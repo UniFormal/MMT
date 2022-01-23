@@ -1,7 +1,8 @@
 package info.kwarc.mmt.stex.lsp
 
+import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
-import info.kwarc.mmt.stex.RusTeX
+import info.kwarc.mmt.stex.{RusTeX, TeXError}
 import info.kwarc.rustex.Params
 
 import scala.concurrent.Future
@@ -11,7 +12,8 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
 
   val params = new Params {
-    def prefix(pre:Option[String],s:String) : String = pre match {
+    private var files: List[String] = Nil
+    private def prefix(pre:Option[String],s:String) : String = pre match {
       case Some(pre) => s.split('\n').map(s => pre + ": " + s).mkString("\n")
       case None => s
     }
@@ -22,7 +24,17 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
     override def write_neg_1(s: String): Unit = client.log(prefix(Some("rustex--1"),s))
     override def write_other(s: String): Unit = client.log(prefix(Some("rustex-other"),s))
     override def message(s: String): Unit = client.log(prefix(Some("rustex-msg"),s))
-    override def file_clopen(s: String): Unit = client.log(prefix(Some("rustex"),s))
+    def file_open(s: String): Unit = {
+      files ::= s
+      client.log(prefix(Some("rustex-file-open"),s))
+    }
+    def file_close(): Unit = {
+      client.log(prefix(Some("rustex-file-close"),files.head))
+      files = files.tail
+    }
+    def error(msg : String, stacktrace : List[(String, String)]) : Unit = {
+      client.documentErrors(doctext,uri,TeXError(msg,stacktrace))
+    }
   }
 
   server.mathhub_top match {

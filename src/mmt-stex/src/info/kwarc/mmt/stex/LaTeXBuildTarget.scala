@@ -19,6 +19,12 @@ import info.kwarc.rustex.Params
 
 import scala.xml.parsing.XhtmlParser
 
+case class TeXError(msg:String,stacktrace:List[(String,String)]) extends info.kwarc.mmt.api.Error(msg) {
+  override def extraMessage: String = stacktrace.map{case (a,b) => a + " - " + b}.mkString("\n")
+
+  override def level: Level = info.kwarc.mmt.api.Level.Error
+}
+
 object RusTeX {
   import info.kwarc.rustex.Bridge
   private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
@@ -67,6 +73,7 @@ trait XHTMLParser extends TraversingBuildTarget {
     log("building " + inFile)
     val self = this
     val params = new Params {
+      private var files: List[String] = Nil
       override def log(s: String): Unit = self.log(s,Some("rustex-log"))
       override def write_16(s: String): Unit = self.log(s,Some("rustex-16"))
       override def write_17(s: String): Unit = self.log(s,Some("rustex-17"))
@@ -74,7 +81,17 @@ trait XHTMLParser extends TraversingBuildTarget {
       override def write_neg_1(s: String): Unit = self.log(s,Some("rustex-neg1"))
       override def write_other(s: String): Unit = self.log(s,Some("rustex-other"))
       override def message(s: String): Unit = self.log(s,Some("rustex-msg"))
-      override def file_clopen(s: String): Unit = self.log(s,Some("rustex"))
+      def file_open(s: String): Unit = {
+        files ::= s
+        self.log(s,Some("rustex-file"))
+      }
+      def file_close(): Unit = {
+        self.log(files.head,Some("rustex-file-close"))
+        files = files.tail
+      }
+      def error(msg : String, stacktrace : List[(String, String)]) : Unit = {
+        errorCont(TeXError(msg,stacktrace))
+      }
     }
     val html = RusTeX.parse(inFile,params,Nil)//,List("c_stex_module_"))//LaTeX.asHTML(inFile.toString)
     File.write(outFile.setExtension("shtml"),html)
