@@ -183,7 +183,7 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   private var _log : (String,Option[String]) => Unit = null
   private var _controller : Controller = null
   private var _client : Option[ClientWrapper[LSPClient]] = None
-  protected def controller = _controller
+  def controller = _controller
   protected def log(s : String, subgroup : Option[String] = None) = _log(s,subgroup)
   def client = _client.getOrElse({
     ???

@@ -1,7 +1,10 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.stex.STeXServer
+import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.jsonrpc.services.{JsonRequest, JsonSegment}
 
 import java.util.concurrent.CompletableFuture
@@ -20,7 +23,7 @@ trait STeXClient extends LSPClient {
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
 }
 class STeXLSPWebSocket extends LSPWebsocket(classOf[STeXClient],classOf[STeXLSPServer])
-class STeXLSP extends LSP(classOf[STeXClient],classOf[STeXLSPServer],classOf[STeXLSPWebSocket])("stex",5007,5008) {
+class STeXLSP extends LSP(classOf[STeXClient],classOf[STeXLSPServer],classOf[STeXLSPWebSocket])("stex",5007,5008){
   override def newServer(style: RunStyle): STeXLSPServer = new STeXLSPServer(style)
 }
 
@@ -47,7 +50,20 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
      case _ =>
    }
 
-   override def connect: Unit = client.log("Connected to sTeX!")
+
+   lazy val stexserver = controller.extman.get(classOf[STeXServer]) match {
+     case Nil =>
+       val ss = new STeXServer
+       controller.extman.addExtension(ss)
+       ss
+     case a :: _ =>
+       a
+   }
+
+   override def connect: Unit = {
+     controller.extman.addExtension(lspdocumentserver)
+     client.log("Connected to sTeX!")
+   }
 
    override def didChangeConfiguration(params: List[(String, List[(String, String)])]): Unit = {
      params.collect {case (a,ls) if a == "stexide" =>
@@ -60,6 +76,31 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
    override def didSave(docuri: String): Unit = this.documents.get(docuri) match {
      case Some(document) => document.build()
      case _ =>
+   }
+
+   val self = this
+
+   lazy val lspdocumentserver = new ServerExtension("stexlspdocumentserver") {
+     override def apply(request: ServerRequest): ServerResponse = request.path.lastOption match {
+       case Some("document") =>
+         request.query match {
+           case "" =>
+             ServerResponse("Empty Document path","txt")
+           case s =>
+             self.documents.get(s) match {
+               case None =>
+                 ServerResponse("Empty Document path","txt")
+               case Some(d) =>
+                 d.html match {
+                   case Some(html) => ServerResponse(html.toString,"html")
+                   case None =>
+                     ServerResponse("Document not yet built","txt")
+                 }
+             }
+         }
+       case _ =>
+         ServerResponse("Unknown key","txt")
+     }
    }
 
 }

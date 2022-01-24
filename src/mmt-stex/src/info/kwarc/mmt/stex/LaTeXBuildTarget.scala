@@ -19,11 +19,13 @@ import info.kwarc.rustex.Params
 
 import scala.xml.parsing.XhtmlParser
 
-case class TeXError(msg:String,stacktrace:List[(String,String)]) extends info.kwarc.mmt.api.Error(msg) {
-  override def extraMessage: String = stacktrace.map{case (a,b) => a + " - " + b}.mkString("\n")
-
-  override def level: Level = info.kwarc.mmt.api.Level.Error
+object TeXError {
+  def apply(uri:String,msg:String,stacktrace:List[(String,String)],reg:SourceRegion) =
+    info.kwarc.mmt.api.SourceError(msg,
+      SourceRef(URI(uri),reg),msg,stacktrace.map{case (a,b) => a + " - " + b}
+    )
 }
+
 
 object RusTeX {
   import info.kwarc.rustex.Bridge
@@ -89,8 +91,9 @@ trait XHTMLParser extends TraversingBuildTarget {
         self.log(files.head,Some("rustex-file-close"))
         files = files.tail
       }
-      def error(msg : String, stacktrace : List[(String, String)]) : Unit = {
-        errorCont(TeXError(msg,stacktrace))
+      def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
+        val region = SourceRegion(SourcePosition(0,files.head._2,files.head._3),SourcePosition(0,files.head._2,files.head._3))
+        errorCont(TeXError(inFile.toURI.toString,msg,stacktrace,region))
       }
     }
     val html = RusTeX.parse(inFile,params,Nil)//,List("c_stex_module_"))//LaTeX.asHTML(inFile.toString)

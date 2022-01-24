@@ -1,7 +1,14 @@
 package info.kwarc.mmt.stex.lsp
 
+import info.kwarc.mmt.api
+import info.kwarc.mmt.api.{DPath, ErrorHandler}
 import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion}
+import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
+import info.kwarc.mmt.stex.Extensions.DocumentExtension
+import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
 import info.kwarc.mmt.stex.{RusTeX, TeXError}
 import info.kwarc.rustex.Params
 
@@ -32,21 +39,47 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
       client.log(prefix(Some("rustex-file-close"),files.head))
       files = files.tail
     }
-    def error(msg : String, stacktrace : List[(String, String)]) : Unit = {
-      client.documentErrors(doctext,uri,TeXError(msg,stacktrace))
+    def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
+      val (off1,off2,p) = LSPDocument.fullLine(files.head._2-1,doctext)
+      val reg = SourceRegion(SourcePosition(off1,files.head._2,0),SourcePosition(off2,files.head._2,p))
+      client.documentErrors(doctext,uri,TeXError(uri,msg,stacktrace,reg))
     }
   }
 
   server.mathhub_top match {
     case Some(f) => Future { RusTeX.initializeBridge(f / ".rustex") }
   }
+
+  lazy val errorCont = new ErrorHandler {
+    override protected def addError(e: api.Error): Unit = client.documentErrors(doctext,uri,e)
+  }
+
+  def parsingstate = {
+    val extensions = server.stexserver.extensions
+    val rules = extensions.flatMap(_.rules)
+    new SemanticState(server.controller,rules,errorCont,DPath(URI(uri)))
+  }
+
+  var html:Option[HTMLNode] = None
+
   def build(): Unit = {
     this.file match {
       case Some(f) =>
         Future {
           val html = RusTeX.parse(f, params)
+          val newhtml = HTMLParser(html)(parsingstate)
+          server.stexserver.doHeader(newhtml)
+
+          val exts = server.stexserver.extensions
+          val docrules = exts.collect {
+            case e : DocumentExtension =>
+              e.documentRules
+          }.flatten
+          def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
+          newhtml.iterate(doE)
+          this.html = Some(newhtml)
           val msg = new HTMLUpdateMessage
-          msg.html = html
+          msg.html = uri
           this.client.client.updateHTML(msg)
         }
       case _ =>

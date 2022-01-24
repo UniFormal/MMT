@@ -17,6 +17,27 @@ object LSPDocument {
     offset + col
   }
 
+  def fullLine(line:Int,text : String) = {
+    var l = 0
+    var offset0 = 0
+    while (l < line && text.isDefinedAt(offset0)) {
+      if (text(offset0) == '\n') {
+        l += 1
+      }
+      offset0 += 1
+    }
+    var offset1 = offset0
+    var p0 = 0
+    while (l == line && text.isDefinedAt(offset1)) {
+      if (text(offset1) == '\n') {
+        l += 1
+      }
+      offset1 += 1
+      p0 += 1
+    }
+    (offset0,offset1,p0)
+  }
+
   def toLC(offset:Int,text : String) = {
     val before = text.take(offset)
     var lines : List[String] = Nil
