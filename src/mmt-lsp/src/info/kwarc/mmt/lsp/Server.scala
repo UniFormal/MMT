@@ -126,6 +126,12 @@ case object WebSocketStyle extends RunStyle
 class ClientWrapper[+A <: LSPClient](val client : A) {
   def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
   def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
+  def resetErrors(uri:String) = {
+    val params = new PublishDiagnosticsParams()
+    params.setUri(uri)
+    params.setDiagnostics(Nil.asJava)
+    client.publishDiagnostics(params)
+  }
   def documentErrors(doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
     val params = new PublishDiagnosticsParams()
     params.setUri(uri)

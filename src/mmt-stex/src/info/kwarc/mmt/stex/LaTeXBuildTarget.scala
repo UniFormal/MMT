@@ -31,7 +31,7 @@ object RusTeX {
   import info.kwarc.rustex.Bridge
   private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
 
-  def initializeBridge(f : => File): Unit = {
+  def initializeBridge(f : => File): Unit = this.synchronized {
     if (!Bridge.initialized()) {
       val path = f
       val file = path / Bridge.library_filename()
@@ -41,7 +41,9 @@ object RusTeX {
       Bridge.initialize(path.toString)
     }
   }
-  def parse(f : File,p:Params,memories:List[String] = Nil) = Bridge.parse(f.toString,p,memories)
+  def parse(f : File,p:Params,memories:List[String] = Nil) = {
+    if (Bridge.initialized()) Bridge.parse(f.toString,p,memories) else ""
+  }
 
 }
 

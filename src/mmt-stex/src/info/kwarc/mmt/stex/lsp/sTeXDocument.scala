@@ -46,10 +46,6 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
     }
   }
 
-  server.mathhub_top match {
-    case Some(f) => Future { RusTeX.initializeBridge(f / ".rustex") }
-  }
-
   lazy val errorCont = new ErrorHandler {
     override protected def addError(e: api.Error): Unit = client.documentErrors(doctext,uri,e)
   }
@@ -63,6 +59,7 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
   var html:Option[HTMLNode] = None
 
   def build(): Unit = {
+    client.resetErrors(uri)
     this.file match {
       case Some(f) =>
         Future {
@@ -79,7 +76,7 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
           newhtml.iterate(doE)
           this.html = Some(newhtml)
           val msg = new HTMLUpdateMessage
-          msg.html = uri
+          msg.html = (server.controller.server.get.baseURI / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
           this.client.client.updateHTML(msg)
         }
       case _ =>

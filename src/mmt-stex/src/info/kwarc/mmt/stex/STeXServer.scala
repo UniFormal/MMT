@@ -163,11 +163,11 @@ class STeXServer extends ServerExtension("fomid") {
     val head = doc.get("head")()().head
     val body = doc.get("body")()().head
     head.add(<meta charset="UTF-8"/>)
-    var addcss = true
+    var addcss = false
     head.get("link")((HTMLParser.ns_html,"rel","stylesheet"))().foreach(e => e.attributes.get((HTMLParser.ns_html,"href")) match {
       case Some("https://latex.now.sh/style.css") => e.delete
-      case Some("LaTeXML.css") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/LaTeXML.css"
-      case Some(s) if s.startsWith("ltx-") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/" + s
+      //case Some("LaTeXML.css") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/LaTeXML.css"
+      //case Some(s) if s.startsWith("ltx-") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/" + s
       case Some("htmlstomach.css") =>
         e.attributes((HTMLParser.ns_html,"href")) = "/stex/htmlstomach.css"
         addcss = false

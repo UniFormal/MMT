@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.lsp
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
-import info.kwarc.mmt.stex.STeXServer
+import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.jsonrpc.services.{JsonRequest, JsonSegment}
 
@@ -68,6 +68,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
    override def didChangeConfiguration(params: List[(String, List[(String, String)])]): Unit = {
      params.collect {case (a,ls) if a == "stexide" =>
        ls.collect {case ("mathhub",v) if v.nonEmpty && File(v).exists() =>
+         RusTeX.initializeBridge(File(v) / ".rustex")
          this.mathhub_top = Some(File(v))
        }
      }
