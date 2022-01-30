@@ -157,7 +157,7 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
           print("")
           ???
       })
-      d.setMessage(e.getMessage)
+      d.setMessage(e.getMessage + "\n\n" + e.extraMessage)
       d
     }
     params.setDiagnostics(diags.asJava)

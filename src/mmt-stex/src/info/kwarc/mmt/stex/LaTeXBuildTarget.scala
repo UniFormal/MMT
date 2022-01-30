@@ -88,6 +88,9 @@ trait XHTMLParser extends TraversingBuildTarget {
       def file_open(s: String): Unit = {
         files ::= s
         self.log(s,Some("rustex-file"))
+        if (s.contains("MathHub/smglom") && s.contains(".en.tex")) {
+          println(s.trim)
+        }
       }
       def file_close(): Unit = {
         self.log(files.head,Some("rustex-file-close"))
@@ -98,9 +101,9 @@ trait XHTMLParser extends TraversingBuildTarget {
         errorCont(TeXError(inFile.toURI.toString,msg,stacktrace,region))
       }
     }
-    val html = RusTeX.parse(inFile,params,Nil)//,List("c_stex_module_"))//LaTeX.asHTML(inFile.toString)
+    val html = RusTeX.parse(inFile,params,List("c_stex_module_"))
     File.write(outFile.setExtension("shtml"),html)
-    val doc = HTMLParser(outFile.setExtension("shtml"))(state)//XHTML.parse(outFile,Some(state))
+    val doc = HTMLParser(outFile.setExtension("shtml"))(state)
     outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
     doc
