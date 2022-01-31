@@ -53,7 +53,7 @@ trait XHTMLParser extends TraversingBuildTarget {
 
   override def start(args: List[String]): Unit = try {
     super.start(args)
-    LaTeXML.initializeIfNecessary(controller)
+    //LaTeXML.initializeIfNecessary(controller)
     controller.extman.get(classOf[STeXServer]) match {
       case Nil =>
         stexserver = new STeXServer

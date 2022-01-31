@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex.lsp
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
@@ -104,4 +105,17 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
      }
    }
 
+}
+
+object Main {
+
+  @throws[InterruptedException]
+  //@throws[ExecutionException]
+  def main(args: Array[String]): Unit = {
+    val controller = new Controller()
+    val end = new STeXLSP
+    controller.extman.addExtension(end)
+    controller.backend.openArchive(File(args.head))
+    end.runLocal
+  }
 }
