@@ -1,9 +1,16 @@
-.sidenote {
+/*.sidenote {
   font-size: 0.8rem;
   float: right;
   clear: right;
   width: 18vw;
   margin-right: -155%;
+}*/
+.sidenote {
+  font-size: 0.8rem;
+  float: right;
+  clear: right;
+  width: 100%;
+  margin-right: -140%;
   /*margin-bottom: 1em;*/
 }
 

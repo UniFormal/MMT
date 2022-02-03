@@ -13,6 +13,7 @@ import java.util
 import java.util.logging.LogManager
 import java.util.logging.Logger
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
+import info.kwarc.mmt.api.utils.File
 import org.eclipse.jetty.server.{Server, ServerConnector}
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
@@ -22,6 +23,7 @@ import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
+import java.io.{BufferedWriter, FileWriter, PrintWriter}
 import javax.websocket.server.ServerEndpointConfig
 import scala.jdk.CollectionConverters._
 
@@ -62,10 +64,10 @@ abstract class LSP[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClas
     // print("MMT Started")
     // startLocalServer(System.in, System.out)
 
-    val controller = new Controller()
+    //val controller = new Controller()
     val end = new AbstractLSPServer(newServer(LocalStyle),self) {}
     controller.extman.addExtension(end,"local" :: Nil)
-    //val logFile = java.io.File.createTempFile("mmtlsp/log_","")
+    //val logFile = File("/home/jazzpirate/templog.txt").toJava//java.io.File.createTempFile("mmtlsp/log_","")
     //val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
     val launcher = new Launcher.Builder().setLocalService(end).setRemoteInterface(clc).setInput(System.in).
       setOutput(System.out).validateMessages(true)/*.traceMessages(wr)*/.create()

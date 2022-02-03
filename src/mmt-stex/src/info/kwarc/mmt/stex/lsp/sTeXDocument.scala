@@ -64,19 +64,24 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
       case Some(f) =>
         Future {
           val html = RusTeX.parse(f, params)
-          val newhtml = HTMLParser(html)(parsingstate)
-          server.stexserver.doHeader(newhtml)
+          val msg = this.synchronized {
+            val newhtml = HTMLParser(html)(parsingstate)
+            server.stexserver.doHeader(newhtml)
 
-          val exts = server.stexserver.extensions
-          val docrules = exts.collect {
-            case e : DocumentExtension =>
-              e.documentRules
-          }.flatten
-          def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
-          newhtml.iterate(doE)
-          this.html = Some(newhtml)
-          val msg = new HTMLUpdateMessage
-          msg.html = (server.controller.server.get.baseURI / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
+            val exts = server.stexserver.extensions
+            val docrules = exts.collect {
+              case e: DocumentExtension =>
+                e.documentRules
+            }.flatten
+
+            def doE(e: HTMLNode): Unit = docrules.foreach(r => r.unapply(e))
+
+            newhtml.iterate(doE)
+            this.html = Some(newhtml)
+            val msg = new HTMLUpdateMessage
+            msg.html = (server.controller.server.get.baseURI / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
+            msg
+          }
           this.client.client.updateHTML(msg)
         }
       case _ =>

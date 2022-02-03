@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.lsp
 
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, Run}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
@@ -34,9 +34,9 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
   with WithAnnotations[STeXClient,sTeXDocument]
  {
    override def newDocument(uri: String): sTeXDocument = {
-     val mf = client.client.getMainFile
-     val file = mf.join().mainFile
-     println("Here: " + file)
+     //val mf = client.client.getMainFile
+     //val file = mf.join().mainFile
+     //println("Here: " + file)
      new sTeXDocument(uri,this.client,this)
    }
    var mathhub_top : Option[File] = None
@@ -93,11 +93,11 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
                case None =>
                  ServerResponse("Empty Document path","txt")
                case Some(d) =>
-                 d.html match {
+                 /*d.synchronized */ { d.html match {
                    case Some(html) => ServerResponse(html.toString,"html")
                    case None =>
                      ServerResponse("Document not yet built","txt")
-                 }
+                 } }
              }
          }
        case _ =>
@@ -112,7 +112,18 @@ object Main {
   @throws[InterruptedException]
   //@throws[ExecutionException]
   def main(args: Array[String]): Unit = {
-    val controller = new Controller()
+    val controller = Run.controller
+    /*controller.handleLine("log html /home/jazzpirate/mmtlog.html")
+    controller.handleLine("log+ lsp")
+    controller.handleLine("log+ lsp-stex")
+    controller.handleLine("log+ lsp-stex-server")
+    controller.handleLine("log+ lsp-stex-server-methodcall")*/
+    val mathhub_dir = File(args.head)
+    if (mathhub_dir.exists()) {
+      controller.handleLine("mathpath archive " + mathhub_dir.toString)
+      controller.handleLine("lmh root " + mathhub_dir.toString)
+    }
+    controller.handleLine("server on 8090")
     val end = new STeXLSP
     controller.extman.addExtension(end)
     controller.backend.openArchive(File(args.head))
