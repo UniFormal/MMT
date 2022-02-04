@@ -94,7 +94,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
                  ServerResponse("Empty Document path","txt")
                case Some(d) =>
                  /*d.synchronized */ { d.html match {
-                   case Some(html) => ServerResponse(html.toString,"html")
+                   case Some(html) => ServerResponse(html.toString,"application/xhtml+xml")
                    case None =>
                      ServerResponse("Document not yet built","txt")
                  } }

@@ -108,7 +108,7 @@ object FragmentExtension extends STeXExtension {
           case _ =>
             ???
         }
-        Some(ServerResponse(doc.toString,"html"))
+        Some(ServerResponse(doc.toString,"application/xhtml+xml"))
       case None =>
         Some(ServerResponse("Empty fragment","txt"))
     }

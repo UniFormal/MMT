@@ -33,7 +33,7 @@ object EditorExtension extends STeXExtension {
   def doEditor(query : String) = {
     var content = MMTSystem.getResourceAsString("/mmt-web/stex/editor/main.html")
     content = content.replace("CONTENT_URL",query)
-    ServerResponse(content,"html")
+    ServerResponse(content,"application/xhtml+xml")
   }
 
   def getTeXFile(s : String) = {

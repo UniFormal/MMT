@@ -21,7 +21,7 @@ object DocumentExtension extends STeXExtension {
         case "" =>
           Some(ServerResponse("Empty Document path","txt"))
         case s =>
-          Some(ServerResponse(doDocument(s).toString, "html"))
+          Some(ServerResponse(doDocument(s).toString, "application/xhtml+xml"))
       }
     case _ => None
   }

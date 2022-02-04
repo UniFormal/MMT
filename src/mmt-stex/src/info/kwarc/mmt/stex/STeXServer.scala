@@ -108,7 +108,7 @@ class STeXServer extends ServerExtension("fomid") {
           case _ =>
         })
     }
-    ServerResponse(ret.toString, "html")
+    ServerResponse(ret.toString, "application/xhtml+xml")
   } catch {
     case ret:ErrorReturn => ret.toResponse
     case t : NonLocalReturnControl[Any] =>
@@ -183,7 +183,7 @@ class STeXServer extends ServerExtension("fomid") {
                         |      MML.mmlFilters.add(function ({math, document, data}) {
                         |        for (const mtext of data.querySelectorAll('mtext')) {
                         |          const child = mtext.firstElementChild;
-                        |          if (child && child.namespaceURI === 'http://www.w3.org/1999/xhtml') {
+                        |          if (child &amp;&amp; child.namespaceURI === 'http://www.w3.org/1999/xhtml') {
                         |            const semantics = adaptor.node('semantics', {}, [
                         |              adaptor.node('annotation-xml', {encoding: 'application/xhtml+xml'}, mtext.childNodes)
                         |            ]);

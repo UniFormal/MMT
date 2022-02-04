@@ -12,9 +12,9 @@ object BrowserExtension extends STeXExtension {
         case "menu" =>
           Some(ServerResponse.JsonResponse(doMenu))
         case "" =>
-          Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"html"))
+          Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"application/xhtml+xml"))
         case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
-         Some(ServerResponse(DocumentExtension.doDocument(ps).toString.trim,"html"))
+         Some(ServerResponse(DocumentExtension.doDocument(ps).toString.trim,"application/xhtml+xml"))
         case _ =>
           ???
       }
