@@ -119,11 +119,12 @@ object Main {
     controller.handleLine("log+ lsp-stex-server")
     controller.handleLine("log+ lsp-stex-server-methodcall")*/
     val mathhub_dir = File(args.head)
+    val port = args(1)
     if (mathhub_dir.exists()) {
       controller.handleLine("mathpath archive " + mathhub_dir.toString)
       controller.handleLine("lmh root " + mathhub_dir.toString)
     }
-    controller.handleLine("server on 8090")
+    controller.handleLine("server on " + port)
     val end = new STeXLSP
     controller.extman.addExtension(end)
     controller.backend.openArchive(File(args.head))
