@@ -126,17 +126,18 @@ case object SocketStyle extends RunStyle
 case object WebSocketStyle extends RunStyle
 
 class ClientWrapper[+A <: LSPClient](val client : A) {
+  private def normalizeUri(s : String) : String = s.take(5) + s.drop(5).replace(":","%3A")
   def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
   def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
   def resetErrors(uri:String) = {
     val params = new PublishDiagnosticsParams()
-    params.setUri(uri)
+    params.setUri(normalizeUri(uri))
     params.setDiagnostics(Nil.asJava)
     client.publishDiagnostics(params)
   }
   def documentErrors(doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
     val params = new PublishDiagnosticsParams()
-    params.setUri(uri)
+    params.setUri(normalizeUri(uri))
     val diags = errors.map{e =>
       val d = new Diagnostic
       e match {
@@ -261,6 +262,8 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
     case _ => null
   }
 
+  private def normalizeUri(s:String) : String = s.replace("%3A",":")
+
   @JsonNotification("connect")
   override def connect(clientO: LanguageClient): Unit = {
     log("Connected: " + clientO.toString,Some("methodcall"))
@@ -351,6 +354,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   @JsonNotification("textDocument/didOpen")
   def didOpen(params: DidOpenTextDocumentParams): CompletableFuture[Unit] = {
+    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
     log("textDocument/didOpen: " + params.getTextDocument.getUri + " (" + params.getTextDocument.getLanguageId + ")",Some("methodcall"))
     Completable { server.didOpen(params) }
   }
@@ -376,6 +380,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   @JsonNotification("textDocument/didSave")
   def didSave(params: DidSaveTextDocumentParams): CompletableFuture[Unit] = Completable {
+    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
     log("textDocument/didSave: " + params.getTextDocument.getUri,Some("methodcall"))
     server.didSave(params.getTextDocument.getUri)
   }
@@ -415,6 +420,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   @JsonRequest("textDocument/hover")
   def hover(params: HoverParams): CompletableFuture[Hover] = Completable {
+    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
     log("textDocument/hover: " + params.getTextDocument.getUri + ":(" + params.getPosition.getLine + "," + params.getPosition.getCharacter + ")",Some("methodcall"))
     server.hover(params)
   }
@@ -431,6 +437,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   def documentSymbol(
                       params: DocumentSymbolParams
                     ): CompletableFuture[JEither[util.List[DocumentSymbol], util.List[SymbolInformation]]] = Completable {
+    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
     log("textDocument/documentSymbol: " + params.getTextDocument.getUri,Some("methodcall"))
     toEither{
       val ret = server.documentSymbol(params)
@@ -465,6 +472,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   @JsonRequest("textDocument/completion")
   def completion(position: CompletionParams): CompletableFuture[JEither[util.List[CompletionItem], CompletionList]] = Completable {
+    position.getTextDocument.setUri(normalizeUri(position.getTextDocument.getUri))
     log("textDocument/completion: " + position.getTextDocument.getUri + " at (" +
       position.getPosition.getLine + "," + position.getPosition.getCharacter + ")"
       ,Some("methodcall"))
@@ -502,12 +510,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   def foldingRange(
                     params: FoldingRangeRequestParams
                   ): CompletableFuture[util.List[FoldingRange]] = Completable {
+    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
     log("textDocument/foldingRange: " + params.getTextDocument.getUri,Some("methodcall"))
     server.foldingRange(params).asJava
   }
 
   @JsonRequest(value = "textDocument/semanticTokens/full")
   def semanticTokensFull(params: SemanticTokensParams) : CompletableFuture[SemanticTokens] = Completable {
+    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
     log("textDocument/semanticTokens/full: " + params.getTextDocument.getUri,Some("methodcall"))
     server.semanticTokensFull(params)
   }

@@ -131,7 +131,6 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:Cl
     _doctext = s
     updateNow
   }
-
 }
 
 trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[A,B] {
