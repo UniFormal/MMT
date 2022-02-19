@@ -50,7 +50,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
      case LocalStyle => scala.sys.exit()
      case _ =>
    }
-
+   override def exit: Unit = shutdown
 
    lazy val stexserver = controller.extman.get(classOf[STeXServer]) match {
      case Nil =>
