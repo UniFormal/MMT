@@ -690,7 +690,13 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     else
       Some(vds)
    }
-      
+
+   private var freshUnkownCounter = -1
+   /** generates a fresh names for an unknown */
+   def freshUnknown() = {
+     freshUnkownCounter += 1
+     LocalName("") / "O" / freshUnkownCounter.toString
+   }
    /**
     * @param newVars new unknowns; creating new unknowns during checking permits variable transformations
     * @param before the variable before which to insert the new ones, otherwise insert at end
@@ -709,6 +715,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     *
     * this is implemented by adding a fresh unknown, and running the constraint
     * this can be used to compute a value in logic programming style, where the computation is given by a functional predicate
+    * @param x a fresh unknown
+    * @param tp the type of x
+    * @param constraint a program that calls checks that suffice to solve the value of x; this should return false if the solution failed
     */
    def defineByConstraint(x: LocalName, tp: Term)(constraint: Term => Boolean) = {
      addUnknowns(x%tp, None)

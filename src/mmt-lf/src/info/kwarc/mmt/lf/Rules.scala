@@ -220,7 +220,7 @@ object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
-            // this case is somewhat redundant, but allows reusing the variable name
+            // this case is somewhat redundant, but allows reusing the variable name of the lambda
             // TODO this might check a1 >: a2 instead, but then a1 must be checked separately
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             val (xn,sub1) = Common.pickFresh(solver, x1)
@@ -353,7 +353,7 @@ object FlattenCurrying extends ComputationRule(Apply.path) {
 /**
  * the beta-reduction rule reducible(s,A)  --->  (lambda x:A.t) s = t [x/s]
  *
- * the reducibility judgment is left abstract, usually the typing judgment s:A
+ * the reducibility judgment is kept abstract, usually it is the typing judgment s:A
  *
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
  */
@@ -458,15 +458,6 @@ object UnsafeBeta extends BreadthRule(Apply.path){
 */
 
 
-/** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
- * LocalName.Anon is used for x */
-// not used anymore because Pi rules now also apply to arrow
-object ExpandArrow extends ComputationRule(Arrow.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
-      case Arrow(a,b) => Simplify(Pi(OMV.anonymous, a, b))
-      case _ => Simplifiability.NoRecurse
-   }
-}
 
 class Injectivity(val head: GlobalName) extends TermBasedEqualityRule {
    def applicable(tm1: Term, tm2: Term) = (tm1,tm2) match {
@@ -615,8 +606,20 @@ object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
    }
 }
 
+/** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
+  * LocalName.Anon is used for x */
+// not used anymore because Pi rules now also apply to arrow
+/*
+object ExpandArrow extends ComputationRule(Arrow.path) {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
+      case Arrow(a,b) => Simplify(Pi(OMV.anonymous, a, b))
+      case _ => Simplifiability.NoRecurse
+   }
+}
+*/
+
 /**
-  * Removes unnecessary occurrences of [[Pi]]s.
+  * inverse of ExpandArrow - removes unnecessary occurrences of [[Pi]]s.
   * E.g., over the signature `{A: type, B: type}`, the [[Pi]] in `Πx: A. B`
   * is unnecessary and can be replaced by an [[Arrow]] `A -> B`.
   */

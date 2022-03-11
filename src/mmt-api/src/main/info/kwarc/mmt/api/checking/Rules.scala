@@ -218,15 +218,18 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
  *  Thus it can be used both for type inference and for type checking.
  *  @param h the head of the term whose type this rule infers
  *  @param t the "typing judgement symbol", e.g. ''info.kwarc.mmt.lf.OfType.path''
+ *  Even if the expected type is given, rules should still perform some kind of type inference on the term
+ *  as opposed to simply returning the expected type. The expected type might contain unknowns that are to be solved
+ *  by equating it to the inferred type.
  */
 abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
    /**
     *  @param tp the expected type
     *    pre: if provided, tp is covered
-    *  @param covered whether tm is covered
+    *  @param covered whether tm is covered; if so and tp is provided, then tm:tp covered
     *  @return the inferred type and the result of type-checking
     *    post: if the left component is Some(tpI), typing tm:tpI is covered
-     *         if tp provided and the right component is Some(true), tm:tp is covered
+    *      if tp provided and the right component is Some(true), tm:tp is covered
     */
    def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean])
 

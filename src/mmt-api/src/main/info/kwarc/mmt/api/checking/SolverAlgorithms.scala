@@ -649,9 +649,9 @@ trait SolverAlgorithms {self: Solver =>
     *
     * If type inference is not successful, this is delayed.
     */
-  def inferTypeAndThen(tm: Term)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
+  def inferTypeAndThen(tm: Term, covered: Boolean = false)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
       implicit val (s,h) = (stack, history)
-      inferType(tm) match {
+      inferType(tm, covered) match {
          case Some(tp) =>
             cont(tp)
          case None =>
@@ -712,10 +712,10 @@ trait SolverAlgorithms {self: Solver =>
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       history += msg
       val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
-      controller.extman.get(classOf[Prover]) foreach {prover =>
+      controller.extman.get(classOf[AutomatedProver]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {
-            val p = proof.get
+            val p = proof.getOrElse(UnknownTerm())
             history += "proof: " + presentObj(p)
             return Some(p)
          } else {
