@@ -6,73 +6,53 @@ import info.kwarc.mmt.api.utils.{URI, XMLEscaping}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX
 import info.kwarc.mmt.sequences.Sequences
+import info.kwarc.mmt.stex.rules.StringLiterals
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 
 import scala.xml._
 import objects._
 
 object STeX {
-  val fomid_dpath = DPath(utils.URI(Some("fomid"), None, abs=true))
-  val foundation = fomid_dpath / "foundation"
-  val core = fomid_dpath / "core"
-  val metadata = foundation ? "Metadata"
-  //val ur = DPath(URI.http colon "cds.omdoc.org")/ "urtheories"
-  val meta = foundation ? "Meta"
+  val meta_dpath = DPath(URI.http colon "mathhub.info") / "sTeX"
+  val meta_path = meta_dpath ? "Metatheory"
+  val mmtmeta_path = meta_dpath ? "MMTMeta"
 
+  val string = mmtmeta_path ? "stringliteral"
 
-  val meta_quantification = metadata ? "quantification"
-  val meta_source = metadata ? "source"
-  val meta_macro = metadata ? "macroname"
-  val meta_notation = metadata ? "notation"
-  val meta_arity = metadata ? "arity"
-  val meta_vardecl = metadata ? "vardecl"
-  val meta_language = metadata ? "language"
-
-
-
-  val pos = (foundation / "literals") ? "PositiveNaturals" ? "positivenaturalliteral"
-  val nat = (foundation / "literals") ? "Naturals" ? "naturalliteral"
-  val int = (foundation / "literals") ? "Integers" ? "integerliteral"
-  val rat = (foundation / "literals") ? "Rationals" ? "rationalliteral"
-  val real = (foundation / "literals") ? "Reals" ? "realliteral"
-  val string = (foundation / "literals") ? "Strings" ? "stringliteral"
-
-  object PosLiterals extends RepresentedRealizedType(OMS(pos),StandardPositive)
-  object NatLiterals extends RepresentedRealizedType(OMS(nat),StandardNat)
-  object IntLiterals extends RepresentedRealizedType(OMS(int),StandardInt)
-  object RatLiterals extends RepresentedRealizedType(OMS(rat),StandardRat)
-  object RealLiterals extends RepresentedRealizedType(OMS(real),StandardDouble)
-  object StringLiterals extends RepresentedRealizedType(OMS(string),StandardString)
+  val meta_notation = mmtmeta_path ? "notation"
 
   val notation = new {
-    val sym = foundation ? "Notations" ? "notation"
     val tp = new {
-      val sym = foundation ? "Notations" ? "notation-type"
+      val sym = mmtmeta_path ? "notationtype"
       def apply(nsym : GlobalName, arity : String) = OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity)))
 
-        def unapply(tm : Term) = tm match {
-          case OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity))) => Some((nsym,arity))
-          case _ => None
-        }
+      def unapply(tm : Term) = tm match {
+        case OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity))) => Some((nsym,arity))
+        case _ => None
+      }
     }
     def apply(node : Node, prec : String, frag : String) = {
-      OMA(OMS(sym),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node)))
+      OMA(OMS(meta_notation),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node)))
     }
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node))) =>
+      case OMA(OMS(`meta_notation`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node))) =>
         Some((node,prec,frag))
       case _ => None
     }
   }
-
-
   val informal = new {
-    val sym = foundation ? "Informal" ? "informal-sym"
-    val opsym = foundation ? "Informal" ? "informal-apply"
-    def applyOp(label : String,args : List[Term]) = {
-      OMA(OMS(opsym),StringLiterals(label) :: args)
+    val sym = mmtmeta_path ? "informalsym"
+    val op = new {
+      val opsym = mmtmeta_path ? "informalapply"
+      def apply(label : String,args : List[Term]) = {
+        OMA(OMS(opsym),StringLiterals(label) :: args)
+      }
+      def unapply(tm : Term) = tm match {
+        case OMA(OMS(`opsym`),StringLiterals(label) :: args) => Some((label,args))
+        case _ => None
+      }
     }
-    def applySimple(n : Node) = OMA(OMS(sym),OMFOREIGN(n) :: Nil)
+    def apply(n : Node) = OMA(OMS(sym),OMFOREIGN(n) :: Nil)
     def unapply(tm : Term) = tm match {
       case OMA(OMS(`sym`),OMFOREIGN(n) :: Nil) =>
         Some(n)
@@ -80,72 +60,15 @@ object STeX {
     }
   }
 
-  def language(l : String) = metadata ? l
-
-  val symboldoc = new {
-    val th = string.module
-    val tp = th ? "symboldoc"
-    val sym = th ? "symboldocfor"
-    def apply(symbol : ContentPath,lang : String,doc : List[HTMLNode]) = {
-      OMA(OMS(sym),List(StringLiterals(symbol.toString),StringLiterals(lang),OMFOREIGN(<span>{doc.map(_.node)}</span>))) // OMFOREIGN
-    }
-    def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(StringLiterals(s),StringLiterals(lang),OMFOREIGN(n))) =>
-        Some((s,lang,n.child.toList))
-      case _ =>
-        None
-    }
-  }
-
-  import info.kwarc.mmt.api.objects.Conversions._
-
-  val universal_quantifier = new {
-    val path = foundation ? "Bindings" ? "universal"
-    def apply(ctx : Context,body : Term) = OMBIND(OMS(path),ctx,body)
-    def apply(ln : LocalName,tp : Option[Term],body : Term) = OMBIND(OMS(path),tp match {
-      case Some(t) => OMV(ln) % t
-      case None => VarDecl(ln)
-    },body)
-    def unapply(tm : Term) = tm match {
-      case OMBIND(OMS(`path`),Context(vd, rest @_*),bd) =>
-        if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
-      case _ => None
-    }
-  }
-
-  val existential_quantifier = new {
-    val path = foundation ? "Bindings" ? "existential"
-    def apply(ctx : Context,body : Term) = OMBIND(OMS(path),ctx,body)
-    def apply(ln : LocalName,tp : Option[Term],body : Term) = OMBIND(OMS(path),tp match {
-      case Some(t) => OMV(ln) % t
-      case None => VarDecl(ln)
-    },body)
-    def unapply(tm : Term) = tm match {
-      case OMBIND(OMS(`path`),Context(vd, rest @_*),bd) =>
-        if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
-      case _ => None
-    }
-  }
-
-  val let = new {
-    val path = foundation ? "Bindings" ? "let"
-    def apply(ln : LocalName, defi : Term,body : Term) = OMBIND(OMS(path),Context(VarDecl(ln,None,None,Some(defi),None)),body)
-    def unapply(tm : Term) = tm match {
-      case OMBIND(OMS(`path`),Context(vd),bd) if vd.df.isDefined =>
-        Some(vd.name,vd.df.get,bd)
-      case _ => None
-    }
-  }
-
   val flatseq = new {
-    val sym = foundation ? "Sequences" ? "seq"
+    val sym = meta_path ? "seqexpr"
     def apply(tms : Term*) = OMA(OMS(sym),tms.toList)
     def unapply(tm : Term) = tm match {
       case OMA(OMS(`sym`),ls) => Some(ls)
       case _ => None
     }
     val tp = new {
-      val sym = foundation ? "Sequences" ? "seqtype"
+      val sym = meta_path ? "seqtype"
       def apply(tp : Term) = OMA(OMS(sym),List(tp))
       def unapply(tm : Term) = tm match {
         case OMA(OMS(`sym`),List(tp)) => Some(tp)
@@ -154,63 +77,61 @@ object STeX {
     }
   }
 
-  val prop = (foundation / "foundations") ? "Foundation" ? "judgment"
-  val ded = (foundation / "foundations") ? "Foundation" ? "holds"
-
-
-
-
-
-
-
-  val set = (core / "sets") ? "Sets" ? "Set"
-  val funtype = (core / "sets") ? "Functions" ? "FunctionType"
-  object Forall {
-    val path = (core / "logic") ? "UniversalQuantifier" ? "Forall"
-    def apply(x : LocalName,tp : Option[Term], tm : Term) : OMBINDC = tm match {
-      case Forall(ctx2,bd) =>
-        OMBIND(OMS(path),ctx2 ++ (if (tp.isDefined) x%tp.get else VarDecl(x)),bd)
-      case _ =>
-        OMBIND(OMS(path),Context(VarDecl(x,None,tp,None,None)),tm)
-    }
-    def apply(ctx : Context,tm : Term) : OMBINDC = tm match {
-      case Forall(ctx2,bd) =>
-        OMBIND(OMS(path),ctx2 ++ ctx,bd)
-      case _ =>
-        OMBIND(OMS(path),ctx,tm)
-    }
-    def unapply(tm : Term) : Option[(Context,Term)] = tm match {
-      case OMBIND(OMS(`path`),ctx,bd) if ctx.nonEmpty =>
-        unapply(bd) match {
-          case Some((ctx2,bd2)) =>
-            Some(ctx2 ++ ctx,bd2)
-          case _ => Some(ctx,bd)
-        }
+  val binder = new {
+    val path = meta_path ? "bind"
+    def apply(ctx : Context,body : Term) = OMBIND(OMS(path),ctx,body)
+    def apply(ln : LocalName,tp : Option[Term],body : Term) = OMBIND(OMS(path),tp match {
+      case Some(t) => OMV(ln) % t
+      case None => VarDecl(ln)
+    },body)
+    def unapply(tm : Term) = tm match {
+      case OMBIND(OMS(`path`),Context(vd, rest @_*),bd) =>
+        if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
       case _ => None
     }
   }
-  object Exists {
-    val path = (core / "logic") ? "ExistentialQuantifier" ? "Exists"
-    def apply(x : LocalName,tp : Option[Term], tm : Term) : OMBINDC = tm match {
-      case Exists(ctx2,bd) =>
-        OMBIND(OMS(path),ctx2 ++ (if (tp.isDefined) x%tp.get else VarDecl(x)),bd)
-      case _ =>
-        OMBIND(OMS(path),Context(VarDecl(x,None,tp,None,None)),tm)
-    }
-    def apply(ctx : Context,tm : Term) : OMBINDC = tm match {
-      case Exists(ctx2,bd) =>
-        OMBIND(OMS(path),ctx2 ++ ctx,bd)
-      case _ =>
-        OMBIND(OMS(path),ctx,tm)
-    }
-    def unapply(tm : Term) : Option[(Context,Term)] = tm match {
-      case OMBIND(OMS(`path`),ctx,bd) if ctx.nonEmpty =>
-        unapply(bd) match {
-          case Some((ctx2,bd2)) =>
-            Some(ctx2 ++ ctx,bd2)
-          case _ => Some(ctx,bd)
-        }
+  val implicit_binder = new {
+    val path = meta_path ? "implicitbind"
+    def apply(ctx : Context,body : Term) = OMBIND(OMS(path),ctx,body)
+    def apply(ln : LocalName,tp : Option[Term],body : Term) = OMBIND(OMS(path),tp match {
+      case Some(t) => OMV(ln) % t
+      case None => VarDecl(ln)
+    },body)
+    def unapply(tm : Term) = tm match {
+      case OMBIND(OMS(`path`),Context(vd, rest @_*),bd) =>
+        if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
       case _ => None
     }
   }
+
+  val symboldoc = new {
+    val tp = mmtmeta_path ? "symboldoc"
+    val sym = mmtmeta_path ? "symboldocfor"
+    def apply(symbol : List[ContentPath],lang : String,doc : HTMLNode) = {
+      OMA(OMS(sym),StringLiterals(lang) :: OMFOREIGN(doc.node) :: symbol.map(s => StringLiterals(s.toString))) // OMFOREIGN
+    }
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),StringLiterals(lang) :: OMFOREIGN(n) :: ls) =>
+        Some((ls.map(StringLiterals.unapply(_).get),lang,n))
+      case _ =>
+        None
+    }
+  }
+
+  val judgmentholds = new {
+    val sym = meta_path ? "judgmentholds"
+    def apply(tm : Term) = OMA(OMS(sym),List(tm))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(t)) => Some(t)
+      case _ => None
+    }
+  }
+
+  val meta_macro = mmtmeta_path ? "macroname"
+  val meta_language = mmtmeta_path ? "language"
+  val meta_arity = mmtmeta_path ? "arity"
+
+  val meta_quantification = mmtmeta_path ? "quantification"
+  val meta_qforall = mmtmeta_path ? "universal"
+  val meta_qexists = mmtmeta_path ? "existential"
 }

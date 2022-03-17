@@ -1,6 +1,8 @@
 package info.kwarc.mmt.stex.features
 
 
+/*
+
 import info.kwarc.mmt.api.{GlobalName, InvalidElement, LocalName, ParametricRule, Path, Rule}
 import info.kwarc.mmt.api.checking.{ExtendedCheckingEnvironment, SubtypingRule}
 import info.kwarc.mmt.api.frontend.Controller
@@ -171,4 +173,5 @@ class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) exten
   }
 }
 
+ */
  */

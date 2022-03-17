@@ -517,6 +517,10 @@ class NotationBasedPresenter extends ObjectPresenter {
             recurse(last, noBrackets)(pc.child(n))
          }
          -1
+      case f@OMFOREIGN(_) => {
+        pc.out(f.toString)
+        -1
+      }
    }
 
    /** abbreviation for not bracketing */

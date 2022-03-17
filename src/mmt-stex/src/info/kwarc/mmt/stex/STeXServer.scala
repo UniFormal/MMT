@@ -1,30 +1,22 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.RedirectableDimension
 import info.kwarc.mmt.api.frontend.Extension
-import info.kwarc.mmt.api.notations.{Delim, Marker, SimpArg, Var}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.refactoring.AcrossLibraryTranslator
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.odk.Sage.{Sage, SageSystem}
-import info.kwarc.mmt.stex.Extensions.DocumentExtension.controller
-import info.kwarc.mmt.stex.Extensions.{BrowserExtension, DocumentExtension, EditorExtension, FragmentExtension, OMDocExtension, STeXExtension, Translator}
-import info.kwarc.mmt.stex.features.{DefinitionFeature, PillarFeature, TheoremFeature}
-import info.kwarc.mmt.stex.translations.DemoContent
+import info.kwarc.mmt.stex.Extensions.{BrowserExtension, DocumentExtension, FragmentExtension, OMDocExtension, STeXExtension}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml._
 
 import scala.runtime.NonLocalReturnControl
-import scala.xml.parsing
 
 case class ErrorReturn(s : String) extends Throwable {
   def toResponse = ServerResponse(s,"plain",ServerResponse.statusCodeNotFound)
 }
 
 
-class STeXServer extends ServerExtension("fomid") {
+class STeXServer extends ServerExtension("sTeX") {
 
   def resolveDocumentQuery(query : String) = query match {
     case s if s.startsWith("group=") =>
@@ -73,17 +65,19 @@ class STeXServer extends ServerExtension("fomid") {
     addExtension(DocumentExtension)
     addExtension(FragmentExtension)
     addExtension(BrowserExtension)
-    addExtension(EditorExtension)
+    //addExtension(EditorExtension)
     //addExtension(DemoExtension)
-    addExtension(classOf[PillarFeature])
-    addExtension(classOf[DefinitionFeature])
+    //addExtension(classOf[PillarFeature])
+    //addExtension(classOf[DefinitionFeature])
 
-    controller.backend.getArchives.filter(_.id.startsWith("FoMID")).foreach(_.readRelational(Nil, controller, "rel"))
+    controller.backend.getArchives.filter{a =>
+      a.properties.get("format").contains("stex")
+    }.foreach(_.readRelational(Nil, controller, "rel"))
   }
 
   override def apply(request: ServerRequest): ServerResponse = try {
-    val ret = request.path.lastOption match {
-      case Some("declaration") =>
+    request.path.lastOption match {
+      /*case Some("declaration") =>
         request.query match {
           case "" =>
             ???
@@ -101,14 +95,18 @@ class STeXServer extends ServerExtension("fomid") {
           case Some("None") => None
           case Some(s) => Some(Path.parseC(XMLEscaping.unapply(s),NamespaceMap.empty))
           case _ => None
-        }
+        }*/
+      case Some(":sTeX") if request.query == "" =>
+        val nr = request.copy(path = List(":sTeX","browser"))
+        return apply(nr)
       case _ =>
         extensions.foreach(e => e.serverReturn(request) match {
           case Some(rsp) => return rsp
           case _ =>
         })
     }
-    ServerResponse(ret.toString, "application/xhtml+xml")
+    ServerResponse("Unknown request: " + request.path.mkString("/"),"text/plain")
+    //ServerResponse(ret.toString, "application/xhtml+xml")
   } catch {
     case ret:ErrorReturn => ret.toResponse
     case t : NonLocalReturnControl[Any] =>
@@ -117,96 +115,25 @@ class STeXServer extends ServerExtension("fomid") {
       throw t
   }
 
-  def doDeclaration(s : String) = {
-    val path = Path.parseS(s)
-    val c = controller.getConstant(path)
-    val (doc,body) = emptydoc
-    def space = scala.xml.Text(" ")
-    val suffix = c.rl match {
-      case Some("variable") =>
-        body.add(<b>Variable</b>)
-        c.metadata.getValues(STeX.meta_quantification) match {
-          case List(OMS(STeX.Forall.path)) => scala.xml.Text("(universally quantified)")
-          case List(OMS(STeX.Exists.path)) => scala.xml.Text("(existentially quantified)")
-          case _ => space
-        }
-      case _ =>
-        body.add(<b>Symbol</b>)
-        space
-    }
-    body.add(space)
-    body.add(<a href={"/?"+s} target="_blank">{XMLEscaping(c.path.toString)}</a>)
-    body.add(<br/>)
-    body.add(
-      <table>
-        <tr><th>Macro</th><th>Presentation</th><th>Type</th><th></th></tr>
-        <tr>
-          <td>{c.notC.parsing match {
-              case Some(tn) => scala.xml.Text(tn.markers.mkString(""))
-              case _ => scala.xml.Text("(None)")
-            }}</td>
-          <td>{c.notC.presentation match {
-              case Some(tn) => scala.xml.Text(tn.markers.mkString(""))
-              case _ => scala.xml.Text("(None)")
-            }}</td>
-          <td>{c.tp match {
-              case Some(tpi) => xhtmlPresenter.asXML(tpi,Some(c.path $ TypeComponent))
-              case _ => scala.xml.Text("(None)")
-            }}</td>
-          <td>{suffix}</td>
-        </tr>
-      </table>)
-    doc
-  }
 
   def doHeader(doc : HTMLNode) = {
     val head = doc.get("head")()().head
     val body = doc.get("body")()().head
-    head.add(<meta charset="UTF-8"/>)
-    var addcss = false
-    head.get("link")((HTMLParser.ns_html,"rel","stylesheet"))().foreach(e => e.attributes.get((HTMLParser.ns_html,"href")) match {
-      case Some("https://latex.now.sh/style.css") => e.delete
-      //case Some("LaTeXML.css") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/LaTeXML.css"
-      //case Some(s) if s.startsWith("ltx-") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/" + s
-      case Some("htmlstomach.css") =>
-        e.attributes((HTMLParser.ns_html,"href")) = "/stex/htmlstomach.css"
-        addcss = false
-      case _ =>
-    })
-    if (addcss) head.add(<link rel="stylesheet" href="/stex/latex-css/style.css"/>) else head.add(<link rel="stylesheet" href="/stex/sidenotes.css"/>)
-    head.add(<script>{"""MathJax = {
-                        |  startup: {
-                        |    ready() {
-                        |      MathJax.startup.defaultReady();
-                        |      const MML = MathJax.startup.document.inputJax[0];
-                        |      const adaptor = MML.adaptor;
-                        |      MML.mmlFilters.add(function ({math, document, data}) {
-                        |        for (const mtext of data.querySelectorAll('mtext')) {
-                        |          const child = mtext.firstElementChild;
-                        |          if (child &amp;&amp; child.namespaceURI === 'http://www.w3.org/1999/xhtml') {
-                        |            const semantics = adaptor.node('semantics', {}, [
-                        |              adaptor.node('annotation-xml', {encoding: 'application/xhtml+xml'}, mtext.childNodes)
-                        |            ]);
-                        |            mtext.parentNode.replaceChild(semantics, mtext);
-                        |          }
-                        |        }
-                        |      });
-                        |    }
-                        |  }
-                        |}""".stripMargin}</script>)
-    head.add(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{HTMLParser.empty}</script>)
-    extensions.foreach(_.doHeader(head,body))
-    head
+    val headstring = MMTSystem.getResourceAsString("/mmt-web/stex/htmlfragments/header.xml")
+    doc.addBefore(headstring,head)
+    head.delete
+    val nhead = doc.get("head")()().head
+
+    extensions.foreach(_.doHeader(nhead,body))
+    nhead
   }
 
   def emptydoc = {
     val rules = extensions.flatMap(_.rules)
     val state = new ParsingState(controller,rules)
-    val doc = HTMLParser("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN\" \"http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:stex=\"http://kwarc.info/ns/sTeX\" xmlns:mml=\"http://www.w3.org/1998/Math/MathML\" lang=\"en\">")(state) //new XHTMLDocument
-    doc.add(<head></head>)
-    doc.add(<body><div class="ltx_page_main"><div class="ltx_page_content"><div class="ltx_document"></div></div></div></body>)
+    val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/emptydoc.xhtml"))(state)
     doHeader(doc)
-    (doc,doc.get("div")()("ltx_document").head)
+    (doc,doc.get("div")()("body").head)
   }
 
   lazy val xhtmlPresenter = controller.extman.get(classOf[STeXPresenterML]) match {

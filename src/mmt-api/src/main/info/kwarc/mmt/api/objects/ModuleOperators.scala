@@ -328,7 +328,7 @@ object TheoryExp {
     */
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
     case OMMOD(p) =>
-      val t = lib.getTheory(p)
+      val t = lib.getAs(classOf[AbstractTheory],p)
       t.meta match {
         case None => 
           Nil
