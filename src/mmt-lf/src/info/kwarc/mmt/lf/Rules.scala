@@ -176,22 +176,22 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
                   case Some((argTypes,tmI)) =>
                     // It is not clear whether it is better to type-check the return type or the arguments first.
                     // Conceivably the latter allows solving more unknowns early and localize errors.
-                    // But it can also introduce complex terms early, thus slowing down (factor 2  in experiments) checking and 
+                    // But it can also introduce complex terms early, thus slowing down (factor 2 in experiments) checking and
                     // even lead to failures where beta-reductions lead to substitutions to the arguments of unknowns.
                     // Using tryToCheckWithoutDelay instead of check here avoids the latter but not the former.
                     // Therefore, the early check of the type is skipped. Future experiments may find better heuristics.
-                    //val resCheckResult = tpO flatMap {tp =>
-                    //   solver.check(Subtyping(stack, tmI, tp))(history + "checking return type against expected type")
-                    //}
-                    val resCheckResult: Option[Boolean] = None
+                    val resCheckResult = tpO map {tp =>
+                       solver.check(Subtyping(stack, tmI, tp))(history + "checking return type against expected type")
+                    }
+                    // val resCheckResult: Option[Boolean] = None
                     // check the arguments
-                    // open question: should later arguments still be ckeched if an error is found?
+                    // this does not check later arguments if one argument leads to a definite error
                     val argCheckResult = (args zip argTypes).zipWithIndex forall {case ((t,a),i) =>
                       val aS = solver.substituteSolution(a) // previous checks may have solved some unknowns
                       conforms(solver)(t, aS, covered)(stack, history + ("checking argument " + (i+1)))
                     }
                     // no point in returning a positive check result if this is internally ill-typed
-                    val checkResult = resCheckResult map {r => r && argCheckResult}
+                    val checkResult = resCheckResult map {_ && argCheckResult}
                     // we return the inferred type and (if expected type provided) the type check result
                     val tmIS = solver.substituteSolution(tmI)
                     (Some(tmIS), checkResult)

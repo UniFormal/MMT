@@ -261,7 +261,9 @@ object Archive {
       }
       val scheme = hd.substring(0, p)
       val schemeAuthority = hd.substring(p + 2) match {
-        case "NONE" => URI(Some(scheme), None, Nil, true) // for absent authority, path may be relative, but we don't want that
+        // "NONE" only used in archives built with versions before devel 2022-03
+        case "-" | "NONE" => URI(Some(scheme), None, Nil, true) // for absent authority, path may be relative, but we don't want that
+        case "EMPTY" => URI(Some(scheme), Some(""))
         case s => URI(scheme, s)
       }
       DPath(schemeAuthority / tl.init) ? escaper.unapply(fileNameNoExt)
@@ -286,8 +288,13 @@ object Archive {
     // TODO: Use narrationBase instead of "NONE"?
     val uri = m.parent.uri
     val schemeString = uri.scheme.fold("")(_ + "..")
+    val authString = uri.authority match {
+      case Some("") => "EMPTY" // empty authority is rarer than absent authority, so gets awkward case
+      case Some(s) => s
+      case None => "-" // can't use empty string because paths ending in . are badly supported
+    }
     FilePath(
-      (schemeString + uri.authority.getOrElse("NONE")) :: uri.path :::
+      (schemeString + authString) :: uri.path :::
         List(escaper.apply(m.name.toPath) + ".omdoc"))
   }
 

@@ -837,6 +837,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val mRR = (implDom, implCod) match {
       case (Some(l0), Some(l1)) => OMCOMP(l0, mR, l1)
       case _ =>
+        content.getImplicit(codI, ComplexTheory(context ++ codC)) // DELETE
         env.errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + domI + " -> " + codI))
         m
     }

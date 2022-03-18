@@ -310,11 +310,6 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           case _ =>
         }
         throw GetError("name " + name + " not found in " + cont)
-      case TUnion(ts) => ts mapFind { t =>
-        getO(t,name)
-      } getOrElse {
-        error("union of theories has no declarations except includes")
-      }
       case OMCOMP(Nil) =>
         name match {
           case LocalName(ComplexStep(d) :: _) =>
@@ -840,7 +835,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     * Adds a [[StructuralElement]].
     *
     * If the element is a [[ContainerElement]] (incl. [[Structure]]s and [[PlainInclude]]s!),
-    * you *must* to call [[endAdd()]] sometime after calling this [[add()]] method.
+    * you *must* call [[endAdd()]] sometime after calling this [[add()]] method.
     * Otherwise, you risk an inconsistent state of MMT.
     */
   def add(e: StructuralElement, at: AddPosition = AtEnd) {

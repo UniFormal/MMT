@@ -1019,20 +1019,7 @@ object Solver {
 object InferredType extends TermProperty[(Branchpoint,Term)](Solver.propertyURI / "inferred")
 
 /** used by [[Solver]] to mark a term as head-normal: no simplification rule can change the head symbol */
-class Stability(id: Int) extends BooleanTermProperty(Solver.propertyURI / "stability" / id.toString) {
-  def hasStableShape(o: Obj, sh: Shape): Boolean = {
-    (o,sh) match {
-      case (_, Wildcard) => true
-      case (t, AtomicShape(s)) =>
-        t == s && this.is(t)
-      case (ComplexTerm(op,_,_,_), ComplexShape(sop, children)) if op == sop =>
-        (o.subobjects zip children) forall {case ((_,t), c) =>
-            hasStableShape(t,c)
-        }
-      case _ => false
-    }
-  }
-}
+class Stability(id: Int) extends BooleanTermProperty(Solver.propertyURI / "stability" / id.toString)
 
 object Stability {
   private var id = -1

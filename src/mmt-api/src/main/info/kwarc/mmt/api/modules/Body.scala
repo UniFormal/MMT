@@ -117,11 +117,15 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
       case None =>
         false
       case Some(old) =>
-        if (s equivalentTo old)
-          true
-        else
-          throw AddError("a declaration for the name " + name + s" already exists " +
-            s"(full path is ${s.path})")
+        if (s equivalentTo old) {
+          if (!s.isGenerated && old.isGenerated) {
+            // this error is needed, e.g., to avoid replacing an induced include with a later original one, thus changing the logical order
+            throw AddError(s"redundancy, an equivalent declaration for $name was already generated (full path is ${s.path})")
+          }
+        } else {
+          throw AddError(s"name clash, a declaration for $name already exists (full path is ${s.path})")
+        }
+        true
     }
     statements(name) = s
     addAlternativeNames(s)

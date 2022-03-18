@@ -166,7 +166,9 @@ object Level {
 }
 
 /** errors in user content */
-trait ContentError
+trait ContentError {
+  def sourceRef: Option[SourceRef]
+}
 
 /** other errors that occur during parsing */
 case class ParseError(s: String) extends Error("parse error: " + s)
@@ -174,9 +176,10 @@ case class ParseError(s: String) extends Error("parse error: " + s)
 /** errors that occur when parsing a knowledge item */
 case class SourceError(origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil,
                        override val level: Level = Level.Error) extends Error(mainMessage) with ContentError {
-  override def extraMessage: String = s"source error ($origin) at " + ref.toString + extraMessages.mkString("\n", "\n", "\n")
 
+  override def extraMessage: String = s"source error ($origin) at " + ref.toString + extraMessages.mkString("\n", "\n", "\n")
   override def toNode: Elem = xml.addAttr(xml.addAttr(super.toNode, "sref", ref.toString), "target", origin)
+  def sourceRef = Some(ref)
 }
 
 /** errors that occur during compiling */
@@ -189,13 +192,29 @@ object CompilerError {
 abstract class Invalid(s: String) extends Error(s) with ContentError
 
 /** errors that occur when structural elements are invalid */
-case class InvalidElement(elem: StructuralElement, s: String) extends Invalid("invalid element: " + s + ": " + elem.path.toPath) with ContentError
+case class InvalidElement(elem: StructuralElement, s: String) extends Invalid("invalid element: " + s + ": " + elem.path.toPath) with ContentError {
+  def sourceRef = SourceRef.get(elem)
+}
 
 /** errors that occur when objects are invalid */
-case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj)
+case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj) {
+  def sourceRef = SourceRef.get(obj)
+}
 
 /** errors that occur when judgements do not hold */
-case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid(s"invalid unit: $msg")
+case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid(s"invalid unit: $msg") {
+  def sourceRef = {
+    // some WFJudgement must exist because we always start with it
+    history.getSteps.mapFind {s =>
+      s.removeWrappers match {
+        case j: objects.WFJudgement =>
+          SourceRef.get(j.wfo)
+        case _ =>
+          None
+      }
+    }
+  }
+}
 
 /** run time error thrown by executing invalid program */
 case class ExecutionError(msg: String) extends Error(msg)

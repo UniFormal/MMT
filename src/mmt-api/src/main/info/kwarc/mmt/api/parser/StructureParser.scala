@@ -805,10 +805,27 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val from = OMPMOD(fromPath,fromArgs)
     SourceRef.update(from, fromRef)
     readDelimiter("->", "→")
-    val (toRef, toPath,toArgs) = readMPathWithParameters(vpath,context)
-    val to = OMPMOD(toPath,toArgs)
-    SourceRef.update(to, toRef)
-    readDelimiter("abbrev", "=") match {
+    var tos: List[(SourceRef,MPath,List[Term])] = Nil
+    var delim: (String,SourceRegion) = ("",null)
+    do {
+      val to = readMPathWithParameters(vpath,context)
+      tos = tos ::: List(to)
+      delim = state.reader.readToken
+    } while (delim._1 == "+")
+    val to = tos match {
+      case (ref,p,args) :: Nil =>
+        val t = OMPMOD(p,args)
+        SourceRef.update(t,ref)
+        t
+      case _ =>
+        val ds= tos map {case (r,p,as) =>
+          val d = IncludeVarDecl(p,as)
+          SourceRef.update(d,r)
+          d
+        }
+        ComplexTheory(Context(ds:_*))
+    }
+    delim._1 match {
       case "abbrev" =>
         val (_, _, df) = readParsedObject(context)
         val v = View(ns, name, from, to, TermContainer.asParsed(df.toTerm), isImplicit)
@@ -821,6 +838,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           readInModule(v, context ++ v.getInnerContext, noFeatures)(state.copy())
         }
         end(v)
+      case _ =>
+        throw makeError(delim._2, List("abbrev","=").map("'" + _ + "'").mkString(" or ") + "expected")
     }
   }
   
