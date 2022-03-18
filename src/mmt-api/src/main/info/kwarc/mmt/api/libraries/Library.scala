@@ -413,7 +413,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          // initial complex steps are possible even if no prefix of name is declared in t if t is not flattened
          case ComplexStep(mpath) :: ln =>
            getO(mpath) match {
-             case Some(included: Theory) =>
+             case Some(included: AbstractTheory) =>
                // continue lookup in (possibly implicitly) included theory
                val imp = implicitGraph(mpath, t match {
                  case t:Theory => t.path
@@ -923,7 +923,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def addImplicits(se: StructuralElement, before: Boolean) {
     se match {
       // before == true
-      case t: Theory if before =>
+      case t: AbstractTheory if before =>
         t.getAllIncludes foreach addIncludeToImplicit
       case dd: DerivedDeclaration if before =>
         implicitGraph.add(dd.home.toMPath, dd.modulePath, None)
@@ -941,7 +941,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           id.home match {
             case OMMOD(h) =>
               get(h) match {
-                case thy: Theory =>
+                case thy: AbstractTheory =>
                   val oldImpl = implicitGraph(OMMOD(id.from),id.home) flatMap {
                     case OMCOMP(Nil) => None
                     case i => Some(i)
@@ -964,7 +964,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case _ =>
           }
         }
-      case t: Theory if !before  =>
+      case t: AbstractTheory if !before  =>
       // (*)
       //t.getRealizees foreach addIncludeToImplicit
       case l: Link if l.isImplicit && !before =>

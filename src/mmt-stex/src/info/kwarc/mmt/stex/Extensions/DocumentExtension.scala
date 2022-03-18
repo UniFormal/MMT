@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.Extensions
 import info.kwarc.mmt.api.archives.RedirectableDimension
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, MathMLTerm}
+import info.kwarc.mmt.stex.xhtml.{HTMLArg, HTMLComp, HTMLLanguageComponent, HTMLParser, HasHead, NotationComponent}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
 
 import scala.xml.parsing.XhtmlParser
@@ -34,20 +34,13 @@ object DocumentExtension extends STeXExtension {
         e.documentRules
     }.flatten
     def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
-    filecontent.iterate(doE)
+    filecontent.get("body")()().head.iterate(doE)
     filecontent
   }
 
   override def doHeader(head: HTMLNode,body: HTMLNode): Unit = {
-    head.add(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))
-    body.add(<div class="stexoverlay" id="stexMainOverlay" style="z-index:100;border-style:solid;position:fixed;top:10px;transition: width 0.2s smooth;background-color:white;">
-        <table style="width:80ch;height:100%">
-          <tr style="height:28px"><td style="text-align:right"><button onclick="stexOverlayOff('stexMainOverlay')">X</button></td></tr>
-          <tr width="100%" height="100%"><td><iframe class="stexoverlayinner" id="stexoverlayinner" name="stexoverlayinner" onLoad="if (this.contentWindow.location.href=='about:blank') {} else {stexMainOverlayFade();};this.style.height=(this.contentWindow.document.body.offsetHeight+5) + 'px';" width="100%"
-                                                     style="opacity:100; margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)\">{HTMLParser.empty}</iframe>
-          </td></tr>
-        </table>
-      </div>)
+    //head.add(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))
+    body.add(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/overlaymain.xml"))
   }
 
   // TODO
@@ -55,9 +48,6 @@ object DocumentExtension extends STeXExtension {
     val rules = server.extensions.flatMap(_.rules)
     //val state = new ParsingState(,rules)
     uri match {
-      case "http://mathhub.info/fomid/demo.xhtml" =>
-        val state = new ParsingState(controller,rules)
-        HTMLParser(MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml"))(state)
       case s if s.startsWith("group=") =>
         val grp = s.drop(6)
         val doc = server.emptydoc
@@ -134,33 +124,43 @@ object DocumentExtension extends STeXExtension {
     }
   }
 
+  def getLanguage(elem:HTMLNode) = {
+    val top = getTop(elem)
+    top.get()((HTMLParser.ns_html,"property","stex:language"))().headOption match {
+      case Some(l : HTMLLanguageComponent) => l.resource
+      case _ => ""
+    }
+  }
+
+  private def getTop(elem:HTMLNode) : HTMLNode = if (elem.label == "body") elem else elem.parent match {
+    case Some(p) => getTop(p)
+    case _ => elem
+  }
+
   def sidebar(elem : HTMLNode, content: List[Node]) = {
+    val sidenotes = getTop(elem).get()()("sidenote-container").head
+    sidenotes.add(<div>{content}</div>)
+  }/*{
     val id = elem.state.generateId
+    val side = <span id={id} class="sidenote-container"><span class="sidenote-container-b"><small class="sidenote">{content}</small></span></span>
     var e = if (elem.parent.exists(_.isVisible)) elem else elem.collectAncestor {
       case a if a.parent.exists(_.isVisible) => a
     }.getOrElse(elem)
     if (e.isMath) e = e.collectAncestor {
       case a if a.parent.exists(!_.isMath) => a
     }.getOrElse(e)
-    e.parent.foreach(_.addBefore(<span style="display:inline">
-      <label for={id} class="sidenote-toggle">{HTMLParser.empty}</label>
-      <input type="checkbox" id={id} class="sidenote-toggle"/>
-      <span class="sidenote" style="display:inline">{content}</span>
-    </span>,e))
-  }
+    e.parent.foreach(_.addBefore(side,e))
+  }*/
 
   def overlay(elem : HTMLNode, urlshort : String,urllong : String) : Unit = {
-    def criterion(n : HTMLNode) = n match {
-      case t if t.attributes.isDefinedAt((HTMLParser.ns_stex,"arg")) => false
-      case _ : HTMLText => true
-      case t if t.getClass == classOf[HTMLNode] => true
-      case t if t.getClass == classOf[MathMLTerm] => true
-      case _ => false
-    }
     if (elem.classes.contains("hasoverlay")) return
     elem.classes = "hasoverlay" :: elem.classes
-    def pickelems(n : HTMLNode) : List[HTMLNode] = if (n.get()()().forall(criterion)) List(n) else
-      n.children.filter(criterion).flatMap(pickelems)
+    def pickelems(n : HTMLNode,inarg:Boolean = false) : List[HTMLNode] = n match {
+      case comp : NotationComponent => List(comp)
+      case a : HTMLArg => a.children.flatMap(pickelems(_,true))
+      case _ : HasHead if inarg => Nil
+      case o => o.children.flatMap(pickelems(_,inarg))
+    }
     val id = elem.state.generateId
     val targets = pickelems(elem)
     val onhover = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.add('stexoverlaycontainerhover')").mkString(";")

@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.Extensions
-
+/*
 import info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api.archives.{Build, BuildTargetModifier}
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
@@ -46,3 +46,4 @@ object EditorExtension extends STeXExtension {
     }
   }
 }
+*/

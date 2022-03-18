@@ -475,7 +475,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         s.df.foreach {df =>
           val (expectedDomain, expectedCodomain) = linkOpt match {
             case None =>
-              (s.fromC.get, Some(thy.toTerm))
+              (s.fromC.get, Some(thy match {
+                case _ : Theory => thy.toTerm
+                case at : AbstractTheory => OMMOD(at.modulePath)
+              }))
             case Some(link) =>
               val sOrg = content.getStructure(thy.modulePath ? s.name)
               val sOrgFrom = sOrg.from

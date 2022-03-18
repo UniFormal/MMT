@@ -1,26 +1,27 @@
 package info.kwarc.mmt.stex.xhtml
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.utils.{File, MMTSystem, URI, Unparsed, XMLEscaping}
-import info.kwarc.mmt.api.{DPath, Error, ErrorHandler, ErrorThrower, LocalName, NamespaceMap, OpenCloseHandler, ParseError, Path}
+import info.kwarc.mmt.api.utils.{File, URI, Unparsed, XMLEscaping}
 import info.kwarc.mmt.stex.STeXError
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
-import org.xml.sax.InputSource
 
-import java.io.StringReader
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 import scala.xml._
-import scala.xml.parsing.NoBindingFactoryAdapter
 
 abstract class HTMLRule {
   protected def resource(n : HTMLNode) = n.attributes.get((n.namespace,"resource"))
   protected def property(n : HTMLNode) = n.attributes.get((n.namespace,"property"))
   val priority : Int = 0
-  def rule(s : HTMLParser.ParsingState) : PartialFunction[HTMLParser.HTMLNode,HTMLParser.HTMLNode]
+  def apply(s : HTMLParser.ParsingState,n:HTMLParser.HTMLNode) : Option[HTMLParser.HTMLNode]
+}
+
+case class SimpleHTMLRule(name:String,f:HTMLParser.HTMLNode => HTMLParser.HTMLNode) extends HTMLRule {
+  override def apply(s: HTMLParser.ParsingState, n: HTMLParser.HTMLNode): Option[HTMLParser.HTMLNode] = {
+    if (property(n).contains("stex:" + name)) Some(f(n)) else None
+  }
 }
 
 class CustomHTMLNode(orig : HTMLParser.HTMLNode) extends HTMLParser.HTMLNode(orig.state,orig.namespace,orig.label) {
@@ -32,6 +33,7 @@ object HTMLParser {
   val ns_html = "http://www.w3.org/1999/xhtml"
   val ns_mml = "http://www.w3.org/1998/Math/MathML"
   val ns_stex = "http://kwarc.info/ns/sTeX"
+  val ns_mmt = "http://uniformal.github.io/MMT"
   val ns_rustex = "http://kwarc.info/ns/RusTeX"
   val empty = '\u200E'
 
@@ -41,7 +43,16 @@ object HTMLParser {
     private[HTMLParser] var _top : Option[HTMLNode] = None
     protected var _parent : Option[HTMLNode] = None
     private var _namespace : String = ""
-    private val _rules : List[PartialFunction[HTMLNode,HTMLNode]] = rules.sortBy(-_.priority).map(_.rule(this))
+    private val _rules : List[HTMLRule] = rules.sortBy(-_.priority)
+    private def applyRules(nn : HTMLNode) : HTMLNode = {
+      _rules.foreach{r =>
+        r(this,nn) match {
+          case Some(n) => return n
+          case _ =>
+        }
+      }
+      nn
+    }
     private var _id = 0
     def generateId = {
       _id += 1
@@ -121,7 +132,9 @@ object HTMLParser {
         }.getOrElse {
           URI(File(file).toURI)
         }
-        SourceRef(fileuri, SourceRegion(toOffset(File(file), from._1, from._2), toOffset(File(file), to._1, to._2)))
+        if (File(file).exists()) {
+          SourceRef(fileuri, SourceRegion(toOffset(File(file), from._1, from._2), toOffset(File(file), to._1, to._2)))
+        } else SourceRef.anonymous(file)
       }
     }
 
@@ -167,7 +180,7 @@ object HTMLParser {
           nn._sourceref = Some(SourceRef.fromURI(URI(s)))
       }
       if (nn._sourceref.isEmpty && _parent.exists(_._sourceref.isDefined)) nn._sourceref = _parent.get._sourceref
-      val newn = _rules.collectFirst{ case r if r.isDefinedAt(n) => r(nn)}.getOrElse(nn)
+      val newn = applyRules(nn)
       newn
     }
     private[HTMLParser] def openclose(n : HTMLNode) = {
@@ -234,6 +247,14 @@ object HTMLParser {
     var classes : List[String] = Nil
     private[HTMLParser] var _parent: Option[HTMLNode] = None
 
+    def copy : HTMLNode = {
+      val ret = new HTMLNode(state,namespace, label)
+      ret.classes = classes
+      attributes.foreach(e => ret.attributes(e._1) = e._2)
+      children.foreach(c => ret.add(c.copy))
+      ret
+    }
+
     def parent = _parent
 
     private[HTMLParser] var _children: List[HTMLNode] = Nil
@@ -264,7 +285,7 @@ object HTMLParser {
         state.error("???")
     }
 
-    protected def onAdd = {}
+    def onAdd = {}
 
     protected def replace(n: HTMLNode) = {
       _parent = n._parent
@@ -393,7 +414,7 @@ object HTMLParser {
     }
 
     def node = try {
-      XML.loadString(this.toString)
+      XML.loadString(this.toString.trim)
     } catch {
       case o =>
         println(o.toString)
@@ -405,6 +426,10 @@ object HTMLParser {
   class HTMLText(state : ParsingState, val text : String) extends HTMLNode(state,"","") {
     override def toString() = text//XMLEscaping(text)
     override def isEmpty = toString() == "" || toString() == empty.toString
+
+    override def copy : HTMLText = {
+      new HTMLText(state,text)
+    }
   }
 
   object HTMLNode {
