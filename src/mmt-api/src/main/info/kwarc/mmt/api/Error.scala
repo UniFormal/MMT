@@ -168,6 +168,14 @@ object Level {
 /** errors in user content */
 trait ContentError {
   def sourceRef: Option[SourceRef]
+  def logicalRef: Option[Path]
+}
+
+/** errors tied to a structural element */
+trait StructuralElementError extends ContentError {
+  def elem: StructuralElement
+  def sourceRef = SourceRef.get(elem)
+  def logicalRef = Some(elem.path)
 }
 
 /** other errors that occur during parsing */
@@ -180,6 +188,7 @@ case class SourceError(origin: String, ref: SourceRef, mainMessage: String, extr
   override def extraMessage: String = s"source error ($origin) at " + ref.toString + extraMessages.mkString("\n", "\n", "\n")
   override def toNode: Elem = xml.addAttr(xml.addAttr(super.toNode, "sref", ref.toString), "target", origin)
   def sourceRef = Some(ref)
+  def logicalRef = None
 }
 
 /** errors that occur during compiling */
@@ -192,13 +201,12 @@ object CompilerError {
 abstract class Invalid(s: String) extends Error(s) with ContentError
 
 /** errors that occur when structural elements are invalid */
-case class InvalidElement(elem: StructuralElement, s: String) extends Invalid("invalid element: " + s + ": " + elem.path.toPath) with ContentError {
-  def sourceRef = SourceRef.get(elem)
-}
+case class InvalidElement(elem: StructuralElement, s: String) extends Invalid(s"invalid element ${elem.path}: $s") with StructuralElementError
 
 /** errors that occur when objects are invalid */
-case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj) {
+case class InvalidObject(obj: objects.Obj, s: String) extends Invalid(s"invalid object, $s: " + obj) {
   def sourceRef = SourceRef.get(obj)
+  def logicalRef = None
 }
 
 /** errors that occur when judgements do not hold */
@@ -214,6 +222,7 @@ case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, m
       }
     }
   }
+  def logicalRef = unit.component
 }
 
 /** run time error thrown by executing invalid program */
@@ -222,20 +231,33 @@ case class ExecutionError(msg: String) extends Error(msg)
 /** other errors */
 case class GeneralError(s: String) extends Error("general error: " + s)
 
+/** errors during library operations */
+abstract class LibraryError(s: String) extends Error(s) with ContentError
+
 /** errors that occur when adding a knowledge item */
-case class AddError(s: String) extends Error("add error: " + s)
+case class AddError(elem: StructuralElement, s: String) extends
+    LibraryError(s"error adding ${elem.path}: $s") with StructuralElementError
 
 /** errors that occur when updating a knowledge item */
-case class UpdateError(s: String) extends Error("update error: " + s)
+case class UpdateError(elem: StructuralElement, s: String) extends
+    LibraryError(s"error updating ${elem.path}: $s") with StructuralElementError
 
 /** errors that occur when deleting a knowledge item */
-case class DeleteError(s: String) extends Error("delete error: " + s)
+case class DeleteError(path: Path, s: String) extends LibraryError(s"error deleting $path: $s") {
+  def sourceRef = None
+  def logicalRef = None
+}
 
 /** errors that occur when retrieving a knowledge item */
-case class GetError(s: String) extends Error("get error: " + s)
+case class GetError(path: Path, s: String) extends LibraryError(s"error getting $path: $s") {
+  def sourceRef = None
+  def logicalRef = None
+}
 
 /** errors that occur when the backend believes it should find an applicable resource but cannot */
-case class BackendError(s: String, p: Path) extends Error("Cannot find resource " + p.toString + ": " + s)
+case class BackendError(s: String, p: Path) extends Error(s"error retrieving resource $p: $s")
+/** general errors involving archives */
+case class ArchiveError(id: String, msg: String) extends Error(s"error regarding archive $id: $msg")
 
 /** errors that occur when a configuration entry is missing */
 case class ConfigurationError(id: String) extends Error(s"no entry for $id in current configuration")
@@ -249,10 +271,14 @@ case class RegistrationError(s: String) extends Error(s)
 /** errors that are not supposed to occur, e.g., when input violates the precondition of a method */
 case class ImplementationError(s: String) extends Error("implementation error: " + s)
 
-/** errors that occur during substitution with name of the variable for which the substitution is defined */
-case class SubstitutionUndefined(name: LocalName, m: String) extends Error("Substitution undefined at " + name.toString + "; " + m)
-
-case class LookupError(name: LocalName, context: objects.Context) extends Error("variable " + name.toString + " not declared in context " + context)
+/** errors involving retrieval of parts of objects */
+abstract class ObjectError(msg: String) extends Error(msg)
+/** lookup in the context */
+case class LookupError(name: LocalName, context: objects.Context) extends ObjectError("variable " + name.toString + " not declared in context " + context)
+/** lookup in a substitution */
+case class SubstitutionUndefined(name: LocalName, m: String) extends ObjectError("Substitution undefined at " + name.toString + "; " + m)
+/** lookup in the context */
+case class SubobjectError(obj: objects.Obj, pos: objects.Position) extends ObjectError(s"position $pos does not exist in $obj")
 
 case class HeapLookupError(name: LocalName) extends Error("variable " + name.toString + " not declared")
 

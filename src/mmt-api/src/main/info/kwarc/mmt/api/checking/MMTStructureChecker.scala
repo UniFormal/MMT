@@ -270,7 +270,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           // Hence, generate the expectation `|- v(c.tp) : v(c.df)` where `v` is the homomorphic extension
           // of the link
           case link: Link =>
-            content.get(link.from, c.name, msg => throw GetError(s"cannot find realized constant. ${msg}")) match {
+            val rc = try {content.get(link.from, c.name)}
+                     catch {case g: GetError => throw GetError(g.path, "cannot find realized constant").setCausedBy(g)}
+            rc match {
               case cOrg: Constant =>
                 def tr = tryApplyMorphism(link.toTerm, Some(InvalidElement(link, "link not total")))
                 Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
@@ -733,7 +735,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 case Some(m) =>
                   if (!Morph.isInclude(m)) {
                      // note: to allow the pushout, we have to at least consider the note in Library.getInLink 
-                     env.errorCont(InvalidObject(t, "theory is visible via morphism " + m + " but pushout is not implemented yet"))                    
+                     env.errorCont(InvalidObject(t, "theory is visible via morphism " + m + " but pushout is not implemented yet"))
                   }
                   t
               }

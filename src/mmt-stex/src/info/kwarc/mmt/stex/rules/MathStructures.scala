@@ -1092,7 +1092,7 @@ case class RecordExpBody(ifields : List[OML]) extends RecordBody(ifields) with R
 object ModuleType {
   def apply(mp : MPath, args : List[Term], lookup : Lookup) = {
 
-    def getD(ln : LocalName) = Try(lookup.get(OMPMOD(mp,args),ln,s => throw RecordError(ln + " not found in " + mp))).toOption match {
+    def getD(ln : LocalName) = lookup.getO(OMPMOD(mp,args),ln) match {
       case Some(c : Constant) => c
       case Some(c) => throw RecordError("not a constant: " + c.path)
       case _ =>

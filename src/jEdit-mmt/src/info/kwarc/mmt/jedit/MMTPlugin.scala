@@ -1,13 +1,14 @@
 package info.kwarc.mmt.jedit
 
 import java.awt.Font
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils.File._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.msg._
 import org.gjt.sp.jedit.textarea._
+
 import javax.swing.SwingUtilities
 
 /**
@@ -40,11 +41,16 @@ class MMTPlugin extends EBPlugin with Logger {
          val ref = controller.getO(p) flatMap {
             e => MMTHyperlink.elemToSourceRef(controller, e)
          }
-         ref foreach {r =>
-            val view = jEdit.getActiveView
-            MMTHyperlink.navigateTo(view, r)
-         }
+         ref foreach navigateTo
       }
+     override def onNavigateSource(r: SourceRef) {
+       log("navigating to " + r)
+       navigateTo(r)
+     }
+     def navigateTo(r: SourceRef) {
+       val view = jEdit.getActiveView
+       MMTHyperlink.navigateTo(view, r)
+     }
    }
 
    /** called by jEdit when plugin is loaded */

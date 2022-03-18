@@ -133,8 +133,8 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
   }
   def context = currentParent.map(_.context).getOrElse(Context.empty)
   def getRules = try {RuleSet.collectRules(controller,context)} catch {
-    case g@GetError(s) =>
-      val path = Path.parseM(s.drop("no backend applicable to ".length))
+    case g: GetError =>
+      val path = Path.parseM(g.shortMsg.drop("no backend applicable to ".length)) //FR: I've reworded many error messages, so this might not work anymore
       if (!missings.contains(path)) {
         eh(g)
         this.missings ::= path
@@ -192,8 +192,8 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
   def check(se : StructuralElement) = try {
     checker(se)(ce)
   } catch {
-    case g@GetError(s) =>
-      val path = Path.parseM(s.drop("no backend applicable to ".length))
+    case g:GetError =>
+      val path = Path.parseM(g.shortMsg.drop("no backend applicable to ".length)) // FR: I've reworded error messages, so this may not work anymore
       if (!missings.contains(path)) {
         eh(g)
         this.missings ::= path

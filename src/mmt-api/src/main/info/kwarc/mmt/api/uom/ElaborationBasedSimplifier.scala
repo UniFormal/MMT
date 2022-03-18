@@ -502,7 +502,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
              var i = 0
              while (dd.getDeclarations.isDefinedAt(i)) { // awkward, but necessary to elaborate generated things as well
                try { apply(dd.getDeclarations(i)) } catch {
-                 case GetError(_) =>
+                 case _:GetError =>
                }
                i+=1
              }

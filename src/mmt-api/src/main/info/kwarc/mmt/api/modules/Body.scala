@@ -120,10 +120,10 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
         if (s equivalentTo old) {
           if (!s.isGenerated && old.isGenerated) {
             // this error is needed, e.g., to avoid replacing an induced include with a later original one, thus changing the logical order
-            throw AddError(s"redundancy, an equivalent declaration for $name was already generated (full path is ${s.path})")
+            throw AddError(s, s"redundancy, an equivalent declaration for $name was already generated")
           }
         } else {
-          throw AddError(s"name clash, a declaration for $name already exists (full path is ${s.path})")
+          throw AddError(s, s"name clash, a declaration for $name already exists")
         }
         true
     }
@@ -152,8 +152,8 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
     val inDoc = s.relativeDocumentHome
     val doc = asDocument.getLocally(inDoc) match {
       case Some(d: Document) => d
-      case Some(_) => throw AddError(s"narrative element $inDoc exists in theory $path but is not a document")
-      case _ => throw AddError(s"document $inDoc does not exist in theory $path")
+      case Some(_) => throw AddError(s, s"narrative element $inDoc exists in theory $path but is not a document")
+      case _ => throw AddError(s, s"document $inDoc does not exist in theory $path")
     }
     val ref = SRef(doc.path, s.path)
     val afterSRef = at match {
@@ -181,7 +181,7 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
   private def addAlternativeNames(s: Declaration) {
     s.alternativeNames foreach {a =>
       if (statements.isDefinedAt(a))
-        throw AddError("a declaration for the name " + a + " already exists")
+        throw AddError(s, s"name clash, a declaration for the alternative name $a already exists")
       statements(a) = s
     }
   }

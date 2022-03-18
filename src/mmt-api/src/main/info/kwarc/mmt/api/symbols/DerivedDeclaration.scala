@@ -613,7 +613,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     case VarDeclFeature(LocalName(ComplexStep(dom) :: Nil), OMMOD(q), None) if dom == q && !context.contains(dv) =>
       val thy = controller.simplifier.getBody(context, OMMOD(dom)) match {
         case t : Theory => t
-        case _ => throw GetError("Not a declared theory: " + dom)
+        case _ => throw GetError(dom, "variable feature declaration does not refer to a theory")
       }
       controller.simplifier.apply(thy)
       implicit val vars = thy.parameters.filter(_.feature.isEmpty)
@@ -654,7 +654,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     val context = controller.simplifier.elaborateContext(Context.empty,parenth.getInnerContext)
     val body = controller.simplifier.getBody(context, dom) match {
       case t : Theory => t
-      case _ => throw GetError("Not a theory: " + dom)
+      case _ => throw GetError(dd.path, "domain of derived declaration is not a theory")
     }
     controller.simplifier.apply(body)
     val parentContextIncludes = context.collect{

@@ -180,6 +180,7 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
                     // even lead to failures where beta-reductions lead to substitutions to the arguments of unknowns.
                     // Using tryToCheckWithoutDelay instead of check here avoids the latter but not the former.
                     // Therefore, the early check of the type is skipped. Future experiments may find better heuristics.
+                    // Currently, aggressive early result checking is used to investigate if problems persist.
                     val resCheckResult = tpO map {tp =>
                        solver.check(Subtyping(stack, tmI, tp))(history + "checking return type against expected type")
                     }
