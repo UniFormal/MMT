@@ -114,7 +114,7 @@ trait XHTMLParser extends TraversingBuildTarget {
 
 class LaTeXToHTML extends XHTMLParser {
   val key = "stex-xhtml"
-  val outDim = Dim("xhtml")
+  val outDim = Dim("export/xhtml")
   val inDim = info.kwarc.mmt.api.archives.source
   def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
 
@@ -132,7 +132,7 @@ class LaTeXToHTML extends XHTMLParser {
 class HTMLToOMDoc extends Importer with XHTMLParser {
   val key = "xhtml-omdoc"
   val inExts = List("xhtml")
-  override val inDim = Dim("xhtml")
+  override val inDim = Dim("export/xhtml")
 
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     log("postprocessing " + bt.inFile)
