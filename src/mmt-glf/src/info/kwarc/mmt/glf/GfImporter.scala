@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.objects.{OMID, OMS}
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.lf.{FunType, LF, Typed}
 
 import scala.collection.mutable
@@ -25,6 +26,7 @@ class GfImporter extends Importer {
     */
 
     val docpath = DPath(URI(bt.narrationDPath.toPath))
+    // throw ServerError("docpath is " + docpath.toString)
     val s = File.read(bt.inFile)
     if (!s.contains("abstract")) {
       log("Skipping " + bt.inPath, log_progress)

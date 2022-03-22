@@ -80,6 +80,7 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
 
       val elpiresult = JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
       val mmtresult = JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
+      val mmtplain = JSONArray(trees.map(t => JSONString(t.toString)): _*)
       if (query.version == 1) {
         if (query.toElpi)
           ServerResponse.JsonResponse(elpiresult)
@@ -91,6 +92,7 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
           ("result", JSONObject(
             ("elpi", elpiresult),
             ("mmt", mmtresult),
+            ("mmtplain", mmtplain),
           )),
           ("errors", JSONArray()),
         ))
