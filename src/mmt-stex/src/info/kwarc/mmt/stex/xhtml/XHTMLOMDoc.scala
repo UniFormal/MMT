@@ -304,7 +304,9 @@ case class HTMLAssoctypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(or
 }
 
 case class HTMLTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  assert(sstate.forall(!_.in_term))
+  if (sstate.exists(_.in_term)) {
+    ???
+  }
   sstate.foreach(_.in_term = true)
 
 
@@ -565,15 +567,14 @@ case class HTMLImport(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   def domain = Path.parseM(resource)
   sstate.foreach { state =>
     collectAncestor {
-      case t: HTMLModuleLike =>
-        t.signature_theory.foreach { th =>
-          val incl = PlainInclude(domain, t.sighome.get.toMPath)
-          sourceref.foreach(s => SourceRef.update(incl,s))
-          state.controller.add(incl)
-          state.controller.endAdd(incl)
-          state.check(incl)
-        }
-    }
+      case t: HTMLModuleLike => t
+    }.foreach{t => t.signature_theory.foreach { th =>
+      val incl = PlainInclude(domain, t.sighome.get.toMPath)
+      sourceref.foreach(s => SourceRef.update(incl,s))
+      state.controller.add(incl)
+      state.controller.endAdd(incl)
+      state.check(incl)
+    }}
   }
 }
 
