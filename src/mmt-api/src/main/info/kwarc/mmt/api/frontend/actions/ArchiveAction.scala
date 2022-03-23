@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.frontend.actions
 
-import info.kwarc.mmt.api.{GetError, Level, RegistrationError}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller, ShellArguments}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
@@ -76,7 +76,7 @@ object MakeActionCompanion extends ActionCompanion("handle the make command line
 
 case class ArchiveMar(id: String, file: File) extends ArchiveAction {
   def apply() {
-    val arch = controller.backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+    val arch = controller.backend.getArchive(id).getOrElse(throw ArchiveError(id, "archive not found"))
     arch.toMar(file)
   }
   def toParseString = s"archive $id mar $file"
@@ -94,7 +94,7 @@ trait ArchiveActionHandling {self: Controller =>
     */
   def buildArchive(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath) {
     ids.foreach { id =>
-      val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
+      val arch = backend.getArchive(id) getOrElse (throw ArchiveError(id, "archive not found"))
       key match {
         case "check" => arch.check(in, this)
         case "validate" => arch.validate(in, this)
@@ -109,7 +109,7 @@ trait ArchiveActionHandling {self: Controller =>
           else
             arch.loadJava(this, in.segments.head)
         case "close" =>
-          val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+          val arch = backend.getArchive(id).getOrElse(throw ArchiveError(id, "archive not found"))
           backend.closeArchive(id)
           notifyListeners.onArchiveClose(arch)
         case _ =>

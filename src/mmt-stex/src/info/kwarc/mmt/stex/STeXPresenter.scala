@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, RenderingHandler}
 import info.kwarc.mmt.api.{CPath, ContentPath, StructuralElement}
 import info.kwarc.mmt.stex
-import info.kwarc.mmt.stex.STeX.StringLiterals
+import info.kwarc.mmt.stex.rules.StringLiterals
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
 
@@ -18,7 +18,7 @@ trait STeXPresenter extends ObjectPresenter {
     case Some(c: StructuralElement) =>
       val notations = OMDocHTML.getNotations(c,controller)
       val notationFragment = tm.metadata.getValues(STeX.meta_notation).headOption match {
-        case Some(STeX.StringLiterals(s)) => s
+        case Some(StringLiterals(s)) => s
         case _ => ""
       }
       // TODO withnotations
@@ -34,7 +34,7 @@ trait STeXPresenter extends ObjectPresenter {
           "???"
       }
       val arity = c.metadata.getValues(STeX.meta_arity) match {
-        case List(STeX.StringLiterals(s)) => s
+        case List(StringLiterals(s)) => s
         case _ => ""
       }
       Some(stex.STeXNotation(tm,cp,macroname,notation,notationFragment,arity,notations))
@@ -87,7 +87,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         node.attributes(("","mathbackground")) = "#ff0000"
         pc.out(node.toString)
         0
-      case OMA(OMS(STeX.informal.opsym),StringLiterals(label) :: args) =>
+      case OMA(OMS(STeX.informal.op.opsym),StringLiterals(label) :: args) =>
         pc.out("<" + label + " mathbackground=\"#ff0000\"" + ">")
         args.foreach(recurse(_))
         pc.out("</" + label + ">")

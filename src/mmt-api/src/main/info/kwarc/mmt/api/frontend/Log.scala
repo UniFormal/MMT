@@ -280,8 +280,15 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
   }
 
   override def apply(ind: Int, e: Error, debug: Boolean) {
-    file.println( s"""<div class="log error" style="margin-left: $ind%">""")
+    val (cls,refO) = e match {
+      case e: ContentError => ("content-error", e.sourceRef)
+      case _ => ("error", None)
+    }
+    file.println( s"""<div class="log $cls" style="margin-left: $ind%">""")
     file.println( s"""<div><span class="timestamp">$time</span><span class="error-short">${e.shortMsg}</span></div>""")
+    refO.foreach {ref =>
+      file.println(s"""<div class="sourceref"><span class="sourceref" data-mmt-ref="${ref.toString}">${ref.toString}</span></div>""")
+    }
     if (debug) {
       e.toStringLong.split("\\n").toList.foreach { line =>
         file.println( s"""<div class="error-long"><span>$line</span></div>""")

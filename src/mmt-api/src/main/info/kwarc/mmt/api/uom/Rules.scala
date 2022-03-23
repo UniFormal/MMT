@@ -14,15 +14,7 @@ abstract class MatchingSimplificationRule(val head: GlobalName) extends Simplifi
 /**
   * Special case for rules that do not need to know about other rules.
   *
-  * @param h The "head" of applicable terms. **Unused in certain parts of the
-  *          class hierarchy!**
-  *          See [[SyntaxDrivenRule]] and descendants on how it is used. They
-  *          determine applicability of a rule on a term t by checking if the
-  *          head of t is in fact the head `h`.
-  *
-  *          TODO How is the head of a term defined?
-  *          TODO Remove this parameter in favor of keeping it just in
-  *            [[SyntaxDrivenRule]]?
+  * @param h head of applicable terms
   */
 abstract class SimplificationRule(h: GlobalName) extends MatchingSimplificationRule(h) {
   def apply(context: Context, rules: RuleSet, t: Term): Simplifiability = apply(context, t)

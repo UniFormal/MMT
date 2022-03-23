@@ -7,7 +7,7 @@ import com.twitter.util.Await
 import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.utils.{File, FilePath}
-import info.kwarc.mmt.api.{GetError, InvalidElement, LocalName, Path}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.{SituationSpace, SituationTheory, StandardContentValidator}
 
@@ -73,7 +73,7 @@ object Server extends TwitterServer {
 
     ctrl.handleLine(s"mathpath archive ${archiveRoot}")
     val frameitArchive = ctrl.backend.getArchive(FrameWorld.archiveID).getOrElse {
-      throw GetError(s"Archive ${FrameWorld.archiveID} could not be found!")
+      throw ArchiveError(FrameWorld.archiveID, "archive could not be found")
     }
 
     // force-read relational data as [[info.kwarc.mmt.frameit.business.datastructures.Scroll]] uses

@@ -88,7 +88,7 @@ object Patcher {
     case (c : Constant, TypeComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, Some(s), c.df, c.rl, c.notC)
     case (c : Constant, TypeComponent, None) => Constant(c.home, c.name, c.alias, None, c.df, c.rl, c.notC)
 
-    case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
+    case _ => throw UpdateError(d, "unexpected component update found while applying diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +
                                 "compName = " + comp +  "\n" +
                                 "newComp = " + nw.toString)

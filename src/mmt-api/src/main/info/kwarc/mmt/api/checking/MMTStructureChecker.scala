@@ -270,7 +270,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           // Hence, generate the expectation `|- v(c.tp) : v(c.df)` where `v` is the homomorphic extension
           // of the link
           case link: Link =>
-            content.get(link.from, c.name, msg => throw GetError(s"cannot find realized constant. ${msg}")) match {
+            val rc = try {content.get(link.from, c.name)}
+                     catch {case g: GetError => throw GetError(g.path, "cannot find realized constant").setCausedBy(g)}
+            rc match {
               case cOrg: Constant =>
                 def tr = tryApplyMorphism(link.toTerm, Some(InvalidElement(link, "link not total")))
                 Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
@@ -475,7 +477,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         s.df.foreach {df =>
           val (expectedDomain, expectedCodomain) = linkOpt match {
             case None =>
-              (s.fromC.get, Some(thy.toTerm))
+              (s.fromC.get, Some(thy match {
+                case _ : Theory => thy.toTerm
+                case at : AbstractTheory => OMMOD(at.modulePath)
+              }))
             case Some(link) =>
               val sOrg = content.getStructure(thy.modulePath ? s.name)
               val sOrgFrom = sOrg.from
@@ -730,7 +735,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 case Some(m) =>
                   if (!Morph.isInclude(m)) {
                      // note: to allow the pushout, we have to at least consider the note in Library.getInLink 
-                     env.errorCont(InvalidObject(t, "theory is visible via morphism " + m + " but pushout is not implemented yet"))                    
+                     env.errorCont(InvalidObject(t, "theory is visible via morphism " + m + " but pushout is not implemented yet"))
                   }
                   t
               }
@@ -837,6 +842,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val mRR = (implDom, implCod) match {
       case (Some(l0), Some(l1)) => OMCOMP(l0, mR, l1)
       case _ =>
+        content.getImplicit(codI, ComplexTheory(context ++ codC)) // DELETE
         env.errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + domI + " -> " + codI))
         m
     }

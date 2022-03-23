@@ -75,7 +75,7 @@ class LambdaPiInclude extends StructuralFeature("BoundInclude") with IncludeLike
     val dom = getDomain(dd)
     val body = controller.simplifier.getBody(Context.empty, dom) match {
       case t : Theory => t.path
-      case _ => throw GetError("Not a declared theory: " + dom)
+      case _ => throw LocalError("not a declared theory: " + dom)
     }
     new Elaboration {
       override def domain: List[LocalName] = List(LocalName(body))

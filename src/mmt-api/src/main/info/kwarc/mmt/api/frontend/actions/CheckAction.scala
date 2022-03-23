@@ -1,9 +1,10 @@
 package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, RelationHandler}
+import info.kwarc.mmt.api.checking.{Checker, RelationHandler, CheckingEnvironment}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.Context
+import info.kwarc.mmt.api.parser.SourceRef
 
 /** shared base class for actions checking objects */
 sealed abstract class CheckAction extends Action
@@ -33,6 +34,15 @@ case class Navigate(p: Path) extends CheckAction {
 object NavigateCompanion extends ActionCompanion("navigate to knowledge item", "navigate") {
   import Action._
   def parserActual(implicit state: ActionState) = path ^^ { p => Navigate(p) }
+}
+
+case class NavigateSource(ref: SourceRef) extends CheckAction {
+  def apply() {controller.navigateSource(ref)}
+  def toParseString = s"navigateSource $ref"
+}
+object NavigateSourceCompanion extends ActionCompanion("navigate to physical location", "navigateSource") {
+  import Action._
+  def parserActual(implicit state: ActionState) = str ^^ { s => NavigateSource(SourceRef.fromString(s)) }
 }
 
 case class Compare(p: Path, r: Int) extends CheckAction {
@@ -71,5 +81,9 @@ trait CheckActionHandling {self: Controller =>
   /** navigates to a given path, handling [[Navigate]] */
   def navigate(p: Path): Unit = {
     notifyListeners.onNavigate(p)
+  }
+  /** navigates to a given path, handling [[Navigate]] */
+  def navigateSource(r: SourceRef): Unit = {
+    notifyListeners.onNavigateSource(r)
   }
 }

@@ -104,35 +104,17 @@ trait XHTMLParser extends TraversingBuildTarget {
     val html = RusTeX.parse(inFile,params,List("c_stex_module_"))
     File.write(outFile.setExtension("shtml"),html)
     val doc = HTMLParser(outFile.setExtension("shtml"))(state)
+    doc.get("head")()().head.children.foreach(_.delete)
     outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
     doc
-
-    /*
-    log("building " + inFile)
-    LaTeXML.latexmlc(inFile,outFile.setExtension("shtml"),Some(s => log(s,Some(inFile.toString))),Some(s => log(s,Some(inFile.toString)))).foreach {
-      case (i,ls) if i > Level.Warning =>
-        errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
-      case _ =>
-    }
-    if (!outFile.setExtension("shtml").exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
-    val doc = HTMLParser(outFile.setExtension("shtml"))(state)
-    outFile.setExtension("shtml").delete()
-    File.write(outFile, doc.toString)
-    outFile.up.children.foreach {
-      case f if f.getExtension.contains("css") => f.delete()
-      case _ =>
-    }
-    log("written: " + outFile)
-    doc
-    */
   }
 
 }
 
 class LaTeXToHTML extends XHTMLParser {
   val key = "stex-xhtml"
-  val outDim = Dim("xhtml")
+  val outDim = Dim("export/xhtml")
   val inDim = info.kwarc.mmt.api.archives.source
   def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
 
@@ -150,7 +132,7 @@ class LaTeXToHTML extends XHTMLParser {
 class HTMLToOMDoc extends Importer with XHTMLParser {
   val key = "xhtml-omdoc"
   val inExts = List("xhtml")
-  override val inDim = Dim("xhtml")
+  override val inDim = Dim("export/xhtml")
 
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     log("postprocessing " + bt.inFile)
@@ -158,8 +140,6 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
     val state = new SemanticState(controller, rules, bt.errorCont, dpath)
-    //val trules = extensions.flatMap(_.checkingRules)
-    //trules.foreach(state.addTransformSE)
     HTMLParser(bt.inFile)(state)
     index(state.doc)
     log("Finished: " + bt.inFile)
@@ -185,8 +165,6 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     val dpath = bt.narrationDPath
     val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
     val state = new SemanticState(controller,rules,bt.errorCont,dpath)
-    //val trules = extensions.flatMap(_.checkingRules)
-    //trules.foreach(state.addTransformSE)
     outFile.up.mkdirs()
     buildFileActually(bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
@@ -204,99 +182,6 @@ class STeXToOMDoc extends Importer with XHTMLParser {
 
 }
 
-/*
-class LaTeXToHTML extends Importer {
-  def format = "stex"
-  override val inExts = List("tex")
-  override val outDim = Dim("xhtml")
-  override val outExt = "xhtml"
-  private var stexserver : STeXServer = null
-
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): CheckingResult = {
-    ???
-  }
-  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
-    ???
-  }
-
-  override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
-
-  override def start(args: List[String]): Unit = try {
-    super.start(args)
-    LaTeXML.initializeIfNecessary(controller)
-    controller.extman.get(classOf[STeXServer]) match {
-      case Nil =>
-        stexserver = new STeXServer
-        controller.extman.addExtension(stexserver)
-      case a :: _ =>
-        stexserver = a
-    }
-  } catch {
-    case t : Throwable =>
-      throw t
-  }
-
-  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
-    val (doc,missing) = buildFileActually(bt)
-    missing.foreach(m => bt.errorCont(GetError("no backend applicable to " + m)))
-    //index(doc)
-
-    BuildResult.empty
-  }
-/*
-  override def buildFile(bf: BuildTask): BuildResult = {
-    val (html,extensions) = buildFileActually(bf)
-    val doc = PreElement.extract(html,extensions)(controller)
-    var dl = doc
-    while (dl.path.^.uri != bf.base) {
-      val nd = controller.getO(dl.path.^) match {
-        case Some(d : Document) =>
-          d
-        case _ =>
-          val ndi = new Document(dl.path.^,FolderLevel)
-          controller add ndi
-          ndi
-      }
-      controller add DRef(nd.path,dl.path)
-      dl = nd
-    }
-    controller.getO(dl.path.^) match {
-      case Some(d : Document) =>
-        controller add DRef(d.path,dl.path)
-      case _ =>
-        val ndi = new Document(dl.path.^,FolderLevel)
-        controller add ndi
-        controller add DRef(ndi.path,dl.path)
-    }
-    BuildResult.empty
-  }
-
- */
-
-  def buildFileActually(bf: BuildTask) = {
-    val extensions = stexserver.extensions
-    val xhtmlrules = extensions.flatMap(_.xhtmlRules)
-    val state = new XHTMLParsingState(xhtmlrules)
-    log("building " + bf.inFile)
-    LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
-      case (i,ls) if i > Level.Warning =>
-        bf.errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
-      case _ =>
-    }
-    if (!bf.outFile.exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
-    log("postprocessing " + bf.inFile)
-    val doc = XHTML.parse(bf.outFile,Some(state))
-    doc.get("div")(("", "class", "ltx_page_logo")).foreach(_.delete)
-    doc.get("div")(("", "class", "ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
-    //val (mmtdoc,missing) = PreElement.extract(doc)(controller)
-    File.write(bf.outFile, doc.toString)
-    log("Finished: " + bf.inFile)
-    //(mmtdoc,missing)
-    (doc,Nil)
-  }
-}
-
- */
 
 import STeXUtils._
 import java.util.regex.PatternSyntaxException

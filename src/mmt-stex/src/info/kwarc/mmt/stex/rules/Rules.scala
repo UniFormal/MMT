@@ -1,14 +1,13 @@
-package info.kwarc.mmt.stex.features
+package info.kwarc.mmt.stex.rules
 
-import info.kwarc.mmt.api.checking.{AbbreviationRuleGenerator, History, InhabitableRule, SingleTermBasedCheckingRule, Solver, UniverseRule}
-import info.kwarc.mmt.api.{GlobalName, LocalName, ParametricRule, ParseError, Rule, RuleSet}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects.{ComplexTheory, Context, OMA, OMBIND, OMBINDC, OMID, OMMOD, OMS, OMV, Stack, Substitution, Term, VarDecl}
-import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
-import info.kwarc.mmt.api.uom.{AbbrevRule, RealizedType, RealizedValue, SemanticOperator, SemanticType, SemanticValue}
-import info.kwarc.mmt.lf.FunType
-import info.kwarc.mmt.stex.STeX
+import info.kwarc.mmt.api.objects.Conversions.localName2OMV
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardString}
 import info.kwarc.mmt.stex.xhtml.SemanticState
+import info.kwarc.mmt.stex.{STeX, rules}
 
 object Rules {
   import info.kwarc.mmt.api.objects.Conversions._
@@ -26,6 +25,8 @@ object Rules {
     // TODO
     private def recurse(tmmatch : Term,tmorig : Term)(cont : Context) : Option[List[(LocalName,Term)]] = (tmmatch,tmorig) match {
       case (OMID(s1),OMID(s2)) if s1 == s2 => Some(Nil)
+      case (STeX.flatseq(ls),OMV(x)) if variables.exists(_._1 ==x) =>
+        Some(ls.map(t => (x,t)))
       case (_,OMV(x)) if variables.exists(_._1 == x) => Some(List((x,tmmatch)))
       case (OMA(t1,a1),OMA(t2,a2)) if a1.length == a2.length =>
         recurse(t1,t2)(cont) match {
@@ -42,17 +43,17 @@ object Rules {
         None
     }
     def unapply(tm : Term) = {
-      recurse(tm,body)(Context.empty) match {
+      recurse(tm,body)(Context.empty) /* match {
         case Some(ls) =>
           val dist = ls.distinct
           val vns = dist.map(_._1)
           if (vns == vns.distinct) Some(variables.map(v => ls.find(_._1 == v._1).get)) else None
         case _ => None
-      }
+      } */
     }
   }
   def getBoundVars(tm : Term) : (List[(LocalName,Option[Term])],Term) = tm match {
-    case STeX.universal_quantifier(ln,tp,bd) =>
+    case STeX.binder(ln,tp,bd) =>
       val ret = getBoundVars(bd)
       ((ln,tp) :: ret._1,ret._2)
     case _ => (Nil,tm)
@@ -81,12 +82,11 @@ object Universe extends ParametricRule {
         case Some(gn : GlobalName) => gn
         case _ => STeX.informal.sym
       }
-      RuleSet(UnivRule(pattern,head),InhabRule(pattern,head))
+      RuleSet(UnivRule(pattern,head),rules.InhabRule(pattern,head))
     case _ =>
       ???
   }
 }
-
 
 case class InhabRule(pattern : Rules.Pattern,hhead : GlobalName) extends InhabitableRule(hhead) with UsesPatterns {
   override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true) // by applicability
@@ -101,14 +101,155 @@ object Inhabitable extends ParametricRule {
         case Some(gn : GlobalName) => gn
         case _ => STeX.informal.sym
       }
-      InhabRule(pattern,head)
+      rules.InhabRule(pattern,head)
     case _ =>
       ???
   }
 }
 
-import info.kwarc.mmt.api.objects.Conversions._
+trait HTMLTermRule extends Rule {
+  def apply(tm : Term)(implicit state : SemanticState) : Option[Term]
+}
 
+object ImplicitBindRule extends HTMLTermRule {
+  override def apply(tm: Term)(implicit state: SemanticState): Option[Term] = tm match {
+    /*case STeX.implicit_binder(ln,_,bd) =>
+      val ret = apply(bd).getOrElse(bd)
+      val traverser = new StatelessTraverser {
+        override def traverse(t: Term)(implicit con: Context, ss: State): Term = t match {
+          case o@OMV(`ln`) =>
+            state.markAsUnknown(o)
+          case _ => Traverser(this,t)
+        }
+      }
+      Some(traverser(ret,()))*/
+    case _ => None
+  }
+}
+
+object MiMoVariableRule extends HTMLTermRule {
+  override def apply(tm: Term)(implicit state: SemanticState): Option[Term] = tm match {
+    case STeX.informal(n) if n.label == "mi" && n.child.length == 1 =>
+      Some(OMV(n.child.head.toString()))
+    case _ => None
+  }
+}
+
+object ParenthesisRule extends HTMLTermRule {
+  val open = new {
+    def unapply(tm : Term) = tm match {
+      case STeX.informal(o) if o.label == "mo" && o.attribute("class").exists(_.exists(_.toString() == "opening")) &&
+        o.child.length == 1 && o.child.head.toString() == "(" => Some(true)
+      case _ => None
+    }
+  }
+  val close = new {
+    def unapply(tm : Term) = tm match {
+      case STeX.informal(o) if o.label == "mo" && o.attribute("class").exists(_.exists(_.toString() == "closing")) &&
+        o.child.length == 1 && o.child.head.toString() == ")" => Some(true)
+      case _ => None
+    }
+  }
+  override def apply(tm: Term)(implicit state: SemanticState): Option[Term] = tm match {
+    case STeX.informal.op("mrow",List(open(_),t,close(_))) => Some(t)
+    case _ => None
+  }
+}
+
+trait BindingRule extends Rule {
+  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
+}
+
+object StringLiterals extends RepresentedRealizedType(OMS(STeX.string),StandardString)
+
+object InformalBindingRule extends BindingRule {
+  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context] = tm match {
+    case OMV(x) =>
+      val vd = state.getVariableContext.find(_.name == x).getOrElse {
+        val v = state.markAsUnknown(OMV(state.getUnknownTp))
+        VarDecl(x,tp=v)
+      }
+      vd.metadata.update(STeX.meta_notation,tm)
+      Some(Context(vd))
+    case _ => None
+  }
+}
+
+case class BinderRule(pattern : Rules.Pattern,head : GlobalName,tp : Option[LocalName]) extends BindingRule with UsesPatterns {
+  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context] = tm match {
+    case pattern(ls) =>
+      val (vars, tpO) = tp match {
+        case Some(tpn) =>
+          val p = ls.find(_._1 == tpn).getOrElse {
+            return None
+          }
+          (ls.filterNot(_ == p), Some(p._2))
+        case _ => (ls,None)
+      }
+      Some(vars.foldLeft(Context.empty) {
+        case (ctx, (_, OMV(ln))) =>
+          tpO match {
+            case Some(t) => ctx ++ (ln % t)
+            case _ => ctx ++ VarDecl(ln)
+          }
+        case (ctx, (_, ot)) =>
+          val nc = state.makeBinder(ot,assoc).variables.map {
+            case vd if vd.tp.isEmpty =>
+              tpO match {
+                case Some(t) => vd.name % t
+                case _ => vd
+              }
+            case vd => vd
+          }
+          ctx ++ nc
+      }.map{vd => vd.metadata.update(STeX.meta_notation,tm);vd})
+    case _ =>
+      None
+  }
+}
+
+object TypingLike extends ParametricRule {
+  def apply(controller: Controller, home: Term, args: List[Term]) = {
+    if (args.length != 1 && args.length != 2) throw ParseError("one or two arguments expected")
+    val (pattern,ln) = args match {
+      case List(h,OMV(n)) =>
+        (new Rules.Pattern(h),Some(n))
+      case List(h,STeX.binder(n,_,OMV(m))) if n == m =>
+        (new Rules.Pattern(h),Some(n))
+      case List(h) =>
+        (new Rules.Pattern(h),None)
+      case _ =>
+        throw ParseError("second argument needs to be a variable")
+    }
+    val head = pattern.body.head match {
+      case Some(gn : GlobalName) => gn
+      case _ => STeX.informal.sym
+    }
+    BinderRule(pattern,head,ln)
+  }
+}
+
+object NotationRules extends RuleSet {
+  object NInhabitableRule extends InhabitableRule(STeX.notation.tp.sym) {
+    override def applicable(t: Term): Boolean = t match {
+      case STeX.notation.tp(_,_) => true
+      case _ => false
+    }
+    override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] =
+      if(applicable(term)) Some(true) else None
+  }
+  object NTypingRule extends TypingRule(STeX.notation.tp.sym) {
+    override def applicable(t: Term): Boolean = NInhabitableRule.applicable(t)
+
+    override def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = (tm,tp) match {
+      case (STeX.notation(_,_,_),STeX.notation.tp(_,_)) => Some(true)
+      case _ => None
+    }
+  }
+  override def getAll: Iterable[Rule] = Seq(NInhabitableRule,NTypingRule)
+}
+
+/*
 object Realize extends ParametricRule {
 
   //TODO checks are called even when an .omdoc file is read
@@ -186,74 +327,9 @@ object AbbreviationRule extends ParametricRule {
       throw ParseError("one OMID and one arbitrary argument expected")
   }
 }
+*/
+/*
 
-trait BindingRule extends Rule {
-  def apply(tm : Term)(implicit state : SemanticState) : Option[Context]
-}
-
-object InformalBindingRule extends BindingRule {
-  def apply(tm : Term)(implicit state : SemanticState) : Option[Context] = tm match {
-    case OMV(x) =>
-      val vd = VarDecl(x)
-      vd.metadata.update(STeX.meta_notation,tm)
-      Some(Context(vd))
-    case _ => None
-  }
-}
-
-case class BinderRule(pattern : Rules.Pattern,head : GlobalName,tp : Option[LocalName]) extends BindingRule with UsesPatterns {
-  def apply(tm : Term)(implicit state : SemanticState) : Option[Context] = tm match {
-    case pattern(ls) =>
-      val (vars, tpO) = tp match {
-        case Some(tpn) =>
-          val p = ls.find(_._1 == tpn).getOrElse {
-            return None
-          }
-          (ls.filterNot(_ == p), Some(p._2))
-        case _ => (ls,None)
-      }
-      Some(vars.foldLeft(Context.empty) {
-        case (ctx, (_, OMV(ln))) =>
-          tpO match {
-            case Some(t) => ctx ++ ln % t
-            case _ => ctx ++ VarDecl(ln)
-          }
-        case (ctx, (_, ot)) =>
-          val nc = state.makeBinder(ot).variables.map {
-            case vd if vd.tp.isEmpty =>
-              tpO match {
-                case Some(t) => vd.name % t
-                case _ => vd
-              }
-            case vd => vd
-          }
-          ctx ++ nc
-      }.map{vd => vd.metadata.update(STeX.meta_notation,tm);vd})
-    case _ =>
-      None
-  }
-}
-
-object Binder extends ParametricRule {
-  def apply(controller: Controller, home: Term, args: List[Term]) = {
-    if (args.length != 1 && args.length != 2) throw ParseError("one or two arguments expected")
-    val (pattern,ln) = args match {
-      case List(h,OMV(n)) =>
-        (new Rules.Pattern(h),Some(n))
-      case List(h,STeX.universal_quantifier(n,_,OMV(m))) if n == m =>
-        (new Rules.Pattern(h),Some(n))
-      case List(h) =>
-        (new Rules.Pattern(h),None)
-      case _ =>
-        throw ParseError("second argument needs to be a variable")
-    }
-    val head = pattern.body.head match {
-      case Some(gn : GlobalName) => gn
-      case _ => STeX.informal.sym
-    }
-    BinderRule(pattern,head,ln)
-  }
-}
 
 case class LetBinderRule(pattern : Rules.Pattern,head : GlobalName,df : Option[LocalName]) extends BindingRule with UsesPatterns {
   def apply(tm : Term)(implicit state : SemanticState) : Option[Context] = tm match {
@@ -308,3 +384,5 @@ object LetBinder extends ParametricRule {
     LetBinderRule(pattern,head,ln)
   }
 }
+
+ */

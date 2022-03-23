@@ -709,7 +709,7 @@ trait SolverAlgorithms {self: Solver =>
    }
 
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
-      val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
+      val msg = "proving " + presentObj(context) + " |-- _  ::  " + presentObj(conc)
       history += msg
       val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[AutomatedProver]) foreach {prover =>

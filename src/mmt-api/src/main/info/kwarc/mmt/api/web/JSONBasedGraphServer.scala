@@ -96,7 +96,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
       if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top", full = true))
       else ServerResponse.fromJSON(sidebar.getJSON(id))
     } else if (request.pathForExtension.headOption.contains("json")) {
-      val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), "json"))
+      val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(LocalError("Not a URI"), "json"))
       val key = request.parsedQuery("key").getOrElse("pgraph")
       val sem = request.parsedQuery("semantic").getOrElse("none")
       val comp = request.parsedQuery("comp").getOrElse("default")

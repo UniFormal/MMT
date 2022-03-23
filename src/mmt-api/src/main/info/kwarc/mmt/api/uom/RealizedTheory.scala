@@ -132,13 +132,13 @@ abstract class RealizationInScala extends RealizedTheory(None) {
        }
        case _ =>
      }
-     throw AddError("cannot add rule for operator " + synType + " before adding the operator's realization")
+     throw AddError(this, s"realization for syntactic type $synType not found while trying to add a rule")
    }
 
    /** adds a rule for implementing a function symbol (argument and return types must have been added previously) */
    def function(op:GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: FunctionN) {
      if (aTypesN.length != fun.arity) {
-         throw AddError("function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
+         throw AddError(this, "function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
      }
      val rType = getRealizedType(rTypeN)
      val aTypes = aTypesN map {n => getRealizedType(n)}
@@ -196,7 +196,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
    /** the partial inverse of an n-ary operator */
    def inverse(op: GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: InvFunctionN) {
       if (aTypesN.length != fun.arity) {
-         throw AddError("function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
+         throw AddError(this, "function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
       }
       val rType = getRealizedType(rTypeN)
       val aTypes = aTypesN map {n => getRealizedType(n)}

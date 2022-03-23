@@ -58,9 +58,9 @@ abstract class ROController {
 
   def get(path: Path): StructuralElement
 
-  def getDocument(path: DPath, msg: Path => String = p => "no document found at " + p): Document = Try(get(path)) match {
+  def getDocument(path: DPath, msg: String = "no document found"): Document = Try(get(path)) match {
     case scala.util.Success(d: Document) => d
-    case _ => throw GetError(msg(path))
+    case _ => throw GetError(path, msg)
   }
 }
 
@@ -259,7 +259,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
      // The merging happens in the 'add' method.
      val oldDocOpt = localLookup.getO(dpath) map {
         case d: Document => d
-        case _ => throw AddError("a non-document with this URI already exists: " + dpath)
+        case e => throw AddError(e, "a non-document with this URI already exists")
      }
      oldDocOpt.foreach {doc =>
         // (M): deactivate the old structure
@@ -355,8 +355,8 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     */
   def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = getO(path) match {
     case Some(e : E@unchecked) if cls.isInstance(e) => e
-    case Some(r) => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
-    case None => throw GetError("Element doesn't exist: " + path)
+    case Some(r) => throw GetError(path, "element exists but is not a " + cls + " - it is a " + r.getClass)
+    case None => throw GetError(path, "element does not exist")
   }
 
   /**
@@ -369,7 +369,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     */
   def getAsO[E <: StructuralElement](cls : Class[E], path: Path): Option[E] = getO(path).map {
     case e : E@unchecked if cls.isInstance(e) => e
-    case r => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
+    case r => throw GetError(path, "element exists but is not a " + cls + " - it is a " + r.getClass)
   }
 
   def getConstant(path: GlobalName): Constant = getAs(classOf[Constant], path)
@@ -493,7 +493,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
             "retrieval finished, but element was not in memory afterwards (this usually means the backend loaded an element whose URI is not the one that was requested)"
           else
             "cyclic dependency while trying to retrieve"
-          throw GetError("cannot retrieve " + eprev.last.path + ": " + msg)
+          throw GetError(eprev.last.path, msg)
         } else {
           iterate({retrieve(e)}, eprev, false)
           iterate(a, eprev, true)
@@ -512,7 +512,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
         }
       } catch {
         case NotApplicable(msg) =>
-          throw GetError(msg)
+          throw GetError(nf.path, msg)
       }
     }
     log("retrieved " + nf.path)
@@ -681,7 +681,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   def delete(p: Path) {
     p match {
       case _: CPath =>
-         throw DeleteError("deletion of component paths not implemented")
+         throw DeleteError(p, "deletion of component paths not implemented")
       case p =>
         val seOpt = localLookup.getO(p)
         seOpt foreach {se =>

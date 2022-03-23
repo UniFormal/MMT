@@ -28,6 +28,8 @@ trait ChangeListener extends Extension {
    def onCheck(c: StructuralElement) {}
    /** called when navigating to an element */
    def onNavigate(p: Path) {}
+   /** called when navigating to a physical location */
+   def onNavigateSource(r: parser.SourceRef) {}
    /** called when a new archive is added */
    def onArchiveOpen(a: Archive) {}
    /** called when an archive is removed */
@@ -76,6 +78,10 @@ class Notify(listeners: List[ChangeListener], report: Report) {
 
    def onNavigate(p: Path) {
       tryAll(_.onNavigate(p))
+   }
+
+   def onNavigateSource(r: parser.SourceRef) {
+      tryAll(_.onNavigateSource(r))
    }
 
    def onArchiveOpen(a: archives.Archive) {

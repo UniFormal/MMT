@@ -8,7 +8,6 @@ import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 import info.kwarc.mmt.stex.xhtml.HTMLRule
 
-
 abstract class Translator(val language : String) {
   def applicable(tm : Term) : Boolean
   def translate(tm : Term) : (Term,List[GlobalName])

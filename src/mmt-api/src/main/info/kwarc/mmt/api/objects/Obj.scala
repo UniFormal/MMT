@@ -85,7 +85,7 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
      pos.indices.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
             obj.subobjects.lift(i) match {
-               case None => throw GetError("position " + pos + " not valid in " + this)
+               case None => throw SubobjectError(this, pos)
                case Some((newCon, so)) => (con ++ newCon, so)
             }
       }

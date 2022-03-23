@@ -154,16 +154,14 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           }
           // no applicable rule: recurse according to simp
           val top = t.subobjects.length
-          val recursePositions = if (state.unit.fullRecursion)
-            1 to top
-          else (recPosSimp join recPosComp).getPositions(top)
-          val stabilityCriticalPos = recPosComp.getPositions(top)
+          val stabilityCriticalPos = (recPosSimp join recPosComp).getPositions(top)
+          val recursePositions = if (state.unit.fullRecursion) 1 to top else stabilityCriticalPos
           var changed = false
           var stable = true
           // we go through all arguments and try to simplify each one of them
           val subobjsNew = t.subobjects.zipWithIndex.tail.map {case ((c,o),i) =>
             if (!recursePositions.contains(i)) {
-              o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
+              o // only recurse if this is one of the recurse positions and no previous subobject has changed
             } else {
               val oN = traverseObject(o)(context++c,state)
               val ch = oN != o

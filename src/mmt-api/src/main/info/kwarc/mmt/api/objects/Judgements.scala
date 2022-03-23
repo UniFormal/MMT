@@ -18,7 +18,7 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
   //TODO also true that.context.subsumes(this.context)
 
   /** a toString method that may call a continuation on its objects */
-  def present(implicit cont: Obj => String) = "Judgment " + presentAntecedent + " |- " + presentSucceedent
+  def present(implicit cont: Obj => String) = "Judgment " + presentAntecedent + "  |--  " + presentSucceedent
   def presentSucceedent(implicit cont: Obj => String) = toString
   def presentAntecedent(implicit cont: Obj => String) = {
      cont(stack.context)
@@ -47,7 +47,7 @@ case class Equality(stack: Stack, tm1: Term, tm2: Term, tpOpt: Option[Term]) ext
      ret
    }
    override def presentSucceedent(implicit cont: Obj => String): String =
-      cont(tm1) + " = " + cont(tm2) + tpOpt.map(tp => " : " + cont(tp)).getOrElse("")
+      cont(tm1) + "  ==  " + cont(tm2) + tpOpt.map(tp => "  ::  " + cont(tp)).getOrElse("")
    /** swaps left and right side of equality */
    def swap = Equality(stack, tm2, tm1, tpOpt)
 }
@@ -64,7 +64,7 @@ abstract class BinaryObjJudgement(stack: Stack, left: Obj, right: Obj, delim: St
     ret
   }
   override def presentSucceedent(implicit cont: Obj => String): String =
-      cont(left) + " " + delim + " " + cont(right)
+      cont(left) + "  " + delim + "  " + cont(right)
 }
 
 /**

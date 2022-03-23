@@ -98,7 +98,16 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case v: Link =>
               applyChecked(materialize(Context.empty,v.from,None, Some(v.fromC)))
               v match {
-                case v: View => applyChecked(materialize(Context.empty,v.to,None,Some(v.toC)))
+                case v: View =>
+                  v.to match {
+                    case TUnion(ats) => ats.foreach {case (p,args) =>
+                      // if the codomain is a union of atomic theories, we can handle them individually without materializing
+                      val pT = controller.get(p)
+                      applyChecked(pT)
+                    }
+                    case _ =>
+                      applyChecked(materialize(Context.empty,v.to,None,Some(v.toC)))
+                  }
                 case _: Structure =>
               }
             case _ =>
@@ -368,10 +377,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 if (!eq) {
                   // otherwise, it is an error
                   val List(newStr,exStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
+                  val parStr = parent.name.toString
                   val msg = if (inTheory) {
-                    "theory included twice with different definitions or parameters"
+                    s"theory included twice into $parStr with different definitions or parameters"
                   } else {
-                    "two unequal morphisms included for the same theory"
+                    s"two unequal morphisms included into $parStr for the same theory"
                   }
                   env.errorCont(InvalidElement(dOrig,s"$msg: $newStr != $exStr are the morphisms"))
                 }
@@ -404,7 +414,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // from.meta is treated like any other include into from (in particular: skipped if from.meta included into thy.meta)
         // compute all includes into thy or any of its meta-theories
         val thyMetas = TheoryExp.metas(thy.toTerm)(lup).map(p => lup.getAs(classOf[Theory], p))
-        val alreadyIncluded = (thy::thyMetas).flatMap(_.getAllIncludes)
+        val alreadyIncluded = (thy::thyMetas).reverse.flatMap(_.getAllIncludes)
         flattenInclude(id, alreadyIncluded, thy.toTerm)
       case (link: Link, Include(id)) =>
         // includes in views are treated very similarly; we compose mor with includes into from and check equality of duplicates
@@ -492,7 +502,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
              var i = 0
              while (dd.getDeclarations.isDefinedAt(i)) { // awkward, but necessary to elaborate generated things as well
                try { apply(dd.getDeclarations(i)) } catch {
-                 case GetError(_) =>
+                 case _:GetError =>
                }
                i+=1
              }

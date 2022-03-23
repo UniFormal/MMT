@@ -248,7 +248,7 @@ class Importer extends archives.Importer {
         try {
           controller.simplifier(nt.path)
         } catch {
-          case GetError(_) =>
+          case _:GetError =>
           case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
         }
 
@@ -366,7 +366,7 @@ class Importer extends archives.Importer {
         try {
           controller.simplifier(nt.path)
         } catch {
-          case GetError(_) =>
+          case _:GetError =>
           case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
         }
       // controller add PlainInclude(th.path,parent.path)
@@ -413,7 +413,7 @@ class Importer extends archives.Importer {
         try {
           controller.simplifier(parent.path)
         } catch {
-          case GetError(_) =>
+          case _:GetError =>
         }
       /*
       val (name,tp,df) = components.collectFirst {
