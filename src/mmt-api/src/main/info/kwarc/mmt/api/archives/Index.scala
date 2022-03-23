@@ -159,7 +159,7 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
     importDocument(bf, doc => indexDocument(bf.archive, doc))
   }
 
-  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = {
+  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
@@ -219,7 +219,7 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
          case IsRootDoc(dp) => dp
          case _ => throw LocalError("can only interpret root documents")
       }
-      imp.build(arch, Build.update, FilePath(path), Some(errorCont))
+      imp.build(arch, BuildChanged(), FilePath(path), Some(errorCont))
       try {
         controller.globalLookup.getAs(classOf[Document],dpath)
       } catch {

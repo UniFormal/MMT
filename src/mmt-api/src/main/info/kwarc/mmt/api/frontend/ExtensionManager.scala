@@ -335,9 +335,9 @@ class ExtensionManager(controller: Controller) extends Logger {
     // action companions
     List(NoActionCompanion,RemoteActionCompanion,
         ListReportGroupsCompanion, AddReportHandlerCompanion, LoggingOnCompanion, LoggingOffCompanion,
-        ExecFileCompanion, ScalaCompanion, MBTCompanion,
+        ExecFileCompanion, ScalaCompanion,
         InspectDefineCompanion, DefineCompanion, EndDefineCompanion, DoCompanion,
-        CheckCompanion, CheckTermCompanion, NavigateCompanion, CompareCompanion,
+        CheckCompanion, CheckTermCompanion, NavigateCompanion, NavigateSourceCompanion, CompareCompanion,
         ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, ReadCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
         MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
@@ -345,7 +345,7 @@ class ExtensionManager(controller: Controller) extends Logger {
         ClearCompanion, ExitCompanion, SetBaseCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
-        ArchiveBuildCompanion, FinishBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion,
+        ArchiveBuildCompanion, FinishBuildCompanion, ConfBuildCompanion, ArchiveMarCompanion,
     ).foreach{e => addExtension(e)}
     // This **must** be at the end, to act as a default for stuff
     addExtension(GetActionCompanion)

@@ -51,7 +51,7 @@ class Make extends ShellExtension("make") {
      controller.report.groups += "debug"
      controller.report.groups += "archives"
      controller.report.groups += bt.logPrefix
-     bt(Build, arch, buildPath)
+     bt(BuildAll, arch, buildPath)
      true
    }
 }

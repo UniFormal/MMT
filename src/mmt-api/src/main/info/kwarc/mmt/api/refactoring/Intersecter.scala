@@ -10,7 +10,7 @@ package info.kwarc.mmt.api.refactoring
   */
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
+import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Build}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
@@ -738,7 +738,7 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
   }
 
   /** build or update intersections in a given archive */
-  override def build(a: Archive, up: Update, in: FilePath): Unit = {
+  override def build(a: Archive, w: Build, in: FilePath): Unit = {
     val res = findIntersections(a)
     implicit val fw: FileWriter = new FileWriter(new java.io.File(a.root.toString + "/export/intersections/"+a.id+".mmt"))
     res.foreach(r => {

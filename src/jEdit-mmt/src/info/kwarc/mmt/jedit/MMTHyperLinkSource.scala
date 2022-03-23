@@ -19,20 +19,16 @@ class MMTHyperlink(start: Int, end: Int, startLine: Int, path: Path, ref: Option
 }
 
 object MMTHyperlink {
-   /** extracts physical source references from a structural element */
-   def elemToSourceRef(controller: frontend.Controller, elem: StructuralElement) : Option[SourceRef] = {
-       val ref = SourceRef.get(elem)
-       // we may have a ref now, but it's only useful if it's a file:URI
-       ref flatMap {r =>
-          val c = r.container
-          if (c.scheme == Some("file")) Some(r)
-          else {
-             //resolve logical document id in an archive
-             controller.backend.resolveLogical(c) map {
-               case (archive, path) => r.copy(container = FileURI(archive / source / path))
-             }
-          }
-       }
+   /** tries to turn a logical source ref into a physical one, i.e., one whose container is a file:URI */
+   def makeSourceRefPhysical(controller: frontend.Controller, ref: SourceRef) : Option[SourceRef] = {
+      val c = ref.container
+      if (c.scheme == Some("file")) Some(ref)
+      else {
+         //resolve logical document id in an archive
+         controller.backend.resolveLogical(c) map {
+           case (archive, path) => ref.copy(container = FileURI(archive / source / path))
+         }
+      }
    }
    /** navigates to a SourceRef in a jedit view */
    def navigateTo(view: View, ref: SourceRef) {
@@ -83,7 +79,7 @@ class MMTHyperlinkSource extends HyperlinkSource {
                   //asset.getScope flatMap {home => libraries.Names.resolve(home, id)(controller.localLookup)}
             }
             val linkOpt = elemOpt map {elem =>
-               val ref = MMTHyperlink.elemToSourceRef(controller,elem)
+               val ref = SourceRef.get(elem).flatMap(r => MMTHyperlink.makeSourceRefPhysical(controller,r))
                log(ref.map(_.toString).getOrElse("no file reference"))
                new MMTHyperlink(begin, end, line, elem.path, ref)
             }

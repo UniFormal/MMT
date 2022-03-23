@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api.ParseError
-import info.kwarc.mmt.api.frontend.{Controller, MMTILoop, MMTScriptEngine}
+import info.kwarc.mmt.api.frontend.{Controller, MMTILoop}
 import info.kwarc.mmt.api.utils.File
 
 /** shared base class for actions related to execution of Action code */
@@ -31,19 +31,6 @@ case class Scala(init: Option[String]) extends ExecAction {
 object ScalaCompanion extends ActionCompanion("run a Scala interpreter or evaluate a Scala expression", "scala"){
   import Action._
   def parserActual(implicit state: ActionState) = ("[^\\n]*" r) ^^ { s => val t = s.trim; Scala(if (t == "") None else Some(t)) }
-}
-
-
-/** run an .mbt file */
-case class MBT(file: File) extends ExecAction {
-  def apply() {
-    new MMTScriptEngine(controller).apply(file)
-  }
-  def toParseString = s"mbt $file"
-}
-object MBTCompanion extends ActionCompanion("run an .mbt file", "mbt"){
-  import Action._
-  def parserActual(implicit state: ActionState) = file ^^ { f => MBT(f)}
 }
 
 /** helper functions for [[ExecAction]]s */

@@ -114,14 +114,17 @@ object Action extends CompRegexParsers {
   def keyMod(implicit state: ActionState) = str ^^ { case km =>
     if (km.startsWith("-"))
       (km.tail, Clean)
-    else if ("*!&012345".contains(km.last))
-      (km.init, km.last match {
-        case '!' => Build(Update(Level.Error))
-        case '&' => BuildDepsFirst(Update(Level.Error))
-        case '*' => Build(Update(Level.Ignore))
-        case d => Build(Update(d.asDigit - 1))
-      })
-    else (km, Build)
+    else {
+      val i = km.indexOf("*")
+      if (i == -1)
+        (km,BuildAll)
+      else {
+        val k = km.take(i)
+        val mods = k.drop(i+1)
+        val w = BuildSome(mods.contains('C'), mods.contains('E'))
+        (k, w)
+      }
+    }
   }
 }
 

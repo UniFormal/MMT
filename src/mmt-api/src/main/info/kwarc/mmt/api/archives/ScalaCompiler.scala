@@ -25,7 +25,7 @@ class ScalaCompiler extends BuildTarget {
   }
 
 
-   def build(a: Archive, up: Update, in: FilePath) {
+   def build(a: Archive, w: Build, in: FilePath) {
      (a / ScalaOutDim).mkdirs
      // the classpath separator
      val sep = if (OS.detect == Windows) ";" else ":"
