@@ -24,28 +24,8 @@ object ArchiveBuildCompanion extends ActionCompanion("builds a dimension in a pr
       case ids ~ km ~ in =>
         ArchiveBuild(ids, km._1, km._2, in)
     }
-  private def dimension(implicit state: ActionState) = "check" | "validate" | "relational" | "close"
   private def optFilePath(implicit state: ActionState) = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
 }
-
-case object FinishBuild extends ArchiveAction with ResponsiveAction {
-  override def toParseString: String = "finish build"
-  private val pollingInterval = 1000
-  def apply() {
-    respond("Waiting for build to finish")
-    while(true) {
-
-      // if the q is empty, break the loop
-      if(controller.extman.get(classOf[BuildQueue]).headOption.forall(_.isEmpty)){
-        return
-      }
-
-      // wait for sleep
-      Thread.sleep(pollingInterval)
-    }
-  }
-}
-object FinishBuildCompanion extends ObjectActionCompanion(FinishBuild, "wait for build process to finish", "finish build")
 
 case class ConfBuild(mod : String, targets : List[String], profile : String) extends ArchiveAction {
   def apply() = controller.configBuild(mod, targets, profile)
@@ -98,31 +78,21 @@ trait ArchiveActionHandling {self: Controller =>
           bt(mod, arch, in)
       }
     }
+    waitForBuild
   }
 
-  /** auxiliary function of [[configBuild]]: guess which files/folders the users wants to build
-    *
-    * @return archive root and relative path in it
-    */
-  private def collectInputs(f: File): List[(File, FilePath)] = {
-    backend.resolveAnyPhysical(f) match {
-      case Some(ff) =>
-        // f is a file in an archive
-        List(ff)
-      case None =>
-        // not in archive, treat f as directory containing archives
-        if (f.isDirectory) f.subdirs.flatMap(collectInputs)
-        else {
-          logError("not a file within an archive: " + f)
-          Nil
-        }
+  def waitForBuild {
+    log("waiting for build to finish")
+    val pollingInterval = 1000
+    while (true) {
+      // if the q is empty, break the loop
+      if (buildManager.doneBuilding) {
+        return
+      }
+      // wait for sleep
+      Thread.sleep(pollingInterval)
     }
   }
-
-  /** auxiliary method of [[make]] */
-  private def usageOption: OptionDescrs = List(
-    OptionDescr("usage", "", NoArg, "display usage message"),
-    OptionDescr("help-command", "", NoArg, "help about the build target"))
 
   /** Runs a given profile from a config file, handling the [[ConfBuild]] target */
   def configBuild(modS : String, targets : List[String], profile : String): Unit = {
