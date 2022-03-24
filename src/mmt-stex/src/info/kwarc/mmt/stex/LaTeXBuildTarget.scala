@@ -1,20 +1,13 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, ExtensionError, GetError, LNStep, Level, LocalName, MMTTask, Path, StructuralElement}
-import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, Importer, LogicalDependency, MissingDependency, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
-import info.kwarc.mmt.api.checking.{CheckingEnvironment, CheckingResult, ExtendedCheckingEnvironment, Interpreter, MMTStructureChecker, RelationHandler, Solver}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.{Link, Module, Theory}
-import info.kwarc.mmt.api.objects.{Context, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
-import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
-import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.rustex.Params
 
 import scala.xml.parsing.XhtmlParser
@@ -182,7 +175,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
 
 }
 
-
+/**
 import STeXUtils._
 import java.util.regex.PatternSyntaxException
 import scala.concurrent._
@@ -191,7 +184,7 @@ import scala.concurrent.duration._
 import scala.sys.process.{ProcessBuilder,ProcessLogger}
 
 /** common code for sms, latexml und pdf generation */
-abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments
+abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis
 {
   val localpathsFile   : String = "localpaths.tex"
   val inDim  : ArchiveDimension = source
@@ -437,3 +430,5 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult
 }
+
+*/

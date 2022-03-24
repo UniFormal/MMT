@@ -112,16 +112,7 @@ object Action extends CompRegexParsers {
 
   /** build modifiers */
   def keyMod(implicit state: ActionState) = str ^^ { case km =>
-    if (km.startsWith("-"))
-      (km.tail, Clean)
-    else if ("*!&012345".contains(km.last))
-      (km.init, km.last match {
-        case '!' => Build(Update(Level.Error))
-        case '&' => BuildDepsFirst(Update(Level.Error))
-        case '*' => Build(Update(Level.Ignore))
-        case d => Build(Update(d.asDigit - 1))
-      })
-    else (km, Build)
+    BuildTargetModifier.parse(km)
   }
 }
 

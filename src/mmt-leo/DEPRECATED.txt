@@ -1,1 +1,0 @@
-This folder is kept for information purposes. But this is not built anymore and the code is not maintained.

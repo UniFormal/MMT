@@ -36,11 +36,10 @@ class MMTPlugin extends EBPlugin with Logger {
    
    /** implements onNavigate hook in terms of the methods of MMTHyperlink */
    val mmtListener = new ChangeListener {
+      override def logPrefix = "jedit-navigate"
       override def onNavigate(p: Path) {
          log("navigating to " + p)
-         val ref = controller.getO(p) flatMap {
-            e => MMTHyperlink.elemToSourceRef(controller, e)
-         }
+         val ref = controller.getO(p) flatMap SourceRef.get
          ref foreach navigateTo
       }
      override def onNavigateSource(r: SourceRef) {
@@ -48,8 +47,14 @@ class MMTPlugin extends EBPlugin with Logger {
        navigateTo(r)
      }
      def navigateTo(r: SourceRef) {
-       val view = jEdit.getActiveView
-       MMTHyperlink.navigateTo(view, r)
+       val rPO = MMTHyperlink.makeSourceRefPhysical(controller, r)
+       rPO match {
+         case Some(rP) =>
+           val view = jEdit.getActiveView
+           MMTHyperlink.navigateTo(view,rP)
+         case None =>
+           log("no physical source ref found")
+       }
      }
    }
 

@@ -186,10 +186,9 @@ class Shell extends StandardIOHelper {
        controller.extman.addExtension(new BuildQueue)
     }
 
-    // run -file and -mbt commands
+    // run -file commands
     val mmtCommands = args.mmtFiles map {s => ExecFile(File(s), None)}
-    val mbtCommands = args.scalaFiles map {s => MBT(File(s))}
-    (mmtCommands ::: mbtCommands) foreach {a => controller.handle(a)}
+    mmtCommands foreach {a => controller.handle(a)}
     // run the remaining commands
     args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = true)}
 

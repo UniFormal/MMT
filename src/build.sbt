@@ -152,7 +152,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
+    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, got, coq, glf,
     tiscaf, lfcatalog,
     jedit, intellij, argsemcomp
   ).
@@ -167,7 +167,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -295,21 +295,10 @@ lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("planetary-mmt"): _*)
 
-/* using MMT in the editing frontends. Orginally developed by Mihnea (?), functional but presumably obsolete
-lazy val webEdit = (project in file("mmt-webEdit")).
-  dependsOn(stex).
-  settings(mmtProjectsSettings("mmt-webEdit"): _*)
-*/
-
 // GLF (Grammatical Framework etc.). Maintainer: Frederik
 lazy val glf = (project in file("mmt-glf")).
   dependsOn(api, lf, repl).
   settings(mmtProjectsSettings("mmt-glf"): _*)
-
-// MMT in the interview server. Maintainer: Teresa
-lazy val interviews = (project in file("mmt-interviews")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-interviews"): _*)
 
 // using MMT from Python via Py4J, maintainer: Florian
 lazy val python = (project in file("python-mmt")).
@@ -352,14 +341,6 @@ lazy val concepts = (project in file("concept-browser")).
 // =================================
 // MMT Projects: plugins for working with other languages in MMT
 // =================================
-
-// plugin for reading TPTP
-lazy val tptp = (project in file("mmt-tptp")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-tptp"): _*).
-  settings(
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "leo.jar"
-  )
 
 // plugin for reading OWL. Originally developed by Füsun
 lazy val owl = (project in file("mmt-owl")).
@@ -536,14 +517,17 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   )
 
 // =================================
-// experimental projects that are not part of the build file: 
+// deleted projects that are still accessible in the history
+// deleted from the devel branch 2022-03-23
+//  mmt-leo, mmt-got, mmt-tptp, mmt-interviews, planetary-mmt
+//  mmt-webEdit: using MMT in editing frontends, orginally developed by Mihnea (?), functional but obsolete
 //
-// mmt-leo: obsolete
-// mmt-reflection: obsolete (but worth keeping until it is superseded by foundations that handle it properly)
-
-// The following were deleted from the devel branch 2021-11-17
+// deleted some other time
+// mmt-reflection
+//
+// deleted from the devel branch 2021-11-17
 // hets-mmt: Aivaras's work for integrating with Hets, owned by DFKI but has become obsolete.
-// marpa-mmt:
-// mmt-guidedTours: obsolete
-// mmt-lfs: obsolete (has been merged into mmt-lf)
+// marpa-mmt
+// mmt-guidedTours
+// mmt-lfs: merged into mmt-lf
 // =================================

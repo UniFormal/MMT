@@ -18,17 +18,13 @@ object ArchiveBuildCompanion extends ActionCompanion("builds a dimension in a pr
   import Action._
 
   override val addKeywords = false
-  def parserActual(implicit state: ActionState) = archdim | archbuild
+  def parserActual(implicit state: ActionState) = archbuild
   private def archbuild(implicit state: ActionState) =
     "build" ~> stringList ~ keyMod ~ optFilePath ^^ {
       case ids ~ km ~ in =>
         ArchiveBuild(ids, km._1, km._2, in)
     }
-  private def archdim(implicit state: ActionState) = "archive" ~> stringList ~ dimension ~ optFilePath ^^ {
-    case ids ~ dim ~ s =>
-      ArchiveBuild(ids, dim, Build, s)
-  }
-  private def dimension(implicit state: ActionState) = "check" | "validate" | "relational" | "integrate" | "test" | "close"
+  private def dimension(implicit state: ActionState) = "check" | "validate" | "relational" | "close"
   private def optFilePath(implicit state: ActionState) = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
 }
 
@@ -63,17 +59,6 @@ object ConfBuildCompanion extends ActionCompanion("handle building relative to a
   }
 }
 
-case class MakeAction(key: String, args: List[String]) extends ArchiveAction {
-  def apply() = controller.make(key, args)
-  def toParseString = "make " + key + args.map(" " + _).mkString
-}
-object MakeActionCompanion extends ActionCompanion("handle the make command line", "make", "rbuild") {
-  import Action._
-  def parserActual(implicit state: ActionState) = str ~ (str *) ^^ {
-    case key ~ args => MakeAction(key, args)
-  }
-}
-
 case class ArchiveMar(id: String, file: File) extends ArchiveAction {
   def apply() {
     val arch = controller.backend.getArchive(id).getOrElse(throw ArchiveError(id, "archive not found"))
@@ -102,12 +87,6 @@ trait ArchiveActionHandling {self: Controller =>
           arch.readRelational(in, this, "rel")
           arch.readRelational(in, this, "occ")
           log("done reading relational index")
-        case "integrate" => arch.integrateScala(this, in)
-        case "test" => // TODO misuse of filepath parameter
-          if (in.segments.length != 1)
-            logError("exactly 1 parameter required, found " + in)
-          else
-            arch.loadJava(this, in.segments.head)
         case "close" =>
           val arch = backend.getArchive(id).getOrElse(throw ArchiveError(id, "archive not found"))
           backend.closeArchive(id)
@@ -149,9 +128,9 @@ trait ArchiveActionHandling {self: Controller =>
   def configBuild(modS : String, targets : List[String], profile : String): Unit = {
     val config = getConfig
     val mod  = modS match {
-      case "Build" => Build
+      case "Build" => BuildAll
       case "Clean" => Clean
-      case _ => Build(Update(Level.Error))
+      case _ => BuildAll
     }
     val archives = try {
       config.getProfile(profile).archives.map(aid => config.getArchive(aid))
@@ -173,67 +152,4 @@ trait ArchiveActionHandling {self: Controller =>
       }
     }
   }
-
-  /**
-    * Makes a given target, handling the [[MakeAction]]
-    * @param key
-    * @param allArgs
-    */
-  @MMT_TODO("handled by the :make shell extension, use it instead") // TODO: Migrate remaining code
-  def make(key: String, allArgs: List[String]): Unit = {
-    report.addHandler(ConsoleHandler)
-    val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))
-    optPair.foreach { case (mod, restArgs) =>
-      val (args, fileNames) = AnaArgs.splitOptions(restArgs)
-      val home = getHome
-      val files = fileNames.map(s => File(home.resolve(s)))
-      val realFiles = if (files.isEmpty)
-        List(home)
-      else {
-        files.filter { f =>
-          val ex = f.exists
-          if (!ex)
-            logError("file \"" + f + "\" does not exist")
-          ex
-        }
-      }
-      val inputs = realFiles flatMap collectInputs
-      val (usageOpts, _) = AnaArgs(usageOption, args)
-      val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args) getOrElse {
-        throw RegistrationError("build target not found: " + key)
-      }
-      report.groups += bt.logPrefix
-      report.groups += "archives"
-      if (usageOpts.nonEmpty) {
-        val moreOpts = bt match {
-          case pbt: BuildTargetArguments => pbt.verbOpts ++ pbt.buildOpts
-          case _ => Nil
-        }
-        AnaArgs.usageMessage(ShellArguments.toplevelArgs ++ usageOption ++
-          BuildTargetModifier.optDescrs ++ moreOpts).foreach(println)
-      } else {
-        inputs foreach { case (root, fp) =>
-          addArchive(root) // add the archive
-          backend.getArchive(root) match {
-            case None =>
-              // opening may fail despite resolveAnyPhysical (i.e. for a MANIFEST.MF without id)
-              logError("not an archive: " + root)
-            case Some(archive) =>
-              val inPath = fp.segments match {
-                case dim :: path =>
-                  bt match {
-                    case tbt: TraversingBuildTarget if dim != tbt.inDim.toString =>
-                      logError("wrong in-dimension \"" + dim + "\"")
-                    case _ =>
-                  }
-                  FilePath(path)
-                case Nil => EmptyPath
-              }
-              bt(mod, archive, inPath)
-          }
-        }
-      }
-    }
-  }
-
 }
