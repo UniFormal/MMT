@@ -60,27 +60,6 @@ object AddMathPathFSCompanion extends ActionCompanion("add mathpath entry for a 
   def parserActual(implicit state: ActionState) = uri ~ file ^^ { case u ~ f => AddMathPathFS(u, f) }
 }
 
-case class Read(file: File, interpret: Boolean) extends MathPathAction {
-  def apply() {
-    if (!file.isFile)
-      throw GeneralError("file not found: " + file)
-    val ps = controller.backend.resolvePhysical(file) match {
-      case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FilePath(p))
-      case None => ParsingStream.fromFile(file)
-    }
-    controller.read(ps, interpret, mayImport = true)(new ErrorLogger(controller.report))
-    ps.stream.close
-  }
-  def toParseString = s"${if (interpret) "interpret" else "read"} $file"
-}
-object ReadCompanion extends ActionCompanion("read a file containing MMT in OMDoc syntax", "read", "interpret") {
-  import Action._
-  override val addKeywords = false
-  def parserActual(implicit state: ActionState) = read | interpret
-  private def read(implicit state: ActionState) = "read" ~> file ^^ { f => Read(f, interpret=false)}
-  private def interpret(implicit state: ActionState) = "interpret" ~> file ^^ { f => Read(f, interpret=true)}
-}
-
 /** implements helper functions of [[MathPathAction]]s */
 trait MathPathActionHandling {self: Controller =>
 

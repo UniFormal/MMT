@@ -333,12 +333,12 @@ class ExtensionManager(controller: Controller) extends Logger {
     addExtension(new AbbreviationRuleGenerator)
     
     // action companions
-    List(NoActionCompanion,RemoteActionCompanion,
+    List(NoActionCompanion,
         ListReportGroupsCompanion, AddReportHandlerCompanion, LoggingOnCompanion, LoggingOffCompanion,
         ExecFileCompanion, ScalaCompanion,
         InspectDefineCompanion, DefineCompanion, EndDefineCompanion, DoCompanion,
-        CheckCompanion, CheckTermCompanion, NavigateCompanion, NavigateSourceCompanion, CompareCompanion,
-        ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, ReadCompanion,
+        CheckCompanion, CheckTermCompanion, NavigateCompanion, NavigateSourceCompanion,
+        ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
         MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
         ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHOpenCompanion, LMHUseCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,

@@ -112,19 +112,7 @@ object Action extends CompRegexParsers {
 
   /** build modifiers */
   def keyMod(implicit state: ActionState) = str ^^ { case km =>
-    if (km.startsWith("-"))
-      (km.tail, Clean)
-    else {
-      val i = km.indexOf("*")
-      if (i == -1)
-        (km,BuildAll)
-      else {
-        val k = km.take(i)
-        val mods = k.drop(i+1)
-        val w = BuildSome(mods.contains('C'), mods.contains('E'))
-        (k, w)
-      }
-    }
+    BuildTargetModifier.parse(km)
   }
 }
 

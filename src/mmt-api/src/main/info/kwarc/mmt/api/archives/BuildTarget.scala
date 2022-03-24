@@ -26,10 +26,15 @@ sealed abstract class Build extends BuildTargetModifier {
   }
 }
 
+/** build all files */
 case object BuildAll extends Build {
   def toString(dim: String) : String = dim
 }
-/** changed files are always build, for other files a disjunction of two booleands is used */
+/** build certain files:
+  * * changed files: always
+  * * files that depended on files that have changed: if the corresponding flag is set
+  * * files that had errors: if the corresponding flag is true
+  */
 case class BuildSome(dependsOnChange: Boolean, hadErrors: Boolean) extends Build {
   /** letter C or E occurs if correspondng flag is set */
   def key: String = (if (dependsOnChange) "C" else "") + (if (hadErrors) "E" else "")
@@ -43,7 +48,24 @@ object BuildChanged {
  * parsing method for build target modifiers
  */
 object BuildTargetModifier {
-
+  /**
+    * parses m.toString(d) into (d,m)
+    */
+  def parse(dm: String): (String,BuildTargetModifier) = {
+    if (dm.startsWith("-"))
+      (dm.tail, Clean)
+    else {
+      val i = dm.indexOf("*")
+      if (i == -1)
+        (dm,BuildAll)
+      else {
+        val d = dm.take(i)
+        val mods = d.drop(i+1)
+        val w = BuildSome(mods.contains('C'), mods.contains('E'))
+        (d, w)
+      }
+    }
+  }
 }
 
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
