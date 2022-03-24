@@ -14,21 +14,22 @@ object ScalaOutDim extends RedirectableDimension("bin")
 class ScalaCompiler extends BuildTarget {
   val key = "scala-bin"
 
+  // the classpath separator
+  private val sep = if (OS.detect == Windows) ";" else ":"
+
   /** recursively finds the classpath of all dependencies of an archive */
   private def transitiveArchiveClasspath(a : Archive) = {
-    a.transitiveDependencies(controller.backend).map(singleArchiveClassPath).mkString(":")
+    a.transitiveDependencies(controller.backend).map(singleArchiveClassPath).mkString(sep)
   }
 
   /** find the classpath of a single archive */
   private def singleArchiveClassPath(a : Archive) = {
-    a.properties.get("classpath").map(p => a.root / p).mkString(":")
+    a.properties.get("classpath").map(p => a.root / p).mkString(sep)
   }
 
 
    def build(a: Archive, w: Build, in: FilePath) {
      (a / ScalaOutDim).mkdirs
-     // the classpath separator
-     val sep = if (OS.detect == Windows) ";" else ":"
      // find all source folders to collect files in
      val folderList = a.properties.getOrElse("scala", "scala")
      val folders = stringToList(folderList).map(d => a / Dim(d)).filter(_.exists)
@@ -46,19 +47,18 @@ class ScalaCompiler extends BuildTarget {
      val args = (
        if(report.groups.contains("compiler")) List("-verbose") else Nil
      ) ::: List(
-       "-classpath", System.getProperty("java.class.path") + ":" + cp,
+       "-classpath", System.getProperty("java.class.path") + sep + cp,
        "-d", (a / ScalaOutDim).toString,
      ) ::: files
 
-     val process = RunJavaClass("scala.tools.nsc.Main", args)
-     report("debug", process.command().toArray.mkString(" "))
+     val process = RunJavaClass("scala.tools.nsc.Main", args, s => report("debug", s))
 
      // run the process and wait for it
      val proc = process.inheritIO().start()
      proc.waitFor()
 
      if(proc.exitValue() != 0) {
-       throw GeneralError("scalac returned error code")
+       throw LocalError("scalac returned error code")
      }
    }
 
