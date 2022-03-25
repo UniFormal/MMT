@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, MMTSystem, OS, Windo
 
 import java.nio.file.Files
 import scala.sys.process.{Process, ProcessLogger}
-
+/*
 object LaTeXML {
   private var latexmlc_cmd = "latexmlc"
   private var latexmls = "latexmls"
@@ -451,3 +451,5 @@ class TikzSvg extends PdfLatex
     getDirFilesByExt(a, srcDir, toBeCleanedExts).foreach(deleteWithLog)
   }
 }
+
+ */

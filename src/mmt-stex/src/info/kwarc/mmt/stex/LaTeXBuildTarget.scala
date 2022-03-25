@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, ExtensionError, GetError, LNStep, Level, LocalName, MMTTask, Path, StructuralElement}
+import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, ExtensionError, GetError, LNStep, Level, LocalName, MMTTask, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, Importer, LogicalDependency, MissingDependency, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, CheckingResult, ExtendedCheckingEnvironment, Interpreter, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
@@ -114,7 +114,7 @@ trait XHTMLParser extends TraversingBuildTarget {
 
 class LaTeXToHTML extends XHTMLParser {
   val key = "stex-xhtml"
-  val outDim = Dim("export/xhtml")
+  val outDim = Dim("xhtml")
   val inDim = info.kwarc.mmt.api.archives.source
   def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
 
@@ -132,11 +132,11 @@ class LaTeXToHTML extends XHTMLParser {
 class HTMLToOMDoc extends Importer with XHTMLParser {
   val key = "xhtml-omdoc"
   val inExts = List("xhtml")
-  override val inDim = Dim("export/xhtml")
+  override val inDim = Dim("xhtml")
 
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     log("postprocessing " + bt.inFile)
-    val dpath = bt.narrationDPath
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString("."),NamespaceMap.empty)
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
     val state = new SemanticState(controller, rules, bt.errorCont, dpath)
@@ -162,7 +162,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
-    val dpath = bt.narrationDPath
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString("."),NamespaceMap.empty)
     val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
     val state = new SemanticState(controller,rules,bt.errorCont,dpath)
     outFile.up.mkdirs()
@@ -182,7 +182,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
 
 }
 
-
+/*
 import STeXUtils._
 import java.util.regex.PatternSyntaxException
 import scala.concurrent._
@@ -437,3 +437,6 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult
 }
+
+
+ */
