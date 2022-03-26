@@ -10,7 +10,7 @@ import symbols._
 object GenericScalaExporter {
   /** reserved identifiers */
   private val keywords = List("type", "val", "var", "def", "return", "new", "class", "trait", "object", "extends", "with", "abstract", "implicit",
-      "match", "case", "if", "else", "while", "do", "for")
+      "match", "case", "if", "else", "while", "do", "for", "throw", "try", "catch", "finally")
   /** preused identifiers, i.e., declared in Object */
   private val reserved = List("true", "false", "eq", "List", "Nil", "Set", "String", "Boolean", "Option", "None", "Some", "Term", "OML", "Context", "VarDecl")
 

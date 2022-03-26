@@ -570,7 +570,7 @@ class URIProducer extends BuildTarget {
 
   private def jsonFile(a: Archive) = a / archives.export / key / "uris.json"
 
-  def build(a: Archive, up: Update, in: FilePath) {
+  def build(a: Archive, w: Build, in: FilePath) {
      val thys = controller.depstore.querySet(DPath(a.narrationBase), Transitive(+Declares) * HasType(IsTheory))
      File.stream(jsonFile(a), "[\n", ",\n", "\n]") {out =>
        thys.foreach {thy =>

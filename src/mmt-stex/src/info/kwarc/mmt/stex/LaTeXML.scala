@@ -1,3 +1,5 @@
+/*
+
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level
@@ -452,4 +454,4 @@ class TikzSvg extends PdfLatex
   }
 }
 
- */
+*/

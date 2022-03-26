@@ -64,7 +64,7 @@ abstract class Interpreter extends Importer {
     // TODO handle definiens
     val used = doc.getModulesResolved(controller.globalLookup).flatMap {
       case th : AbstractTheory => th.getAllIncludes.map(_.from) ::: th.getNamedStructures.map(_.from.toMPath)
-      case v : View => v.from.toMPath :: v.to.toMPath :: v.getAllIncludes.map(_.from)
+      case v : View => v.domainAsContext.getIncludes ::: v.codomainAsContext.getIncludes ::: v.getAllIncludes.map(_.from)
     }.distinct.map(LogicalDependency)
     val missing = used.collect {
         case ld if Try(controller.getO(ld.mpath)).toOption.flatten.isEmpty => ld

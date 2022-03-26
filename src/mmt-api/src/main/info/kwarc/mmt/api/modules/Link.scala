@@ -29,6 +29,8 @@ trait Link extends ModuleOrLink {
    }
   /** the codomain of this link; pre: must have been given explicitly or have been inferred */
    def to: Term = toC.get.getOrElse(throw ImplementationError("can only call this method after codomain has been inferred"))
+   /** list of theories whose union is included into 'to' */
+   def codomainPaths = codomainAsContext.getIncludes
    /** the codomain as a context */
    def codomainAsContext: Context = toC.get match {
     case Some(ComplexTheory(cont)) => cont

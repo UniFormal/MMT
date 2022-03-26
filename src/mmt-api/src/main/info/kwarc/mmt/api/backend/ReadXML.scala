@@ -81,7 +81,7 @@ class XMLReader(controller: Controller) extends Logger {
                readInDocument(nsMap, Some(d), node)
          }
          case t: AbstractTheory => readInModule(t.modulePath, nsMap(t.path), t, node)
-         case v: View =>           readInModule(v.modulePath, nsMap(v.to.toMPath), v, node)
+         case v: View =>           readInModule(v.modulePath, v.codomainPaths.headOption.fold(nsMap)(nsMap.apply(_)), v, node)
          case s: Structure =>      readInModule(s.modulePath, nsMap, s, node)
       }
    }

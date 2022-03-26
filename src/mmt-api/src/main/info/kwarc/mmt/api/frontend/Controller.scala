@@ -310,7 +310,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
           throw GeneralError("no importer found for " + f)
         }
         log("building " + f)
-        importer.build(a, Build.update, FilePath(p), Some(errorCont))
+        importer.build(a, BuildChanged(), FilePath(p), Some(errorCont))
       case None =>
         throw GeneralError("not in a known archive: " + f)
     }
