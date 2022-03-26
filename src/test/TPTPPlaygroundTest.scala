@@ -16,14 +16,14 @@ object TPTPPlaygroundTest extends MagicTest {
       throw ImplementationError("Extension cannot be loaded from archive!")
     }
     controller.handleLine("log+ debug")
-    //controller.handleLine("build MMT/LATIN2 mmt-omdoc playground/tptp-exporter_monoid.mmt")
-    //controller.handleLine("build MMT/LATIN2 tptp playground/tptp-exporter_monoid.omdoc")
+    //controller.handleLine("build MMT/LATIN2 mmt-omdoc casestudies/2022-tptp/tptp-exporter_monoid.mmt")
+    //controller.handleLine("build MMT/LATIN2 tptp casestudies/2022-tptp/tptp-exporter_monoid.omdoc")
 
-    //controller.handleLine("build MMT/LATIN2 mmt-omdoc playground/tptp-exporter_hol.mmt")
-    //controller.handleLine("build MMT/LATIN2 tptp playground/tptp-exporter_hol.omdoc")
+    //controller.handleLine("build MMT/LATIN2 mmt-omdoc casestudies/2022-tptp/tptp-exporter_hol.mmt")
+    //controller.handleLine("build MMT/LATIN2 tptp casestudies/2022-tptp/tptp-exporter_hol.omdoc")
 
-    controller.handleLine("build MMT/LATIN2 mmt-omdoc playground/peano.mmt")
-    controller.handleLine("build MMT/LATIN2 tptp playground/peano.omdoc")
+    controller.handleLine("build MMT/LATIN2 mmt-omdoc casestudies/2022-tptp/peano.mmt")
+    controller.handleLine("build MMT/LATIN2 tptp casestudies/2022-tptp/peano.omdoc")
   }
 
   /**
