@@ -31,13 +31,11 @@ trait SolverAlgorithms {self: Solver =>
    private lazy val universeRules = rules.getOrdered(classOf[UniverseRule])
    private lazy val inhabitableRules = rules.getOrdered(classOf[InhabitableRule])
    private lazy val termBasedEqualityRules = rules.getOrdered(classOf[TermBasedEqualityRule])
-   private lazy val termHeadBasedEqualityRules = rules.getOrdered(classOf[TermHeadBasedEqualityRule])
    private lazy val typeBasedEqualityRules = rules.getOrdered(classOf[TypeBasedEqualityRule])
    private lazy val solutionRules = rules.getOrdered(classOf[ValueSolutionRule])
    private lazy val typeSolutionRules = rules.getOrdered(classOf[TypeSolutionRule])
    private lazy val typeCoercionRules = rules.getOrdered(classOf[TypeCoercionRule])
    private lazy val forwardSolutionRules = rules.getOrdered(classOf[ForwardSolutionRule])
-   private lazy val abbreviationRules = rules.getOrdered(classOf[AbbrevRule])
 
   // ******************************************************************************************
   // *** algorithms for checking a judgment, returning booleans
