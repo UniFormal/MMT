@@ -123,7 +123,7 @@ class Utils(base: File) {
   /** copy MMT jar to jEdit settings directory */
   def installJEditJars {
     settings.get(killJEdit).foreach {x => runscript(x, true)}
-    Thread.sleep(500)
+    Thread.sleep(1000)
     val fname = settings.get(jeditSettingsFolder).getOrElse {
       Utils.error(s"cannot copy jars because there is no setting '$jeditSettingsFolder' in $settingsFile")
       return
