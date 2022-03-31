@@ -85,7 +85,9 @@ trait XHTMLParser extends TraversingBuildTarget {
           println(s.trim)
         }
       }
-      def file_close(): Unit = {
+      def file_close(): Unit = if (files.isEmpty) {
+        print("")
+      } else {
         self.log(files.head,Some("rustex-file-close"))
         files = files.tail
       }
@@ -96,7 +98,13 @@ trait XHTMLParser extends TraversingBuildTarget {
     }
     val html = RusTeX.parse(inFile,params,List("c_stex_module_"))
     File.write(outFile.setExtension("shtml"),html)
-    val doc = HTMLParser(outFile.setExtension("shtml"))(state)
+    val doc = try {
+      HTMLParser(outFile.setExtension("shtml"))(state)
+    } catch {
+      case e =>
+        println(e)
+        ???
+    }
     doc.get("head")()().head.children.foreach(_.delete)
     outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
@@ -129,7 +137,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
 
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     log("postprocessing " + bt.inFile)
-    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString("."),NamespaceMap.empty)
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
     val state = new SemanticState(controller, rules, bt.errorCont, dpath)
@@ -155,7 +163,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
-    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString("."),NamespaceMap.empty)
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
     val state = new SemanticState(controller,rules,bt.errorCont,dpath)
     outFile.up.mkdirs()
