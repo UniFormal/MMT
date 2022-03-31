@@ -12,7 +12,7 @@ import scala.tools.nsc.interpreter.Results
  */
 object MMTILoop {
   val settings = new Settings() // make sure all classes of the Java classpath are available
-  settings.usejavacp.value = true
+  settings.usejavacp.value = true // TODO: this does not load classes from archives
   val cfg = ShellConfig(settings)
 }
 class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {

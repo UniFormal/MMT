@@ -35,10 +35,17 @@
 			<END REGEXP="TRUE">&#x1d;|&#x1f;|&#x1e;|&#10074;|&#10073;|&#10072;</END>
 		</SPAN_REGEXP>
 
-        <!-- high Unicode delimiters and other delimiters of MMT concrete syntax-->		
-		<SEQ TYPE="LITERAL2">❚</SEQ>
-		<SEQ TYPE="LITERAL3">❙</SEQ>
-		<SEQ TYPE="LITERAL4">❘</SEQ>
+		<!-- ********* NOTE *************
+		     jEdit 5.6 cannot handle rules for string that start with a high Unicode character.
+		     Those crash the mode parser with an ArrayOutOfBoundsException
+		     and result in all syntax highlighting rules being ignored.
+		     Do not add such rules.
+		     
+		     As a workaround, the MMTTextHighlighting class in the jEdit-mmt project is used to
+		     paint certain characters. Its behavior can be adjusted there.
+		-->
+		
+		<!--  delimiters of MMT concrete syntax-->		
 		<SEQ TYPE="OPERATOR">:</SEQ>
 		<SEQ TYPE="OPERATOR">@</SEQ>
 		<SEQ TYPE="OPERATOR">#</SEQ>
@@ -69,36 +76,12 @@
 		<SEQ TYPE="KEYWORD2">]</SEQ>
 		<SEQ TYPE="KEYWORD2">{</SEQ>
 		<SEQ TYPE="KEYWORD2">}</SEQ>
-		<SEQ TYPE="KEYWORD2">⟶</SEQ>
-		<SEQ TYPE="KEYWORD2">⟵</SEQ>
-		<SEQ TYPE="KEYWORD2">⟷</SEQ>
 
 		<SPAN TYPE="LABEL" NO_LINE_BREAK="TRUE">
 			<BEGIN>"</BEGIN>
 			<END>"</END>
 		</SPAN>
 		<SEQ_REGEXP HASH_CHARS="0123456789" AT_WORD_START="TRUE" TYPE="DIGIT">[0-9]+(.[0-9]+)?</SEQ_REGEXP>
-
-		<!-- typical logic-level delimiters, e.g., FOL -->
-		<SEQ TYPE="KEYWORD3">⊦</SEQ>
-		<SEQ TYPE="KEYWORD3">⊢</SEQ>
-		<SEQ TYPE="KEYWORD3">⊣</SEQ>
-		<SEQ TYPE="KEYWORD3">≐</SEQ>
-		<SEQ TYPE="KEYWORD3">∀</SEQ>
-		<SEQ TYPE="KEYWORD3">∃</SEQ>
-		<SEQ TYPE="KEYWORD3">∧</SEQ>
-		<SEQ TYPE="KEYWORD3">∨</SEQ>
-		<SEQ TYPE="KEYWORD3">¬</SEQ>
-		<SEQ TYPE="KEYWORD3">→</SEQ>
-		<SEQ TYPE="KEYWORD3">←</SEQ>
-		<SEQ TYPE="KEYWORD3">↔</SEQ>
-		<SEQ TYPE="KEYWORD3">⇒</SEQ>
-		<SEQ TYPE="KEYWORD3">⇐</SEQ>
-		<SEQ TYPE="KEYWORD3">⇔</SEQ>
-		<SEQ TYPE="KEYWORD3">⟹</SEQ>
-		<SEQ TYPE="KEYWORD3">⟸</SEQ>
-		<SEQ TYPE="KEYWORD3">⟺</SEQ>
-		<SEQ TYPE="KEYWORD3">ι</SEQ>
 
       <!-- see comment below for bracket highlighting -->
       <SEQ TYPE="OPERATOR">)</SEQ> <!-- unmatched closing bracket -->
