@@ -354,7 +354,8 @@ trait SolverAlgorithms {self: Solver =>
       }
       // solve an unknown
       val jS = j.copy(tm1 = tm1S, tm2 = tm2S)
-      val solved = solveEquality(jS) || solveEquality(jS.swap)
+      Solver.breakAfter(139)
+      val solved = solveEquality(jS,Nil) || solveEquality(jS.swap,Nil)
       if (solved) return true
 
       // 2) find a TermBasedEqualityRule
@@ -1016,9 +1017,10 @@ trait SolverAlgorithms {self: Solver =>
     *  returns true if the unknowns were solved and the equality proved
     *  otherwise, returns false without state change (returning false here does not signal that the equality is disproved)
     */
-   private def solveEquality(j: Equality)(implicit history: History): Boolean = state.SolveEqualityStack(j) {
+   private def solveEquality(j: Equality, seenSofar: List[Equality])(implicit history: History): Boolean = {
+      if (seenSofar contains j) return false // cycle in recursive simplification, so give up
       implicit val stack = j.stack
-     log("Solving " + j.present)
+      log("Solving " + j.present)
       j.tm1 match {
          //foundation-independent case: direct solution of an unknown variable
         case Unknown(m, as) =>
@@ -1048,7 +1050,7 @@ trait SolverAlgorithms {self: Solver =>
                   case Some((j2,msg)) =>
                     history += "Using solution rule " + rs.head.toString
                     log("Using solution rule " + rs.head.toString)
-                    return solveEquality(j2)((history + msg).branch)
+                    return solveEquality(j2,j::seenSofar)((history + msg).branch)
                   case _ =>
                 }
               }

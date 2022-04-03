@@ -296,6 +296,14 @@ class ExtensionManager(controller: Controller) extends Logger {
     val rbs = new RuleBasedSimplifier
     val mss = new ElaborationBasedSimplifier(rbs)
     val mmtint = new TwoStepInterpreter(kwp, msc, mss)// with MMTStructureEstimator
+    // a fast interpreter that only parses structure and does not check
+    /*
+    does not work well yet because (co)domains and rules are also parsed by the object-parser and then cause parser errors
+    val fastparse = new KeywordBasedParser(DefaultObjectParser)
+    val fastint = new OneStepInterpreter(fastparse) {
+      override def format = "mmtstructure"
+      override def inExts = mmtint.inExts
+    } */
     val rbe = new execution.RuleBasedExecutor
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))

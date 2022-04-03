@@ -138,10 +138,9 @@ class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MM
            val c = segment.charAt(localOffset)
            val globalOffset = segment.offset + localOffset
            def pC(c: Char, si: Int) = paintChar(globalOffset, startPoint, styles(si), c)
-           utils.listmap(characterStyles, c).foreach {i =>
-             pC(c,i)
-           }
-           utils.listmap(characterClassStyles, Character.getType(c)).foreach {i =>
+           val iO = utils.listmap(characterStyles, c) orElse
+                    utils.listmap(characterClassStyles, Character.getType(c))
+           iO.foreach {i =>
              pC(c,i)
            }
 

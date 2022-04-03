@@ -152,9 +152,9 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, got, coq, glf,
+    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
     tiscaf, lfcatalog,
-    jedit, intellij, argsemcomp
+    jedit, intellij
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -472,15 +472,6 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
 
-// plugin for computing argumentation semantics
-lazy val argsemcomp = (project in file("mmt-argsemcomp")).
-  dependsOn(api).
-  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
-  settings(
-    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
-    "org.slf4j" % "slf4j-simple" % "1.7.30", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
-  )
-
 // =================================
 // DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
@@ -521,6 +512,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
 // deleted from the devel branch 2022-03-23
 //  mmt-leo, mmt-got, mmt-tptp, mmt-interviews, planetary-mmt
 //  mmt-webEdit: using MMT in editing frontends, orginally developed by Mihnea (?), functional but obsolete
+//  mmt-argsemcomp: argumentation semantics by Max
 //
 // deleted some other time
 // mmt-reflection

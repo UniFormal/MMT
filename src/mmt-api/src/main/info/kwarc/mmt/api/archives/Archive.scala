@@ -119,7 +119,10 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       traverse(dim, in / n, mode, sendLog)(onFile, onDir).toList
     val inFile = this / dim / in
     val inFileName = inFile.getName
-    if (inFile.isDirectory) {
+    if (!inFile.exists) {
+      log("file does not exist: " + in)
+      None
+    } else if (inFile.isDirectory) {
       if (includeDir(inFileName)) {
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
@@ -128,13 +131,16 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
-    } else if (filter(inFileName) && filterDir(inFile.up.getName))
+    } else if (filter(inFileName) && filterDir(inFile.up.getName)) {
       if (!forClean && !inFile.existsCompressed) {
         if (sendLog) log("file does not exist: " + inFile)
         None
       } else
         Some(onFile(Current(inFile, in)))
-    else None
+    } else {
+      log("not an included file or directory: " + in)
+      None
+    }
   }
 
   /** Returns (#Theories,#Constants)**/

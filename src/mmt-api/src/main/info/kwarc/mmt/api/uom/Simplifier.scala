@@ -18,7 +18,7 @@ trait ObjectSimplifier extends Extension {self =>
    def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType
    
    def toTranslator(rules: RuleSet, expDef: Boolean) = new UniformTranslator {
-     def apply(c: Context, t: Term) = self.apply(t, SimplificationUnit(c, expDef, true), rules)
+     def applyPlain(c: Context, t: Term) = self.apply(t, SimplificationUnit(c, expDef, true), rules)
    }
 }
 

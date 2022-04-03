@@ -116,7 +116,7 @@ class FlatteningPresenter extends Presenter(new ParallelMathMLPresenter) {
       case doc : Document =>
         wrapScope(standalone, doc.path)(doDocument(doc))
       case thy : Theory =>
-        val newThys = if (thy.path.toPath.contains("math")) mf.enrichFineGrained(thy) else List(thy)
+        val newThys = List(thy) // Mihnea used to call enrichment here, which added declarations induced by views to theories
         newThys foreach { t =>
           val out = (folder / t.name.toPath).setExtension("html")
           this.outputTo(out) {

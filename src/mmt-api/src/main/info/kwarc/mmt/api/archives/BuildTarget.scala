@@ -235,8 +235,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   protected def getErrorFile(a: Archive,inPath: FilePath): File =
     FileBuildDependency(key,a,inPath).getErrorFile(controller) //TODO why is this method not like the others?
 
-  // TODO why is this not protected?
-  // Because it also gets called from ErrorManager
+  // This should be protected but also gets called from ErrorManager
   def getFolderErrorFile(a: Archive,inPath: FilePath): File = a / errors / key / inPath / (folderName + ".err")
 
   protected def getOutPath(a: Archive,outFile: File): FilePath = outFile.toFilePath

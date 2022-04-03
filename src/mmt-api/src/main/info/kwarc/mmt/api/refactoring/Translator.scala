@@ -61,7 +61,7 @@ case class SymbolApplication(s: GlobalName, app: Application) extends Applicatio
 abstract class AcrossLibraryTranslation extends UniformTranslator {
   def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) : Boolean
   def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) : Term
-  def apply(context: Context, tm: Term) : Term = tm
+  def applyPlain(context: Context, tm: Term) : Term = tm
 }
 
 object AlignmentTranslation {

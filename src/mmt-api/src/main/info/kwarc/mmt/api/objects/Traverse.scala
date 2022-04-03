@@ -66,7 +66,7 @@ abstract class Traverser[A] {
     *  @param newInit creates a fresh initial state
     */
    def toTranslator(newInit: () => A): UniformTranslator = new symbols.UniformTranslator {
-     def apply(c: Context, t: Term): Term = traverse(t)(c, newInit())
+     def applyPlain(c: Context, t: Term): Term = traverse(t)(c, newInit())
    }
 
   /** diagrammatic composition (first this, then that) */

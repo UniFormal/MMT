@@ -55,7 +55,8 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
 
   /** the underlying LineReader implementation used by this jLineREPL */
   lazy private val reader: LineReader = {
-    Logger.getLogger("org.jline").setLevel(Level.OFF) // turns of logging
+    val logger = Logger.getLogger("org.jline") // need to hold a reference to the logger to avoid settings to be overridden
+    logger.setLevel(Level.OFF) // turns of logging
 
     // create a new terminal
     val terminal = TerminalBuilder.builder.system(true).build()

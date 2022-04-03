@@ -345,7 +345,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             case None =>
               // c has no type: copy over the expected type
               val tr = env.ce.simplifier.objectLevel.toTranslator(env.rules, false)
-              val expTpS = tr(context, expTp)
+              val expTpS = tr.applyPlain(context, expTp)
               c.tpC.analyzed = expTpS
           }
         }

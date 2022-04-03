@@ -10,24 +10,47 @@ import info.kwarc.mmt.api.uom._
  *
  * There are a number of desirable properties that Translator can have.
  * In particular: preservation of typing, equality; commute with substitution.
+ *
+ * The functions applyXXX for Def, Type, and Plain are split because many translators are defined via
+ * * a compositional applyPlain
+ * * non-compositional top-level steps on top of applyPlain that differ between applyDef and applyType
+ * A term may occur on both sides of the typing judgment, in which case applyDef and applyType may translate it differently
  */
 abstract class Translator {self =>
    /** map terms that occur on the left side of MMT's typing judgment */
    def applyDef(context: Context, tm: Term): Term
    /**
     * map terms that occur on the right side of MMT's typing judgment (i.e., types)
-    * note that the same term may occur on both sides and thus be translated differently depending on where it occurs
     */
    def applyType(context: Context, tm: Term): Term
 
-   def applyVarDecl(context: Context, vd: VarDecl) = vd.copy(tp = vd.tp map {t => applyType(context,t)}, df = vd.df map {t => applyDef(context,t)})
+   /**
+    * map terms that occur in other positions, e.g., arguments to parametric theories
+    */
+   def applyPlain(context: Context, tm: Term): Term
+
+   /** maps module references, identity by default, can be overridden */
+   def applyAtomicModule(p: MPath): MPath = p
+
+   def applyVarDecl(context: Context, vd: VarDecl) = {
+     def tr(t: Term) = vd match {
+       case IncludeVarDecl(_) => applyModule(context,t)
+       case _ => applyPlain(context, t)
+     }
+     vd.copy(tp = vd.tp map tr, df = vd.df map tr)
+   }
 
    def applyContext(context: Context, con: Context): Context = con.mapVarDecls {case (c, vd) =>
      val nc = context ++ c
      applyVarDecl(nc, vd)
    }
 
-   def applyModule(context: Context, tm: Term): Term = applyDef(context, tm)
+   def applyModule(context: Context, tm: Term): Term = {
+     tm match {
+       case OMPMOD(p, args) => OMPMOD(applyAtomicModule(p), args.map(a => applyPlain(context, a)))
+       case ComplexTheory(cont) => ComplexTheory(applyContext(context, cont))
+     }
+   }
 
    /**
     * not all rules can be translated generically
@@ -41,28 +64,30 @@ abstract class Translator {self =>
 
    /** diagrammatic composition (first this, then that) */
    def compose(that: Translator) = new Translator {
+     def applyPlain(con: Context, tm: Term) = that.applyPlain(self.applyContext(Context.empty, con), self.applyPlain(con, tm))
      def applyDef(con: Context, tm: Term) = that.applyDef(self.applyContext(Context.empty, con), self.applyDef(con, tm))
      def applyType(con: Context, tm: Term) = that.applyType(self.applyContext(Context.empty, con), self.applyType(con, tm))
+     override def applyAtomicModule(p: MPath) = that.applyAtomicModule(self.applyAtomicModule(p))
    }
 }
 
 /** a translator that maps all terms in the same way (i.e., applyDef and applyType are the same) */
 abstract class UniformTranslator extends Translator {
-   def apply(context: Context, tm: Term): Term
-
-   def applyType(context: Context, tm: Term) = apply(context, tm)
-   def applyDef(context: Context, tm: Term) = apply(context, tm)
+   def applyType(context: Context, tm: Term) = applyPlain(context, tm)
+   def applyDef(context: Context, tm: Term) = applyPlain(context, tm)
+   // We add the apply method in this class only to avoid accidentally calling the wrong method on a general Translator.
+   def apply(context: Context, tm: Term) = applyPlain(context, tm)
 }
 
 /** identity (non-traversing) */
 object IdentityTranslator extends UniformTranslator {
-  def apply(context: Context, tm: Term) = tm
+  def applyPlain(context: Context, tm: Term) = tm
 }
 
 /** a translator obtained from a traverser */
 abstract class TraversingTranslator extends UniformTranslator {
   val trav: StatelessTraverser
-  def apply(context: Context, tm: Term) = trav(tm, context)
+  def applyPlain(context: Context, tm: Term) = trav(tm, context)
 }
 
 object TraversingTranslator {
@@ -71,17 +96,17 @@ object TraversingTranslator {
 
 /** a translator that applies a morphism (lazily) */
 case class ApplyMorphismLazy(morph: Term) extends UniformTranslator {
-   def apply(context: Context, tm: Term) = OMM(tm, morph)
+   def applyPlain(context: Context, tm: Term) = OMM(tm, morph)
 }
 
-/** a translator that applies a morphism (lazily) */
+/** a translator that applies a morphism */
 case class ApplyMorphism(lup: Lookup, morph: Term) extends UniformTranslator {
-   def apply(context: Context, tm: Term) = lup.ApplyMorphs(tm, morph)
+   def applyPlain(context: Context, tm: Term) = lup.ApplyMorphs(tm, morph)
 }
 
 /** a translator that performs substitution */
 case class ApplySubs(subs: Substitution) extends UniformTranslator {
-  def apply(context: Context, tm: Term) = tm ^? subs
+  def applyPlain(context: Context, tm: Term) = tm ^? subs
 }
 
 /** replaces all naked OML's; for convenience a substitution is used even though we are replacing OML's not OMV's */
@@ -101,15 +126,11 @@ object OMLReplacer {
 }
 
 /**
-  * A traverser to replace references to [[GlobalName]]s by a custom term given
-  * by the abstract method [[OMSReplacer.replace]].
-  **/
+  * A traverser to replace references to [[GlobalName]]s by a custom term
+  */
 abstract class OMSReplacer extends StatelessTraverser {
   /**
-    * The replacement function called to replace references to [[GlobalName]]s by the returned
-    * term. If the return value is None, no replacement is preformed in that specific instance.
-    *
-    * @param p The [[GlobalName]] to be replaced.
+    * replace(p) = Some(t): OMS(p) ---> t; otherwise OMS(p) ---> OMS(p)
     */
   def replace(p: GlobalName): Option[Term]
   def traverse(t: Term)(implicit con : Context, state : State): Term = t match {
@@ -124,10 +145,7 @@ abstract class OMSReplacer extends StatelessTraverser {
 
 object OMSReplacer {
   /**
-    * Gives an [[OMSReplacer]] precisely given by the specified replacer function `r`
-    * @param r The replacement function called to replace references to [[GlobalName]]s by the returned
-    *          term. If the return value is None, no replacement is preformed in that specific instance.
-    * @return
+    * returns an [[OMSReplacer]] given by the specified replacer function
     */
   def apply(r: GlobalName => Option[Term]): OMSReplacer = (p: GlobalName) => r(p)
 }

@@ -69,32 +69,6 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
    protected object state {
-      // stateful fields
-
-     /**
-      * For cycle detection in solveEquality
-      */
-
-     private var solveEqualityStack : List[Equality] = Nil
-     object SolveEqualityStack {
-       def apply(j : Equality)(a : => Boolean): Boolean = try {
-         if (solveEqualityStack contains j) {
-           log("Cycle in solveEquality!")
-           return false
-         }
-         solveEqualityStack ::= j
-         val ret = a
-         assert(solveEqualityStack.head == j)
-         solveEqualityStack = solveEqualityStack.tail
-         ret
-       } catch {
-         case rc : NonLocalReturnControl[Boolean@unchecked] =>
-           assert(solveEqualityStack.head == j)
-           solveEqualityStack = solveEqualityStack.tail
-           rc.value
-       }
-     }
-
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
       private var _solution : Context = initUnknowns
       import scala.collection.mutable.ListMap
@@ -174,7 +148,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       private def mutable = pushedStates.isEmpty
       /** the state that is stored here for backtracking */
       private case class StateData(solutions: Context, bounds: ListMap[LocalName,List[TypeBound]],
-                                   dependencies: List[CPath], delayed: List[DelayedConstraint],solveEqualityStack : List[Equality] = Nil,
+                                   dependencies: List[CPath], delayed: List[DelayedConstraint],
                                    allowDelay: Boolean, allowSolving: Boolean) {
          var delayedInThisRun: List[DelayedConstraint] = Nil
       }
@@ -190,7 +164,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
        * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
       def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
-         val tempState = StateData(solution, _bounds, dependencies, _delayed, solveEqualityStack, allowDelay, allowSolving)
+         val tempState = StateData(solution, _bounds, dependencies, _delayed, allowDelay, allowSolving)
          pushedStates ::= tempState
          def rollback {
             val oldState = pushedStates.head
@@ -199,7 +173,6 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             _bounds = oldState.bounds
             _dependencies = oldState.dependencies
             _delayed = oldState.delayed
-           solveEqualityStack = oldState.solveEqualityStack
          }
          try {
            val aR = a
@@ -1009,7 +982,7 @@ object Solver {
                }
             }
          }
-         return None
+        None
       case OMAorAny(OMV(m), _) if unknowns.isDeclared(m) => Some((Nil, m))
       case _ => None
    }

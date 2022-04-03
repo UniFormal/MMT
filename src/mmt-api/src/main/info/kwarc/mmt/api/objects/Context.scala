@@ -40,6 +40,7 @@ case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], d
   }).getOrElse(Nil) ::: (df map {
     _.freeVars_
   }).getOrElse(Nil)
+  private[objects] def paths_ = tp.map(_.paths_).getOrElse(Nil) ::: df.map(_.paths_).getOrElse(Nil)
 
   def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
 
@@ -363,6 +364,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
       fv
     }
   }
+  private[objects] def paths_ = this.flatMap(_.paths_)
 
   def subobjects = mapVarDecls { case (con, vd) => (con, vd) }
 
@@ -412,6 +414,7 @@ case class Sub(name: LocalName, target: Term) extends Obj {
   def map(f: Term => Term) = Sub(name, f(target))
 
   private[objects] def freeVars_ = target.freeVars_
+  private[objects] def paths_ = target.paths_
 
   def subobjects = subobjectsNoContext(List(target))
 
@@ -463,6 +466,7 @@ case class Substitution(subs: Sub*) extends Obj {
   private[objects] def freeVars_ = (this flatMap {
     _.freeVars_
   })
+  private[objects] def paths_ = this.flatMap(_.paths_)
 
   def subobjects = subobjectsNoContext(subs.toList)
 

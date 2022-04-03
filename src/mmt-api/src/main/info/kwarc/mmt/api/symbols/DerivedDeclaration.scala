@@ -607,6 +607,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     val applyPars = applyParams(body,toTerm)(vars)
     def applyType(c: Context, t: Term) = bindPi(applyPars(t, c))
     def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
+    def applyPlain(c: Context, t: Term) = applyDef(c,t) // This is probably not correct, but recovers original behavior.
   }
 
   override def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
