@@ -1,15 +1,15 @@
 package info.kwarc.mmt.stex.xhtml
 
-import info.kwarc.mmt.api.documents.{Document, MRef}
+import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.informal.Informal
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
-import info.kwarc.mmt.api.{ComplexStep, ContentPath, DPath, GlobalName, LocalName, MPath, NamespaceMap, Path, Rule, RuleSet, StructuralElement}
+import info.kwarc.mmt.api.{AddError, ComplexStep, ContentPath, DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path, Rule, RuleSet, StructuralElement}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMID, OMIDENT, OMMOD, OMS, OMV, Obj, Term, VarDecl}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, Include, PlainInclude, Structure, TermContainer}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, Include, NestedModule, PlainInclude, Structure, TermContainer}
 import info.kwarc.mmt.api.uom.Scala.Opaque
 import info.kwarc.mmt.api.utils.{File, URI, XMLEscaping}
 import info.kwarc.mmt.odk.{IntegerLiterals, LFX, NatLiterals, PosLiterals}
@@ -101,6 +101,11 @@ class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
     }
   }
   protected def forceTerm2(n : HTMLNode): Term = n.children match {
+    case Nil if n.isInstanceOf[HTMLText] =>
+      try {STeX.informal(n.parent.get.node) } catch {
+        case e =>
+          ???
+      }
     case List(_: HTMLText) | Nil =>
       try {STeX.informal(n.node) } catch {
         case e =>
@@ -137,6 +142,19 @@ class HTMLDocument(val path : DPath,orig : HTMLParser.HTMLNode) extends OMDocHTM
   }
   override def onAdd: Unit = sstate.foreach { state =>
     state.controller.library.endAdd(doc)
+  }
+}
+
+
+case class HTMLInputref(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+  sstate.foreach { state =>
+    collectAncestor {
+      case t: HTMLDocument => t
+    }.foreach{ doc =>
+      val dref = DRef(doc.doc.path,Path.parseD(resource + ".omdoc",NamespaceMap.empty))
+      dref.setOrigin(GeneratedDRef)
+      state.controller.add(dref)
+    }
   }
 }
 
@@ -417,7 +435,26 @@ case class HTMLTheory(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with H
 
   _context = _context ++ Context(path.toMPath)
 
-  def open = sstate.foreach { state =>
+  def open : Unit = sstate.foreach { state =>
+    collectAncestor {case th : HTMLTheory => th} match {
+      case Some(t) =>
+        t.signature_theory.foreach {t =>
+          val th = Theory(dpath, path.name, metatheory) // TODO parameters
+          val nt = new NestedModule(t.toTerm,path.name,th)
+          state.controller.add(nt)
+          signature_theory = Some(th)
+        }
+        if (language != "") {
+          t.language_theory.foreach { t =>
+            val th = Theory(dpath / path.name, LocalName(language), metatheory) // TODO parameters
+            val nt = new NestedModule(t.toTerm,  LocalName(language), th)
+            state.controller.add(nt)
+            signature_theory = Some(th)
+          }
+        }
+        return ()
+      case _ =>
+    }
     if (signature == "") {
       val th = Theory(dpath, path.name, metatheory) // TODO parameters
       sourceref.foreach(s => SourceRef.update(th,s))
@@ -569,11 +606,15 @@ case class HTMLImport(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
     collectAncestor {
       case t: HTMLModuleLike => t
     }.foreach{t => t.signature_theory.foreach { th =>
-      val incl = PlainInclude(domain, t.sighome.get.toMPath)
-      sourceref.foreach(s => SourceRef.update(incl,s))
-      state.controller.add(incl)
-      state.controller.endAdd(incl)
-      state.check(incl)
+      try {
+        val incl = PlainInclude(domain, t.sighome.get.toMPath)
+        sourceref.foreach(s => SourceRef.update(incl, s))
+        state.controller.add(incl)
+        state.controller.endAdd(incl)
+        state.check(incl)
+      } catch {
+        case a : AddError =>
+      }
     }}
   }
 }
@@ -636,7 +677,7 @@ case class HTMLDefiniendum(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) w
   def path = Path.parseMS(resource,NamespaceMap.empty)
   def toTerm = OMID(path)
   collectAncestor {
-    case s : HTMLStatement => s
+    case s : HTMLStatement if resource != "" => s
   }.foreach(_.fors ::= path)
 }
 
@@ -713,6 +754,9 @@ case class HTMLTypeStringComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML
   }.foreach(_.typestrings = resource.split(',').map(_.trim).toList)
 }
 
+case class HTMLFromComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {}
+case class HTMLToComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {}
+
 case class HTMLStatementNameComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   collectAncestor {
     case s : HTMLStatement => s
@@ -773,7 +817,21 @@ case class HTMLSAssertion(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) wi
     state.check(c)
   }}}}}
 }
-case class HTMLSExample(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSExample(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {
+  override def onAdd = {sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
+    case m:HTMLModuleLike => m
+  }.foreach { m => m.signature_theory.foreach {_ =>
+    val c = Constant(m.sighome.get,LocalName(name),Nil,None,None,Some("example"))
+    state.controller.add(c)
+    state.check(c)
+  }}}}}
+}
+case class HTMLSProof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSProofstep(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSProofsketch(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSpfcase(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSpfeq(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
 
 // ---------------------------------------------------------------------------------------------------------------------
 

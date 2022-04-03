@@ -209,7 +209,7 @@ object HTMLParser {
         if (n.startswithWS) "\n" + {if (indent>0) (0 until indent).map(_ => "  ").mkString else ""} else ""
       } + {n match {
         case t : HTMLText =>
-          t.text + {if(t.endswithWS) "\n" else ""}
+          t.toString() + {if(t.endswithWS) "\n" else ""}
         case _ =>
           "<" + n.label + {
             if (!n._parent.exists(_.namespace == n.namespace)) " xmlns=\"" + n.namespace + "\"" else ""
@@ -424,7 +424,7 @@ object HTMLParser {
   }
 
   class HTMLText(state : ParsingState, val text : String) extends HTMLNode(state,"","") {
-    override def toString() = text//XMLEscaping(text)
+    override def toString() = text.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll("\"","&quot;")
     override def isEmpty = toString() == "" || toString() == empty.toString
 
     override def copy : HTMLText = {

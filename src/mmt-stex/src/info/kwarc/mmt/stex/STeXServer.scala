@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.{BrowserExtension, DocumentExtension, FragmentExtension, OMDocExtension, STeXExtension}
+import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, STeXGraph}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml._
 
@@ -69,6 +70,8 @@ class STeXServer extends ServerExtension("sTeX") {
     //addExtension(DemoExtension)
     //addExtension(classOf[PillarFeature])
     //addExtension(classOf[DefinitionFeature])
+    //addExtension(FullsTeXGraph)
+    //addExtension(STeXGraph)
 
     controller.backend.getArchives.filter{a =>
       a.properties.get("format").contains("stex")
