@@ -6,8 +6,11 @@ import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
-import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject}
-import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, StandardBuilder}
+import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, MMTSystem}
+import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
+import info.kwarc.mmt.stex.Extensions.DocumentExtension
+import info.kwarc.mmt.stex.xhtml.HTMLParser
+import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 import info.kwarc.mmt.stex.{STeX, STeXServer}
 
 import scala.collection.{Set, mutable}
@@ -21,7 +24,87 @@ class STeXGraphPopulator extends Extension {
   }
 }
 
-object FullsTeXGraph extends Extension {
+object FullsTeXGraph extends ServerExtension("vollki") {
+
+  lazy val server = controller.extman.get(classOf[STeXServer]).head
+
+  def usermodels = controller.extman.get(classOf[UserModels]).headOption
+
+  override def apply(request: ServerRequest): ServerResponse = {
+    val path = request.parsedQuery("path").flatMap(s => getO(Path.parse(s)))
+    val user = request.parsedQuery("user").flatMap(u => usermodels.flatMap(_.getUser(u))) match {
+      case None => usermodels.flatMap(_.getUser("nulluser"))
+      case Some(u) => Some(u)
+    }
+    val language = request.parsedQuery("lang") match {
+      case Some(l) => l
+      case None => "en"
+    }
+
+    request.path.lastOption match {
+      case Some(":vollki") =>
+        val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/vollki/guidedtours.html"))(server.getState)
+        val entrydoc = doc.get("select")()("entrydoc").head
+        val usermodel = doc.get("select")()("usermodel").head
+        usermodels.foreach(_.getAllUsers.foreach{ u =>
+          if (user.contains(u))
+            usermodel.add(<option value={u.f.name} selected="true">{u.f.name}</option>)
+          else
+            usermodel.add(<option value={u.f.name}>{u.f.name}</option>)
+        })
+        allobjects.foreach{ n =>
+          if (path.contains(n))
+            entrydoc.add(<option value={n.id} selected="true">{n.id}</option>)
+          else
+            entrydoc.add(<option value={n.id}>{n.id}</option>)
+        }
+        ServerResponse(doc.toString,"application/xhtml+xml")
+      case Some("frag") =>
+        path.foreach {node =>
+          val doc = node.getDocument(language).getOrElse(node.getDocument("en").getOrElse(node.getDocument("").get))
+          val file = controller.backend.resolveLogical(doc.path.uri).map { case (a, ls) =>
+            (File(a.rootString) / "xhtml" / ls.mkString("/")).setExtension("xhtml")
+          }.getOrElse {
+            return ServerResponse("Document not found: " + doc.path, "text/plain")
+          }
+          val html = HTMLParser.apply(File.read(file))(server.getState)
+          val exts = server.extensions
+          val docrules = exts.collect {
+            case e: DocumentExtension =>
+              e.documentRules
+          }.flatten
+          def doE(e: HTMLNode): Unit = docrules.foreach(r => r.unapply(e))
+          html.iterate(doE)
+          val dbody = html.get("body")()().head
+          return ServerResponse(dbody.children.map(_.toString).mkString("\n"), "application/xhtml+xml")
+        }
+        ServerResponse("Unknown query: " + request.query, "text/plain")
+      case Some("tour") =>
+        path match {
+          case Some(n) =>
+            var nodes = n.topologicalSort.collect({
+              case n if user.forall(u => u.getValue(n) < 0.9) => n
+            })
+            if (nodes.isEmpty) {
+              nodes = (n.selectTopo.flatMap(_.selectTopo) ::: n.selectTopo ::: n :: Nil).distinct
+            }
+            val (_, body) = server.emptydoc
+            nodes.foreach { node =>
+              body.add(<tr style="width:100%">
+                <td>
+                  <a href={"javascript:collapse(\"" + node.id + "\")"} style="pointer-events: auto;"><b>{"> " + node.id}</b></a>
+                  <div class="collapsible" style="display:none;margin-left:30px;flex-direction:column;white-space:normal;" id={node.id + "-collapse"}></div>
+                </td>
+              </tr>)
+            }
+            ServerResponse(body.children.map(_.toString).mkString("\n"), "application/xhtml+xml")
+          case None =>
+            ServerResponse("Unknown query: " + request.query, "text/plain")
+        }
+      case _ =>
+        ServerResponse("Unknown request: " + request.path.mkString("/"),"text/plain")
+    }
+  }
 
   override def start(args: List[String]): Unit = {
     if (!controller.extman.get(classOf[JGraphExporter]).contains(STeXGraph)) controller.extman.addExtension(STeXGraph)
@@ -55,10 +138,11 @@ object FullsTeXGraph extends Extension {
 
   trait sTeXNode {
     val id : String
-    protected def selectTopo : List[sTeXNode]
+    def selectTopo : List[sTeXNode]
     lazy val topologicalSort : List[sTeXNode] = {
       (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
     }
+    def getDocument(language : String) : Option[Document]
   }
   class sTeXDocument(val id : String) extends sTeXNode {
     private[FullsTeXGraph] var _children : List[sTeXNode] = Nil
@@ -68,7 +152,7 @@ object FullsTeXGraph extends Extension {
     private[FullsTeXGraph] val _documents = mutable.HashMap.empty[String,Document]
     def getDocument(language : String) : Option[Document] = _documents.get(language)
 
-    override protected def selectTopo: List[sTeXNode] = _children
+    override def selectTopo: List[sTeXNode] = _children.reverse
   }
   class sTeXTheory(val sig: Theory) extends sTeXNode {
     val path : MPath = sig.path
@@ -83,7 +167,7 @@ object FullsTeXGraph extends Extension {
     private[FullsTeXGraph] val _documents = mutable.HashMap.empty[String,Document]
     def getDocument(language : String) : Option[Document] = _documents.get(language)
 
-    override protected def selectTopo: List[sTeXNode] = _includes
+    override def selectTopo: List[sTeXNode] = _includes.reverse
   }
 
   val all_languages = List("en","de","ar","bg","ru","fi","ro","tr","fr")
@@ -99,7 +183,7 @@ object FullsTeXGraph extends Extension {
     pathstr = pathstr.dropRight(6)
     val (id,lang) = if (all_languages.exists(s => pathstr.endsWith("." + s))) {
       val ls = pathstr.split('.')
-      (pathstr.init.mkString("."),pathstr.last)
+      (ls.init.mkString("."),ls.last)
     } else (pathstr,"")
     val node = new sTeXDocument(id)
     allobjects ::= node
@@ -143,7 +227,7 @@ object FullsTeXGraph extends Extension {
     pathstr = pathstr.dropRight(6)
     val (id,lang) = if (all_languages.exists(s => pathstr.endsWith("." + s))) {
       val ls = pathstr.split('.')
-      (pathstr.init.mkString("."),pathstr.last)
+      (ls.init.mkString("."),ls.last)
     } else (pathstr,"")
     val node = new sTeXTheory(th)
     allobjects ::= node
