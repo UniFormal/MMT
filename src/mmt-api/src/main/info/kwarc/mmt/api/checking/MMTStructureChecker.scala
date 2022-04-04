@@ -132,10 +132,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
     implicit val ce = env.ce
     val path = e.path
-    log("checking " + path,e match {
-      case _:AbstractTheory | _:Constant => Some("simple")
-      case _ => None
-    })//+ " using the following rules: " + env.rules.toString)
+    log("checking " + path)//+ " using the following rules: " + env.rules.toString)
     UncheckedElement.set(e)
 
     // Global switch-case on what to check
@@ -812,15 +809,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         (m, t, t)
       case OMCOMP(ms) => ms.filter(_ != OMCOMP()) match {
         case Nil => (m, dom, cod)
-        case hd :: tl =>
-          val (hdR, r, s1) = checkMorphism(context, hd, Some(dom), None)
-          if (tl.isEmpty)
-            (hdR, r, s1)
-          else {
-            val (tlR, s2, t) = checkMorphism(context, OMCOMP(tl), Some(s1), Some(cod))
-            // implicit morphism s1 -> s2 is inserted into tlR by recursive call
-            (OMCOMP(hdR, tlR), r, t)
-          }
+        case ms =>
+          val (initR, r, s1) = checkMorphism(Context.empty, OMCOMP(ms.init), Some(dom), None)
+          val (lastR, s2, t) = checkMorphism(context, ms.last, Some(s1), Some(cod))
+          // implicit morphism s1 -> s2 is inserted into lastR by recursive call
+          (OMCOMP(initR :: List(lastR)), r, t)
       }
       case ComplexMorphism(body) =>
         // get domain and codomain as contexts
@@ -842,7 +835,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val mRR = (implDom, implCod) match {
       case (Some(l0), Some(l1)) => OMCOMP(l0, mR, l1)
       case _ =>
-        content.getImplicit(codI, ComplexTheory(context ++ codC)) // DELETE
+        // content.getImplicit(codI, ComplexTheory(context ++ codC)) // helpful for debugging if the error below occurs
         env.errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + domI + " -> " + codI))
         m
     }

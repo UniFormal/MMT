@@ -368,12 +368,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             idID.df match {
               case Some(dfMor) =>
                 // if idID has a definiens, we have to check equality with the existing include
-                val existingMor = exid.asMorphism
+                val existingMor = Morph.simplify(exid.asMorphism)(lup)
                 val existingMorN = oS(existingMor,SimplificationUnit(innerCont,false,true),rules)
                 val eq = Morph.equal(existingMorN,dfMor,OMMOD(exid.from),target)(lup)
                 if (!eq) {
                   // otherwise, it is an error
-                  val List(newStr,exStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
+                  val List(exStr,newStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
                   val parStr = parent.name.toString
                   val msg = if (inTheory) {
                     s"theory included twice into $parStr with different definitions or parameters"

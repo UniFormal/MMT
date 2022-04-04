@@ -31,6 +31,7 @@ abstract class Translator {self =>
 
    /** maps module references, identity by default, can be overridden */
    def applyAtomicModule(p: MPath): MPath = p
+   def applyStructure(p: GlobalName): GlobalName = p
 
    def applyVarDecl(context: Context, vd: VarDecl) = {
      def tr(t: Term) = vd match {
@@ -40,15 +41,29 @@ abstract class Translator {self =>
      vd.copy(tp = vd.tp map tr, df = vd.df map tr)
    }
 
+   def applySub(context: Context, sb: Sub) = {
+     sb match {
+       case IncludeSub(p,t) => IncludeSub(p,applyModule(context, t))
+       case Sub(n,t) => Sub(n, applyPlain(context,t))
+     }
+   }
+
    def applyContext(context: Context, con: Context): Context = con.mapVarDecls {case (c, vd) =>
      val nc = context ++ c
      applyVarDecl(nc, vd)
    }
+   def applySubstitution(context: Context, sub: Substitution): Substitution = sub.mapTerms(s => applyPlain(context,s))
 
    def applyModule(context: Context, tm: Term): Term = {
      tm match {
        case OMPMOD(p, args) => OMPMOD(applyAtomicModule(p), args.map(a => applyPlain(context, a)))
+       case OMS(p) => OMS(applyStructure(p))
        case ComplexTheory(cont) => ComplexTheory(applyContext(context, cont))
+       case ComplexMorphism(sub) => ComplexMorphism(applySubstitution(context, sub))
+       case OMIDENT(t) => OMIDENT(applyModule(context, t))
+       case OMCOMP(ms) => OMCOMP(ms.map(a => applyModule(context,a)))
+       case OMINST(f,t,args) => OMINST(applyAtomicModule(f), applyAtomicModule(t), args.map(a => applyPlain(context,a)))
+       case OMStructuralInclude(f,t) => OMStructuralInclude(applyAtomicModule(f), applyAtomicModule(t))
      }
    }
 

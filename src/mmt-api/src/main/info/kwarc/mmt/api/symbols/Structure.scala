@@ -193,7 +193,7 @@ object Include {
 case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Term], total: Boolean) {
   /** OMIDENT(from) or OMINST(from, args) or OMCOMP(the-former, df); OMStructuralInclude for realizations */
   def asMorphism: Term = {
-    if (isRealization) OMStructuralInclude(from, home.toMPath)
+    if (isRealization && !df.isDefined) OMStructuralInclude(from, home.toMPath)
     else OMCOMP(OMINST(from, home.toMPath, args) :: df.toList)
   }
 

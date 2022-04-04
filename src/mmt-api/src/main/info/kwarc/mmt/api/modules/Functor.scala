@@ -6,36 +6,30 @@ import symbols._
 import objects._
 
 /**
-  * expression translation used by a [Functor]
-  */
-abstract class ExpressionTransformation extends Translator {
-  private val translatedDecls = new scala.collection.mutable.HashMap[GlobalName,List[Declaration]]
-  def translated(in: Declaration, out: Declaration) {
-    translatedDecls(in.path) ::= out
-  }
-}
-
-/**
   * maps extensions of theory 'from' to extensions of theory 'to'
   *
   */
-abstract class Functor extends Extension {
+abstract class StructureTransformer[ET <: ExpressionTransformer] extends Extension {
   def from: MPath
   def to: MPath
 
   def applyModuleName(s: String): String
 
-  /** caches the translations of modules */
-  private val translatedModules = new scala.collection.mutable.HashMap[MPath,List[Module]]
-  def registerDeclaration(d: Declaration, dT: Declaration, ae: ExpressionTransformation) {
+  /** caches the generated modules */
+  protected val translatedModules = new scala.collection.mutable.HashMap[MPath,List[Module]]
+  /** caches the generated expression transformations */
+  // We don't use ET here because a structure transformer might generate multiple expression transformer of different types
+  protected val exprTrans = new scala.collection.mutable.HashMap[(MPath,MPath),ExpressionTransformer]
+
+  /** central method for adding a declaration to the controller */
+  protected def registerDeclaration(d: Declaration, dT: Declaration) {
     controller.add(dT)
-    ae.translated(d,dT)
   }
 
   /** returns an expression translator
     * a new translator is generated for every module
     */
-  def applyExpr: ExpressionTransformation
+  def makeExprTrans(from: MPath, to:MPath): ET
 
   /** translates a module path without building the translated theory */
   def applyModulePath(mp: MPath): MPath = {
@@ -62,12 +56,11 @@ abstract class Functor extends Extension {
       case t: Theory =>
     }
     // otherwise rename the module
-    val ae = applyExpr
+    val p = module.path
+    val pT = applyModulePath(p)
+    val ae = makeExprTrans(p, pT)
     val cont = Context.empty
-
     def aeMod(t: Term) = ae.applyModule(cont,t)
-
-    val pT = applyModulePath(module.path)
     val moduleT: Module = module match {
       case t: Theory =>
         val paramT = t.paramC.map(par => ae.applyContext(cont,par))
@@ -80,13 +73,13 @@ abstract class Functor extends Extension {
         new View(pT.doc,pT.name,fromT,toT,dfT,v.isImplicit)
     }
     controller.add(moduleT)
-    module.getDeclarations.foreach {d => applyDeclaration(module,moduleT,d,ae)}
     translatedModules(module.path) ::= moduleT
-    moduleT
+    exprTrans((p,pT)) = ae
+    module.getDeclarations.foreach {d => applyDeclaration(module,moduleT,d,ae)}
   }
 
   // called on every Declaration
-  def applyDeclaration(in: Module,out: Module,d: Declaration,ae: ExpressionTransformation) {
+  def applyDeclaration(in: Module,out: Module,d: Declaration,ae: ET) {
     d match {
       case c: Constant =>
         applyConstant(in,out,c,ae)
@@ -96,16 +89,26 @@ abstract class Functor extends Extension {
   }
 
   // called for every Constant, factored out for easy overriding
-  def applyConstant(in: Module,out: Module,c: Constant,ae: ExpressionTransformation) {
+  def applyConstant(in: Module,out: Module,c: Constant,ae: ET) {
     val cT = c.translate(out.toTerm,LocalName.empty,ae,Context.empty)
-    registerDeclaration(c,cT,ae)
-    ae.translated(c,cT)
+    registerDeclaration(c,cT)
   }
   // called for every Structure, factored out for easy overriding
-  def applyStructure(in: Module,out: Module, s: Structure,ae: ExpressionTransformation) {
+  def applyStructure(in: Module,out: Module, s: Structure,ae: ET) {
     val sT = s.translate(out.toTerm,LocalName.empty,ae,Context.empty)
-    registerDeclaration(s,sT,ae)
+    registerDeclaration(s,sT)
   }
+}
+
+/**
+  * expression translation used by a [StructureTransformer]
+  *
+  * This is a generalization of morphisms:
+  * expressions over 'from' are mapped to expressions over 'to'
+  */
+abstract class ExpressionTransformer extends Translator {
+  def from: MPath
+  def to: MPath
 }
 
 /**
@@ -118,50 +121,66 @@ abstract class Functor extends Extension {
      * standard translation: works for eq but not eqcong
      * one tm ?a per occurrence of term, then type check to reduce unknowns (works for eqcong but not eq)
  */
-class Polymorphify(val from: MPath, term: GlobalName, val to: MPath, tp: GlobalName, tm: GlobalName) extends Functor {self =>
+class PolymorphifyStructure(val from: MPath, term: GlobalName, val to: MPath, tp: GlobalName, tm: GlobalName)
+  extends StructureTransformer[PolimorphifyExpr] {self =>
   // all theories included into the meta-theory of from
   private val metaPaths: List[MPath] = Nil //TODO
 
   def applyModuleName(s: String) = "Typed"
   /** t: A --->  [u:tp] t' : {u:tp} t' where t' replaces c with c u if alsoPoly(c) was called
     */
-  class ApplyExpr extends ExpressionTransformation {
-    private var madePoly: List[GlobalName] = Nil
-    /** the variable of the binding */
-    // TODO prevent shadowing
-    private val u = OMV("u")
-    // the polymorphic type for u
-    def poly(p: GlobalName) = OMA(OMS(p), List(u)) // should be LF apply
-    private val tr = OMSReplacer {p =>
-      if (madePoly contains p) Some(poly(p)) else None
-    }
-    def applyPlain(c: Context, t: Term) = tr(t,c)
-    def applyType(c: Context, t: Term) = t // Pi(u, tp, applyPlain(c++ u%tp, t))
-    def applyDef(c: Context, t: Term) = t // Lambda(u, tp, applyPlain(c ++ u%tp, t))
-    override def applyAtomicModule(p: MPath) = {
-      // this call automatically generates the module if it has not been generated yet
-      self.applyModule(p)
-      self.applyModulePath(p)
+  def makeExprTrans(f: MPath,t: MPath) = new PolimorphifyExpr(f,t, this)
+  def getExprTrans(f: MPath):PolimorphifyExpr = {
+    exprTrans.get(f,applyModulePath(f)) match {
+      case Some(et: PolimorphifyExpr) => et
+      case None =>
+        applyModule(f)
+        getExprTrans(f)
     }
   }
-  def applyExpr = new ApplyExpr
 
   override def applyModule(module: Module) {
     if (metaPaths contains module.path) return // meta-theory remains unchanged
     super.applyModule(module)
   }
 
-  override def applyConstant(in:Module, out: Module, c: Constant, ae: ExpressionTransformation) {
+  override def applyConstant(in:Module, out: Module, c: Constant, ae: PolimorphifyExpr) {
     // avoid needlessly polymorphifying auxiliary constants
     val polymorphify = c.tp.exists(_.paths contains term) || c.df.exists(_.paths contains term)
     if (polymorphify) {
       super.applyConstant(in,out,c,ae)
+      ae.madePoly ::= c.path
     } else {
       val cT = c.translate(out.toTerm,LocalName.empty,IdentityTranslator,Context.empty)
-      registerDeclaration(c,cT,ae)
+      registerDeclaration(c,cT)
     }
   }
 }
+
+class PolimorphifyExpr(val from: MPath, val to: MPath, st: PolymorphifyStructure) extends ExpressionTransformer {
+  var madePoly: List[GlobalName] = Nil
+  /** the variable of the binding */
+  // TODO prevent shadowing
+  private val u = OMV("u")
+
+  private val tr = OMSReplacer {p =>
+    if (st.getExprTrans(p.module).madePoly contains p) {
+      // the polymorphic type for u
+      val pT = OMA(OMS(p), List(u)) // should be LF apply
+      Some(pT)
+    } else
+      None
+  }
+  def applyPlain(c: Context, t: Term) = tr(t,c)
+  def applyType(c: Context, t: Term) = t // Pi(u, tp, applyPlain(c++ u%tp, t))
+  def applyDef(c: Context, t: Term) = t // Lambda(u, tp, applyPlain(c ++ u%tp, t))
+  override def applyAtomicModule(p: MPath) = {
+    // this call automatically generates the module if it has not been generated yet
+    st.applyModule(p)
+    st.applyModulePath(p)
+  }
+}
+
 
 /**
   * @param sort the name of the sort to use
@@ -169,6 +188,6 @@ class Polymorphify(val from: MPath, term: GlobalName, val to: MPath, tp: GlobalN
 // class FOLToSFOL(sort: GlobalName) extends Functor {}
 
 /** pushout is the special case of Functor where expressions are translated along a morphism */
-abstract class Pushout(val from: MPath, val to: MPath, mor: Term) extends Functor {
+abstract class Pushout(val from: MPath, val to: MPath, mor: Term) extends StructureTransformer {
   // def applyExpr = ApplyMorphs(mor)
 }

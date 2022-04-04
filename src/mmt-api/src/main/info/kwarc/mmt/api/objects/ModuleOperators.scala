@@ -234,6 +234,7 @@ object Morph {
         }
         // OMCOMP disappears if result has length 1
         OMCOMP(result)
+      case m => m // anything is allowed in content that is still being checked
     }
   }
 

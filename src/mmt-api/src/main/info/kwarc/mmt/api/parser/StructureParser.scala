@@ -446,7 +446,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   // not actually using the feature (there might be multiple for the same keyword); just checking that at least one exists
                   readDerivedModule(parentInfo, Context.empty, k)
                 case None =>
-                  throw makeError(reg, "unknown keyword: " + k)
+                  val msg = if (k == "" && reg.start.offset == 0) {
+                    "unknown characters at the beginning of the file, maybe an encoding issue"
+                  } else "unknown keyword: " + k
+                  throw makeError(reg, msg)
               }
           }
       }

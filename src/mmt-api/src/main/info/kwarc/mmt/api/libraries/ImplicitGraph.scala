@@ -283,7 +283,6 @@ class ImplicitGraph {
       if (mors.tail.forall(m => h == m))
        Some(mors.head)
       else {
-       println("not unique: " + mors)
        None
       }
     }
