@@ -131,6 +131,11 @@ class STeXServer extends ServerExtension("sTeX") {
     nhead
   }
 
+  def getState : ParsingState = {
+    val rules = extensions.flatMap(_.rules)
+    new ParsingState(controller,rules)
+  }
+
   def emptydoc = {
     val rules = extensions.flatMap(_.rules)
     val state = new ParsingState(controller,rules)
