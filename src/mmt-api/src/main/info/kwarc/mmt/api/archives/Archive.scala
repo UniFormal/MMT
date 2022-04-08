@@ -119,10 +119,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       traverse(dim, in / n, mode, sendLog)(onFile, onDir).toList
     val inFile = this / dim / in
     val inFileName = inFile.getName
-    if (!inFile.exists) {
-      log("file does not exist: " + in)
-      None
-    } else if (inFile.isDirectory) {
+    if (inFile.isDirectory) {
       if (includeDir(inFileName)) {
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
