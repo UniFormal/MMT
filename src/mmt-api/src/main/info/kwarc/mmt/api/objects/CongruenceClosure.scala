@@ -2,18 +2,17 @@ package info.kwarc.mmt.api.objects
 import Conversions._
 
 /**
- * reduces an equality to a list of equalities by applying congruence and alpha-renaming
- *
+ * tries to reduce an equality to a list of equalities by applying congruence and alpha-renaming
  * no context-specific reasoning or simplification is applied
- * always succeeds (returns List(eq) at worst)
- *
  * @param assume callback that is tested before recursing
  *
  * invariant: Conjunction(CongrunceClosure(eq))  ===>  eq
  */
 class CongruenceClosure(assume: Equality => Option[Boolean]) {
-  def apply(eq: Equality): List[Equality] = {
-     aux(eq.context, eq.tm1, eq.tm2)
+  def apply(eq: Equality): Option[List[Equality]] = {
+     val eqs = aux(eq.context, eq.tm1, eq.tm2)
+     if (eqs == List(eq))
+       None else Some(eqs)
   }
 
   private def aux(cont: Context, t1: Term, t2: Term): List[Equality] = {
@@ -33,17 +32,25 @@ class CongruenceClosure(assume: Equality => Option[Boolean]) {
            //TODO match types, open problem: how to handle subtyping of literals
            if (l1.value == l2.value) Nil else noMatch
          case (OMA(f1, args1), OMA(f2,args2)) =>
-            ((f1 :: args1) zip (f2 :: args2)) flatMap {
+            if (args1.length != args2.length || f1 != f2) {
+              noMatch
+            } else ((f1 :: args1) zip (f2 :: args2)) flatMap {
                case (x,y) => aux(cont, x,y)
             }
          // recurse into components, keeping track of variables
          case (OMBINDC(b1, bound1, sc1), OMBINDC(b2, bound2, sc2)) =>
-            val bM  = aux(cont, b1, b2)
-            val (boundM, rename) = auxCon(cont, bound1, bound2).getOrElse {return noMatch}
-            val sM = (sc1 zip sc2) flatMap {
-               case (s1, s2) => aux(cont ++ bound1, s1, s2 ^? rename)
+            if (b1 != b2 || bound1.length != bound2.length || sc1.length != sc2.length) {
+              noMatch
+            } else {
+              val bM = aux(cont,b1,b2)
+              val (boundM,rename) = auxCon(cont,bound1,bound2).getOrElse {
+                return noMatch
+              }
+              val sM = (sc1 zip sc2) flatMap {
+                case (s1,s2) => aux(cont ++ bound1,s1,s2 ^? rename)
+              }
+              bM ::: boundM ::: sM
             }
-            bM ::: boundM ::: sM
          case (OML(n1,t1,d1,_,f1), OML(n2,t2,d2,_,f2)) =>
            if (n1 != n2 || f1 != f2)
              noMatch

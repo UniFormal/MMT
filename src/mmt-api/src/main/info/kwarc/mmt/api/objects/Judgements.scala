@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import objects.Conversions._
-import scala.collection.mutable.{HashSet}
+
+import scala.collection.mutable.HashSet
 
 /** the type of object level judgments as used for typing and equality of terms */
 abstract class Judgement extends utils.HashEquality[Judgement] with checking.HistoryEntry {
@@ -13,13 +14,27 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
   val stack: Stack
   def context = stack.context
 
-  /** true if that is guaranteed if this holds */
-  def implies(that: Judgement): Boolean = this == that
+  /** a sound but not necessary complete criterion for whether that judgment is guaranteed if this one holds */
+  def implies(that: Judgement): Boolean = {
+    (this impliesSuccedent that) && (that.context subsumes this.context)
+  }
+
+  def impliesSuccedent(that: Judgement): Boolean = (this,that) match {
+    case (j:UnaryObjJudgement, k: UnaryObjJudgement) => j.label == k.label && j.obj == k.obj
+    case (j:BinaryObjJudgement, k: BinaryObjJudgement) => j.delim == k.delim && j.left == k.left && j.right == k.right
+    case (e:Equality,f:Equality) =>
+      val tpImplies = e.tpOpt == f.tpOpt || f.tpOpt.isEmpty
+      tpImplies && ((e.tm1 == f.tm1 && e.tm2 == f.tm2) || (e.tm1 == f.tm2 && e.tm2 == f.tm1))
+    case (e: EqualityContext, f: EqualityContext) =>
+      // uptoAlpha handling can be improved
+      e.uptoAlpha == f.uptoAlpha && ((e.context1 == f.context1 && e.context2 == f.context2) || (e.context1 == f.context2 && e.context2 == f.context1))
+    case _ => false
+  }
   //TODO also true that.context.subsumes(this.context)
 
   /** a toString method that may call a continuation on its objects */
-  def present(implicit cont: Obj => String) = "Judgment " + presentAntecedent + "  |--  " + presentSucceedent
-  def presentSucceedent(implicit cont: Obj => String) = toString
+  def present(implicit cont: Obj => String) = "Judgment " + presentAntecedent + "  |--  " + presentSuccedent
+  def presentSuccedent(implicit cont: Obj => String) = toString
   def presentAntecedent(implicit cont: Obj => String) = {
      cont(stack.context)
   }
@@ -34,37 +49,39 @@ trait WFJudgement extends Judgement {
    val wfo: Obj
 }
 
-/** represents an equality judgement, optionally at a type
- * context |- t1 = t2 : tp  if t = Some(tp)
- * or
- * context |- t1 = t2       if t = None
- */
-case class Equality(stack: Stack, tm1: Term, tm2: Term, tpOpt: Option[Term]) extends Judgement {
-   lazy val freeVars = {
-     val ret = new HashSet[LocalName]
-     val fvs = stack.context.freeVars_ ::: tm1.freeVars_ ::: tm2.freeVars_ ::: (tpOpt.map(_.freeVars_).getOrElse(Nil))
-     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-     ret
-   }
-   override def presentSucceedent(implicit cont: Obj => String): String =
-      cont(tm1) + "  ==  " + cont(tm2) + tpOpt.map(tp => "  ::  " + cont(tp)).getOrElse("")
-   /** swaps left and right side of equality */
-   def swap = Equality(stack, tm2, tm1, tpOpt)
-}
-
-
 /**
- *  Common code for some binary judgements
- */
-abstract class BinaryObjJudgement(stack: Stack, left: Obj, right: Obj, delim: String) extends Judgement {
+  *  Common code for some binary judgements
+  *  @param left the first object
+  *  @param right the second object
+  *  @param delim the property between the objects (part of both concrete and abstract syntax)
+  */
+abstract class BinaryObjJudgement(stack: Stack, val left: Obj, val right: Obj, val delim: String) extends Judgement {
    lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: left.freeVars_ ::: right.freeVars_
     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n} //only vars from obj should be kicked out here
     ret
   }
-  override def presentSucceedent(implicit cont: Obj => String): String =
+  override def presentSuccedent(implicit cont: Obj => String): String =
       cont(left) + "  " + delim + "  " + cont(right)
+}
+
+/** represents an equality judgement, optionally at a type
+  * context |- t1 = t2 : tp  if t = Some(tp)
+  * or
+  * context |- t1 = t2       if t = None
+  */
+case class Equality(stack: Stack, tm1: Term, tm2: Term, tpOpt: Option[Term]) extends Judgement {
+  lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: tm1.freeVars_ ::: tm2.freeVars_ ::: (tpOpt.map(_.freeVars_).getOrElse(Nil))
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    ret
+  }
+  override def presentSuccedent(implicit cont: Obj => String): String =
+    cont(tm1) + "  ==  " + cont(tm2) + tpOpt.fold("")(tp => "  ::  " + cont(tp))
+  /** swaps left and right side of equality */
+  def swap = Equality(stack, tm2, tm1, tpOpt)
 }
 
 /**
@@ -78,21 +95,23 @@ case class Subtyping(stack: Stack, tp1: Term, tp2: Term) extends BinaryObjJudgem
  * tpSymb - optionally specified typing symbol
  */
 case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[GlobalName] = None)
-           extends BinaryObjJudgement(stack, tm, tp, ":") with WFJudgement {
+           extends BinaryObjJudgement(stack, tm, tp, "::") with WFJudgement {
   val wfo = tm
 }
 
 /**
- *  Common code for some judgements
- */
-abstract class UnaryObjJudgement(stack: Stack, obj: Obj, label: String) extends Judgement {
+  *  Common code for some judgements
+  *  @param obj the object that is judged
+  *  @param label the syntactic category of the object (part of both concrete and abstract syntax)
+  */
+abstract class UnaryObjJudgement(stack: Stack, val obj: Obj, val label: String) extends Judgement {
    lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: obj.freeVars_
     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n} //only vars from obj should be kicked out here (multiple places in this file)
     ret
   }
-  override def presentSucceedent(implicit cont: Obj => String): String =
+  override def presentSuccedent(implicit cont: Obj => String): String =
       cont(obj) + " " + label
 }
 
@@ -148,6 +167,6 @@ case class EqualityContext(stack: Stack, context1: Context, context2: Context, u
      fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
      ret
    }
-   override def presentSucceedent(implicit cont: Obj => String): String =
+   override def presentSuccedent(implicit cont: Obj => String): String =
       cont(context1) + " = " + cont(context2)
 }

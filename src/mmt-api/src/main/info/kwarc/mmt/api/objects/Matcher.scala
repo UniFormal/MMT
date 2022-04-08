@@ -283,7 +283,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     // check if a query variable can be isolated and do so
     Solver.findSolvableVariable(solutionRules, querySolution, queryOrg) foreach { case (rs, x) => applyRules(rs) }
     // 4) default: congruence
-    CongruenceClosure(j) forall { eq =>
+    CongruenceClosure(j).getOrElse(List(j)).forall { eq =>
       val bound = eq.context
       val goal = eq.tm1
       val query = eq.tm2

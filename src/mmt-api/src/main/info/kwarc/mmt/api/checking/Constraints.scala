@@ -14,12 +14,14 @@ abstract class DelayedConstraint {
   val branchInfo: BranchInfo
   def history = branchInfo.history
   def branch = branchInfo.backtrack
-  /** @return true if a solved variable occurs free in this Constraint */
+  /** true if a solved variable occurs free in this Constraint */
   def isActivatable(solved: List[LocalName]) = notTriedYet || (solved exists {name => freeVars contains name})
+  /** unknown-solving equalities that are sufficient but not necessary to discharge this */
+  def suffices : Option[List[Equality]]
 }
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, val notTriedYet: Boolean = false) extends DelayedConstraint {
+class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, val suffices: Option[List[Equality]] = None, val notTriedYet: Boolean = false) extends DelayedConstraint {
   val freeVars = constraint.freeVars
   override def toString = constraint.toString
 }
@@ -27,6 +29,7 @@ class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, va
 /** A wrapper around a continuation function to be delayed until a certain type inference succeeds */
 class DelayedInference(val stack: Stack, val branchInfo: BranchInfo, val tm: Term, val cont: Term => Boolean) extends DelayedConstraint {
    def notTriedYet = false
+   def suffices = None
    val freeVars = {
      val vs = stack.context.freeVars ++ tm.freeVars
      scala.collection.immutable.ListSet(vs :_*)

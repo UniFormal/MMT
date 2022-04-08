@@ -62,7 +62,7 @@ trait SolverAlgorithms {self: Solver =>
       }
       JudgementStore.getOrElseUpdate(j) {
         history += j
-        log("checking: " + j.presentSucceedent + "\n  in context: " + j.presentAntecedent)
+        log("checking: " + j.presentSuccedent + "\n  in context: " + j.presentAntecedent)
         logAndHistoryGroup {
           j match {
             case j: Typing   => checkTyping(j)
@@ -77,26 +77,6 @@ trait SolverAlgorithms {self: Solver =>
         }
      }
    }
-
-   /** caches the results of judgements to avoid duplicating work */
-   // judgements are not cached if we are in a dry run to make sure they are run again later to solve unknowns
-   private object JudgementStore {
-     private val store = new scala.collection.mutable.HashMap[Judgement,Boolean]
-     def get(j : Judgement) = store.get(j)
-     /** lookup up result for j; if not known, run f to define it */
-     def getOrElseUpdate(j : Judgement)(f: => Boolean): Boolean = {
-       store.find {case (k,_) => k implies j} match {
-         case Some((_,r)) =>
-           r
-         case None =>
-           val r = f
-           if (!isDryRun) {
-             store(j) = r
-           }
-           r
-       }
-    }
-  }
 
    /** proves a Universe Judgment
     *
@@ -409,6 +389,13 @@ trait SolverAlgorithms {self: Solver =>
       }
    }
 
+  private def isDirectlySolvable(j: Equality)(implicit stack: Stack) = {
+    j.tm1 match {
+      case Unknown(_,args) => isDistinctVarList(args).isDefined
+      case _ => false
+    }
+  }
+
    /**
     * checks equality t1 = t2 by using congruence reasoning
     *
@@ -420,7 +407,11 @@ trait SolverAlgorithms {self: Solver =>
        true
      } else if (!stability.is(t1S) || !stability.is(t2S)) {
        history += "terms not stable"
-       delay(Equality(stack,t1S,t2S,Some(tp)))
+       val j = Equality(stack,t1S,t2S,Some(tp))
+       val equalities = CongruenceClosure(j)
+       val suffices = if (equalities.exists(_.forall(e => isDirectlySolvable(e) || isDirectlySolvable(e.swap))))
+         equalities else None
+       delay(j, suffices)
      } else {
        history += "both terms are stable"
        def differentShape = error("terms have different shape")
@@ -1024,9 +1015,15 @@ trait SolverAlgorithms {self: Solver =>
       j.tm1 match {
          //foundation-independent case: direct solution of an unknown variable
         case Unknown(m, as) =>
-          val vars = isDistinctVarList(as).getOrElse(return false)
+          var vars = isDistinctVarList(as).getOrElse(return false)
           // solve m with j.tm2
-          val mSol = FreeOrAny(vars, j.tm2)
+          var mSol = FreeOrAny(vars, j.tm2)
+          // depending on he order in which variables are solved, it's possible m already occurs in vars
+          // so we have to substitute it before checking for a cycle
+          if (vars.freeVars contains m) {
+            vars = new SubstituteUnknowns(m -> mSol).traverseObject(vars)(Context.empty, ())
+            mSol = FreeOrAny(vars, j.tm2)
+          }
           moveToRight(m)
           val remainingFreeVars = notAllowedInSolution(m, mSol)
           if (remainingFreeVars.isEmpty) {

@@ -220,8 +220,8 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
     Context(vds.reverse: _*)
   }
 
-  /** true if that is a subcontext (inclusion substitution) of this one */
-  // TODO too conservative: may return false too often
+  /** a sound but not necessary complete criterion for whether this context is stronger than that one */
+  // TODO could return true more often, but covers the practically important cases
   def subsumes(that: Context): Boolean = {
     val thisNames = this.variables.toList.map(_.name)
     val thatNames = that.variables.toList.map(_.name)
