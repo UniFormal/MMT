@@ -505,7 +505,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val afrom = a.from
             val adf = a.df getOrElse {
               (l,a) match {
-                case (_: AbstractTheory, Include(id)) if !id.isRealization =>
+                case (_: AbstractTheory, Include(id)) if !(id.isRealization && id.df.isEmpty) =>
                   // if l is a theory that already includes afrom
                   // we have to be careful to avoid a cycle because the realization itself is found at this point if an assignment is missing
                   id.asMorphism

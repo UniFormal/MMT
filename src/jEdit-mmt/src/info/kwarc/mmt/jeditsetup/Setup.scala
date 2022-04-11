@@ -237,7 +237,8 @@ class Setup extends ShellExtension("jeditsetup") {
     }
 
 
-    val jars = List(("ErrorList", "2.4.0"), ("SideKick", "1.8"), ("Hyperlinks","1.2.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
+    // ErrorList 2.4.0 causes bug where errors are not removed from the Error Panel (the updates are sent and they are removed from the gutter)
+    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.2.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize() {
        // download jars from jEdit plugin central

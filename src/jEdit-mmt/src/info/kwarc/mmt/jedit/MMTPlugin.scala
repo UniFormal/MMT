@@ -130,7 +130,7 @@ class MMTPlugin extends EBPlugin with Logger {
           val file = utils.File(buffer.getPath)
           bup.getWhat match {
             case BufferUpdate.CLOSED =>
-              errorSource.removeFileErrors(file)
+              errorSource.removeMMTFileErrors(file)
             case _ =>
           }
         case _ =>
