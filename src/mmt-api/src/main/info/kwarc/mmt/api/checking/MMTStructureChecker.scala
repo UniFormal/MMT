@@ -195,39 +195,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
 
       case c: Constant =>
-        /**
-          * Tries to apply a morphism homomorphically on a term.
-          * We use [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs ApplyMorphs]] and forward caught [[GetError]]
-          * exceptions (plus ''specificError'', if given) to the error continuation in [[env]].
-          *
-          * Use case: in checking of constants below (e.g. of the form ''c: tp = df''), it might happen
-          * that a particular morphism ''mor'' is defined on ''c'' and for further checking needs to be
-          * applied homomorphically on ''tp'' and/or ''df''.
-          * Even though ''mor'' is defined on ''c'', it might not be defined on all constants referenced in
-          * either ''tp'' or ''df''.
-          * In such a scenario, [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs ApplyMorphs]] throws a
-          * [[GetError]].
-          *
-          * Ideally, all morphisms are dependency-closed wrt. domain symbols such that this scenario cannot happen.
-          * These morphisms are called partial. But still, end users might want to typecheck "less than partial"
-          * morphisms without the type checking aborting unexpectedly with a [[GetError]], which would preclude
-          * end users from getting *other* useful type errors.
-          *
-          * @return Upon success, the resulting term is returned. Upon failure with a [[GetError]],
-          *         both the error and ''specificError'' (if given) are messaged to [[env]] and
-          *         [[None]] is returned.
-          */
-        def tryApplyMorphism(mor: Term, specificError: Option[Error]): Term => Option[Term] = t => {
-          try {
-            Some(content.ApplyMorphs(t, mor))
-          } catch {
-            case err: GetError if err.getMessage.contains("no assignment") => // string containment checking a bit brittle
-              env.errorCont(err)
-              specificError foreach env.errorCont
-              None
-          }
-        }
-
         // determine the expected type and definiens (if any) based on the parent element
         /* TODO if computation of the expected type fails due to a missing assignments, we could generate a fresh unknown and try to infer
            the assignment during the later checks
@@ -250,8 +217,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                     content.getO(r ? c.name.tail) match {
                       case Some(cOrg: Constant) =>
                         val mor = real.asMorphism
-                        def tr = tryApplyMorphism(mor, Some(InvalidObject(mor, "not total")))
-                        Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
+                        def tr(t: Term) = content.ApplyMorphs(t, real.asMorphism)
+                        Expectation(cOrg.tp map tr, cOrg.df map tr)
                       case _ =>
                         env.errorCont(InvalidElement(c, "cannot find realized constant"))
                         defaultExp
@@ -271,8 +238,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                      catch {case g: GetError => throw GetError(g.path, "cannot find realized constant").setCausedBy(g)}
             rc match {
               case cOrg: Constant =>
-                def tr = tryApplyMorphism(link.toTerm, Some(InvalidElement(link, "link not total")))
-                Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
+                def tr(t: Term) = content.ApplyMorphs(t, link.toTerm)
+                Expectation(cOrg.tp map tr, cOrg.df map tr)
               case _ =>
                 env.errorCont(InvalidElement(c, "cannot find realized constant"))
                 Expectation(None, None)

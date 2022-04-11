@@ -242,7 +242,7 @@ abstract class Lookup {self =>
           traverse(arg)(con, OMCOMP(via, morph))
         case OMS(path @ (theo ?? ln)) =>
           val aOpt = try {getAs(classOf[Constant], morph, LocalName(theo) / ln).df}
-                     catch {case g: GetError => throw GetError(path, s"no assignment found in morphism $morph").setCausedBy(g)}
+                     catch {case g: GetError => throw GetError(path, s"no assignment for ${path.name} found in morphism $morph").setCausedBy(g)}
           aOpt match {
              case Some(df) => df
              case None =>
@@ -251,7 +251,7 @@ abstract class Lookup {self =>
                 case Some(df) =>
                   traverse(df)
                 case None =>
-                  throw GetError(path, "empty assignment found in morphism")
+                  throw GetError(path, s"empty assignment found for ${path.name} in morphism")
              }
           }
         case t => Traverser(this,t)
