@@ -68,11 +68,11 @@ class MMTErrorSource extends DefaultErrorSource("MMT") {
           }
        }
        remove.foreach {e =>
-         set.remove(e)
-            gui.Swing.invokeLater {
-              val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_REMOVED, e)
-                 org.gjt.sp.jedit.EditBus.send(msg)
-             }
+          set.remove(e)
+          gui.Swing.invokeLater {
+            val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_REMOVED, e)
+            org.gjt.sp.jedit.EditBus.send(msg)
+          }
        }
      }
    }
