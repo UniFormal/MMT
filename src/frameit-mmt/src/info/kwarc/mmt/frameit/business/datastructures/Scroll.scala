@@ -2,12 +2,13 @@ package info.kwarc.mmt.frameit.business.datastructures
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.objects.OMSReplacer
+import info.kwarc.mmt.api.objects.{Context, OMS, OMMOD, Term}
 import info.kwarc.mmt.api.ontology.RelationExp.Imports
 import info.kwarc.mmt.api.ontology.{HasType, IsTheory}
-import info.kwarc.mmt.api.symbols.{OMSReplacer, PlainInclude}
+import info.kwarc.mmt.api.symbols.PlainInclude
 import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.{GetError, GlobalName, LocalName, MPath, RuleSet}
+import info.kwarc.mmt.api.{GlobalName, GetError, MPath, RuleSet, LocalName}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.archives.LabelVerbalizationRule

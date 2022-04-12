@@ -330,15 +330,15 @@ object ExpandRep extends ComputationRule(rep.path) {
    }
 }
 
-/** inverse of ExpandRep, useful for complification */
-object ContractRep extends ComplificationRule {
-  val head = rep.path
-  def apply(matcher: Matcher, c: Context, t: Term) = {
+/** inverse of ExpandRep, useful for complification, should not be used during simplification */
+object ContractRep extends SimplificationRule(rep.path) {
+  def apply(c: Context, t: Term): Simplifiability = {
     t match {
-      case Sequences.ellipsis(n, x, t) if ! t.freeVars.contains(x) => Some(rep(t,n))
-      case _ => None
+      case Sequences.ellipsis(n, x, t) if ! t.freeVars.contains(x) => Simplify(rep(t,n))
+      case _ => Recurse
     }
   }
+  override def complificationOnly = true
 }
 
 /**

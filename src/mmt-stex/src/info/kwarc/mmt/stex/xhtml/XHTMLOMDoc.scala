@@ -2,26 +2,18 @@ package info.kwarc.mmt.stex.xhtml
 
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.informal.Informal
-import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
-import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
+import info.kwarc.mmt.api.notations.{NotationContainer}
 import info.kwarc.mmt.api.{AddError, ComplexStep, ContentPath, DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path, Rule, RuleSet, StructuralElement}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMID, OMIDENT, OMMOD, OMS, OMV, Obj, Term, VarDecl}
-import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, Include, NestedModule, PlainInclude, Structure, TermContainer}
-import info.kwarc.mmt.api.uom.Scala.Opaque
-import info.kwarc.mmt.api.utils.{File, URI, XMLEscaping}
-import info.kwarc.mmt.odk.{IntegerLiterals, LFX, NatLiterals, PosLiterals}
-import info.kwarc.mmt.sequences.Sequences
+import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration, Include, NestedModule, PlainInclude, Structure, TermContainer}
 import info.kwarc.mmt.stex.Extensions.NotationExtractor
 import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
 import info.kwarc.mmt.stex.{STeX, STeXServer}
 
 import scala.collection.mutable
-import scala.util.Try
-import scala.xml.{Elem, Node}
 
 object OMDocHTML {
 

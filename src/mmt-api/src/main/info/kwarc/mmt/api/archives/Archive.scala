@@ -36,7 +36,7 @@ abstract class ROArchive extends Storage with Logger {
   * @param properties a key value map
   * @param report the reporting mechanism
   */
-class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ScalaCode with ZipArchive {
+class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ZipArchive {
 
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName

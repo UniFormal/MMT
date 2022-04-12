@@ -2,9 +2,9 @@ package info.kwarc.mmt.moduleexpressions.operators
 
 import info.kwarc.mmt.api.{GeneralError, LocalName}
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
+import info.kwarc.mmt.api.objects.OMLReplacer
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.OMLReplacer
-import info.kwarc.mmt.api.uom.{BinaryConstantScala, RecurseOnly, Simplifiability, Simplify}
+import info.kwarc.mmt.api.uom.{Simplify, BinaryConstantScala, Simplifiability, RecurseOnly}
 import info.kwarc.mmt.api.utils.SkipThis
 
 object PushoutAlongInclusion extends BinaryConstantScala(Combinators._path, "pushout_inclusion")

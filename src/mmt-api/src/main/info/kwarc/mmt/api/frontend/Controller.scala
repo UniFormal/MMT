@@ -100,8 +100,6 @@ class Controller(report_ : Report = new Report) extends ROController with Action
 
   /** convenience for getting the default simplifier */
   def simplifier: Simplifier = extman.get(classOf[Simplifier]).head
-  /** applies only complification rules, used to unsimplify a fully-processed object, e.g., to undo definition expansion */
-  def complifier(rules: RuleSet) = new TermTransformer("complify", this, rules, ttr => ttr.isInstanceOf[ComplificationRule])
 
   /** convenience for getting the default object parser */
   def objectParser: ObjectParser = extman.get(classOf[ObjectParser], "mmt").get
