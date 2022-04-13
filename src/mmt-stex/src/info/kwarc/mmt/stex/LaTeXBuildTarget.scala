@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, Optio
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
 import info.kwarc.rustex.Params
 
+import scala.sys.process.Process
 import scala.xml.parsing.XhtmlParser
 
 object TeXError {
@@ -179,6 +180,53 @@ class STeXToOMDoc extends Importer with XHTMLParser {
       case Nil => BuildSuccess(Nil,results)
       case o => MissingDependency(o.map(LogicalDependency),results,Nil)
     }
+  }
+}
+
+class PdfLatex extends TraversingBuildTarget {
+  val key: String = "pdflatex"
+  override val outExt: String = "pdf"
+  override val outDim: ArchiveDimension = Dim("export", "pdf")
+  val inDim = Dim("source")
+  override def includeFile(name: String): Boolean = name.endsWith(".tex")
+
+  override def buildFile(bf: BuildTask): BuildResult = {
+    val in = bf.inFile
+    val pb = Process(Seq("pdflatex",in.stripExtension.getName,"-interaction","scrollmode"),in.up)
+    val exit = pb.!
+    val pdffile = in.setExtension("pdf")
+    if (pdffile.exists()) {
+      File.copy(pdffile,bf.outFile,true)
+      pdffile.delete()
+    }
+    clear(pdffile)
+    BuildResult.empty
+  }
+
+  def clear(pdffile : File): Unit = {
+    val supportfiles = List(
+      pdffile.setExtension("aux"),
+      pdffile.setExtension("log"),
+      pdffile.setExtension("bbl"),
+      pdffile.setExtension("toc"),
+      pdffile.setExtension("upa"),
+      pdffile.setExtension("upb"),
+      pdffile.setExtension("blg"),
+      pdffile.setExtension("out"),
+      pdffile.setExtension("idx"),
+      pdffile.setExtension("mw"),
+      pdffile.setExtension("nav"),
+      pdffile.setExtension("snm"),
+      pdffile.setExtension("vrb"),
+      pdffile.setExtension("fdb_latexmk"),
+      pdffile.setExtension("fls"),
+      pdffile.setExtension("sref"),
+      pdffile.setExtension("sms"),
+      File(pdffile.stripExtension.toString + ".run.xml"),
+      File(pdffile.stripExtension.toString + ".synctex.gz"),
+      File(pdffile.stripExtension.toString + "-blx.bib")
+    )
+    supportfiles.foreach(f => if (f.exists()) f.delete())
   }
 
 }

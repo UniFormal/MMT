@@ -62,6 +62,7 @@ object STeXContentError {
 // TODO deprecate/reimplement rest:
 
 //COmmon OMDoc functionality that is not specific to the sTeX importer
+
 object OMDoc {
 
   def getDefaultSRef(s : String, dpath : DPath) : SourceRef = {
