@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/stex/htmlfragments/rustex.css"/>
     <link rel="stylesheet" href="/stex/htmlfragments/sidenotes.css"/>
     <link rel="stylesheet" href="/stex/htmlfragments/overlay.css"/>
+    <link rel="stylesheet" href="/stex/htmlfragments/highlights.css"/>
     <script type="text/javascript" id="overlayjs" src="/stex/htmlfragments/overlay.js">&#8205;</script>
     <script type="text/javascript" id="MathJax-fix" src="/stex/htmlfragments/mathjax-fix.js">&#8205;</script>
     <script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">&#8205;</script>
@@ -34,6 +35,7 @@
             var all = document.getElementsByClassName("collapsible");
             for (var i = 0; i !== all.length; i++) {
                 all[i].style.display = 'none';
+                all[i].innerHTML = "";
             }
             var lang = document.getElementById("language");
             var elem = document.getElementById(id + '-collapse');

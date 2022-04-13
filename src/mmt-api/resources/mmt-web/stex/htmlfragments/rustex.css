@@ -158,7 +158,7 @@ td {
 math {
     width:max-content;
     height:max-content;
-    font-size:85%;
+    /*font-size:85%;*/
 }
 .displaymath {
     align-self: center;

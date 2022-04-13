@@ -13,7 +13,7 @@ import scala.xml._
 import objects._
 
 object STeX {
-  val meta_dpath = DPath(URI.http colon "mathhub.info") / "sTeX"
+  val meta_dpath = DPath(URI.http colon "mathhub.info") / "sTeX" / "meta"
   val meta_path = meta_dpath ? "Metatheory"
   val mmtmeta_path = meta_dpath ? "MMTMeta"
 
