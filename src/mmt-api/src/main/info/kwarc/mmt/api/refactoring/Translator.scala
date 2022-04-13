@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser.ParseResult
-import info.kwarc.mmt.api.symbols.{Constant, Structure, UniformTranslator}
+import info.kwarc.mmt.api.symbols.{Constant, Structure}
 import info.kwarc.mmt.api.uom.RealizedType
 
 import scala.collection.mutable

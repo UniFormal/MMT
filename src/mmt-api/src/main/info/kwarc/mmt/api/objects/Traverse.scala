@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.Conversions._
-import info.kwarc.mmt.api.symbols.UniformTranslator
 
 /**
   * A Traverser is a function on Term defined by context-sensitive induction.
@@ -65,7 +64,7 @@ abstract class Traverser[A] {
    /** this traverser as a translator
     *  @param newInit creates a fresh initial state
     */
-   def toTranslator(newInit: () => A): UniformTranslator = new symbols.UniformTranslator {
+   def toTranslator(newInit: () => A): UniformTranslator = new UniformTranslator {
      def applyPlain(c: Context, t: Term): Term = traverse(t)(c, newInit())
    }
 

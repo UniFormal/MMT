@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import frontend._
 import checking._
-import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 import symbols._
 import modules._

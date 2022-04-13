@@ -9,114 +9,9 @@ import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom._
 
-// TODO Stylistic remark: make consistent use of either the name "query" or "template"
-//  in the API and in the code, but don't use both.
-
-// @formatter:off
 /** Matches a goal term against a template term.
-  *
-  *   - Input: terms template and goal<br>
-  *   - Output: substitution solution such that `template ^ solution == goal`, where
-  * [[Term.^]] is the method applying the substitution.
-  *
-  * Full code example see below.
-  *
-  * @example In normed vector spaces you might have the template term `||x - y||`
-  *          and would like to match the goal term `||(a - b) - c||` with it.<br>
-  *          The matcher will give you the substitution `solution = [x := (a - b), y := c]`.
-  *
-  * This is a special case of (typed!) unification. In general, unification seeks a solution
-  * substitution such that `template ^ solution == goal ^ solution`, i.e. the substitution
-  * applied on *both* sides.
-  * Thus the template usually contains variables intended for substitution ("matching"), but
-  * the goal does not. Still, the goal term may contain free variables as in the example above,
-  * they will then be part of the solution substitution - but only in the RHS of the substitutions.
-  *
-  * No equality relation is taken into account except alpha-conversion of bound variables and
-  * solution rules.
-  *
-  * @note    The class can be reused for multiple matches using the same RuleSet but is not thread-safe.
-  *
-  * @example ```scala
-  *          // Construct the goal and template terms
-  *          //
-  *          val namespace = DPath(URI("http://example.com"))
-  *          val module = namespace ? "myModule"
-  *
-  *          val norm = OMID(module ? "norm")
-  *          val minus = OMID(module ? "minus")
-  *
-  *          // "||(x - y) - z||"
-  *          val goal = OMA(
-  *            norm,
-  *            List(
-  *              OMA(
-  *                minus,
-  *                List(
-  *                  OMA(minus, List(OMV("x"), OMV("y"))),
-  *                  OMV("z")
-  *                )
-  *              )
-  *            )
-  *          )
-  *
-  *          // "||a - b||"
-  *          val template = OMA(
-  *            norm,
-  *            List(OMA(
-  *              minus,
-  *              List(OMV("a"), OMV("b"))
-  *            ))
-  *          )
-  *
-  *          // Empty rule set because we don't use any logic foundation
-  *          // specific typing rules (e.g. the rule in LF for function
-  *          // application)
-  *          val matcher = new Matcher(ctrl, new MutableRuleSet)
-  *
-  *          val matchResult = matcher(
-  *            Context(VarDecl(LocalName("x"), LocalName("y"), LocalName("z"))),
-  *            goal,
-  *            Context(VarDecl(LocalName("a"), LocalName("b"))),
-  *            template
-  *          )
-  *
-  *          // MatchSuccess(a:=(http://example.com?myModule?minus x y), b:=z,true)
-  *          ```
-  *
-  * @note Beware of situations where the template and goal term share some variables.
-  *       E.g. take template term = "a", goal term = "a - a". Intuitively, this should
-  *       be a match with the substitution [a := a - a], but this class cannot handle this.
-  *       The following code will lead to a [[MatchFail]]:
-  *       ```scala
-  *          val matchResult = matcher(
-  *            Context(VarDecl(LocalName("a"))),
-  *            OMA(minus, List(OMV("a"), OMV("a"))),
-  *            Context(VarDecl(LocalName("a"))),
-  *            OMV("a")
-  *          )
-  *       ```
-  *       As a solution you might want to first make your template variables fresh:
-  *       ```scala
-  *       val matchResult = matcher(
-  *         Context(VarDecl(LocalName("a"))),
-  *         OMA(minus, List(OMV("a"), OMV("a"))),
-  *         Context(VarDecl(LocalName("b"))),
-  *         OMV("b")
-  *       )
-  *
-  *       // MatchSuccess(b:=(http://example.com?myModule?minus a a),true)
-  *       println(matchResult)
-  *       ```
-  * @param controller needed for lookups when type checking the matches
-  * @param rules Simplification and other equality-related rules to take into account.
-  *              Especially, you most probably want to specify the equality of your meta-theory (e.g. LF), e.g., by calling
-  *              ```scala
-  *              val ctx = Context(mPathToATheory)
-  *              new Matcher(ctrl, RuleSet.collectRules(ctrl, ctx))
-  *              ```
+  * The class can be reused for multiple matches using the same RuleSet but is not thread-safe.
   */
-// @formatter:on
 class Matcher(controller: Controller, rules: RuleSet) extends Logger {
   def logPrefix = "matcher"
 
@@ -216,9 +111,12 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     *
     * @param goalContext the global context
     * @param goal        the term to be matched, relative to goalContext
-    * @param queryVars   the variables to solve within the template `query`
+    * @param queryVars   the variables to solve within the template/query
     * @param query       the template term to match against, relative to goalContext ++ queryVars
     * @return MatchSuccess(subs, true) if `goal == query ^ subs` for  `goalContext |- subs:queryVars -> .`
+    *
+    * All variables in the template are considered matching variables.
+    * Thus, it is not possible for a free variable to match itself.
     **/
   def apply(goalContext: Context, goal: Term, queryVars: Context, query: Term): MatchResult = {
     apply(goalContext, queryVars) { eq => eq(goal, query) }
