@@ -731,16 +731,16 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
   }
 
   /** a string identifying this build target, used for parsing commands, logging, error messages */
-  override def key: String = "intersections"
+  def key: String = "intersections"
 
   /** clean intersections in a given archive */
-  override def clean(a: Archive, in: FilePath): Unit = {
+  def clean(a: Archive, in: FilePath): Unit = {
     val file = new java.io.File(a.root.toString + "/export/intersections/"+a.id+".mmt")
     file.delete()
   }
 
   /** build or update intersections in a given archive */
-  override def build(a: Archive, w: Build, in: FilePath): Unit = {
+  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
     val res = findIntersections(a)
     implicit val fw: FileWriter = new FileWriter(new java.io.File(a.root.toString + "/export/intersections/"+a.id+".mmt"))
     res.foreach(r => {

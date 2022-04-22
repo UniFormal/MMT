@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend.actions
 
-import info.kwarc.mmt.api.Path
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.parser.SourceRef
 
 /** shared base class for actions controlling the shell or other actions */
@@ -61,6 +61,25 @@ object NavigateSourceCompanion extends ActionCompanion("navigate to physical loc
   def parserActual(implicit state: ActionState) = str ^^ { s => NavigateSource(SourceRef.fromString(s)) }
 }
 
+case class SuppressErrors(act: Action) extends ControlAction with ActionWithErrorRecovery {
+  override def init(c: Controller) {
+    super.init(c)
+    act.init(c)
+  }
+  def apply(errorCont: Option[ErrorHandler]) = {
+    act match {
+      case a: ActionWithErrorRecovery =>
+        val onlyFatalErrors = errorCont.map(ec => new HandlerWithTreshold(ec, Level.Fatal))
+        a(onlyFatalErrors)
+      case a => a()
+    }
+  }
+  def toParseString = s"suppressErrors " + act.toParseString
+}
+object SuppressErrorsCompanion extends ActionCompanion("run an action without reporting errors", "suppressErrors") {
+  import Action._
+  def parserActual(implicit state: ActionState) = action ^^ { a => SuppressErrors(a) }
+}
 
 /** Implements handling of [[ControlAction]]s */
 trait ControlActionHandling {

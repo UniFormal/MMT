@@ -540,7 +540,7 @@ object Export {
     implicit val eh = ErrorThrower
 
     val controller = new Controller
-    controller.runMSLFile(utils.File("startup.mmt"), None)
+    controller.runMSLFile(utils.File("startup.mmt"), None, true, None)
     val manager: OWLOntologyManager = OWLManager.createOWLOntologyManager()
     val exporter = new Export(manager, controller)
 

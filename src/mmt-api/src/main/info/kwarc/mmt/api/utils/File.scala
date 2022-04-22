@@ -284,18 +284,6 @@ object File {
     fw.close
   }
 
-  /**
-   * convenience method for reading a file into a string
-   *
-   * @param f the source file
-   * @return s the file content (line terminators are \n)
-   */
-  def read(f: File): String = {
-    val s = new StringBuilder
-    ReadLineWise(f) {l => s.append(l + "\n")}
-    s.result
-  }
-
   /** convenience method to obtain a typical (buffered, UTF-8) reader for a file
    *  
    *  If f does not exist, Compress.name(f) is tried and automatically decompressed.
@@ -305,7 +293,19 @@ object File {
     val compress = !f.exists && fC.exists
     val fileName = if (compress) fC else f
     val in = Compress.in(new FileInputStream(fileName.toJava), compress)
-    new BufferedReader(new InputStreamReader(in, java.nio.charset.Charset.forName("UTF-8")))
+    StreamReading.Reader(in)
+  }
+
+  /**
+    * convenience method for reading a file into a string
+    *
+    * @param f the source file
+    * @return s the file content (line terminators are \n)
+    */
+  def read(f: File): String = {
+    val s = new StringBuilder
+    ReadLineWise(f) {l => s.append(l + "\n")}
+    s.result
   }
 
   /** convenience method to read a file line by line

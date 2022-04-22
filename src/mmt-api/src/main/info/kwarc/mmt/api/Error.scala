@@ -133,35 +133,32 @@ object Stacktrace {
   }
 }
 
-/** error levels, see [[Error]]
-  *
-  * even fatal errors can be ignored (by comparison)
-  */
 object Level {
-  type Level = Int
-  val Force = -1
-  val Info = 0
-  val Warning = 1
-  val Error = 2
-  val Fatal = 3
-  val Ignore = 4
+  /** error levels, see [[Error]]
+    *
+    * even fatal errors can be ignored (by comparison)
+    */
+  sealed abstract class Level(val toInt: Int) extends Ordered[Level] {
+    def compare(that: Level) = this.toInt-that.toInt
+  }
+  case object Info extends Level(0)
+  case object Warning extends Level(1)
+  case object Error extends Level(2)
+  case object Fatal extends Level(3)
 
   def parse(s: String): Level = s match {
-    case "0" => Info
-    case "1" => Warning
-    case "" | "2" => Error
-    case "3" => Fatal
+    case "0" | "info" => Info
+    case "1" | "warn" => Warning
+    case "" | "2" | "error" => Error
+    case "3" | "fatal" => Fatal
     case _ => throw ParseError("unknown error level: " + s)
   }
 
   def toString(l: Level): String = l match {
-    case -1 => "force"
-    case 0 => "info"
-    case 1 => "warn"
-    case 2 => "error"
-    case 3 => "fatal"
-    case 4 => "ignore"
-    case _ => "unknown" + l
+    case Info => "info"
+    case Warning => "warn"
+    case Error => "error"
+    case Fatal => "fatal"
   }
 }
 
@@ -229,7 +226,9 @@ case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, m
 case class ExecutionError(msg: String) extends Error(msg)
 
 /** other errors */
-case class GeneralError(s: String) extends Error("general error: " + s)
+case class GeneralError(s: String) extends Error("general error: " + s) {
+  override def level = Level.Fatal
+}
 
 /** errors during library operations */
 abstract class LibraryError(s: String) extends Error(s) with ContentError
@@ -291,33 +290,21 @@ abstract class ExtensionError(prefix: String, s: String) extends Error(prefix + 
   * might produce a non-fatal error.
   */
 abstract class ErrorHandler {
-  /** the global indicator for errors that is not reset by mark */
-  private var newErrors = false
-  private var assumeNoErrors = true
-
-  def mark {
-    assumeNoErrors = true
-  }
-
+  /** true if an error was added since last reset */
+  protected var newErrors = false
   def reset = {
     newErrors = false
-    assumeNoErrors = true
   }
-
-  /** true if errors occurred since ~creation~ last reset */
+  /** true if errors occurred since last reset */
   def hasNewErrors: Boolean = newErrors
-
-  /** true if no new errors occurred since the last call to mark */
-  def noErrorsAdded: Boolean = assumeNoErrors
 
   /** registers an error
     *
     * This should be called exactly once on every error, usually in the order in which they are found.
     */
   def apply(e: Error) {
-    if (e.level > 1) {
+    if (e.level > Level.Warning) {
       newErrors = true
-      assumeNoErrors = false
     }
     addError(e)
   }
@@ -341,14 +328,26 @@ abstract class ErrorHandler {
 
 
 /** Filters errors before passing them to the another error handler */
-class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) extends ErrorHandler {
-  override def mark = handler.mark
-  override def hasNewErrors = handler.hasNewErrors
-  override def catchIn(a: => Unit) = handler.catchIn(a)
-  override def apply(e: Error) = if (filter(e)) handler.apply(e) //otherwise ignore
+abstract class FilteringErrorHandler(handler: ErrorHandler) extends ErrorHandler {
+  def filter(e:Error): Boolean
+  override def apply(e: Error) = {
+    if (filter(e)) {
+      newErrors = true
+      handler.apply(e)
+    } //otherwise ignore
+  }
   def addError(e : Error) = {} //nothing to do here, not called
 }
 
+/** handles only error at or above a certain threshold */
+class HandlerWithTreshold(handler: ErrorHandler, threshold: Level.Level) extends FilteringErrorHandler(handler) {
+  def filter(e: Error) = e.level >= threshold
+}
+
+/** trivial filter that accepts everything; still useful because it allows tracking if new errors have occurred */
+class TrackingHandler(handler: ErrorHandler) extends FilteringErrorHandler(handler) {
+  def filter(e: Error) = true
+}
 
 /** an error handler that needs opening and closing */
 abstract class OpenCloseHandler extends ErrorHandler {
@@ -378,23 +377,19 @@ class MultipleErrorHandler(handlers: List[ErrorHandler]) extends OpenCloseHandle
 /** stores errors in a list */
 class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
   private var errors: List[Error] = Nil
-
   protected def addError(e: Error) {
     this.synchronized {
       errors ::= e
     }
     report.foreach(_ (e))
   }
-
   def isEmpty: Boolean = errors.isEmpty
-
   override def reset() {
     errors = Nil
     super.reset
   }
-
-
   def getErrors: List[Error] = errors.reverse
+  def maxLevel = if (errors.isEmpty) Level.Info else errors.map(_.level).max
 }
 
 /** writes errors to a file in XML syntax

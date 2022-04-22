@@ -206,7 +206,7 @@ object Query {
       QueryFunctionApply(fun, parse(q), Nil)
 
     case _ =>
-      throw ParseError("illegal query expression: " + Sourceable(t))
+      throw ParseError("illegal query expression: " + t)
   }
 
   /**

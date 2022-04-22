@@ -67,14 +67,14 @@ trait Exporter extends BuildTarget {self =>
     */
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit
 
-  def build(a: Archive, w: Build, in: FilePath) {
-    narrationExporter.build(a, w, in)
+  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
+    narrationExporter.build(a, w, in, errorCont)
     // find all modules in documents at path 'in'
     val doc = controller.getAs(classOf[Document], DPath(a.narrationBase / in))
     val mods = doc.getModules(controller.globalLookup)
     mods.foreach {p =>
       val modPath = Archive.MMTPathToContentPath(p)
-      contentExporter.build(a, w, modPath)
+      contentExporter.build(a, w, modPath, errorCont)
     }
   }
 

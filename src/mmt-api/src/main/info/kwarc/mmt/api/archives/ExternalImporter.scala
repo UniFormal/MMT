@@ -26,7 +26,7 @@ abstract class ExternalImporter extends Importer {
     runExternalTool(bf, outFile)
     def error(msg: String) {
       val ref = SourceRef(FileURI(bf.inFile), parser.SourceRegion.none)
-      val e = CompilerError(key, ref, List(msg), Level.Fatal)
+      val e = CompilerError(key, ref, List(msg), Level.Error)
       bf.errorCont(e)
     }
     if (!(outFile.exists && outFile.length > 0)) {

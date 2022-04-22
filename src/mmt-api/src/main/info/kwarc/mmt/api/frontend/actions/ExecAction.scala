@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend.actions
 
-import info.kwarc.mmt.api.ParseError
-import info.kwarc.mmt.api.frontend.{Controller, MMTILoop}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils.File
 
 /** shared base class for actions related to execution of Action code */
@@ -11,8 +11,8 @@ sealed abstract class ExecAction extends Action
   *
   * concrete syntax: file file:FILE
   */
-case class ExecFile(file: File, name: Option[String]) extends ExecAction {
-  def apply() {controller.runMSLFile(file, name)}
+case class ExecFile(file: File, name: Option[String]) extends ExecAction with ActionWithErrorRecovery {
+  def apply(errorCont: Option[ErrorHandler]) {controller.runMSLFile(file, name, true, errorCont)}
   def toParseString = s"file $file ${name.map(" " + _).getOrElse("")}"
 }
 object ExecFileCompanion extends ActionCompanion("load a file containing commands and execute them", "file") {
@@ -34,11 +34,10 @@ object ScalaCompanion extends ActionCompanion("run a Scala interpreter or evalua
 }
 
 /** helper functions for [[ExecAction]]s */
-trait ExecActionHandling {
-  self: Controller =>
+trait ExecActionHandling{self: Controller =>
 
   /** runs a given file, handling [[ExecFile]] */
-  def runMSLFile(f: File, nameOpt: Option[String]) {
+  def runMSLFile(f: File, nameOpt: Option[String], showLog: Boolean, errorCont: Option[ErrorHandler]) {
     val folder = f.getParentFile
     // store old state, and initialize fresh state
     val oldHome = state.home
@@ -46,7 +45,7 @@ trait ExecActionHandling {
     state.home = folder
     state.currentActionDefinition = None
     // execute the file
-    File.read(f).split("\\n").foreach(f => handleLine(f))
+    File.read(f).split("\\n").foreach(f => handleLine(f, showLog, errorCont))
     if (state.currentActionDefinition.isDefined)
       throw ParseError("end of definition expected")
     // restore old state

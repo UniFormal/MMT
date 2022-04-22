@@ -5,20 +5,14 @@ import actions._
 import archives._
 import backend._
 import checking._
-import libraries._
 import opaque._
 import parser._
 import presentation._
 import symbols._
 import proving._
 import uom._
-import presentation._
 import utils._
-import utils.MyList._
 import web._
-
-import scala.util.Try
-
 
 trait Extension extends Logger {
   /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
@@ -336,7 +330,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     // graphs: loading these here is practical even though they need the path to dot (which will be retrieved via getEnvvar)
     List(new DeclarationTreeExporter, new DependencyGraphExporter, new TheoryGraphExporter).foreach(addExtension(_))
     // shell extensions
-    List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
+    List(new ShellSendCommand, new execution.ExecuteFromShell, new Make, new RunFile).foreach(addExtension(_))
 
     addExtension(new AbbreviationRuleGenerator)
     
@@ -350,10 +344,10 @@ class ExtensionManager(controller: Controller) extends Logger {
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
         MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
         ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHOpenCompanion, LMHUseCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
-        ClearCompanion, ExitCompanion, SetBaseCompanion,
+        ClearCompanion, ExitCompanion, SetBaseCompanion, SuppressErrorsCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
-        ArchiveBuildCompanion, ConfBuildCompanion, ArchiveMarCompanion,
+        ArchiveBuildCompanion, ArchiveMarCompanion,
     ).foreach{e => addExtension(e)}
     // This **must** be at the end, to act as a default for stuff
     addExtension(GetActionCompanion)

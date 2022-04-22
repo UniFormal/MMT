@@ -717,7 +717,7 @@ class GraphOptimizationTool extends BuildTarget {
   }
 
   /** build or update this target in a given archive */
-  override def build(a: Archive, w: Build, in: FilePath): Unit = {
+  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
     val theories = a.allContent.flatMap({p:MPath => controller.get(p) match { case dt : Theory => Some(p) case _ => None}})
     val replacements = findReplacements(theories, interactive = false)
     val output = toXML(replacements)

@@ -21,7 +21,7 @@ import MMTSystem._
 class Setup extends ShellExtension("setup") {
    def helpText =
      """
-       |usage: setup [SYSTEM [CONTENT [JEDIT [--no-content]]]]
+       |usage: setup [SYSTEM [CONTENT [JEDIT [BRANCH]]]]
        |
        | Automatically generate an MMT Configuration File.
        |
@@ -30,15 +30,14 @@ class Setup extends ShellExtension("setup") {
        |  JEDIT:        JEdit Folder to load jedit into.
        |                If omitted, detected automatically.
        |                If set to ":", no jedit setup is performed.
-       |  --no-content: If given, Content Path will be set in the config file, but no
-       |                archives will be installed.
-       |
+       |  BRANCH:       The branch of the content archives to install.
+       |                Empty for main branch. --no-content to avoid installing archives.
      """.stripMargin
 
    /** a function to log a message */
    val log: String => Unit = println
 
-   def run(shell: Shell, args: List[String]): Boolean = {
+   def run(shell: Shell, args: List[String]): Option[Level.Level] = {
       log("\n\n\n\nThis is MMT's setup routine.\n" +
               "MMT is provided self-contained, so there is not much to do.\n" +
               "But I'll create a few auxiliary files for you and (if you have 'git' and internet) checkout some basic archives.\n" +
@@ -47,7 +46,7 @@ class Setup extends ShellExtension("setup") {
       val l = args.length
       if (l > 4) {
         log(helpText)
-        return true
+        return withError
       }
 
       val (sysFolder, conFolder, jeditSettingsFolder, installContent) = if (l == 0) {
@@ -73,7 +72,7 @@ class Setup extends ShellExtension("setup") {
            if (j.segments.isEmpty) None
            else Some(File(j))
         }
-        (sf, cf, jsf, true)
+        (sf, cf, jsf, Some(""))
       } else {
         // setup via command line arguments
         val sf = File(args(0))
@@ -89,12 +88,15 @@ class Setup extends ShellExtension("setup") {
         } else {
           OS.jEditSettingsFolder
         }
-        val ic = if(l >= 4) args(3) != "--no-content" else true
+        val ic = if(l >= 4) {
+          if (args(3) == "--no-content") None
+          else Some(args(3))
+        } else Some("")
         (sf, cf, jsf, ic)
       }
       setup(sysFolder, conFolder, jeditSettingsFolder.map(f => (shell,f)), installContent=installContent)
       shell.getString("\n\nPress return to exit.", None)
-      true
+      withSuccess
    }
 
    /**
@@ -102,9 +104,9 @@ class Setup extends ShellExtension("setup") {
     * @param systemFolder create folder MMT/deploy/mmt.jar and auxiliary files in this folder
     * @param contentFolder add this folder as the default folder containing archives, clone MathHub/MMT/examples into here
     * @param setupJEdit if given, also install MMT as a plugin for jEdit
-    * @param installContent if set to false, to do install the content archives
+    * @param installContent if given, the branch of the content archives to install (Some("") for main branch)
     */
-   def setup(systemFolder: File, contentFolder: File, setupJEdit: Option[(Shell, File)], installContent: Boolean = true) {
+   def setup(systemFolder: File, contentFolder: File, setupJEdit: Option[(Shell, File)], installContent: Option[String] = Some("")) {
      //log("\n\nI'm going to try to set things up now.\n" +
      //         "If the following code fails and no help is around, you can try looking at the source code in info.kwarc.mmt.doc.Setup\n")
 
@@ -174,12 +176,13 @@ class Setup extends ShellExtension("setup") {
 
       contentFolder.mkdirs
 
-      if (installContent) {
+      installContent.foreach {b =>
         // log("cloning or downloading content repositories (I'll try to use git; if that fails, I download a zip file)")
         log("cloning content repositories via git")
+        val branchSuffix = if (b.nonEmpty) "" else "@" + b
         try {
-          controller.handleLine("lmh install MMT/examples")
-          controller.handleLine("lmh install MMT/LATIN2")
+          controller.handleLine("lmh install MMT/examples" + branchSuffix)
+          controller.handleLine("lmh install MMT/LATIN2"+ branchSuffix)
         } catch {case e: Error =>
           log(e.toStringLong)
         }

@@ -23,7 +23,7 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
     ce.errorCont(e)
   }
 
-  def extSimpEnv = new uom.ExtendedSimplificationEnvironment(ce.simpEnv, ce.simplifier.objectLevel, rules)
+  def extSimpEnv = uom.ExtendedSimplificationEnvironment(ce.simpEnv, ce.simplifier.objectLevel, rules)
 }
 
 /** auxiliary class for the [[MMTStructureChecker]] to store expectations about a constant */
@@ -823,9 +823,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @return the reconstructed term and a flag to signal if there were errors
     */
   private def checkTermTop(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): (Term, Boolean) = {
-    env.ce.errorCont.mark
-    val tR = checkTerm(context, t)(env,t)
-    (tR, env.ce.errorCont.noErrorsAdded)
+    // wrap the error handler in a tracker to see if this term introduced errors
+    val envTracking = env.copy(ce = env.ce.copy(errorCont = new TrackingHandler(env.ce.errorCont)))
+    val tR = checkTerm(context, t)(envTracking,t)
+    (tR, envTracking.ce.errorCont.hasNewErrors)
   }
 
   /**
