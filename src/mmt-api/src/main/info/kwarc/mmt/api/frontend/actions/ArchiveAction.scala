@@ -51,7 +51,7 @@ trait ArchiveActionHandling {self: Controller =>
     ids.foreach { id =>
       val arch = backend.getArchive(id) getOrElse (throw ArchiveError(id, "archive not found"))
       // if the current directory is the archive's source directory, an initial "." refers to the current directory
-      val in = if (inRaw.startsWith(".")) {
+      val in = if (inRaw.segments.headOption contains ".") {
         (state.home - arch/source) match {
           case Some(p) => p / inRaw.tail
           case None => inRaw

@@ -71,8 +71,6 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * move a delimiter from left to found and addPrepickedDelims if necessary
     */
    private def deleteDelim(index: Int) {
-      if (!left.head.isInstanceOf[Delimiter])
-        true
       val delim = left.head.asInstanceOf[Delimiter]
       found ::= FoundDelim(index, delim)
       left = left.tail

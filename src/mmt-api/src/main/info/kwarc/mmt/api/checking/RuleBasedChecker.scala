@@ -28,7 +28,6 @@ class RuleBasedChecker extends ObjectChecker {
 
       def fail(msg: String) = {
         env.errorCont(InvalidUnit(cu, NoHistory, msg))
-        val tm = ParseResult
         CheckingResult(false, None, prOrg.toTerm)
       }
       if (cu.isKilled) {
