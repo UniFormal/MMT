@@ -130,8 +130,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       } else None
     } else if (filter(inFileName) && filterDir(inFile.up.getName)) {
       if (!forClean && !inFile.existsCompressed) {
-        if (sendLog) log("file does not exist: " + inFile)
-        None
+        throw ArchiveError(id, "file does not exist: " + inFile)
       } else
         Some(onFile(Current(inFile, in)))
     } else {

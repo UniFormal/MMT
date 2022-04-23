@@ -71,6 +71,8 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * move a delimiter from left to found and addPrepickedDelims if necessary
     */
    private def deleteDelim(index: Int) {
+      if (!left.head.isInstanceOf[Delimiter])
+        true
       val delim = left.head.asInstanceOf[Delimiter]
       found ::= FoundDelim(index, delim)
       left = left.tail
@@ -244,7 +246,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                        delete(numCurrentTokens)
                        deleteDelim(currentIndex)
                     }
-                 } else if (ns.length > numCurrentTokens) {
+                 } else if (ns.length < numCurrentTokens) {
                     // if more tokens available than needed, merge all remaining tokens into the last argument
                     //TODO use matched tokens as delimiters, merge in between them
                     onApplyI {currentIndex =>

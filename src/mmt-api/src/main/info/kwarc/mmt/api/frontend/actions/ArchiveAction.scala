@@ -10,7 +10,9 @@ import info.kwarc.mmt.api.utils._
 sealed abstract class ArchiveAction extends Action {}
 
 case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetModifier, in: FilePath = EmptyPath) extends ArchiveAction with ActionWithErrorRecovery {
-  def apply(errorCont: Option[ErrorHandler]) = controller.buildArchive(ids, dim, modifier, in, errorCont)
+  def apply(errorCont: Option[ErrorHandler]) = {
+    controller.buildArchive(ids, dim, modifier, in, errorCont)
+  }
   def toParseString = s"build ${MyList(ids).mkString("[", ",", "]")} ${modifier.toString(dim)}" +
     (if (in.segments.isEmpty) "" else " " + in)
 }
@@ -45,9 +47,16 @@ trait ArchiveActionHandling {self: Controller =>
     * Builds a given target from an Archive, handling the [[ArchiveBuild]] Action
     *
     */
-  def buildArchive(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath, errorCont: Option[ErrorHandler]) {
+  def buildArchive(ids: List[String], key: String, mod: BuildTargetModifier, inRaw: FilePath, errorCont: Option[ErrorHandler]) {
     ids.foreach { id =>
       val arch = backend.getArchive(id) getOrElse (throw ArchiveError(id, "archive not found"))
+      // if the current directory is the archive's source directory, an initial "." refers to the current directory
+      val in = if (inRaw.startsWith(".")) {
+        (state.home - arch/source) match {
+          case Some(p) => p / inRaw.tail
+          case None => inRaw
+        }
+      } else inRaw
       key match {
         case "check" => arch.check(in, this)
         case "validate" => arch.validate(in, this)

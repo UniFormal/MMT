@@ -30,7 +30,6 @@ case class File(toJava: java.io.File) {
     rel
   }
 
-
   /** opens this file using the associated (native) application */
   def openInOS() {
     Desktop.getDesktop.open(toJava)
@@ -110,7 +109,6 @@ case class File(toJava: java.io.File) {
   /** removes the last file extension (if any) */
   def stripExtensionCompressed = Compress.normalize(this).stripExtension
 
-
   /** @return children of this directory */
   def children: List[File] = {
     if (toJava.isFile) Nil else {
@@ -131,6 +129,9 @@ case class File(toJava: java.io.File) {
   /** @return true if that begins with this */
   def <=(that: File) = that.segments.startsWith(segments)
 
+  /** if that<=this, return the remainder of this */
+  def -(that: File) = if (that <= this) Some(FilePath(this.segments.drop(that.segments.length))) else None
+
   /** delete this, recursively if directory */
   def deleteDir {
    children foreach {c =>
@@ -150,7 +151,9 @@ case class FilePath(segments: List[String]) {
   def dirPath = FilePath(if (segments.nonEmpty) segments.init else Nil)
 
   /** append a segment */
-  def /(s: String): FilePath = FilePath(segments ::: List(s))
+  def /(s: String): FilePath = this / FilePath(List(s))
+  /** append a path */
+  def /(p: FilePath): FilePath = FilePath(segments ::: p.segments)
 
   override def toString: String = segments.mkString("/")
 
