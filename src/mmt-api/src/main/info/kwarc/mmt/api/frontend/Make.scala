@@ -86,11 +86,11 @@ class RunFile extends ShellExtension("file") {
     val maxLev = errorCont.maxLevel
     val groups = errors.groupBy(_.level)
     val actualErrors = groups.getOrElse(Level.Error, Nil)
-    val msg = groups.map {case (l,es) => s"${es.length} ${l}s"}.mkString(", ")
+    val msg = if (groups.isEmpty) "no errors" else groups.map {case (l,es) => s"${es.length} ${l}s"}.mkString(", ")
     val excMsg = if (actualErrors.isEmpty) ""
       else "; among the errors: " +
         actualErrors.groupBy(_.excuse).map {case (exc,es) => s"${es.length} ${Level.excuseOStr(exc)}s"}.mkString(", ")
-    log(s"finished with $msg$excMsg")
+    log("finished with " + msg + excMsg)
     if (maxLev <= Level.Error && actualErrors.forall(_.excuse.isDefined)) {
       // we succeed overall if there were at most warnings or excusable errors
       Some(Level.Info)
