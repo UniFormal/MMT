@@ -163,11 +163,12 @@ trait SolverAlgorithms {self: Solver =>
      // continuation if we resort to infering the type of tm
      def checkByInference(tpS: Term, h: History): Boolean = {
        log("checking by inference")
-       inferType(tm)(stack, h + "inferring type") match {
+       val hI = h + "inferring type"
+       inferType(tm)(stack, hI) match {
          case Some(tmI) =>
            checkAfterInference(tmI, tpS, h)
          case None =>
-           delay(Typing(stack, tm, tpS, j.tpSymb))(h + "no applicable typing rule and type inference failed")
+           delay(Typing(stack, tm, tpS, j.tpSymb))(hI + "no applicable typing rule and type inference failed")
        }
      }
 
@@ -556,8 +557,12 @@ trait SolverAlgorithms {self: Solver =>
              history += "lookup in theory"
              getType(p) orElse {
                getDef(p) match {
-                 case None => None
-                 case Some(d) => inferType(d) // expand defined constant
+                 case None =>
+                   history += "no type or definiens"
+                   None
+                 case Some(d) =>
+                   history += "no type, inferring from definiens"
+                   inferType(d) // expand defined constant
                }
              }
           // note that OML's do not have a generally-defined type

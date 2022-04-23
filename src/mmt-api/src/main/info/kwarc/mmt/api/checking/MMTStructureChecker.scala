@@ -826,7 +826,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     // wrap the error handler in a tracker to see if this term introduced errors
     val envTracking = env.copy(ce = env.ce.copy(errorCont = new TrackingHandler(env.ce.errorCont)))
     val tR = checkTerm(context, t)(envTracking,t)
-    (tR, envTracking.ce.errorCont.hasNewErrors)
+    (tR, !envTracking.ce.errorCont.hasNewErrors)
   }
 
   /**

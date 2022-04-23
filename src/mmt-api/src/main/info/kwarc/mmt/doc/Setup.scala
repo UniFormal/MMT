@@ -181,6 +181,7 @@ class Setup extends ShellExtension("setup") {
         log("cloning content repositories via git")
         val branchSuffix = if (b.nonEmpty) "" else "@" + b
         try {
+          controller.handleLine("lmh install MMT/urtheories" + branchSuffix)
           controller.handleLine("lmh install MMT/examples" + branchSuffix)
           controller.handleLine("lmh install MMT/LATIN2"+ branchSuffix)
         } catch {case e: Error =>

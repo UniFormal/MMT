@@ -67,6 +67,9 @@ class RunFile extends ShellExtension("file") {
       return withError
     }
     val file = File(args(0))
+    doIt(file)
+  }
+  def doIt(file: File) = {
     controller.report.addHandler(ConsoleHandler)
     controller.report.groups += "debug"
     val errorCont = new ErrorContainer(Some(report))

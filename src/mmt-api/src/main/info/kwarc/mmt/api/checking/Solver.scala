@@ -473,11 +473,21 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * returns nothing if the type could not be reconstructed
     */
    def getType(p: GlobalName)(implicit h: History): Option[Term] = {
-      val c = getConstant(p).getOrElse {return None}
+      val c = getConstant(p).getOrElse {
+        h += "constant not found"
+        return None
+      }
+      if (!c.tpC.isDefined) {
+        h += "constant has no type"
+        return None
+      }
       val t = c.tpC.getAnalyzedIfFullyChecked
-      if (t.isDefined)
+      if (t.isDefined) {
         addDependency(p $ TypeComponent)
-      t
+      } else {
+        h += "type of constant not fully checked"
+      }
+     t
    }
    
    /** retrieves the definiens of a constant and registers the dependency

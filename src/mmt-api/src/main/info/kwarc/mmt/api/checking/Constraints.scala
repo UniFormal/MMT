@@ -77,6 +77,10 @@ class History(var steps: List[HistoryEntry]) {
    def +=(h: History) {steps :::= h.steps.map(e => IndentedHistoryEntry(e, inc))}
    /** appends a child to the leaf */
    def +=(s: => String) {this += Comment(() => s)}
+   /** pre: that is extension of this, post: this == that */
+   def mergeIn(that: History) {
+     steps :::= that.steps.take(that.steps.length-this.steps.length)
+   }
    /** creates a copy of the history that can be passed when branching */
    def branch = new History(steps)
    /** get the steps */

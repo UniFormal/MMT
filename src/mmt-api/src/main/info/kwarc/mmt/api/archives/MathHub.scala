@@ -293,9 +293,9 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       }
       return Some(_entry)
     }
-    // first try to install via git
+    // try to install via git
     val gitInstall = installGit(id, version)
-    // if that has failed, try to download normally
+    // there used to be code here that downloaded the zip
     gitInstall orElse {
       logError(s"installation has failed, please make sure that git is installed and try again. ")
       None
