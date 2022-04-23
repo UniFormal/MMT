@@ -69,18 +69,33 @@ class RunFile extends ShellExtension("file") {
     val file = File(args(0))
     doIt(file)
   }
-  def doIt(file: File) = {
+  def doIt(file: File): Option[Level.Level] = {
     controller.report.addHandler(ConsoleHandler)
     controller.report.groups += "debug"
+    controller.report.groups += logPrefix
     val errorCont = new ErrorContainer(Some(report))
-    val maxErrorLevel = try {
+    try {
       controller.runMSLFile(file,None,true,Some(errorCont))
-      errorCont.maxLevel
     } catch {
       case e: Exception =>
         errorCont(Error(e))
-        Level.Fatal
+        log("interrupted due to unrecovered error")
+        return Some(Level.Fatal)
     }
-    Some(maxErrorLevel)
+    val errors = errorCont.getErrors.filter(_.level >= Level.Warning)
+    val maxLev = errorCont.maxLevel
+    val groups = errors.groupBy(_.level)
+    val actualErrors = groups.getOrElse(Level.Error, Nil)
+    val msg = groups.map {case (l,es) => s"${es.length} ${l}s"}.mkString(", ")
+    val excMsg = if (actualErrors.isEmpty) ""
+      else "; among the errors: " +
+        actualErrors.groupBy(_.excuse).map {case (exc,es) => s"${es.length} ${Level.excuseOStr(exc)}s"}.mkString(", ")
+    log(s"finished with $msg$excMsg")
+    if (maxLev <= Level.Error && actualErrors.forall(_.excuse.isDefined)) {
+      // we succeed overall if there were at most warnings or excusable errors
+      Some(Level.Info)
+    } else {
+      Some(maxLev)
+    }
   }
 }

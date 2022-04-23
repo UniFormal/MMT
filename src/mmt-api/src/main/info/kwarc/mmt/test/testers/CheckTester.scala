@@ -110,8 +110,8 @@ trait CheckTester extends BaseTester {
 
         // build an info message to show the user
         val countMessage = messageCounts.map({
-          case (t: Level, 1) => s"1 ${Level.toString(t)}"
-          case (t: Level, c) => s"$c ${Level.toString(t)}s"
+          case (t: Level, 1) => s"1 ${t.toString}"
+          case (t: Level, c) => s"$c ${t.toString}s"
         }).mkString(", ")
 
         statusMessage.append(s"$messagePrefix: $countMessage ")

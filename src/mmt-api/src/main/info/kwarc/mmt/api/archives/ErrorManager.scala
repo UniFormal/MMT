@@ -49,7 +49,7 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     val sourceURI = data.sourceRef.fold("")(_.container.toString)
     val sourceFile = if (sourceURI.startsWith("file:")) sourceURI.substring(5) else ""
     val source = if (File(sourceFile).exists()) sourceFile else ""
-    List(if (clean || msg == "no error") "" else Level.toString(data.level),
+    List(if (clean || msg == "no error") "" else data.level.toString,
       data.child.toString,
       archive.root.up.getName,
       archive.root.getName,

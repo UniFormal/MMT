@@ -13,8 +13,8 @@ import utils._
 /** customizes the default errors of the ErrorList plugin
  *  @param mainFile the file whose checking led to the error (may differ from the file that contains the error)
  */
-case class MMTError(val mainFile: File, es: ErrorSource, el: Level.Level, sf: String, sl: Int, sc: Int, ec: Int, msg: String, extraMsg: List[String])
-   extends DefaultErrorSource.DefaultError(es, MMTError.mmtLevelTojEditLevel(el), sf, sl, sc, ec, msg) {
+case class MMTError(mainFile: File, es: ErrorSource, error: Error, sf: String, sl: Int, sc: Int, ec: Int, msg: String, extraMsg: List[String])
+   extends DefaultErrorSource.DefaultError(es, MMTError.mmtLevelTojEditLevel(error), sf, sl, sc, ec, msg) {
   extraMsg foreach {m => addExtraMessage(m)}
 }
 
@@ -29,14 +29,14 @@ object MMTError {
          (l, pos.offset-buf.getLineStartOffset(l))
        } else
          (pos.line,pos.column)
-       new MMTError(mainFile, es, e.level, sf, line, column, column + reg.length, msg, extraMsg)
+       new MMTError(mainFile, es, e, sf, line, column, column + reg.length, msg, extraMsg)
      } catch {
        case t: Exception =>
          val tMsg = "error while creating error (illegal region?: " + reg + ")" 
-         new MMTError(mainFile, es, e.level, sf, 0, 0, 1, tMsg, msg :: extraMsg)
+         new MMTError(mainFile, es, e, sf, 0, 0, 1, tMsg, msg :: extraMsg)
      }
   }
-  def mmtLevelTojEditLevel(mmtLevel: Level.Level): Int = if (mmtLevel >= Level.Error) ErrorSource.ERROR else ErrorSource.WARNING
+  def mmtLevelTojEditLevel(e: Error): Int = if (e.level >= Level.Error && e.excuse.isEmpty) ErrorSource.ERROR else ErrorSource.WARNING
 }
    
 /** customizes the default error source of the ErrorList plugin */
@@ -143,7 +143,7 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
       case e: Error =>
          // other errors, should not happen
          val msg =  "error with unknown location: " + e.getMessage
-         val error = new MMTError(mainFile, errorSource, e.level, mainFile.toString, 0, 0, 1, msg, stringToList(e.toStringLong,"\n"))
+         val error = new MMTError(mainFile, errorSource, e, mainFile.toString, 0, 0, 1, msg, stringToList(e.toStringLong,"\n"))
          errorSource.addError(error)
    }
 }

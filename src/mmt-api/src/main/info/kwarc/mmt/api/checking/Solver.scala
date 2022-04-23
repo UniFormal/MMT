@@ -253,7 +253,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /** true if unsolved variables are left */
    def hasUnsolvedVariables : Boolean = solution.toSubstitution.isEmpty
    /** true if all judgments solved so far succeeded (all variables solved, no delayed constraints, no errors) */
-   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.forall(_.level < Level.Error)
+   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.isEmpty
    /** the solution to the constraint problem
     *
     * @return None if there are unresolved constraints or unsolved variables; Some(solution) otherwise
@@ -735,20 +735,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    // ******************************** error reporting
 
   /** registers an error, returns false */
-  override def error(message: => String)(implicit history: History): Boolean = {
+  override def error(message: => String, exc: Option[Level.Excuse] = None)(implicit history: History): Boolean = {
       log("error: " + message)
       history += message
       val level = Level.Error
-      addError(SolverError(level, history))
-      false
-  }
-  /** registers a warning, returns false */
-  def warning(message: => String)(implicit history: History): Boolean = {
-      log("warning: " + message)
-      val h = Comment(() => message)
-      history += h
-      val level = Level.Warning
-      addError(SolverError(level, history,Some(cont => h.present(cont))))
+      val e = SolverError(exc, history)
+      addError(e)
       false
   }
 
@@ -774,7 +766,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       val bi = new BranchInfo(h, getCurrentBranch)
       addConstraint(new DelayedJudgement(j, bi, notTriedYet = true))(h)
       activateRepeatedly
-      if (errors.exists(_.level >= Level.Error)) {
+      if (errors.nonEmpty) {
         // definitely disproved
         false
       } else {
@@ -953,7 +945,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
                       if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
                         // the user explicitly asked for this term to be filled in
                         solve(vd.name, FreeOrAny(tpCon, Hole(tp)))
-                        error("unsolved hole")
+                        error("unsolved hole", Some(Level.Gap))
                       } else {
                         error("unsolved (typed) unknown: " + vd.name)
                       }
@@ -1069,7 +1061,7 @@ object Stability {
 case class TypeBound(bound: Term, upper: Boolean)
 
 /** error/warning produced by [[Solver]] */
-case class SolverError(level: Level.Level, history: History,msgO : Option[(Obj => String) => String]= None) {
+case class SolverError(excuse: Option[Level.Excuse], history: History,msgO : Option[(Obj => String) => String]= None) {
   def msg(implicit cont : Obj => String) = msgO.map(_.apply(cont)).getOrElse(history.steps.head.present(cont))
 }
 

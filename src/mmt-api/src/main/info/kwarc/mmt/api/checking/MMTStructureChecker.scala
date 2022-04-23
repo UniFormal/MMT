@@ -573,7 +573,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val total = unmappedNames.isEmpty
     if (!total) {
       val ie = new InvalidElement(mod, mod.feature + " is not total") {
-        override def level = Level.Warning
+        override val excuse = Some(Level.Gap)
         override def extraMessage = unmappedNames.mkString("\n")
       }
       env.errorCont(ie)
@@ -1050,8 +1050,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     // subs is total if all names in fromDomain have been removed or are defined to begin with
     if (!allowPartial) {
       val left = fromDomain.filterNot(_.defined)
-      if (left.nonEmpty)
-        env.errorCont(InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")))
+      if (left.nonEmpty) {
+        val e = new InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")) {
+          override val excuse = Some(Level.Gap)
+        }
+        env.errorCont(e)
+      }
     }
     // finally, check the individual maps in subs
     subs.map {

@@ -16,23 +16,23 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
 
   /** the severity of the error, override as needed */
   def level: Level = Level.Error
+  /** none by default, override for excusable errors */
+  val excuse: Option[Level.Excuse] = None
+
+  /** returns "level (excuse)" */
+  def levelString = level.toString + excuse.fold("")(e => s" ($e)")
 
   // this field is transient as some Throwables are not actually serialisable
   @transient private var causedBy: Option[Throwable] = None
-
   def getCausedBy : Option[Throwable] = causedBy
+  /** get the error due to which this error was thrown */
+  def setCausedBy(e: Throwable): this.type = {causedBy = Some(e); this}
 
   def getAllCausedBy: List[Throwable] = getCausedBy match {
     case None => Nil
     case Some(e: Error) =>
       e :: e.getAllCausedBy
     case Some(e) => List(e)
-  }
-  
-  /** get the error due to which this error was thrown */
-  def setCausedBy(e: Throwable): this.type = {
-    causedBy = Some(e)
-    this
   }
 
   protected def causedByToNode = causedBy match {
@@ -138,28 +138,32 @@ object Level {
     *
     * even fatal errors can be ignored (by comparison)
     */
-  sealed abstract class Level(val toInt: Int) extends Ordered[Level] {
-    def compare(that: Level) = this.toInt-that.toInt
-  }
-  case object Info extends Level(0)
-  case object Warning extends Level(1)
-  case object Error extends Level(2)
-  case object Fatal extends Level(3)
-
-  def parse(s: String): Level = s match {
-    case "0" | "info" => Info
-    case "1" | "warn" => Warning
-    case "" | "2" | "error" => Error
-    case "3" | "fatal" => Fatal
-    case _ => throw ParseError("unknown error level: " + s)
+  sealed abstract class Level(val toInt: Int,str: String) extends Ordered[Level] {
+    override def toString = str
+    def compare(that: Level) = this.toInt - that.toInt
   }
 
-  def toString(l: Level): String = l match {
-    case Info => "info"
-    case Warning => "warn"
-    case Error => "error"
-    case Fatal => "fatal"
+  case object Info extends Level(0,"info")
+  case object Warning extends Level(1,"warning")
+  case object Error extends Level(2,"error")
+  case object Fatal extends Level(3,"fatal error")
+
+  val levels = List(Info,Warning,Error,Fatal)
+  def parse(s: String): Level = {
+    levels.find(l => l.toInt.toString == s || l.toString == s).getOrElse {
+      if (s.isEmpty) Error else throw ParseError("unknown error level: " + s)
+    }
   }
+
+  /** errors may carry an excuse why the error may be acceptable */
+  sealed abstract class Excuse(str: String) {
+    override def toString = str
+  }
+  /** partial view, unresolved _, etc. */
+  case object Gap extends Excuse("gap")
+  /** MMT incompleteness */
+  case object Limitation extends Excuse("limitation")
+  def excuseOStr(e: Option[Excuse]) = e.fold("unexcused error")(_.toString)
 }
 
 /** errors in user content */
