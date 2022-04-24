@@ -17,7 +17,7 @@ import scala.util.Try
 class MathHub(val controller: Controller, var local: File, var remote: URI, var https: Boolean = true) extends LMHHub {
 
   /** implements git */
-  protected lazy val git: Git = MMTSystem.git
+  protected lazy val git: Git = utils.OS.git
 
   // PATHS
   def remoteURL(id : String): String = if(https) {

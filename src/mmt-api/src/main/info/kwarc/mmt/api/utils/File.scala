@@ -350,7 +350,10 @@ object File {
     properties
   }
   def readProperties(manifest: File) = readPropertiesFromString(File.read(manifest))
-  
+
+  /** current directory */
+  def currentDir = File(System.getProperty("user.dir"))
+
   /** copies a file */
   def copy(from: File, to: File, replace: Boolean): Boolean = {
     if (!from.exists || (to.exists && !replace)) {

@@ -41,7 +41,7 @@ class ControllerState {
   /** base URL In the local system
    *  initially the current working directory
    */
-  var home = File(System.getProperty("user.dir"))
+  var home = File.currentDir
 
   var actionDefinitions: List[Defined] = Nil
   var currentActionDefinition: Option[Defined] = None
