@@ -173,25 +173,33 @@ class Setup extends ShellExtension("setup") {
       installContent.foreach {b =>
         val baseArchives = List("urtheories","examples","LATIN2")
         log("cloning content repositories via git")
+        val rf = controller.extman.get(classOf[RunFile]).head
         val branch = if (b.isEmpty) "master" else b
+        var build = true
         try {
           baseArchives.foreach {a =>
+            log("cloning " + a)
             OS.git(contentFolderMMT, "clone", "-b", branch, "https://gl.mathhub.info/MMT/" + a) match {
-              case ShellCommand.Abort(e) => println("failed with message: " + e.getMessage)
-              case ShellCommand.Fail(op,_) => println(op)
-              case ShellCommand.Success(op) => println(op)
+              case ShellCommand.Abort(e) =>
+                log("failed with message: " + e.getMessage)
+                throw e
+              case ShellCommand.Fail(op,_) =>
+                log(op)
+                log("failed, skipping the building from now on")
+                build = false
+              case ShellCommand.Success(op) =>
+                log(op)
+                if (build) {
+                  log("building the repository (this may take a minute)")
+                  val ec = rf.doIt(contentFolderMMT / a / "build.msl")
+                  if (ec.get > Level.Info) {
+                    log("errors while building " + a + " (see output above)")
+                  }
+                }
             }
           }
-        } catch {case e: Error =>
-          log(e.toStringLong)
-        }
-        log("building content repositories (this may take a few minutes)")
-        val rf = controller.extman.get(classOf[RunFile]).head
-        baseArchives.foreach {a =>
-          val ec = rf.doIt(contentFolderMMT / a / "build.msl")
-          if (ec.get > Level.Info) {
-            log("errors while building " + a + " (see output above)")
-          }
+        } catch {case e: Exception =>
+          log(Error(e).toStringLong)
         }
         log("done\n")
       }
@@ -230,9 +238,9 @@ class Setup extends ShellExtension("setup") {
         case _ =>
       }
 
-     log("\n\n\nThat's it. If there are no error messages above, you're ready to go.")
-     log("\n\n\nIf git caused errors, you can just clone the archives manually and build them using `run-file :file PATH/TO/build.msl` in the above order.")
-     log(s"\n\nFor standalone use of MMT, the main jar to execute is `${deploy}/mmt.jar`. jEdit will find MMT automatically.")
-     log("\n\nTo force rerunning setup or to update MMT, just run `java -jar mmt.jar :setup` (or delete the generated `mmtrc` file and rerun MMT).")
+     log("\nThat's it. If there are no error messages above, you're ready to go.")
+     log("\nIf git caused errors, you can just clone the archives manually and build them using `run-file :file PATH/TO/build.msl` in the above order.")
+     log(s"\nFor standalone use of MMT, the main jar to execute is `${deploy}/mmt.jar`. jEdit will find MMT automatically.")
+     log("\nTo force rerunning setup or to update MMT, just run `java -jar mmt.jar :setup` (or delete the generated `mmtrc` file and rerun MMT).")
      }
 }

@@ -103,20 +103,37 @@ class Utils(base: File) {
   def settings: Map[String, String] = if (settingsFile.exists) File.readProperties(settingsFile) else Map[String, String]()
 
   /** executes a shell command (in the src folder) */
-  def runscript(command: List[String], home: File = src, waitFor: Boolean = true): Option[String] = {
+  def runscript(command: List[String], home: File = src, waitFor: Boolean = true) {
+    println("running: " + command.mkString(" "))
     val pb = sys.process.Process(command, home.getAbsoluteFile)
-    if (waitFor) Some(pb.!!) else {pb.run(false); None}
+    if (waitFor) pb.! else pb.run(false)
   }
 
   /** runs the mmt.jar command in a sister folder MMT-test */
   def testSetup {
     val test = (root / ".." / "MMT-test").canonical
     val jEdit = test / "jEdit"
-    test.mkdirs
+    jEdit.mkdirs
+    println("starting and killing jEdit so that it creates a fresh settings directory")
+    val initJEDit = s"jedit -settings=${jEdit}".split("\\s").toList
+    runscript(initJEDit, waitFor = false)
+    // need to wait a while before killing because it takes jEdit a while to start
+    import scala.concurrent.ExecutionContext.Implicits.global
+    scala.concurrent.Future {
+      Thread.sleep(10000)
+      println("killing jEdit now (from a different thread that has waited a while to give it time to start up)")
+      settings.get(killJEdit).foreach {x => runscript(List(x),waitFor = true)}
+    }
+
+    println("copying mmt.jar and running setup (including jEdit setup)")
     Utils.deployTo(test / "mmt.jar")(deploy / "mmt.jar")
-    // starts but can't read interactive input, echo | doesn't work either
+    // starts but can't read interactive input, echo | doesn't work either, so it's fully automated here
     val command = s"java -jar mmt.jar :setup --auto --auto devel $jEdit".split("\\s").toList
-    runscript(command, test, waitFor = false)
+    runscript(command, test, waitFor = true)
+
+    println("starting jEdit with a test file")
+    val plFile = test / "MMT-content" / "MMT" / "examples" / "source" / "logic" / "pl.mmt"
+    runscript(initJEDit ::: List(plFile.toString), waitFor = false)
   }
 
   // ************************************************** jEdit-specific code
