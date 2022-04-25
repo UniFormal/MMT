@@ -169,3 +169,10 @@ math {
     justify-content:center;
     align-self:center;
 }
+
+.font-normal {
+    font-family: STIXgeneral, Times, Symbol, cmr10, CMSY10, CMEX10, serif;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+}

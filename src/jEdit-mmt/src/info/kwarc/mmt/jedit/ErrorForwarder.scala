@@ -116,7 +116,7 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
                // find first WFJudgement whose region is within the failed checking unit
                declOpt flatMap {decl =>
                   SourceRef.get(decl).flatMap {bigRef =>
-                     steps.mapFind {s => 
+                     steps.mapFind {s =>
                        s.removeWrappers match {
                         case j: WFJudgement =>
                            SourceRef.get(j.wfo) flatMap {smallRef =>

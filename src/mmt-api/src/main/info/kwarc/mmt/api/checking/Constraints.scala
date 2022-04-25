@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.presentation.Presenter
 import objects._
 
 class BranchInfo(val history: History, val backtrack: Branchpoint)
@@ -91,6 +92,8 @@ class History(var steps: List[HistoryEntry]) {
        inc -=1
      }
    }
+
+  def present(p : Presenter) = steps.map(_.present(o => p.asString(o))).reverse.mkString("\n")
 
    override def toString = steps.map(_.toString).mkString("\n")
 

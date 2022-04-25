@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofsketch, HTMLSProofstep, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
+import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofsketch, HTMLSProofstep, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
 
 object OMDocExtension extends DocumentExtension {
 
@@ -61,6 +61,7 @@ object OMDocExtension extends DocumentExtension {
   }
 
   object FeatureRule extends HTMLRule {
+    override val priority: Int = -50
     override def apply(s: HTMLParser.ParsingState, n: HTMLParser.HTMLNode): Option[HTMLParser.HTMLNode] = {
       s match {
         case _:SemanticState if property(n).exists(_.startsWith("stex:feature:")) =>
@@ -74,6 +75,7 @@ object OMDocExtension extends DocumentExtension {
     UnknownPropertyRule,
     MathMLRule,
     FeatureRule,
+    SimpleHTMLRule("feature:structure",HTMLStructureFeature),
     SimpleHTMLRule("language",HTMLLanguageComponent),
     SimpleHTMLRule("theory",HTMLTheory),
     SimpleHTMLRule("problem",HTMLProblem),
@@ -83,10 +85,12 @@ object OMDocExtension extends DocumentExtension {
     SimpleHTMLRule("args",HTMLArityComponent),
     SimpleHTMLRule("macroname",HTMLMacroNameComponent),
     SimpleHTMLRule("assoctype",HTMLAssoctypeComponent),
+    SimpleHTMLRule("reorderargs",HTMLReorderComponent),
     SimpleHTMLRule("import",HTMLImport),
     SimpleHTMLRule("usemodule",HTMLUseModule),
     SimpleHTMLRule("copymodule",HTMLCopyModule(_,false)),
     SimpleHTMLRule("interpretmodule",HTMLCopyModule(_,true)),
+    SimpleHTMLRule("realize",HTMLRealization),
     SimpleHTMLRule("alias",HTMLAliasComponent),
     SimpleHTMLRule("notation",HTMLNotation),
     SimpleHTMLRule("donotcopy",HTMLDonotcopy),

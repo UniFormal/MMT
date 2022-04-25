@@ -729,7 +729,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       log("error: " + message)
       history += message
       val level = Level.Error
-      addError(SolverError(level, history))
+      addError(SolverError(level, history,Some(_ => message)))
       false
   }
   /** registers a warning, returns false */

@@ -460,6 +460,7 @@ trait SolverAlgorithms {self: Solver =>
     * post: subtyping judgment is covered
     */
    private def checkSubtyping(j: Subtyping)(implicit history: History): Boolean = {
+     if (j.tp1 hasheq j.tp2) return true
      implicit val stack = j.stack
      val tp1L = coerceToType(j.tp1)
      val tp2L = coerceToType(j.tp2)

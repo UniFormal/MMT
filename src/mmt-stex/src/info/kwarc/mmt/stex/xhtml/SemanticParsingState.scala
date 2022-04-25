@@ -1,16 +1,17 @@
 package info.kwarc.mmt.stex.xhtml
 
-import info.kwarc.mmt.api.{DPath, ErrorHandler, GetError, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
-import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler}
+import info.kwarc.mmt.api.{DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects.{Context, OMBIND, OMBINDC, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.ParseResult
-import info.kwarc.mmt.api.symbols.RuleConstantInterpreter
-import info.kwarc.mmt.stex.rules.{BindingRule, HTMLTermRule}
-import info.kwarc.mmt.stex.{STeX, STeXError}
+import info.kwarc.mmt.api.symbols.{Constant, RuleConstantInterpreter}
+import info.kwarc.mmt.stex.rules.{BindingRule, Getfield, HTMLTermRule, ModelsOf, RecType}
+import info.kwarc.mmt.stex.{SCtx, SOMB, SOMBArg, STeX, STeXError, STerm}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
 
 import scala.collection.mutable
+import scala.util.Try
 
 class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHandler, val dpath : DPath) extends HTMLParser.ParsingState(controller,rules) {
   override def error(s: String): Unit = eh(new STeXError(s,None,None))
@@ -88,40 +89,223 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
 
   def applyTerm(tm: Term): Term = traverser(tm, ())
   def applyTopLevelTerm(tm : Term) = {
-    val ntm = applyTerm(tm)
-    val freeVars = new Traverser[(mutable.Set[LocalName],mutable.Set[LocalName])] {
-      override def traverse(t: Term)(implicit con: Context, names: (mutable.Set[LocalName],mutable.Set[LocalName])): Term = t match {
-        case OMV(n) if t.metadata.get(ParseResult.unknown).isEmpty =>
-          names._1.addOne(n)
-          t
+    val ntm = /* if (reorder.isEmpty) */ applyTerm(tm)
+    /* else applyTerm(tm) match {
+      case OMA(f,args) => OMA(f,reorder.map(args(_)))
+      case SOMB(f, args) => SOMB(f,reorder.map(args(_)):_*)
+      case t => t
+    } */
+    class NameSet {
+      var frees: List[(LocalName,Option[Term])] = Nil
+      var unknowns: List[LocalName] = Nil
+    }
+    val traverser = new Traverser[(NameSet,Boolean)] {
+      def reorder(tm: OMA): OMA = {
+        val head = tm match {
+          case OMA(OMS(p),_) => p
+          case OMA(OMV(_),_) => return tm
+          case OMA(Getfield(t,f),_) => getOriginal(t,f).map(_.path).getOrElse{ return tm}
+        }
+        controller.getO(head) match {
+          case Some(c: Constant) =>
+            val reordered = OMDocHTML.getReorder(c) match {
+              case Nil => tm.args
+              case ls => ls.map(tm.args(_)) //OMA(tm.fun, ls.map(tm.args(_)))
+            }
+            tm.copy(args=reordered)
+          case _ => tm
+        }
+      }
+
+      def reorder(tm: OMBINDC): OMBINDC = tm match {
+        case SOMB(f@OMS(p), args) =>
+          controller.getO(p).collect {
+            case c: Constant =>
+              val reordered = OMDocHTML.getReorder(c) match {
+                case Nil => args
+                case ls => ls.map(args(_))
+              }
+              (OMDocHTML.getAssoctype(c),reordered) match {
+                case (None,_) => return SOMB(f, reordered :_*)
+                case (Some("pre"),SCtx(ctx) :: rest) if ctx.nonEmpty =>
+                  val ret = ctx.variables.init.foldRight(SOMB(f,SCtx(Context(ctx.variables.last)) :: rest :_*))((vd,t) =>
+                    SOMB(f,SCtx(Context(vd)),t)
+                  )
+                  ret.copyFrom(tm)
+                  return ret
+                case (Some(s),_) =>
+                  println(s)
+                  ???
+              }
+          }
+          tm
+        case _ => tm
+      }
+
+      def getArgs(tp: Term): List[LocalName] = tp match {
+        case STeX.implicit_binder(_, _, bd) => getUnknown :: getArgs(bd)
+        case _ => Nil
+      }
+
+      def getTerm(n: LocalName): Option[Term] = getVariableContext.findLast(_.name == n).flatMap { vd =>
+        vd.tp match {
+          case Some(t) => Some(t)
+          case None => vd.df match {
+            case Some(t) => Some(t)
+            case _ => None
+          }
+        }
+      }
+
+      def getTerm(p: GlobalName): Option[Term] = controller.getO(p).flatMap {
+        case c: Constant =>
+          c.tp match {
+            case Some(t) => Some(t)
+            case _ => c.df match {
+              case Some(t) => Some(t)
+              case _ => None
+            }
+          }
+        case _ => None
+      }
+
+      def getOriginal(tm : Term, fieldname : LocalName) : Option[Constant] = tm match {
+        case OMV(n) => getVariableContext.findLast(_.name == n).flatMap { vd =>
+          vd.tp match {
+            case Some(ModelsOf(mod@OMPMOD(_,_))) =>
+              Try(controller.library.get(mod,fieldname)).toOption match {
+                case Some(c : Constant) => Some(c)
+                case _ => None
+              }
+            case _ => None
+          }
+        }
+        case OMS(p) => controller.getO(p).flatMap {
+          case c : Constant =>
+            c.tp match {
+              case Some(ModelsOf(mod@OMPMOD(_,_))) =>
+                Try(controller.library.get(mod,fieldname)).toOption match {
+                  case Some(c : Constant) => Some(c)
+                  case _ => None
+                }
+              case _ => None
+            }
+          case _ => None
+        }
+      }
+
+      def recurse(args: List[SOMBArg])(implicit con: Context, names: (NameSet,Boolean)): List[SOMBArg] = {
+        var icon = Context.empty
+        args.map {
+          case STerm(tm) => STerm(traverse(tm)(con ++ icon, names))
+          case SCtx(ctx) =>
+            val ret = traverseContext(ctx)(con ++ icon, names)
+            ret.copyFrom(ctx)
+            icon = icon ++ ret
+            SCtx(ret)
+        }
+      }
+
+      def makeUnknown(ln: LocalName)(implicit con: Context, names: (NameSet,Boolean)) = Solver.makeUnknown(ln,con.map(v => OMV(v.name)).distinct)//OMAorAny(OMV(ln), con.map(v => OMV(v.name)).distinct)
+
+      override def traverse(t: Term)(implicit con: Context, names: (NameSet,Boolean)): Term = t match {
         case OMV(n) =>
-          names._2.addOne(n)
-          t
-        case STeX.implicit_binder(ln,_,bd) =>
-          names._2.addOne(ln)
-          bd
-        case OMBINDC(_,ctx,_) =>
-          val ret = Traverser(this,t)
-          ctx.variables.foreach(v => names._1 -= v.name)
+          getVariableContext.findLast(_.name == n).foreach { vd =>
+            vd.tp.foreach(traverse)
+            vd.df.foreach(traverse)
+          } // required to get free / implicit arguments
+          if (names._2) {
+            getTerm(n) match {
+              case Some(tm) => getArgs(tm) match {
+                case Nil => t
+                case ls =>
+                  names._1.unknowns = names._1.unknowns ::: ls
+                  OMA(t, ls.map(makeUnknown))
+              }
+              case _ => t
+            }
+          } else t
+        case OMS(p) if names._2 =>
+          getTerm(p) match {
+            case Some(tm) => getArgs(tm) match {
+              case Nil => t
+              case ls =>
+                names._1.unknowns = names._1.unknowns ::: ls
+                OMA(t,ls.map(makeUnknown))
+            }
+            case None => t
+          }
+        case o: OMA =>
+          val OMA(f, args) = reorder(o)
+          val ret = (f match {
+            case OMV(n) => getTerm(n)
+            case OMS(p) => getTerm(p)
+            case Getfield(t,f) => getOriginal(t,f).flatMap(c => getTerm(c.path))
+            case _ => ???
+          }) match {
+            case Some(tm) =>
+              val ls = getArgs(tm)
+              names._1.unknowns = names._1.unknowns ::: ls
+              OMA(traverse(f)(con,(names._1,false)), ls.map(makeUnknown) ::: args.map(traverse))
+            case None => OMA(traverse(f)(con,(names._1,false)), args.map(traverse))
+          }
+          ret.copyFrom(o)
           ret
+        case b@OMBINDC(_, _, _) =>
+          val ret = reorder(b) match {
+            case SOMB(f, args) =>
+              (f match {
+                case OMV(n) => getTerm(n)
+                case OMS(p) => getTerm(p)
+                case Getfield(t,f) => getOriginal(t,f).flatMap(c => getTerm(c.path))
+                case _ => ???
+              }) match {
+                case Some(tm) =>
+                  val ls = getArgs(tm)
+                  names._1.unknowns = names._1.unknowns ::: ls
+                  SOMB(traverse(f)(con,(names._1,false)), ls.map(n => STerm(makeUnknown(n))) ::: recurse(args): _*)
+                case None => SOMB(traverse(f)(con,(names._1,false)), recurse(args): _*)
+              }
+            case o =>
+              //println("urgh")
+              o
+          }
+          ret.copyFrom(b)
+          ret
+        case _ => Traverser(this, t)
+      }
+    }
+    val names = new NameSet
+    val freeVars = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case OMV(n) if !con.isDeclared(n) && t.metadata.get(ParseResult.unknown).isEmpty && names.frees.forall(_._1 != n) =>
+          val tp = getVariableContext.findLast(_.name == n) match {
+            case Some(vd) if vd.tp.isDefined =>
+              vd.tp.foreach(traverse)
+              vd.tp
+            case _ =>
+              val n = getUnknownTp
+              names.unknowns = names.unknowns ::: n :: Nil
+              Some(Solver.makeUnknown(n,(names.frees.reverse.map(i => OMV(i._1)) ::: con.map(v => OMV(v.name))).distinct))
+          }
+          names.frees ::= (n,tp)
+          t
+        case OMV(n) if !con.isDeclared(n) && t.metadata.get(ParseResult.unknown).nonEmpty =>
+          names.unknowns = names.unknowns ::: n :: Nil
+          t
+        case OMA(f, args) =>
+          traverse(f)
+          args.foreach(traverse)
+          t
         case _ => Traverser(this,t)
       }
     }
-    val frees : mutable.Set[LocalName] = mutable.Set()
-    val unks : mutable.Set[LocalName] = mutable.Set()
-    freeVars(ntm,(frees,unks))
-    val next = frees.foldLeft(ntm)((t,ln) => {
-      val tp = getVariableContext.find(_.name == ln) match {
-        case Some(vd) if vd.tp.isDefined => vd.tp
-        case _ => Some(markAsUnknown(OMV({
-          val n = getUnknownTp
-          unks.addOne(n)
-          n
-        })))
-      }
-      STeX.implicit_binder(ln,tp,t)
+    freeVars(ntm,())
+    val next = names.frees.reverse.distinct.foldRight(ntm)((ln, t) => {
+      STeX.implicit_binder(ln._1, ln._2, t)
     })
-    if (unks.nonEmpty) OMBIND(OMS(ParseResult.unknown), unks.toList.map(VarDecl(_)), next) else next
+    val ret = traverser(next,(names,true))
+    if (names.unknowns.nonEmpty) OMBIND(OMS(ParseResult.unknown), names.unknowns.distinct.map(VarDecl(_)), ret) else ret
   }
 
   private def currentParent = {

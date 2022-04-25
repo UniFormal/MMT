@@ -95,14 +95,14 @@ class RuleBasedChecker extends ObjectChecker {
          logGroup {
             solver.logState(logPrefix)
             val (errors,warnings) = solver.getErrors.partition(e => e.level >= Level.Error)
-            (errors:::warnings) foreach {case SolverError(l,h,_) =>
-               val e = new InvalidUnit(cu, h.narrowDownError, cuS) {
+            (errors:::warnings) foreach {case SolverError(l,h,m) =>
+               val e = new InvalidUnit(cu, h.narrowDownError, cuS + ": " + m.map(_.apply(o => controller.presenter.asString(o))).getOrElse("")) {
                  override val level = l
                }
                env.errorCont(e)
             }
             if (errors.isEmpty) {
-               val constraints = solver.getConstraints 
+               val constraints = solver.getConstraints
                constraints foreach {dc =>
                   val h = dc.history + "unresolved constraint"
                   env.errorCont(InvalidUnit(cu, h, cuS))

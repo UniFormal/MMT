@@ -3,11 +3,13 @@ package info.kwarc.mmt.stex.rules
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Conversions.localName2OMV
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardString}
-import info.kwarc.mmt.stex.xhtml.SemanticState
-import info.kwarc.mmt.stex.{STeX, rules}
+import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardString}
+import info.kwarc.mmt.stex.xhtml.{OMDocHTML, SemanticState}
+import info.kwarc.mmt.stex.{SCtx, SOMB, STeX, rules}
 
 object Rules {
   import info.kwarc.mmt.api.objects.Conversions._
@@ -21,6 +23,7 @@ object Rules {
     } else {
       ???
     }
+    val head = original.head.get.asInstanceOf[GlobalName]
 
     // TODO
     private def recurse(tmmatch : Term,tmorig : Term)(cont : Context) : Option[List[(LocalName,Term)]] = (tmmatch,tmorig) match {
@@ -51,6 +54,12 @@ object Rules {
         case _ => None
       } */
     }
+
+    def instantiate(ls : List[(LocalName,Term)],tm : Term = original) : Option[Term] = tm match {
+      case STeX.binder(ln,_,bd) if ls.exists(_._1 == ln) => instantiate(ls,bd ^? (ln / ls.find(_._1 == ln).get._2))
+      case STeX.binder(_,_,_) => None
+      case _ => Some(ls.foldLeft(tm)((t,p) => t ^? (p._1 / p._2)))
+    }
   }
   def getBoundVars(tm : Term) : (List[(LocalName,Option[Term])],Term) = tm match {
     case STeX.binder(ln,tp,bd) =>
@@ -68,40 +77,31 @@ trait UsesPatterns extends SingleTermBasedCheckingRule {
   }
 }
 
-case class UnivRule(pattern : Rules.Pattern,hhead : GlobalName) extends UniverseRule(hhead) with UsesPatterns {
+object StringLiterals extends RepresentedRealizedType(OMS(STeX.string),StandardString)
 
-  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true) // by applicability
+trait BindingRule extends Rule {
+  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
 }
 
-object Universe extends ParametricRule {
-
-  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
-    case List(tm) =>
-      val pattern = new Rules.Pattern(tm)
-      val head = pattern.body.head match {
-        case Some(gn : GlobalName) => gn
-        case _ => STeX.informal.sym
+object InformalBindingRule extends BindingRule {
+  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context] = tm match {
+    case OMV(x) =>
+      val vd = state.getVariableContext.findLast(_.name == x).getOrElse {
+        val v = state.markAsUnknown(OMV(state.getUnknownTp))
+        VarDecl(x,tp=v)
       }
-      RuleSet(UnivRule(pattern,head),rules.InhabRule(pattern,head))
-    case _ =>
-      ???
+      vd.metadata.update(STeX.meta_notation,tm)
+      Some(Context(vd))
+    case _ => None
   }
 }
 
-case class InhabRule(pattern : Rules.Pattern,hhead : GlobalName) extends InhabitableRule(hhead) with UsesPatterns {
-  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true) // by applicability
-}
+case class ConjunctionRule(head : GlobalName) extends Rule
 
-object Inhabitable extends ParametricRule {
-
+object ConjunctionLike extends ParametricRule {
   override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
-    case List(tm) =>
-      val pattern = new Rules.Pattern(tm)
-      val head = pattern.body.head match {
-        case Some(gn : GlobalName) => gn
-        case _ => STeX.informal.sym
-      }
-      rules.InhabRule(pattern,head)
+    case List(OMS(p)) =>
+      RuleSet(ConjunctionRule(p))
     case _ =>
       ???
   }
@@ -156,79 +156,6 @@ object ParenthesisRule extends HTMLTermRule {
   }
 }
 
-trait BindingRule extends Rule {
-  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
-}
-
-object StringLiterals extends RepresentedRealizedType(OMS(STeX.string),StandardString)
-
-object InformalBindingRule extends BindingRule {
-  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context] = tm match {
-    case OMV(x) =>
-      val vd = state.getVariableContext.find(_.name == x).getOrElse {
-        val v = state.markAsUnknown(OMV(state.getUnknownTp))
-        VarDecl(x,tp=v)
-      }
-      vd.metadata.update(STeX.meta_notation,tm)
-      Some(Context(vd))
-    case _ => None
-  }
-}
-
-case class BinderRule(pattern : Rules.Pattern,head : GlobalName,tp : Option[LocalName]) extends BindingRule with UsesPatterns {
-  def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context] = tm match {
-    case pattern(ls) =>
-      val (vars, tpO) = tp match {
-        case Some(tpn) =>
-          val p = ls.find(_._1 == tpn).getOrElse {
-            return None
-          }
-          (ls.filterNot(_ == p), Some(p._2))
-        case _ => (ls,None)
-      }
-      Some(vars.foldLeft(Context.empty) {
-        case (ctx, (_, OMV(ln))) =>
-          tpO match {
-            case Some(t) => ctx ++ (ln % t)
-            case _ => ctx ++ VarDecl(ln)
-          }
-        case (ctx, (_, ot)) =>
-          val nc = state.makeBinder(ot,assoc).variables.map {
-            case vd if vd.tp.isEmpty =>
-              tpO match {
-                case Some(t) => vd.name % t
-                case _ => vd
-              }
-            case vd => vd
-          }
-          ctx ++ nc
-      }.map{vd => vd.metadata.update(STeX.meta_notation,tm);vd})
-    case _ =>
-      None
-  }
-}
-
-object TypingLike extends ParametricRule {
-  def apply(controller: Controller, home: Term, args: List[Term]) = {
-    if (args.length != 1 && args.length != 2) throw ParseError("one or two arguments expected")
-    val (pattern,ln) = args match {
-      case List(h,OMV(n)) =>
-        (new Rules.Pattern(h),Some(n))
-      case List(h,STeX.binder(n,_,OMV(m))) if n == m =>
-        (new Rules.Pattern(h),Some(n))
-      case List(h) =>
-        (new Rules.Pattern(h),None)
-      case _ =>
-        throw ParseError("second argument needs to be a variable")
-    }
-    val head = pattern.body.head match {
-      case Some(gn : GlobalName) => gn
-      case _ => STeX.informal.sym
-    }
-    BinderRule(pattern,head,ln)
-  }
-}
-
 object NotationRules extends RuleSet {
   object NInhabitableRule extends InhabitableRule(STeX.notation.tp.sym) {
     override def applicable(t: Term): Boolean = t match {
@@ -249,140 +176,199 @@ object NotationRules extends RuleSet {
   override def getAll: Iterable[Rule] = Seq(NInhabitableRule,NTypingRule)
 }
 
-/*
-object Realize extends ParametricRule {
-
-  //TODO checks are called even when an .omdoc file is read
-  def apply(controller: Controller, home: Term, args: List[Term]) = {
-    if (args.length != 2) throw ParseError("two arguments expected")
-    val List(syn,sem) = args
-    val mp = sem match {
-      case OMMOD(mp) => mp
-      case _ =>  throw ParseError("semantic element must be identifier")
-    }
-    val obj = controller.backend.loadObjectO(mp).getOrElse {
-      throw ParseError("semantic object not found")
-    }
-    obj match {
-      case st: SemanticType =>
-        RealizedType(syn,st)
-      case semVal: SemanticValue =>
-        val synP = syn match {
-          case OMS(p) => p
-          case _ => throw ParseError("realized value must be an identifier")
-        }
-        val synTp = controller.globalLookup.getO(synP) match {
-          case Some(c: Constant) => c.tp.getOrElse {
-            throw ParseError("type not present or not fully checked")
-          }
-          case _ => throw ParseError("realized operator must be a constant")
-        }
-        new RealizedValue(synP, synTp, semVal)
-      case semOp: SemanticOperator =>
-        // TODO
-        throw ParseError("semantic operator not yet implemented")
-      case _ => throw ParseError("objects exists but is not a semantic type or operator")
+object IsSeq {
+  def apply(tm : Term) = tm match {
+    case STeX.flatseq(_) => true
+    case OMV(_) if tm.metadata.get(STeX.flatseq.sym).nonEmpty => true
+    case _ => false
+  }
+  def unapply(tms : List[Term]) = {
+    val i = tms.indexWhere(apply)
+    if (i == -1) None else {
+      Some(tms.take(i),tms(i),tms.drop(i+1))
     }
   }
 }
 
-object SeqTypeInhabitable extends InhabitableRule(STeX.flatseq.tp.sym) {
+object AssocBinRModComp extends ComputationRule(Getfield.path) {
   override def applicable(t: Term): Boolean = t match {
-    case OMA(OMS(STeX.flatseq.tp.sym),List(_)) => true
+    case OMA(Getfield(_,_),_) => true
     case _ => false
   }
 
-  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
-    val OMA(OMS(STeX.flatseq.tp.sym),List(tp)) = term
-    Some(solver.check(info.kwarc.mmt.api.objects.Inhabitable(stack,tp)))
-  }
-}
-
-case class FunctionSpaceInhabitable(hhead : GlobalName) extends InhabitableRule(hhead) {
-  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
-    case OMA(OMS(`hhead`),List(STeX.flatseq(doms),codom)) =>
-      (codom :: doms).foreach {t =>
-        solver.check(info.kwarc.mmt.api.objects.Inhabitable(stack,t))
+  override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+    case OMA(Getfield(mod,field),args) =>
+      check.lookup.getO(mod,field) match {
+        case Some(c : Constant) =>
+          if (OMDocHTML.getAssoctype(c).contains("binr") || OMDocHTML.getAssoctype(c).contains("bin")) {
+            args match {
+              case IsSeq(Nil, ls, Nil) =>
+                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("x"))._1
+                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("y"))._1
+                val tp = check.inferType(ls) match {
+                  case Some(STeX.flatseq.tp(t)) => t
+                  case _ => return Simplifiability.NoRecurse
+                }
+                Simplify(STeX.seqfoldright(STeX.seqlast(ls), STeX.seqinit(ls), x, tp, y, tp, OMA(Getfield(mod, field), List(OMV(x), OMV(y)))))
+              case IsSeq(Nil, ls, rest) =>
+                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("x"))._1
+                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("y"))._1
+                val tp = check.inferType(ls) match {
+                  case Some(STeX.flatseq.tp(t)) => t
+                  case _ => return Simplifiability.NoRecurse
+                }
+                Simplify(STeX.seqfoldright(OMA(Getfield(mod, field), STeX.seqlast(ls) :: rest), STeX.seqinit(ls), x, tp, y, tp, OMA(Getfield(mod, field), List(OMV(x), OMV(y)))))
+              case _ => Simplifiability.NoRecurse
+            }
+          } else Simplifiability.NoRecurse
+        case _ => Simplifiability.NoRecurse
       }
-      Some(true)
-    case _ =>
-      None
+    case _ => Simplifiability.NoRecurse
   }
 }
 
-object FunctionSpaceLike extends ParametricRule {
-  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
-    case List(OMS(head)) =>
-      FunctionSpaceInhabitable(head)
-    case _ =>
-      throw ParseError("one OMID argument expected")
-  }
-}
-
-object AbbreviationRule extends ParametricRule {
-  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
-    case List(OMS(head),tm) =>
-      new AbbrevRule(head,tm)
-    case _ =>
-      throw ParseError("one OMID and one arbitrary argument expected")
-  }
-}
-*/
-/*
-
-
-case class LetBinderRule(pattern : Rules.Pattern,head : GlobalName,df : Option[LocalName]) extends BindingRule with UsesPatterns {
-  def apply(tm : Term)(implicit state : SemanticState) : Option[Context] = tm match {
-    case pattern(ls) =>
-      val (vars, dfO) = df match {
-        case Some(dfn) =>
-          val p = ls.find(_._1 == dfn).getOrElse {
-            return None
+object AssocBinR extends ParametricRule {
+  case class Assoc(head : GlobalName) extends CheckingRule
+  case class Comp(hhead : GlobalName) extends ComputationRule(hhead) {
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+      case OMA(OMS(`head`),args) => args match {
+        case IsSeq(Nil,ls,Nil) =>
+          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("x"))._1
+          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("y"))._1
+          val tp = check.inferType(ls) match {
+            case Some(STeX.flatseq.tp(t)) => t
+            case _ => return Simplifiability.NoRecurse
           }
-          (ls.filterNot(_ == p), Some(p._2))
-        case _ => (ls,None)
+          Simplify(STeX.seqfoldright(STeX.seqlast(ls),STeX.seqinit(ls),x,tp,y,tp,OMA(OMS(head),List(OMV(x),OMV(y)))))
+        case IsSeq(Nil,ls,rest) =>
+          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("x"))._1
+          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("y"))._1
+          val tp = check.inferType(ls) match {
+            case Some(STeX.flatseq.tp(t)) => t
+            case _ => return Simplifiability.NoRecurse
+          }
+          Simplify(STeX.seqfoldright(OMA(OMS(head),STeX.seqlast(ls) :: rest),STeX.seqinit(ls),x,tp,y,tp,OMA(OMS(head),List(OMV(x),OMV(y)))))
+        case _ => Simplifiability.NoRecurse
       }
-      Some(vars.foldLeft(Context.empty) {
-        case (ctx, (_, OMV(ln))) =>
-          dfO match {
-            case Some(t) => ctx ++ VarDecl(ln,None,None,Some(t),None)
-            case _ => ctx ++ VarDecl(ln)
-          }
-        case (ctx, (_, ot)) =>
-          val nc = state.makeBinder(ot).variables.map {
-            case vd if vd.df.isEmpty =>
-              dfO match {
-                case Some(t) => VarDecl(vd.name,None,vd.tp,Some(t),None)
-                case _ => vd
-              }
-            case vd => vd
-          }
-          ctx ++ nc
-      }.map{vd => vd.metadata.update(STeX.meta_notation,tm);vd})
-    case _ =>
-      None
+      /*case OMA(OMS(`head`),List(STeX.flatseq(ls))) if ls.length >= 2 =>
+        Simplify(ls.init.init.foldRight(OMA(OMS(head),ls.init.last :: ls.last :: Nil))((a,t) => OMA(OMS(head),List(a,t))))
+      case OMA(OMS(`head`),STeX.flatseq(ls) :: rest) if ls.nonEmpty =>
+        Simplify(ls.init.foldRight(OMA(OMS(head),ls.last :: rest))((a,t) =>
+          OMA(OMS(head),List(a,t))
+        ))*/
+      case _ => Simplifiability.NoRecurse
+    }
+  }
+
+  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(s)) => RuleSet(Comp(s),Assoc(s))
+    case _ => ???
+  }
+
+}
+
+object AssocBinL extends ParametricRule {
+  case class Assoc(head : GlobalName) extends CheckingRule
+  case class Comp(hhead : GlobalName) extends ComputationRule(hhead) {
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+      /*case OMA(OMS(`head`),List(STeX.flatseq(ls))) if ls.length >= 2 =>
+        Simplify(
+          ls.tail.tail.foldLeft(OMA(OMS(head),ls.head :: ls.tail.head :: Nil))((t,a) => OMA(OMS(head),List(t,a)))
+        )*/
+      case _ => Simplifiability.NoRecurse
+    }
+  }
+
+  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(s)) => RuleSet(Comp(s),Assoc(s))
+    case _ => ???
   }
 }
 
-object LetBinder extends ParametricRule {
-  def apply(controller: Controller, home: Term, args: List[Term]) = {
-    if (args.length != 1 && args.length != 2) throw ParseError("one or two arguments expected")
-    val (pattern,ln) = args match {
-      case List(h,OMV(n)) =>
-        (new Rules.Pattern(h),Some(n))
-      case List(h,STeX.universal_quantifier(n,_,OMV(m))) if n == m =>
-        (new Rules.Pattern(h),Some(n))
-      case List(h) =>
-        (new Rules.Pattern(h),None)
-      case _ =>
-        throw ParseError("second argument needs to be a variable")
-    }
-    val head = pattern.body.head match {
-      case Some(gn : GlobalName) => gn
-      case _ => STeX.informal.sym
-    }
-    LetBinderRule(pattern,head,ln)
+
+object AssocConjModComp extends ComputationRule(Getfield.path) {
+  override def applicable(t: Term): Boolean = t match {
+    case OMA(Getfield(_,_),_) => true
+    case _ => false
+  }
+
+  override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+    case OMA(Getfield(mod,field),args) =>
+      check.lookup.getO(mod,field) match {
+        case Some(c : Constant) =>
+          if (OMDocHTML.getAssoctype(c).contains("conj")) {
+            args match {
+              case IsSeq(pre, STeX.flatseq(a :: b :: Nil), Nil) =>
+                Simplify(OMA(Getfield(mod, field), pre ::: List(a, b)))
+              case IsSeq(pre, STeX.flatseq(a :: Nil), List(b)) =>
+                Simplify(OMA(Getfield(mod, field), pre ::: List(a, b)))
+              case _ => Simplifiability.NoRecurse
+            }
+          } else Simplifiability.NoRecurse
+        case _ => Simplifiability.NoRecurse
+      }
+    case _ => Simplifiability.NoRecurse
   }
 }
 
- */
+object AssocConj extends ParametricRule {
+  case class Assoc(head : GlobalName) extends CheckingRule
+  case class Comp(hhead : GlobalName) extends ComputationRule(hhead) {
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+      case OMA(OMS(`head`), args) => args match {
+        case IsSeq(pre, STeX.flatseq(a :: b :: Nil), Nil) =>
+          Simplify(OMA(OMS(head), pre ::: List(a, b)))
+        case IsSeq(pre, STeX.flatseq(a :: Nil), List(b)) =>
+          Simplify(OMA(OMS(head), pre ::: List(a, b)))
+        case _ => Simplifiability.NoRecurse
+        /*case OMA(OMS(`head`), List(pre,STeX.flatseq(ls))) if ls.length == 2 =>
+        Simplify(OMA(OMS(head),List(pre,ls.head,ls(1))))
+      case OMA(OMS(`head`), List(STeX.flatseq(ls))) if ls.length == 2 =>
+        Simplify(OMA(OMS(head),List(ls.head,ls(1))))
+      case OMA(OMS(`head`), List(STeX.flatseq(List(a)),post)) =>
+        Simplify(OMA(OMS(head),List(a,post)))
+      case OMA(OMS(`head`), List(pre,STeX.flatseq(List(a)),post)) =>
+        Simplify(OMA(OMS(head),List(pre,a,post)))*/
+      }
+    }
+  }
+
+  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(s)) => RuleSet(Comp(s),Assoc(s))
+    case _ => ???
+  }
+}
+
+
+object AssocPwconj extends ParametricRule {
+  case class Assoc(head : GlobalName) extends CheckingRule
+  case class Comp(hhead : GlobalName) extends ComputationRule(hhead) {
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+      // TODO
+      case _ => Simplifiability.NoRecurse
+    }
+  }
+
+  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(s)) => RuleSet(Comp(s),Assoc(s))
+    case _ => ???
+  }
+}
+
+object AssocPre extends ParametricRule {
+  case class Assoc(head : GlobalName) extends CheckingRule
+  case class Comp(hhead : GlobalName) extends ComputationRule(hhead) {
+    override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+      case SOMB(OMS(`head`), SCtx(ctx) :: rest) if ctx.length > 1 =>
+        Simplify(ctx.variables.init.foldRight(SOMB(OMS(head),SCtx(Context(ctx.variables.last)) :: rest :_*))((vd,t) =>
+          SOMB(OMS(head),SCtx(Context(vd)),t)
+        ))
+      case _ => Simplifiability.NoRecurse
+    }
+  }
+
+  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(s)) => RuleSet(Comp(s),Assoc(s))
+    case _ => ???
+  }
+}

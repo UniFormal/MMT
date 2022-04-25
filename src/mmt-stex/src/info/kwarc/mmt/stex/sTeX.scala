@@ -21,6 +21,8 @@ object STeX {
 
   val meta_notation = mmtmeta_path ? "notation"
 
+  val prop = meta_path ? "proposition"
+
   val notation = new {
     val tp = new {
       val sym = mmtmeta_path ? "notationtype"
@@ -77,28 +79,122 @@ object STeX {
     }
   }
 
+  val seqmap = new {
+    val sym = meta_path ? "seqmap"
+    def apply(seq : Term,v : LocalName,f : Term) = SOMB(OMS(sym),STerm(seq),SCtx(Context(VarDecl(v))),STerm(f))
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`sym`),List(STerm(seq),SCtx(Context(v)),STerm(f))) =>
+        Some((seq,v.name,v.tp,f))
+      case _ => None
+    }
+  }
+
+  val seqprepend = new {
+    val sym = meta_path ? "seqprepend"
+    def apply(a : Term,seq : Term) = OMA(OMS(`sym`),List(a,seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(a,seq)) =>
+        Some((a,seq))
+      case _ => None
+    }
+  }
+
+  val seqappend = new {
+    val sym = meta_path ? "seqappend"
+    def apply(seq : Term,a : Term) = OMA(OMS(`sym`),List(seq,a))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq,a)) =>
+        Some((seq,a))
+      case _ => None
+    }
+  }
+
+  import info.kwarc.mmt.api.objects.Conversions._
+
+  val seqfoldleft = new {
+    val sym = meta_path ? "seqfoldleft"
+    def apply(init:Term,seq : Term,v1 : LocalName, tp1: Term,v2:LocalName, tp2 : Term,f : Term) = SOMB(OMS(sym),STerm(init),STerm(seq),SCtx(Context(v1 % tp1)),SCtx(v2 % tp2),STerm(f))
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`sym`),List(STerm(init),STerm(seq),SCtx(Context(v1)),SCtx(Context(v2)),STerm(f))) =>
+        Some((seq,init,v1.name,v1.tp,v2.name,v2.tp,f))
+      case _ => None
+    }
+  }
+
+  val seqfoldright = new {
+    val sym = meta_path ? "seqfoldright"
+    def apply(init:Term,seq : Term,v1 : LocalName, tp1: Term,v2:LocalName, tp2 : Term,f : Term) = SOMB(OMS(sym),STerm(init),STerm(seq),SCtx(Context(v1 % tp1)),SCtx(v2 % tp2),STerm(f))
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`sym`),List(STerm(init),STerm(seq),SCtx(Context(v1)),SCtx(Context(v2)),STerm(f))) =>
+        Some((seq,init,v1.name,v1.tp,v2.name,v2.tp,f))
+      case _ => None
+    }
+  }
+
+  val seqhead = new {
+    val sym = meta_path ? "seqhead"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  val seqtail = new {
+    val sym = meta_path ? "seqtail"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  val seqlast = new {
+    val sym = meta_path ? "seqlast"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  val seqinit = new {
+    val sym = meta_path ? "seqinit"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  import SOMBArg._
+
   val binder = new {
     val path = meta_path ? "bind"
-    def apply(ctx : Context,body : Term) = OMBIND(OMS(path),ctx,body)
-    def apply(ln : LocalName,tp : Option[Term],body : Term) = OMBIND(OMS(path),tp match {
+    def apply(ctx : Context,body : Term) = SOMB(OMS(path),ctx,body)
+    def apply(ln : LocalName,tp : Option[Term],body : Term) = SOMB(OMS(path),Context(tp match {
       case Some(t) => OMV(ln) % t
       case None => VarDecl(ln)
-    },body)
+    }),body)
     def unapply(tm : Term) = tm match {
-      case OMBIND(OMS(`path`),Context(vd, rest @_*),bd) =>
+      case SOMB(OMS(`path`),List(SCtx(Context(vd, rest @_*)),STerm(bd))) =>
         if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
       case _ => None
     }
   }
   val implicit_binder = new {
     val path = meta_path ? "implicitbind"
-    def apply(ctx : Context,body : Term) = OMBIND(OMS(path),ctx,body)
-    def apply(ln : LocalName,tp : Option[Term],body : Term) = OMBIND(OMS(path),tp match {
+    def apply(ctx : Context,body : Term) = SOMB(OMS(path),ctx,body)
+    def apply(ln : LocalName,tp : Option[Term],body : Term) = SOMB(OMS(path),Context(tp match {
       case Some(t) => OMV(ln) % t
       case None => VarDecl(ln)
-    },body)
+    }),body)
     def unapply(tm : Term) = tm match {
-      case OMBIND(OMS(`path`),Context(vd, rest @_*),bd) =>
+      case SOMB(OMS(`path`),List(SCtx(Context(vd, rest @_*)),STerm(bd))) =>
         if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
       case _ => None
     }
@@ -130,6 +226,8 @@ object STeX {
   val meta_macro = mmtmeta_path ? "macroname"
   val meta_language = mmtmeta_path ? "language"
   val meta_arity = mmtmeta_path ? "arity"
+  val meta_assoctype = mmtmeta_path ? "assoctype"
+  val meta_reorder = mmtmeta_path ? "reorder"
 
   val meta_quantification = mmtmeta_path ? "quantification"
   val meta_qforall = mmtmeta_path ? "universal"

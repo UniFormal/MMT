@@ -103,8 +103,8 @@ trait XHTMLParser extends TraversingBuildTarget {
       HTMLParser(outFile.setExtension("shtml"))(state)
     } catch {
       case e =>
-        println(e)
-        ???
+        e.printStackTrace()
+        throw e
     }
     doc.get("head")()().head.children.foreach(_.delete)
     outFile.setExtension("shtml").delete()
