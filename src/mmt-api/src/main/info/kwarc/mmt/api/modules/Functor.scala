@@ -5,6 +5,15 @@ import frontend._
 import symbols._
 import objects._
 
+/*
+ library should store computedModules and computedGeneralizedMorphisms (= ExpressionTransformers)
+ StructureTransformer is applicable to some terms
+ in that case, it produces any number of the above and stores them in library
+ library checks its tables to lookup terms, call StructureTransformer if necessary to materialize
+ a generalized morphism is given by its action on Terms and can be composed like other morphisms
+ lookup in a generalized morphism and morphism application are done by calling the ExpressionTransformer
+*/
+
 /**
   * maps extensions of theory 'from' to extensions of theory 'to'
   *

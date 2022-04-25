@@ -5,6 +5,7 @@ import scala.collection.mutable
 /**
   * Utils for breadth-first-search (BFS)
   */
+@deprecated("only used in diagrams, should probably be moved/deleted")
 object BreadthFirstSearch {
   /**
     * Collect elements in a BFS manner from a bounded set.

@@ -6,7 +6,8 @@ import objects._
 import parser._
 import utils._
 
-class ShellCommand extends ShellExtension("run") {
+/** executes a program given as an MMT term */
+class ExecuteFromShell extends ShellExtension("run") {
    def helpText = "mmt :run THEORY-URI PROGRAM-TERM"
 
    def run(shell: Shell, args: List[String]) = {
@@ -36,6 +37,6 @@ class ShellCommand extends ShellExtension("run") {
      }
      val result = exec(Context(thy), progC)
      println("\nprogram terminated with value: " + controller.presenter.asString(result))
-     true
+     withSuccess
    }
 }

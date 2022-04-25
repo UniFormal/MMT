@@ -23,8 +23,6 @@ stex-xhtml info.kwarc.mmt.stex.LaTeXToHTML
 xhtml-omdoc info.kwarc.mmt.stex.HTMLToOMDoc
 stex-omdoc info.kwarc.mmt.stex.STeXToOMDoc
 
-dummy     info.kwarc.mmt.api.archives.DummyBuildTarget
-
 mmttex     info.kwarc.mmt.latex.MMTTeX
 
 setup      info.kwarc.mmt.doc.Setup

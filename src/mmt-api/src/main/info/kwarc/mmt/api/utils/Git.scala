@@ -1,6 +1,4 @@
-package info.kwarc.mmt.api.archives
-
-import info.kwarc.mmt.api.utils.{File, ShellCommand}
+package info.kwarc.mmt.api.utils
 
 /** builds git commands */
 abstract class Git {

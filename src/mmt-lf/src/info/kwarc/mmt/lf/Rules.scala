@@ -168,7 +168,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
       }
       tm match {
          case ApplySpine(f,args) =>
-            val fTOpt = solver.inferType(f, covered)(stack, history + ("inferring type of function " + solver.presentObj(f)))
+            val hI = history + ("inferring type of function " + solver.presentObj(f))
+            val fTOpt = solver.inferType(f, covered)(stack, hI)
             fTOpt match {
               case Some(fT) =>
                 history += "function is `" + solver.presentObj(f) + "` of type `" + solver.presentObj(fT) + "`"
@@ -200,7 +201,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
                     (None, None)
                 }
               case None =>
-                history += "failed"
+                history.mergeIn(hI)
+                history += "inference of type of function `" + solver.presentObj(f) + "` failed"
                 //TODO commented out because it looks redundant, check if it's ever helpful
                 //args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
                 (None,None)

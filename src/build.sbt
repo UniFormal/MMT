@@ -69,6 +69,7 @@ testOptions in Test += Tests.Argument("-oI")
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 val deployLFCatalog = TaskKey[Unit]("deployLFCatalog", "builds a stand-alone lfcatalog.jar")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
+val testSetup = TaskKey[Unit]("testSetup", "tests the MMT :setup command")
 
 // =================================
 // DOCUMENTATION TASKS
@@ -127,7 +128,8 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   publishTo := Some(Resolver.file("file", utils.value.deploy.toJava / " main")),
 
   install := {},
-  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value
+  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
+  testSetup := utils.value.testSetup
 )
 
 // =================================

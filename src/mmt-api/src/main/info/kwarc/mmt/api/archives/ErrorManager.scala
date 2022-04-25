@@ -49,7 +49,7 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     val sourceURI = data.sourceRef.fold("")(_.container.toString)
     val sourceFile = if (sourceURI.startsWith("file:")) sourceURI.substring(5) else ""
     val source = if (File(sourceFile).exists()) sourceFile else ""
-    List(if (clean || msg == "no error") "" else Level.toString(data.level),
+    List(if (clean || msg == "no error") "" else data.level.toString,
       data.child.toString,
       archive.root.up.getName,
       archive.root.getName,
@@ -111,8 +111,8 @@ object ErrorReader {
       if (lvl >= errorLevel)
         bes ::= ErrorContent(i, lvl, srcR, shortMsg)
     }
-    if (node.child.isEmpty && (emptyErr || errorLevel <= Level.Force)) {
-      bes ::= ErrorContent(0, 0, None, if (!f.exists) "cleaned"
+    if (node.child.isEmpty && emptyErr) {
+      bes ::= ErrorContent(0, Level.Info, None, if (!f.exists) "cleaned"
       else if (emptyErr) emptyMsg else "no error")
     }
     bes.reverse
@@ -212,10 +212,10 @@ class ErrorManager extends Extension with Logger {self =>
   /** registers a [[ChangeListener]] and a [[ServerExtension]] */
   override def start(args: List[String]) {
     val opts = List(
-      OptionDescr("level", "", IntArg, "error level to pick (0 means all)"),
+      OptionDescr("level", "", StringArg, "error level to pick"),
       OptionDescr("clean-unknown-sources", "", NoArg, "clean output files of for missing sources"))
     val (m, _) = AnaArgs(opts, args)
-    m.get("level").foreach { v => level = v.getIntVal - 1 }
+    m.get("level").foreach { v => level = Level.parse(v.getStringVal) }
     controller.extman.addExtension(cl)
     controller.extman.addExtension(serve)
     controller.backend.getArchives.foreach { a => loadAllErrors(a, m.isDefinedAt("clean-unknown-sources")) }

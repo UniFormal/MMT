@@ -8,27 +8,27 @@ import archives._
  */
 class Make extends ShellExtension("make") {
    def helpText = ":make TARGETS ARCHIVE"
-   def run(shell: Shell, args: List[String]): Boolean = {
+   def run(shell: Shell, args: List[String]): Option[Level.Level] = {
      if (args.length < 2) {
        println(helpText)
-       return true
+       return withError
      }
      val key = args(0)
      val input = controller.getHome resolve args(1)
      // get the archive containing the input file
      val (archRoot, relPath) = controller.backend.resolveAnyPhysical(input).getOrElse {
        println(input + " not found")
-       return true
+       return withError
      }
      controller.backend.openArchive(archRoot)
      val arch = controller.backend.getArchive(archRoot).getOrElse {
        println(input + " not found") // should be impossible
-       return true
+       return withError
      }
      // get the build target for the given key
      val bt = controller.extman.getOrAddExtension(classOf[BuildTarget], key).getOrElse {
        println("build target " + key + " not found")
-       return true
+       return withError
      }
      // strip the dimension from the remaining input path (if any)
      val buildPath = relPath.segments match {
@@ -39,19 +39,63 @@ class Make extends ShellExtension("make") {
              FilePath(rest)
            else {
              println(input + " is not an input file for " + key)
-             return true
+             return withError
            }
        }
        case _ =>
          println(key + " can only be called on an entire archive")
-         return true
+         return withError
      }
      // run the build target
      controller.report.addHandler(ConsoleHandler)
      controller.report.groups += "debug"
      controller.report.groups += "archives"
      controller.report.groups += bt.logPrefix
-     bt(BuildAll, arch, buildPath)
-     true
+     val ec = new ErrorContainer(Some(report))
+     bt(BuildAll, arch, buildPath, Some(ec))
+     Some(ec.maxLevel)
    }
+}
+
+/** a make-like shell extension that runs an msl file and reports an exit code based on errors
+  */
+class RunFile extends ShellExtension("file") {
+  def helpText = ":file FILE"
+  def run(shell: Shell, args: List[String]): Option[Level.Level] = {
+    if (args.length < 1) {
+      println(helpText)
+      return withError
+    }
+    val file = File(args(0))
+    doIt(file)
+  }
+  def doIt(file: File): Option[Level.Level] = {
+    controller.report.addHandler(ConsoleHandler)
+    controller.report.groups += "debug"
+    controller.report.groups += logPrefix
+    val errorCont = new ErrorContainer(Some(report))
+    try {
+      controller.runMSLFile(file,None,true,Some(errorCont))
+    } catch {
+      case e: Exception =>
+        errorCont(Error(e))
+        log("interrupted due to unrecovered error")
+        return Some(Level.Fatal)
+    }
+    val errors = errorCont.getErrors.filter(_.level >= Level.Warning)
+    val maxLev = errorCont.maxLevel
+    val groups = errors.groupBy(_.level)
+    val actualErrors = groups.getOrElse(Level.Error, Nil)
+    val msg = if (groups.isEmpty) "no errors" else groups.map {case (l,es) => s"${es.length} ${l}s"}.mkString(", ")
+    val excMsg = if (actualErrors.isEmpty) ""
+      else "; among the errors: " +
+        actualErrors.groupBy(_.excuse).map {case (exc,es) => s"${es.length} ${Level.excuseOStr(exc)}s"}.mkString(", ")
+    log("finished with " + msg + excMsg)
+    if (maxLev <= Level.Error && actualErrors.forall(_.excuse.isDefined)) {
+      // we succeed overall if there were at most warnings or excusable errors
+      Some(Level.Info)
+    } else {
+      Some(maxLev)
+    }
+  }
 }

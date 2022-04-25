@@ -61,9 +61,8 @@ class GAPDocImporter extends Importer {
       val cp = scala.xml.parsing.ConstructingParser.fromSource(src, preserveWS = true)
       val node: Node = cp.document()(0)
       src.close()
-      val errCont = new FilteringErrorHandler(bt.errorCont, e => e.level != Level.Info && e.level != Level.Warning)
+      val errCont = new HandlerWithTreshold(bt.errorCont, Level.Error)
       parseBook(node)(bt.narrationDPath, errCont)
-      LocalName
       val doc = controller.getDocument(bt.narrationDPath)
 
       index(doc)

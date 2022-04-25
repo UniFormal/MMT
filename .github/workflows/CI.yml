@@ -1,47 +1,33 @@
-name: CI
+name: Integration Tests
 
-on:
-  push:
-    branches:
-      - master
-      - devel
-  pull_request:
-    branches:
-      - master
-      - devel
-  
-  # Also trigger on page_build, as well as release created events
-  page_build:
-  release:
-    types: # This configuration does not affect the page_build event above
-      - created
+on: [push, pull_request, workflow_dispatch]
+
+env:
+  SCALA_VERSION: '2.13.4'
+  JAVA_VERSION: 'openjdk@1.14'
 
 jobs:
   ci:
-    # Skip CI if the commit message of the head commit of a push
-    # contains "skip ci" or "ci skip"
-    if: "!contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, 'ci skip')"
-
-    name: Continuous Integration
+    name: Integration Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install OpenJDK 14 and sbt
-        uses: olafurpg/setup-scala@v10
+      - name: Install Java (${{ env.JAVA_VERSION }}) and Scala (${{ env.SCALA_VERSION }})
+        uses: olafurpg/setup-scala@v11
         with:
-          java-version: openjdk@1.14
+          java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Install Dependencies
+      - name: Download MMT dependencies using 'sbt update'
         run: |
           cd src
-          sbt ++2.13.4 update
+          sbt ++${{ env.SCALA_VERSION }} update
 
-      - name: Build 'mmt.jar'
+      - name: Build 'mmt.jar' using 'sbt deploy'
         run: |
           cd src
-          sbt ++2.13.4 deploy
+          sbt ++${{ env.SCALA_VERSION }} deploy
 
       - name: Store 'mmt.jar' artifact
         uses: actions/upload-artifact@v2
@@ -49,13 +35,55 @@ jobs:
           name: mmt.jar
           path: ./deploy/mmt.jar
 
-      - name: Unit Tests
+      - name: Run Unit Tests
         run: |
           cd src
-          sbt ++2.13.4 test
-
-      - name: Integration Tests
-        shell: bash
+          sbt ++${{ env.SCALA_VERSION }} test
+      
+      - name: Use 'devel' version for MMT Archives
         run: |
-          export TEST_USE_BRANCH=${GITHUB_REF#refs/heads/}
-          java -cp deploy/mmt.jar info.kwarc.mmt.test.TestRunner
+          echo "MMT_ARCHIVE_VERSION=devel" >> $GITHUB_ENV
+        if: "!startsWith(github.ref, 'refs/heads/master')"
+      
+      - name: Use 'master' version for MMT Archives
+        run: |
+          echo "MMT_ARCHIVE_VERSION=master" >> $GITHUB_ENV
+        if: startsWith(github.ref, 'refs/heads/master')
+      
+      - name: Create 'out' directory and run MMT Setup
+        id: setup
+        run: |
+          mkdir out && cd out
+          java -jar ../deploy/mmt.jar :setup --auto --auto --no-content --no-jedit
+          cp ../deploy/mmt.jar MMT-system/deploy/mmt.jar
+
+      
+      - name: Test '${{ env.MMT_ARCHIVE }}'
+        if: always() && steps.setup.outcome == 'success'
+        env:
+          MMT_ARCHIVE: 'MMT/urtheories'
+        run: |
+          cd out
+          java -jar MMT-system/deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
+          java -jar MMT-system/deploy/mmt.jar :file MMT-content/${{ env.MMT_ARCHIVE }}/build.msl
+      
+      - name: Test '${{ env.MMT_ARCHIVE }}'
+        if: always() && steps.setup.outcome == 'success'
+        env:
+          MMT_ARCHIVE: 'MMT/examples'
+        run: |
+          cd out
+          java -jar MMT-system/deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
+          java -jar MMT-system/deploy/mmt.jar :file MMT-content/${{ env.MMT_ARCHIVE }}/build.msl
+      
+      - name: Test '${{ env.MMT_ARCHIVE }}'
+        if: always() && steps.setup.outcome == 'success'
+        env:
+          MMT_ARCHIVE: 'MMT/LATIN2'
+        run: |
+          cd out
+          java -jar MMT-system/deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
+          java -jar MMT-system/deploy/mmt.jar :file MMT-content/${{ env.MMT_ARCHIVE }}/build.msl
+      
+
+

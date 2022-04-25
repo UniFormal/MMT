@@ -28,7 +28,6 @@ class RuleBasedChecker extends ObjectChecker {
 
       def fail(msg: String) = {
         env.errorCont(InvalidUnit(cu, NoHistory, msg))
-        val tm = ParseResult
         CheckingResult(false, None, prOrg.toTerm)
       }
       if (cu.isKilled) {
@@ -83,10 +82,10 @@ class RuleBasedChecker extends ObjectChecker {
          }
         // report warnings
         solver.getErrors.foreach{
-          case e@SolverError(l,h,_) =>
+          case e@SolverError(exc,h,_) =>
             val msg = e.msg(solver.presentObj(_))
             env.errorCont(new InvalidUnit(cu,h.narrowDownError,msg) {
-              override val level = l
+              override val excuse = exc
             })
         }
       } else {
@@ -94,10 +93,10 @@ class RuleBasedChecker extends ObjectChecker {
          val cuS = cu.present(solver.presentObj)
          logGroup {
             solver.logState(logPrefix)
-            val (errors,warnings) = solver.getErrors.partition(e => e.level >= Level.Error)
-            (errors:::warnings) foreach {case SolverError(l,h,m) =>
-               val e = new InvalidUnit(cu, h.narrowDownError, cuS + ": " + m.map(_.apply(o => controller.presenter.asString(o))).getOrElse("")) {
-                 override val level = l
+            val errors = solver.getErrors
+            errors foreach {case SolverError(exc,h,_) =>
+               val e = new InvalidUnit(cu, h.narrowDownError, cuS) {
+                 override val excuse = exc
                }
                env.errorCont(e)
             }

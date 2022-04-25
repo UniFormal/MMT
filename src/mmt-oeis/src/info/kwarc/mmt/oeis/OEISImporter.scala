@@ -88,7 +88,7 @@ class OEISImporter extends Importer {
       newSrc.close
 
       val defSRef = OMDoc.getDefaultSRef(text, bt.narrationDPath)
-      val errHandler = new FilteringErrorHandler(bt.errorCont, e => e.level != Level.Info) //e.level == Level.Error && e.level == Level.Fatal)
+      val errHandler = new HandlerWithTreshold(bt.errorCont, Level.Warning)
 
       translateDocument(node, defSRef)(bt.narrationDPath, errHandler)
       val doc = controller.getDocument(bt.narrationDPath)

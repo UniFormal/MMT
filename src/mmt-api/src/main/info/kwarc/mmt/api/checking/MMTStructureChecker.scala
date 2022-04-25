@@ -23,7 +23,7 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
     ce.errorCont(e)
   }
 
-  def extSimpEnv = new uom.ExtendedSimplificationEnvironment(ce.simpEnv, ce.simplifier.objectLevel, rules)
+  def extSimpEnv = uom.ExtendedSimplificationEnvironment(ce.simpEnv, ce.simplifier.objectLevel, rules)
 }
 
 /** auxiliary class for the [[MMTStructureChecker]] to store expectations about a constant */
@@ -573,7 +573,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val total = unmappedNames.isEmpty
     if (!total) {
       val ie = new InvalidElement(mod, mod.feature + " is not total") {
-        override def level = Level.Warning
+        override val excuse = Some(Level.Gap)
         override def extraMessage = unmappedNames.mkString("\n")
       }
       env.errorCont(ie)
@@ -823,9 +823,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @return the reconstructed term and a flag to signal if there were errors
     */
   private def checkTermTop(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): (Term, Boolean) = {
-    env.ce.errorCont.mark
-    val tR = checkTerm(context, t)(env,t)
-    (tR, env.ce.errorCont.noErrorsAdded)
+    // wrap the error handler in a tracker to see if this term introduced errors
+    val envTracking = env.copy(ce = env.ce.copy(errorCont = new TrackingHandler(env.ce.errorCont)))
+    val tR = checkTerm(context, t)(envTracking,t)
+    (tR, !envTracking.ce.errorCont.hasNewErrors)
   }
 
   /**
@@ -1049,8 +1050,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     // subs is total if all names in fromDomain have been removed or are defined to begin with
     if (!allowPartial) {
       val left = fromDomain.filterNot(_.defined)
-      if (left.nonEmpty)
-        env.errorCont(InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")))
+      if (left.nonEmpty) {
+        val e = new InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")) {
+          override val excuse = Some(Level.Gap)
+        }
+        env.errorCont(e)
+      }
     }
     // finally, check the individual maps in subs
     subs.map {

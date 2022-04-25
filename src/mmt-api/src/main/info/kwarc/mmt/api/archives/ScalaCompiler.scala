@@ -1,12 +1,7 @@
 package info.kwarc.mmt.api.archives
 
-import java.net.URLClassLoader
-
 import info.kwarc.mmt.api._
 import utils._
-import MMTSystem._
-
-import scala.util.Try
 
 object ScalaOutDim extends RedirectableDimension("bin")
 
@@ -28,7 +23,7 @@ class ScalaCompiler extends BuildTarget {
   }
 
 
-   def build(a: Archive, w: Build, in: FilePath) {
+   def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
      (a / ScalaOutDim).mkdirs
      // find all source folders to collect files in
      val folderList = a.properties.getOrElse("scala", "scala")
@@ -53,12 +48,20 @@ class ScalaCompiler extends BuildTarget {
 
      val process = RunJavaClass("scala.tools.nsc.Main", args, s => report("debug", s))
 
-     // run the process and wait for it
-     val proc = process.inheritIO().start()
-     proc.waitFor()
-
-     if(proc.exitValue() != 0) {
-       throw LocalError("scalac returned error code")
+     // run the process and process its output
+     // we must redirect error output to output -
+     //   otherwise we'd have to use two threads to read output and error output concurrently to avoid deadlocking
+     // if we used inheritIO instead of reading the output ourselves, we'd have to call proc.waitFor() afterwards
+     val proc = process.redirectErrorStream(true).start()
+     val output = StreamReading.read(proc.getInputStream)
+     log(output)
+     val ev = proc.waitFor() // waits (which shouldn't be necessary) and returns the exit value
+     if (ev != 0) {
+       val e = LocalError("scalac returned errors (see log output for error messages)")
+       errorCont match {
+         case Some(ec) => ec(e)
+         case None => throw e
+       }
      }
    }
 
