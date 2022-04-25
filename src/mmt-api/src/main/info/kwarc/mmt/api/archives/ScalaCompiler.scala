@@ -55,7 +55,7 @@ class ScalaCompiler extends BuildTarget {
      val proc = process.redirectErrorStream(true).start()
      val output = StreamReading.read(proc.getInputStream)
      log(output)
-     val ev = proc.exitValue()
+     val ev = proc.waitFor() // waits (which shouldn't be necessary) and returns the exit value
      if (ev != 0) {
        val e = LocalError("scalac returned errors (see log output for error messages)")
        errorCont match {

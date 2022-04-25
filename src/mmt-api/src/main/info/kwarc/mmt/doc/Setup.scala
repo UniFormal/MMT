@@ -130,25 +130,26 @@ class Setup extends ShellExtension("setup") {
           val entries = jarF.entries
           val unix = OS.detect.isInstanceOf[Unix]
           while (entries.hasMoreElements) {
-             val entry = entries.nextElement
-             val name = entry.getName
-             if (!entry.isDirectory && name.startsWith("setup/")) {
-                val rest = name.substring(6)
-                // skip OS-specific files
-                val winMain = rest.endsWith(".bat")
-                val unixMain = rest == "deploy/mmt"
-                if (! (unix && winMain || !unix && unixMain)) {
-                   val dest = systemFolder / rest
-                   log("extracting " + dest)
-                   val s = utils.readFullStream(jarF.getInputStream(entry))
-                   File.write(dest, s)
-                   if (unix && unixMain) {
-                     ShellCommand.run("chmod", "+x", dest.toString)
-                   }
-                  log("done")
+            val entry = entries.nextElement
+            val name = entry.getName
+            if (!entry.isDirectory && name.startsWith("setup/")) {
+              val rest = name.substring(6)
+              // skip OS-specific files
+              val winMain = rest.endsWith(".bat")
+              val unixMain = rest == "deploy/mmt"
+              if (!(unix && winMain || !unix && unixMain)) {
+                val dest = systemFolder / rest
+                log("extracting " + dest)
+                val s = utils.readFullStream(jarF.getInputStream(entry))
+                File.write(dest,s)
+                if (unix && unixMain) {
+                  ShellCommand.run("chmod","+x",dest.toString)
                 }
-             }
+                log("done")
+              }
+            }
           }
+        case _:FatJar => // TODO this case occurs when running the jar produced by sbt
         case _ =>
       }
 
