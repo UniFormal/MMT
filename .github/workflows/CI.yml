@@ -50,40 +50,32 @@ jobs:
           echo "MMT_ARCHIVE_VERSION=master" >> $GITHUB_ENV
         if: startsWith(github.ref, 'refs/heads/master')
       
-      - name: Create 'out' directory and run MMT Setup
+      - name: Run MMT Setup and store root directory
         id: setup
         run: |
-          mkdir out && cd out
-          java -jar ../deploy/mmt.jar :setup --auto --auto --no-content --no-jedit
-          cp ../deploy/mmt.jar MMT-system/deploy/mmt.jar
+          java -jar ./deploy/mmt.jar :setup --auto --auto --no-content --no-jedit
+          echo "MMT_ARCHIVE_ROOT=../MMT-content" >> $GITHUB_ENV
 
-      
       - name: Test '${{ env.MMT_ARCHIVE }}'
         if: always() && steps.setup.outcome == 'success'
         env:
           MMT_ARCHIVE: 'MMT/urtheories'
         run: |
-          cd out
-          java -jar MMT-system/deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
-          java -jar MMT-system/deploy/mmt.jar :file MMT-content/${{ env.MMT_ARCHIVE }}/build.msl
+          java -jar ./deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
+          java -jar ./deploy/mmt.jar :file ${{ env.MMT_ARCHIVE_ROOT }}/${{ env.MMT_ARCHIVE }}/build.msl
       
       - name: Test '${{ env.MMT_ARCHIVE }}'
         if: always() && steps.setup.outcome == 'success'
         env:
           MMT_ARCHIVE: 'MMT/examples'
         run: |
-          cd out
-          java -jar MMT-system/deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
-          java -jar MMT-system/deploy/mmt.jar :file MMT-content/${{ env.MMT_ARCHIVE }}/build.msl
+          java -jar ./deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
+          java -jar ./deploy/mmt.jar :file ${{ env.MMT_ARCHIVE_ROOT }}/${{ env.MMT_ARCHIVE }}/build.msl
       
       - name: Test '${{ env.MMT_ARCHIVE }}'
         if: always() && steps.setup.outcome == 'success'
         env:
           MMT_ARCHIVE: 'MMT/LATIN2'
         run: |
-          cd out
-          java -jar MMT-system/deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
-          java -jar MMT-system/deploy/mmt.jar :file MMT-content/${{ env.MMT_ARCHIVE }}/build.msl
-      
-
-
+          java -jar ./deploy/mmt.jar lmh install ${{ env.MMT_ARCHIVE }}@${{ env.MMT_ARCHIVE_VERSION }}
+          java -jar ./deploy/mmt.jar :file ${{ env.MMT_ARCHIVE_ROOT }}/${{ env.MMT_ARCHIVE }}/build.msl
