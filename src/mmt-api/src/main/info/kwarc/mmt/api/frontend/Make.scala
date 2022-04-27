@@ -51,8 +51,9 @@ class Make extends ShellExtension("make") {
      controller.report.groups += "debug"
      controller.report.groups += "archives"
      controller.report.groups += bt.logPrefix
-     val ec = new ErrorContainer(Some(report))
-     bt(BuildAll, arch, buildPath, Some(ec))
+     val ec = new ErrorContainer
+     val eh = MultipleErrorHandler(List(ec), report)
+     bt(BuildAll, arch, buildPath, Some(eh))
      Some(ec.maxLevel)
    }
 }
@@ -71,19 +72,20 @@ class RunFile extends ShellExtension("file") {
   }
   def doIt(file: File): Option[Level.Level] = {
     controller.report.addHandler(ConsoleHandler)
-    controller.report.groups += "debug"
+    // controller.report.groups += "debug"
     controller.report.groups += logPrefix
-    val errorCont = new ErrorContainer(Some(report))
+    val errorContainer = new ErrorContainer
+    val errorHandler = MultipleErrorHandler(List(errorContainer), report)
     try {
-      controller.runMSLFile(file,None,true,Some(errorCont))
+      controller.runMSLFile(file,None,true,Some(errorHandler))
     } catch {
       case e: Exception =>
-        errorCont(Error(e))
+        errorHandler(Error(e))
         log("interrupted due to unrecovered error")
         return Some(Level.Fatal)
     }
-    val errors = errorCont.getErrors.filter(_.level >= Level.Warning)
-    val maxLev = errorCont.maxLevel
+    val errors = errorContainer.getErrors.filter(_.level >= Level.Warning)
+    val maxLev = errorContainer.maxLevel
     val groups = errors.groupBy(_.level)
     val actualErrors = groups.getOrElse(Level.Error, Nil)
     val msg = if (groups.isEmpty) "no errors" else groups.map {case (l,es) => s"${es.length} ${l}s"}.mkString(", ")

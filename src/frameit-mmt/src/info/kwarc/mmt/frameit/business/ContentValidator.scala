@@ -39,7 +39,7 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
   })
 
   private def createFreshCheckingEnv() = {
-    val errorContainer = new ErrorContainer(None)
+    val errorContainer = new ErrorContainer
     val checkingEnv: CheckingEnvironment = new CheckingEnvironment(ctrl.simplifier, errorContainer, RelationHandler.ignore, MMTTask.generic)
 
     (checkingEnv, errorContainer)

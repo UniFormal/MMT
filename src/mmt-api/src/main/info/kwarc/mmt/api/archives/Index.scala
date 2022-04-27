@@ -121,7 +121,7 @@ abstract class NonTraversingImporter extends BuildTarget with GeneralImporter {
   /** like index, but additionally allows for error reporting */
   def importDocumentWithErrorHandler(a: Archive, dpath: DPath)(body: ErrorHandler => Unit) {
     val errorFileName = a / errors / key
-    val eh = new ErrorWriter(errorFileName, Some(report))
+    val eh = MultipleErrorHandler(List(new ErrorWriter(errorFileName)), report)
     body(eh)
     eh.close
     importDocument(a, dpath)

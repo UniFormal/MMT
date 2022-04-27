@@ -92,8 +92,11 @@ object TranslationController extends frontend.Logger {
     ("Error of type "+errType+whileDoingWhat+":\n"+e.getMessage+cause)
   }
 
-  private def typeCheckingErrHandler: ErrorHandler = new FilteringErrorHandler(new ErrorContainer(Some(this.translatorReport))) {
-    def filter(e: Error) = errFilter(e)
+  private def typeCheckingErrHandler: ErrorHandler = {
+    val fe = new FilteringErrorHandler(new ErrorContainer) {
+      def filter(e: Error) = errFilter(e)
+    }
+    MultipleErrorHandler(List(fe), this.translatorReport)
   }
 
   private def checkingEnvironment = new CheckingEnvironment(TranslationController.structureSimplifier, typeCheckingErrHandler, checking.RelationHandler.ignore, MMTTask.generic)

@@ -360,7 +360,7 @@ abstract class OpenCloseHandler extends ErrorHandler {
 }
 
 /** combines the actions of multiple handlers */
-class MultipleErrorHandler(handlers: List[ErrorHandler]) extends OpenCloseHandler {
+class MultipleErrorHandler(val handlers: List[ErrorHandler]) extends OpenCloseHandler {
   def addError(e: Error) {
     handlers.foreach(_.apply(e))
   }
@@ -377,15 +377,31 @@ class MultipleErrorHandler(handlers: List[ErrorHandler]) extends OpenCloseHandle
     }
   }
 }
+object MultipleErrorHandler {
+  /** creates a MultipleErrorHandler and adds error reporting if not also present */
+  def apply(hs: List[ErrorHandler], rep: frontend.Report) = {
+    val handlers = hs.flatMap(handlersFlat)
+    val alreadyReports = handlers.exists {
+      case h: ErrorLogger => h.report == rep
+      case _ => false
+    }
+    val errorLogger = if (alreadyReports) Nil else List(new ErrorLogger(rep))
+    new MultipleErrorHandler(errorLogger:::handlers)
+  }
+  /** all atomic handlers, i.e., flattening out the multiple handlers */
+  def handlersFlat(e: ErrorHandler): List[ErrorHandler] = e match {
+    case me: MultipleErrorHandler => me.handlers.flatMap(handlersFlat)
+    case h => List(h)
+  }
+}
 
 /** stores errors in a list */
-class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
+class ErrorContainer extends ErrorHandler {
   private var errors: List[Error] = Nil
   protected def addError(e: Error) {
     this.synchronized {
       errors ::= e
     }
-    report.foreach(_ (e))
   }
   def isEmpty: Boolean = errors.isEmpty
   override def reset() {
@@ -399,15 +415,12 @@ class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
 /** writes errors to a file in XML syntax
   *
   * @param fileName the file to write the errors into (convention: file ending 'err')
-  * @param report if given, errors are also reported
-  *
   */
-class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends OpenCloseHandler {
+class ErrorWriter(fileName: File) extends OpenCloseHandler {
   private var file: StandardPrintWriter = null
 
   protected def addError(e: Error) {
     if (file == null) open
-    report.foreach(_ (e))
     file.write(new PrettyPrinter(240, 2).format(e.toNode) + "\n")
   }
 
@@ -423,7 +436,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends OpenC
 }
 
 /** reports errors */
-class ErrorLogger(report: frontend.Report) extends ErrorHandler {
+class ErrorLogger(val report: frontend.Report) extends ErrorHandler {
   protected def addError(e: Error) {
     report(e)
   }

@@ -290,11 +290,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     */
   private def makeBuildTask(a: Archive,inPath: FilePath,inFile: File,
                             children: Option[List[BuildTask]],eCOpt: Option[ErrorHandler]): BuildTask = {
-    val errorWriter = makeHandler(a,inPath,children.isDefined)
-    val errorCont = eCOpt match {
-      case None => errorWriter
-      case Some(eC) => new MultipleErrorHandler(List(eC,errorWriter))
-    }
+    val ew = makeHandler(a,inPath,children.isDefined)
+    val errorCont = MultipleErrorHandler(ew :: eCOpt.toList, report)
     val outFile = if (children.isDefined) getFolderOutFile(a,inPath) else getOutFile(a,inPath)
     new BuildTask(key,a,inFile,children,inPath,outFile,errorCont)
   }
@@ -308,10 +305,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** auxiliary function to create an error handler */
-  private def makeHandler(a: Archive,inPath: FilePath,isDir: Boolean = false) = {
+  private def makeHandler(a: Archive,inPath: FilePath, isDir: Boolean = false) = {
     val errFileName = if (isDir) getFolderErrorFile(a,inPath)
     else getErrorFile(a,inPath)
-    new ErrorWriter(errFileName,Some(report))
+    new ErrorWriter(errFileName)
   }
 
   // ******************* Actual building (i.e., when the build manager calls a build task)

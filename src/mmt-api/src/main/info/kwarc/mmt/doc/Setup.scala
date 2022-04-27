@@ -70,7 +70,14 @@ class Setup extends ShellExtension("setup") {
         (sf, cf, Some(""), jsf, None)
       } else {
         // setup via command line arguments
-        val sf = if (args(0) == "--auto") File.currentDir / "MMT-system" else File(args(0))
+        val sf = if (args(0) == "--auto") {
+          MMTSystem.runStyle match {
+            case d: DeployRunStyle =>
+              d.deploy.up
+            case _ =>
+              File.currentDir / "MMT-system"
+          }
+        } else File(args(0))
         val cf = if (l >= 2 && args(1) != "--auto") File(args(1)) else {
           sf.up / "MMT-content"
         }
@@ -135,22 +142,22 @@ class Setup extends ShellExtension("setup") {
             if (!entry.isDirectory && name.startsWith("setup/")) {
               val rest = name.substring(6)
               // skip OS-specific files
-              val winMain = rest.endsWith(".bat")
-              val unixMain = rest == "deploy/mmt"
-              if (!(unix && winMain || !unix && unixMain)) {
+              val winFile = rest.endsWith(".bat")
+              if (unix && !winFile || !unix && winFile) {
                 val dest = systemFolder / rest
                 log("extracting " + dest)
                 val s = utils.readFullStream(jarF.getInputStream(entry))
                 File.write(dest,s)
-                if (unix && unixMain) {
+                if (unix) {
                   ShellCommand.run("chmod","+x",dest.toString)
                 }
                 log("done")
               }
             }
           }
-        case _:FatJar => // TODO this case occurs when running the jar produced by sbt
         case _ =>
+           // TODO this case should also copy fiels
+           //  if MMT is run with a parameter for the system folder that's not an MMT clone folder (but nobody should do that anyway)
       }
 
       val configFile = deploy/"mmtrc"
