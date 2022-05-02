@@ -15,7 +15,7 @@ trait Exporter extends BuildTarget {self =>
   protected var _rh: RenderingHandler = null
   /**
     * sends output to a certain file, file is created new and deleted if empty afterwards
- *
+    *
     * @param out the output file to be used while executing body
     * @param body any code that produces output
     */
