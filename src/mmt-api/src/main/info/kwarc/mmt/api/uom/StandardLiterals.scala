@@ -509,6 +509,10 @@ object Arithmetic {
   }
 }
 
+
+object OpenMath {
+  val _path = DPath(utils.URI("http", "www.openmath.org") / "cd") ? "OpenMath"
+}
 /** OpenMath's literals
   *  These should be moved to an OpenMath plugin, but they are used by the API, e.g., for metadata
   */

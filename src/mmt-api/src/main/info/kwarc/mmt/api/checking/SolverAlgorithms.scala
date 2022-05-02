@@ -31,13 +31,11 @@ trait SolverAlgorithms {self: Solver =>
    private lazy val universeRules = rules.getOrdered(classOf[UniverseRule])
    private lazy val inhabitableRules = rules.getOrdered(classOf[InhabitableRule])
    private lazy val termBasedEqualityRules = rules.getOrdered(classOf[TermBasedEqualityRule])
-   private lazy val termHeadBasedEqualityRules = rules.getOrdered(classOf[TermHeadBasedEqualityRule])
    private lazy val typeBasedEqualityRules = rules.getOrdered(classOf[TypeBasedEqualityRule])
    private lazy val solutionRules = rules.getOrdered(classOf[ValueSolutionRule])
    private lazy val typeSolutionRules = rules.getOrdered(classOf[TypeSolutionRule])
    private lazy val typeCoercionRules = rules.getOrdered(classOf[TypeCoercionRule])
    private lazy val forwardSolutionRules = rules.getOrdered(classOf[ForwardSolutionRule])
-   private lazy val abbreviationRules = rules.getOrdered(classOf[AbbrevRule])
 
   // ******************************************************************************************
   // *** algorithms for checking a judgment, returning booleans
@@ -64,7 +62,7 @@ trait SolverAlgorithms {self: Solver =>
       }
       JudgementStore.getOrElseUpdate(j) {
         history += j
-        log("checking: " + j.presentSucceedent + "\n  in context: " + j.presentAntecedent)
+        log("checking: " + j.presentSuccedent + "\n  in context: " + j.presentAntecedent)
         logAndHistoryGroup {
           j match {
             case j: Typing   => checkTyping(j)
@@ -79,26 +77,6 @@ trait SolverAlgorithms {self: Solver =>
         }
      }
    }
-
-   /** caches the results of judgements to avoid duplicating work */
-   // judgements are not cached if we are in a dry run to make sure they are run again later to solve unknowns
-   private object JudgementStore {
-     private val store = new scala.collection.mutable.HashMap[Judgement,Boolean]
-     def get(j : Judgement) = store.get(j)
-     /** lookup up result for j; if not known, run f to define it */
-     def getOrElseUpdate(j : Judgement)(f: => Boolean): Boolean = {
-       store.find {case (k,_) => k implies j} match {
-         case Some((_,r)) =>
-           r
-         case None =>
-           val r = f
-           if (!isDryRun) {
-             store(j) = r
-           }
-           r
-       }
-    }
-  }
 
    /** proves a Universe Judgment
     *
@@ -185,11 +163,12 @@ trait SolverAlgorithms {self: Solver =>
      // continuation if we resort to infering the type of tm
      def checkByInference(tpS: Term, h: History): Boolean = {
        log("checking by inference")
-       inferType(tm)(stack, h + "inferring type") match {
+       val hI = h + "inferring type"
+       inferType(tm)(stack, hI) match {
          case Some(tmI) =>
            checkAfterInference(tmI, tpS, h)
          case None =>
-           delay(Typing(stack, tm, tpS, j.tpSymb))(h + "no applicable typing rule and type inference failed")
+           delay(Typing(stack, tm, tpS, j.tpSymb))(hI + "no applicable typing rule and type inference failed")
        }
      }
 
@@ -356,7 +335,8 @@ trait SolverAlgorithms {self: Solver =>
       }
       // solve an unknown
       val jS = j.copy(tm1 = tm1S, tm2 = tm2S)
-      val solved = solveEquality(jS) || solveEquality(jS.swap)
+      Solver.breakAfter(139)
+      val solved = solveEquality(jS,Nil) || solveEquality(jS.swap,Nil)
       if (solved) return true
 
       // 2) find a TermBasedEqualityRule
@@ -410,6 +390,13 @@ trait SolverAlgorithms {self: Solver =>
       }
    }
 
+  private def isDirectlySolvable(j: Equality)(implicit stack: Stack) = {
+    j.tm1 match {
+      case Unknown(_,args) => isDistinctVarList(args).isDefined
+      case _ => false
+    }
+  }
+
    /**
     * checks equality t1 = t2 by using congruence reasoning
     *
@@ -421,7 +408,11 @@ trait SolverAlgorithms {self: Solver =>
        true
      } else if (!stability.is(t1S) || !stability.is(t2S)) {
        history += "terms not stable"
-       delay(Equality(stack,t1S,t2S,Some(tp)))
+       val j = Equality(stack,t1S,t2S,Some(tp))
+       val equalities = CongruenceClosure(j)
+       val suffices = if (equalities.exists(_.forall(e => isDirectlySolvable(e) || isDirectlySolvable(e.swap))))
+         equalities else None
+       delay(j, suffices)
      } else {
        history += "both terms are stable"
        def differentShape = error("terms have different shape")
@@ -470,6 +461,7 @@ trait SolverAlgorithms {self: Solver =>
     * post: subtyping judgment is covered
     */
    private def checkSubtyping(j: Subtyping)(implicit history: History): Boolean = {
+     if (j.tp1 hasheq j.tp2) return true
      implicit val stack = j.stack
      val tp1L = coerceToType(j.tp1)
      val tp2L = coerceToType(j.tp2)
@@ -491,7 +483,10 @@ trait SolverAlgorithms {self: Solver =>
      // otherwise, apply a subtyping rule
      history += "not obviously equal, trying subtyping rules"
      val res = tryAllRules(subtypingRules,tp1,tp2){(r,t1,t2) => r.applicable(t1,t2)} { (rule,tp1S,tp2S,h) =>
-       rule(this)(tp1S,tp2S)(stack,h)
+       try { rule(this)(tp1S,tp2S)(stack,h) } catch {
+         case d : rule.DelayJudgment =>
+           return delay(j)
+       }
      }
      res.getOrElse {
        history += "falling back to checking equality"
@@ -563,8 +558,12 @@ trait SolverAlgorithms {self: Solver =>
              history += "lookup in theory"
              getType(p) orElse {
                getDef(p) match {
-                 case None => None
-                 case Some(d) => inferType(d) // expand defined constant
+                 case None =>
+                   history += "no type or definiens"
+                   None
+                 case Some(d) =>
+                   history += "no type, inferring from definiens"
+                   inferType(d) // expand defined constant
                }
              }
           // note that OML's do not have a generally-defined type
@@ -646,9 +645,9 @@ trait SolverAlgorithms {self: Solver =>
     *
     * If type inference is not successful, this is delayed.
     */
-  def inferTypeAndThen(tm: Term)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
+  def inferTypeAndThen(tm: Term, covered: Boolean = false)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
       implicit val (s,h) = (stack, history)
-      inferType(tm) match {
+      inferType(tm, covered) match {
          case Some(tp) =>
             cont(tp)
          case None =>
@@ -706,13 +705,13 @@ trait SolverAlgorithms {self: Solver =>
    }
 
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
-      val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
+      val msg = "proving " + presentObj(context) + " |-- _  ::  " + presentObj(conc)
       history += msg
       val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
-      controller.extman.get(classOf[Prover]) foreach {prover =>
+      controller.extman.get(classOf[AutomatedProver]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {
-            val p = proof.get
+            val p = proof.getOrElse(UnknownTerm())
             history += "proof: " + presentObj(p)
             return Some(p)
          } else {
@@ -1010,43 +1009,27 @@ trait SolverAlgorithms {self: Solver =>
   // *** auxiliary functions for solving
   // ******************************************************************************************
 
-  /**
-    * For cycle detection in solveEquality
-    */
-  private object SolveEqualityStack {
-    private var stack : List[Equality] = Nil
-    def apply(j : Equality)(a : => Boolean): Boolean = try {
-      if (stack contains j) {
-        log("Cycle in solveEquality!")
-        return false
-      }
-      stack ::= j
-      val ret = a
-      assert(stack.head == j)
-      stack = stack.tail
-      ret
-    } catch {
-      case rc : NonLocalReturnControl[Boolean@unchecked] =>
-        assert(stack.head == j)
-        stack = stack.tail
-        rc.value
-    }
-  }
-
    /** tries to solve an unknown occurring in tm1 in terms of tm2
     *
     *  returns true if the unknowns were solved and the equality proved
     *  otherwise, returns false without state change (returning false here does not signal that the equality is disproved)
     */
-   private def solveEquality(j: Equality)(implicit history: History): Boolean = SolveEqualityStack(j) {
+   private def solveEquality(j: Equality, seenSofar: List[Equality])(implicit history: History): Boolean = {
+      if (seenSofar contains j) return false // cycle in recursive simplification, so give up
       implicit val stack = j.stack
-     log("Solving " + j.present)
+      log("Solving " + j.present)
       j.tm1 match {
          //foundation-independent case: direct solution of an unknown variable
         case Unknown(m, as) =>
-          val vars = isDistinctVarList(as).getOrElse(return false)
+          var vars = isDistinctVarList(as).getOrElse(return false)
           // solve m with j.tm2
-          val mSol = FreeOrAny(vars, j.tm2)
+          var mSol = FreeOrAny(vars, j.tm2)
+          // depending on he order in which variables are solved, it's possible m already occurs in vars
+          // so we have to substitute it before checking for a cycle
+          if (vars.freeVars contains m) {
+            vars = new SubstituteUnknowns(m -> mSol).traverseObject(vars)(Context.empty, ())
+            mSol = FreeOrAny(vars, j.tm2)
+          }
           moveToRight(m)
           val remainingFreeVars = notAllowedInSolution(m, mSol)
           if (remainingFreeVars.isEmpty) {
@@ -1070,7 +1053,7 @@ trait SolverAlgorithms {self: Solver =>
                   case Some((j2,msg)) =>
                     history += "Using solution rule " + rs.head.toString
                     log("Using solution rule " + rs.head.toString)
-                    return solveEquality(j2)((history + msg).branch)
+                    return solveEquality(j2,j::seenSofar)((history + msg).branch)
                   case _ =>
                 }
               }

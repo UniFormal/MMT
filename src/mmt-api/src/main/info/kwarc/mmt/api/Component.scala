@@ -16,7 +16,7 @@ trait ComponentContainer {
     */
    def update(nw: ComponentContainer): Boolean
    /** empties this container, afterwards the component is absent */
-   def delete: Unit
+   def delete(): Unit
    /** true if (some dimension of) this component is present */
    def isDefined: Boolean
 
@@ -50,7 +50,7 @@ class FinalTermContainer(t: Term) extends AbstractTermContainer {
       case nw: FinalTermContainer => nw.get != Some(t)
       case _ => throw ImplementationError("cannot update final term container")
    }
-   def delete {}
+   def delete(): Unit = {}
    def isDefined = true
    def get = Some(t)
 }

@@ -66,7 +66,7 @@ class JupyterKernel extends Extension {
   private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
   private val logFile = utils.File("mmt-jupyter-kernel").addExtension("log")
   logFile.createNewFile()
-  private val errorCont = new MultipleErrorHandler(List(new ErrorWriter(logFile, None), ErrorThrower))
+  private val errorCont = new MultipleErrorHandler(List(new ErrorWriter(logFile), ErrorThrower))
 
   override def logPrefix: String = "jupyter"
   

@@ -3,10 +3,11 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.presentation.PresentationContext
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
-import scala.xml.Node
+import scala.xml.{Attribute, Elem, Node, Null}
 
 
 /** represents an MMT term variable declaration
@@ -39,6 +40,7 @@ case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], d
   }).getOrElse(Nil) ::: (df map {
     _.freeVars_
   }).getOrElse(Nil)
+  private[objects] def paths_ = tp.map(_.paths_).getOrElse(Nil) ::: df.map(_.paths_).getOrElse(Nil)
 
   def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
 
@@ -59,12 +61,6 @@ case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], d
   def toNode = <om:OMV name={name.toPath} feature={feature.orNull}>
     {mdNode}{tpN}{dfN}
   </om:OMV>
-
-  def toCMLQVars(implicit qvars: Context) = <bvar>
-    <ci>
-      {name.toPath}
-    </ci>{(tp.toList ::: df.toList).map(_.toCMLQVars)}
-  </bvar>
 
   private def tpN = tp.map(t => <type>
     {t.toNode}
@@ -224,8 +220,8 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
     Context(vds.reverse: _*)
   }
 
-  /** true if that is a subcontext (inclusion substitution) of this one */
-  // TODO too conservative: may return false too often
+  /** a sound but not necessary complete criterion for whether this context is stronger than that one */
+  // TODO could return true more often, but covers the practically important cases
   def subsumes(that: Context): Boolean = {
     val thisNames = this.variables.toList.map(_.name)
     val thatNames = that.variables.toList.map(_.name)
@@ -368,6 +364,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
       fv
     }
   }
+  private[objects] def paths_ = this.flatMap(_.paths_)
 
   def subobjects = mapVarDecls { case (con, vd) => (con, vd) }
 
@@ -391,11 +388,6 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
     <om:OMBVAR>
       {mdNode}{this.zipWithIndex.map({ case (v, i) => v.toNode })}
     </om:OMBVAR>
-
-  def toCMLQVars(implicit qvars: Context) =
-    <apply>
-      {this.map(v => v.toCMLQVars)}
-    </apply>
 
   def head = None
 
@@ -422,16 +414,13 @@ case class Sub(name: LocalName, target: Term) extends Obj {
   def map(f: Term => Term) = Sub(name, f(target))
 
   private[objects] def freeVars_ = target.freeVars_
+  private[objects] def paths_ = target.paths_
 
   def subobjects = subobjectsNoContext(List(target))
 
   def toNode: Node = <om:OMV name={name.toString}>
     {mdNode}{target.toNode}
   </om:OMV>
-
-  def toCMLQVars(implicit qvars: Context): Node = <mi name={name.toPath}>
-    {target.toCMLQVars}
-  </mi>
 
   def toStr(implicit shortURIs: Boolean) = name + ":=" + target.toStr
 
@@ -477,6 +466,7 @@ case class Substitution(subs: Sub*) extends Obj {
   private[objects] def freeVars_ = (this flatMap {
     _.freeVars_
   })
+  private[objects] def paths_ = this.flatMap(_.paths_)
 
   def subobjects = subobjectsNoContext(subs.toList)
 
@@ -514,8 +504,6 @@ case class Substitution(subs: Sub*) extends Obj {
     <om:OMBVAR>
       {mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}
     </om:OMBVAR>
-
-  def toCMLQVars(implicit qvars: Context) = asContext.toCMLQVars
 
   def head = None
 

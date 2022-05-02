@@ -15,14 +15,13 @@
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 // twiesing 18-09-2018: Remove call to deprecated methods
+// twiesing 01-04-2020: Fix weird regression on Mac OS
 
 package tiscaf
 
-import java.nio.ByteBuffer
+import java.nio.{Buffer, ByteBuffer}
 import java.nio.channels.{SelectionKey, Selector, SocketChannel}
-
 import javax.net.ssl._
-
 import scala.concurrent.ExecutionContext
 import scala.util.Success
 
@@ -90,6 +89,36 @@ private trait HPeer extends HLoggable {
   }
 }
 
+/**
+  * On certain newer versions of the JVM some of the ByteBuffer methods fail with:
+  * java.lang.NoSuchMethodError: java.nio.ByteBuffer.limit(I)Ljava/nio/ByteBuffer
+  *
+  * See also https://jira.mongodb.org/browse/JAVA-2559.
+  *
+  * This object contains methods to work around these changes.
+  * A clean approach would be to recompile the unmanaged jar dependencies.
+  * However that would potentially break other versions.
+  */
+object BufferHack {
+  def clear(buffer: ByteBuffer) {
+    try {
+      buffer.clear
+    } catch {
+      case _: java.lang.NoSuchMethodError =>
+        buffer.asInstanceOf[Buffer].clear()
+    }
+  }
+  def flip(buffer: ByteBuffer) {
+    try {
+      buffer.flip
+    } catch {
+      case _: java.lang.NoSuchMethodError =>
+        buffer.asInstanceOf[Buffer].flip()
+    }
+  }
+}
+
+
 private trait HSimplePeer extends HPeer {
 
   private val theBuf = ByteBuffer.allocate(bufferSize)
@@ -109,7 +138,7 @@ private trait HSimplePeer extends HPeer {
         case _ => // do nothing and avoid MatchError
       }
 
-    theBuf.clear
+    BufferHack.clear(theBuf)
     val wasRead = channel.read(theBuf)
     if (wasRead == -1) dispose // counterpart peer wants to write but writes nothing
     else
@@ -130,9 +159,9 @@ private trait HSimplePeer extends HPeer {
   // ByteBuffer.wrap(ar, offset, length) is slower in my tests rather direct array putting
   final def writeToChannel(ar: Array[Byte], offset: Int, length: Int) = {
     if (length > 0) {
-      theBuf.clear
+      BufferHack.clear(theBuf)
       theBuf.put(ar, offset, length)
-      theBuf.flip
+      BufferHack.flip(theBuf)
       plexerBarrier.await
       channel.write(theBuf)
 

@@ -1,13 +1,14 @@
 package info.kwarc.mmt.jedit
 
 import java.awt.Font
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils.File._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.msg._
 import org.gjt.sp.jedit.textarea._
+
 import javax.swing.SwingUtilities
 
 /**
@@ -35,16 +36,26 @@ class MMTPlugin extends EBPlugin with Logger {
    
    /** implements onNavigate hook in terms of the methods of MMTHyperlink */
    val mmtListener = new ChangeListener {
+      override def logPrefix = "jedit-navigate"
       override def onNavigate(p: Path) {
          log("navigating to " + p)
-         val ref = controller.getO(p) flatMap {
-            e => MMTHyperlink.elemToSourceRef(controller, e)
-         }
-         ref foreach {r =>
-            val view = jEdit.getActiveView
-            MMTHyperlink.navigateTo(view, r)
-         }
+         val ref = controller.getO(p) flatMap SourceRef.get
+         ref foreach navigateTo
       }
+     override def onNavigateSource(r: SourceRef) {
+       log("navigating to " + r)
+       navigateTo(r)
+     }
+     def navigateTo(r: SourceRef) {
+       val rPO = MMTHyperlink.makeSourceRefPhysical(controller, r)
+       rPO match {
+         case Some(rP) =>
+           val view = jEdit.getActiveView
+           MMTHyperlink.navigateTo(view,rP)
+         case None =>
+           log("no physical source ref found")
+       }
+     }
    }
 
    /** called by jEdit when plugin is loaded */
@@ -56,7 +67,7 @@ class MMTPlugin extends EBPlugin with Logger {
       val startup = MMTOptions.startup.get.getOrElse("startup.msl")
       val file = home resolve startup
       if (file.exists)
-         controller.runMSLFile(file, None)
+         controller.runMSLFile(file, None, true, Some(new ErrorLogger(controller.report)))
 
       val conf = MMTOptions.config.get.getOrElse("mmtrc")
       val confFile = home resolve conf
@@ -119,7 +130,7 @@ class MMTPlugin extends EBPlugin with Logger {
           val file = utils.File(buffer.getPath)
           bup.getWhat match {
             case BufferUpdate.CLOSED =>
-              errorSource.removeFileErrors(file)
+              errorSource.removeMMTFileErrors(file)
             case _ =>
           }
         case _ =>
@@ -148,13 +159,13 @@ class MMTPlugin extends EBPlugin with Logger {
       val taExt = new MMTTextHighlighting(controller, editPane)
       val tooltipExt = new MMTToolTips(controller, editPane)
       val gutterExt = new MMTGutterExtension(this, editPane)
-      val annotExt = new MMTGutterAnnotations(this, editPane)
+      // val annotExt = new MMTGutterAnnotations(this, editPane) // never used, but could be reactivated
       painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list
       // This only painted delimiters, which is now done by syntax highlighting, and did semantic highlighting, which never worked anyway
       painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
       ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
-      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
-      ta.getGutter.addMouseListener(annotExt.mouseAdapter)
+      //ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
+      //ta.getGutter.addMouseListener(annotExt.mouseAdapter)
     }
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)

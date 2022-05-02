@@ -6,8 +6,8 @@ package info.kwarc.mmt.moduleexpressions.operators
 
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
+import info.kwarc.mmt.api.objects.OMLReplacer
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.OMLReplacer
 import info.kwarc.mmt.api.uom._
 
 /**

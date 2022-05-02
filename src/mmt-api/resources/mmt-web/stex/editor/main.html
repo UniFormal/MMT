@@ -1,0 +1,64 @@
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="/stex/editor/min/vs/loader.js"></script>
+  <style>
+    #editor {
+          min-height: 400px;
+          flex:50%;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+    }
+    body {
+      display:flex;
+      flex-flow: column;
+      flex: 100%;
+      height: 95%;
+    }
+    div {
+      display: flex;
+    }
+    .button {
+      cursor: pointer;
+    }
+    form {
+      margin: 0.5em;
+    }
+  </style>
+</head>
+<body>
+<div style="flex-flow: row">
+  <form method="post" action="/:fomid/editor/save?CONTENT_URL" id="saveform">
+    <input type="hidden" name="content" id="savecontent"/>
+    <span onclick="document.getElementById('savecontent').value = editor.getValue();document.getElementById('saveform').submit();" type="submit" class="button">SAVE</span>
+  </form>
+  <span> </span>
+  <form method="post" action="/:fomid/editor/compile?CONTENT_URL" id="buildform">
+    <input type="hidden" name="content" id="buildcontent"/>
+    <span onclick="document.getElementById('buildcontent').value = editor.getValue();document.getElementById('buildform').submit();" type="submit" class="button" target="iframe">BUILD</span>
+  </form>
+</div>
+
+<div style="flex-flow: row;flex:95%">
+  <div id="editor"></div>
+  <iframe id="iframe" style="border:0;flex:50%;" src="/:fomid/document?CONTENT_URL"></iframe>
+</div>
+
+<script>
+  var editor = null;
+  require.config({ paths: { 'vs': '/stex/editor/min/vs' }});
+  require(['vs/editor/editor.main'], function() {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      language: '',
+      // theme: 'vs-dark'
+    });
+    var request = new XMLHttpRequest();
+    request.open("GET","/:fomid/editor/content?CONTENT_URL",false);
+    request.send(null);
+    editor.setValue(request.responseText);
+  });
+</script>
+
+</body>
+</html>

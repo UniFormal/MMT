@@ -3,9 +3,10 @@ package info.kwarc.mmt.sequences
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.FouraryConstantScala
+import info.kwarc.mmt.api.uom.{FouraryConstantScala, RecurseOnly, Simplifiability, Simplify}
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.sequences.NatRules.NatLit
 
 
 object FoldLeft extends FouraryConstantScala(Sequences._path, "foldLeft") {
@@ -64,19 +65,32 @@ object FoldLeftType extends InferenceRule(FoldLeft.path,OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val fold = FoldLeft.Deconstruct(solver,covered)
     tm match {
-      case fold(init,tp1,tp2,tp3,n,seq) =>
+      case fold(_,_,_,tp3,_,_) =>
         Some(tp3)
       case _ => None
     }
   }
 }
-/*
+
 object FoldLeftCompute extends ComputationRule(FoldLeft.path) {
-  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     tm match {
-      case FoldLeft(f, init, n, seq) =>
-        ???
-      case _ => None
+      case FoldLeft(f, init, _, seq) =>
+        seq match {
+          case Sequences.flatseq(as@_*) =>
+            Simplify(as.foldLeft(init)((t1,t2) => ApplySpine(f,t1,t2)))
+          case Sequences.ellipsis(_,ind,body) =>
+            val nO = Length.infer(solver, seq)
+            nO match {
+              case Some(NatLit(n)) =>
+                Simplify((0 until n.toInt).foldLeft(init)((t1,i) => ApplySpine(f,t1,body ^? (ind / NatLit(i)))))
+              case _ =>
+                RecurseOnly(List(4))
+            }
+          case _ =>
+            RecurseOnly(List(4))
+        }
+      case _ => Simplifiability.NoRecurse
     }
   }
-} */
+}

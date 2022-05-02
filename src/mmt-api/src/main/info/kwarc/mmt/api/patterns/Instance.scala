@@ -77,6 +77,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
        val d = pattern.module.getO(n.tail).getOrElse(return None)
        val dN = d match {
          case c: Constant if c.name == OMV.anonymous => Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, dd.notC)
+         case c: Constant if c.rl == Some("mainDecl")=> Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, c.not map(NotationContainer(_)) getOrElse dd.notC)
          case _ => d
        }
        val subs = (params zip args) map {case (vd,a) => Sub(vd.name, a)}

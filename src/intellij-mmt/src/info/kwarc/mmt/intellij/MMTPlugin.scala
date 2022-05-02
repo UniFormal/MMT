@@ -198,7 +198,7 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     /** Options */
     val mslf = home / "startup.msl"
     if (mslf.toJava.exists())
-      controller.runMSLFile(mslf, None)
+      controller.runMSLFile(mslf, None, true, None)
     else {
       mslf.createNewFile()
       File.append(mslf, "extension info.kwarc.mmt.odk.Plugin")

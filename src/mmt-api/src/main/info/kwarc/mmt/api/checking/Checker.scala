@@ -17,7 +17,7 @@ object RelationHandler {
    def ignore = new RelationHandler {def apply(r: RelationalElement) {}}
 }
 
-class CheckingEnvironment(val simplifier: uom.Simplifier, val errorCont: ErrorHandler, val reCont: RelationHandler, val task: MMTTask) {
+case class CheckingEnvironment(simplifier: uom.Simplifier, errorCont: ErrorHandler, reCont: RelationHandler, task: MMTTask) {
   def simpEnv = new uom.SimplificationEnvironment(false, errorCont, task)
 }
 
@@ -27,6 +27,7 @@ class CheckingEnvironment(val simplifier: uom.Simplifier, val errorCont: ErrorHa
  * see also [[Checker]]
  */
 trait ObjectChecker extends Extension {
+  def lookup = controller.globalLookup
    /**
     * @param cu the checking unit to check
     * @param rules rules to use during checking

@@ -22,18 +22,19 @@ abstract class Lookup {self =>
       if (cls.isInstance(ce))
          ce.asInstanceOf[E]
       else
-         throw GetError("element at " + ce.path + " exists but has unexpected type " + ce.getClass + " (expected: " + cls + ")")
+         throw GetError(ce.path, "element exists but has unexpected type " + ce.getClass + " (expected: " + cls + ")")
    }
 
-   private type ErrorCont = String => Nothing
-   private val defError = (s:String) => throw GetError(s)
    /** for get methods with optional return value */
-   private def optional[E](code: ErrorCont => E): Option[E] = try {Some(code(defError))} catch {case _:GetError|_:BackendError => None}
+   private def optional[E](code: => E): Option[E] = {
+     try {Some(code)}
+     catch {case _:GetError|_:BackendError => None}
+   }
 
    /** lookup a path */
    def get(path : Path) : StructuralElement
    /** like get, but returns option */
-   def getO(path: Path) = optional {_ => get(path)}
+   def getO(path: Path) = optional {get(path)}
    /**
     * like get but with restricted return type
     * example: getAs(classOf[Constant], path): Constant
@@ -50,31 +51,31 @@ abstract class Lookup {self =>
     * @param error the continuation to call on the error message
     * @return the declaration
     */
-   def get(home: Term, name: LocalName, error: String => Nothing): Declaration
+   def get(home: Term, name: LocalName): Declaration
    /** like get but returns optional */
-   def getO(home: Term, name: LocalName) = optional {e => get(home,name,e)}
+   def getO(home: Term, name: LocalName) = optional {get(home,name)}
    /** like get but with restricted return type */
-   def getAs[E <: ContentElement](cls : Class[E], home: Term, name: LocalName, error: String => Nothing): E =
-      as(cls){get(home, name, error)}
+   def getAs[E <: ContentElement](cls : Class[E], home: Term, name: LocalName): E =
+      as(cls){get(home, name)}
 
    // deprecated, use getAs(classOf[X],...) instead of getX
-   def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
-     get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
-   def getView(path : MPath, msg : Path => String = defmsg) : View =
-     get(path) match {case v: View => v case _ => throw GetError(msg(path))}
-   def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
-     get(path) match {case e : Link => e case _ => throw GetError(msg(path))}
-   def getSymbol(path : GlobalName, msg : Path => String = defmsg) : Declaration =
-     get(path) match {case e : Declaration => e case _ => throw GetError(msg(path))}
-   def getConstant(path : GlobalName, msg : Path => String = defmsg) : Constant =
-     get(path) match {case e : Constant => e case _ => throw GetError(msg(path))}
-   def getStructure(path : GlobalName, msg : Path => String = defmsg) : Structure =
-     get(path) match {case e : Structure => e case _ => throw GetError(msg(path))}
+   def getTheory(path : MPath) : Theory =
+     get(path) match {case t: Theory => t case _ => throw GetError(path, "not a theory")}
+   def getView(path : MPath) : View =
+     get(path) match {case v: View => v case _ => throw GetError(path, "not a view")}
+   def getLink(path : ContentPath) : Link =
+     get(path) match {case e : Link => e case _ => throw GetError(path, "not a link")}
+   def getSymbol(path : GlobalName) : Declaration =
+     get(path) match {case e : Declaration => e case _ => throw GetError(path, "not a declaration")}
+   def getConstant(path : GlobalName) : Constant =
+     get(path) match {case e : Constant => e case _ => throw GetError(path, "not a constants")}
+   def getStructure(path : GlobalName) : Structure =
+     get(path) match {case e : Structure => e case _ => throw GetError(path, "not a structure")}
 
    def getComponent(path: CPath) : ComponentContainer = {
-      val se = getO(path.parent).getOrElse(throw GetError("parent does not exist: " + path))
+      val se = getO(path.parent).getOrElse(throw GetError(path, "parent does not exist"))
       se.getComponent(path.component) getOrElse {
-         throw GetError("illegal component: " + path)
+         throw GetError(path, "illegal component")
       }
    }
 
@@ -108,7 +109,7 @@ abstract class Lookup {self =>
       val p = a.home match {
          case OMMOD(p) => p
          case OMS(p) => p
-         case _ => throw GetError("non-atomic link")
+         case _ => throw GetError(a.path, "domain is non-atomic link")
       }
       val l = get(p) match {
          case t: AbstractTheory => return (t, None)
@@ -117,11 +118,11 @@ abstract class Lookup {self =>
            case t: AbstractTheory => return (t, None)
            case l: Link => l
          }
-         case _ => throw GetError("unknown home encountered while getting domain of " + a.path)
+         case _ => throw GetError(a.path, "unknown parent found")
       }
       val dom = l.from match {
          case OMMOD(t) => getAs(classOf[Theory],t)
-         case _ => throw GetError("domain of declared link is not a declared theory")
+         case _ => throw GetError(a.path, "domain of link is not an atomic theory")
       }
       (dom,Some(l))
    }
@@ -130,12 +131,12 @@ abstract class Lookup {self =>
   def getParent(d: Declaration): ModuleOrLink = {
     val homePath = d.home match {
       case OMID(p) => p
-      case _ => throw GetError("can't get parent with complex home")
+      case _ => throw GetError(d.path, "declaration has complex home")
     }
     get(homePath) match {
        case m: ModuleOrLink => m
        case nm: NestedModule => nm.module
-       case _ => throw GetError("unknown home encountered while getting domain of " + d.path)
+       case _ => throw GetError(d.path, "parent found but is not a module or link")
     }
   }
 
@@ -218,7 +219,7 @@ abstract class Lookup {self =>
       * @param expand All [[OMID]]s referencing a defined constant in this list will be definition-expanded.
       * @return The definition-expanded term.
       */
-      def apply(t: Term, expand: Seq[ContentPath]): Term = super.apply(t, expand.contains)
+      def apply(t: Term, expand: Set[ContentPath]): Term = super.apply(t, expand.contains)
 
       def traverse(t: Term)(implicit con: Context, expand: ContentPath => Boolean): Term = t match {
          case OMID(p: GlobalName) if expand(p) => getAs(classOf[Constant],p).df match {
@@ -239,18 +240,21 @@ abstract class Lookup {self =>
        t match {
         case OMM(arg, via) =>
           traverse(arg)(con, OMCOMP(via, morph))
-        case OMS(theo ?? ln) =>
-          def error(s: String) = throw GetError(s"no assignment for $ln found in $morph ($s)")
-          val aOpt = getAs(classOf[Constant], morph, LocalName(theo) / ln, msg => error(msg)).df
+        case OMS(path @ (theo ?? ln)) =>
+          val (aOpt,errOpt) = try {
+            (getAs(classOf[Constant], morph, LocalName(theo) / ln).df, None)
+          } catch {case e: GetError => (None,Some(e))}
           aOpt match {
              case Some(df) => df
              case None =>
                // TODO what to do if already included in codomain? need to specify if views have to explicitly include identity
-               getAs(classOf[Constant], theo ? ln).df match {
+               getAs(classOf[Constant], path).df match {
                 case Some(df) =>
                   traverse(df)
                 case None =>
-                  error("empty assignment")
+                  val error = GetError(path, s"no assignment found for ${path.name} in morphism")
+                  errOpt.foreach {e => error.setCausedBy(e)}
+                  throw error
              }
           }
         case t => Traverser(this,t)
@@ -266,7 +270,7 @@ abstract class LookupWithNotFoundHandler(lup: Lookup) extends Lookup {
     protected def handler[A](code: => A): A
 
     def get(path: Path) = handler {lup.get(path)}
-    def get(home: Term, name: LocalName, error: String => Nothing) = handler {lup.get(home, name, error)}
+    def get(home: Term, name: LocalName) = handler {lup.get(home, name)}
     def visible(to: Term) = handler {lup.visible(to)}
     def getImplicit(from: Term, to: Term) = handler {lup.getImplicit(from, to)}
     def preImage(p: GlobalName) = handler {lup.preImage(p)}
@@ -278,6 +282,6 @@ trait FailingNotFoundHandler {
       code
     } catch {
       case frontend.NotFound(p, _) =>
-        throw GetError(p.toPath + " not known")
+        throw GetError(p, "not found")
     }
 }

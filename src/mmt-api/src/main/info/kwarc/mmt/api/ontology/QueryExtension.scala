@@ -86,10 +86,10 @@ class Infer extends QueryFunctionExtension("infer", ObjType, ObjType) {
     val (context, term) = argument match {
       case OMBIND(QueryEvaluator.free, cont, obj) => (outerCon ++ cont, obj)
       case t: Term => (outerCon, t)
-      case o: Obj => throw GetError("object has no type: " + o)
+      case o: Obj => throw LocalError("object has no type: " + o)
       case _ => throw ImplementationError("evaluation of ill-typed query")
     }
-    checking.Solver.infer(controller, context, term, None).getOrElse {throw GetError("error during type inference")}
+    checking.Solver.infer(controller, context, term, None).getOrElse {throw LocalError("error during type inference")}
   }
 }
 

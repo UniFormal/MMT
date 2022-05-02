@@ -28,7 +28,11 @@ object LFEquality {
    in particular, Univ(1), Univ(2) are type and kind, respectively
  */
 object Univ {
-   def apply(level : Int) : Term = if (level == 1) OMS(Typed.ktype) else OMS(Typed.kind)
+   def apply(level : Int) : Term = level match {
+      case 1 => OMS(Typed.ktype)
+      case 2 => OMS(Typed.kind)
+      case _ => throw ImplementationError("LF only has universes with indices 1 and 2 (not zero-based!)")
+   }
    def unapply(t : Term) : Option[Int] =
       if (t == OMS(Typed.kind)) Some(2) else if (t == OMS(Typed.ktype)) Some(1) else None
 }

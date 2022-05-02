@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{Module, Theory, View}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.symbols.{OMLReplacer, TermContainer}
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
-import scala.collection.mutable
 
 /** auxiliary class for storing lists of declarations statefully without giving it a global name
   *
@@ -24,7 +24,7 @@ trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] with S
 case class AnonymousTheory(mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
   def rename(oldNew: (LocalName,Term)*) = {
     val sub: Substitution = oldNew.toList map {case (old,nw) => Sub(old, nw)}
-    val trav = symbols.OMLReplacer(sub)
+    val trav = objects.OMLReplacer(sub)
     val newDecls = decls map {oml =>
       // TODO this renaming is too aggressive if there is OML shadowing or if OMLs are used for other purposes
       val omlR : OML = trav(oml, Context.empty).asInstanceOf[OML] // this traverser always maps OMLs to OMLs

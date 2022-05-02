@@ -1,6 +1,10 @@
 package info.kwarc.mmt.api.parser
 
-import info.kwarc.mmt.api.{ComponentContainer, DPath, DeclarationComponent, Path, StructuralElement}
+
+
+/*
+
+import info.kwarc.mmt.api.{ComponentContainer, DPath, DeclarationComponent, Path, SourceError, StructuralElement}
 import info.kwarc.mmt.api.documents.{Document, MRef, Namespace, NamespaceImport, SRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.Generated
@@ -21,13 +25,17 @@ abstract class AnnotatedText {
   def parent : Option[AnnotatedText]
   val keys:List[String] = Nil
 
-  def asSequence:List[Child] = if (_children.isEmpty) List(this.asInstanceOf[Child]) else children.flatMap(_.asSequence)
+  def asSequence:List[Child] = if (_children.isEmpty) this match {
+    case c : Child => List(c)
+    case _ => Nil
+  } else children.flatMap(_.asSequence)
 
-  def addChild(at : Child) = {
-    assert(this.region.contains(at.region))
+  def addChild(at : Child) : Unit = {
+    if (!this.region.contains(at.region)) return ()
     val nStart = if (_children.nonEmpty) {
-      assert(_children.head.end <= at.start)
-      _children.head.end
+      if(_children.head.end <= at.start)
+        _children.head.end
+      else return ()
     } else this.start
     if (nStart.offset != at.start.offset) {
       val ws = text.substring(nStart.offset-this.start.offset,at.start.offset-this.start.offset)
@@ -90,7 +98,7 @@ abstract class AnnotatedText {
         off += i
         doOthers(input,at+off)
       case _ =>
-        _children ::= new ErrorText(at+off,input,this)
+        // _children ::= new ErrorText(SourceRegion(at+off,at+off+input.length),input,this)
     }
   }
 }
@@ -107,8 +115,8 @@ class AnnotatedCommentToken(at:SourcePosition, val text:String, val getParent : 
   def region = SourceRegion(at,at+text.length)
 }
 
-class ErrorText(at: SourcePosition, val text:String, val getParent : AnnotatedText) extends Child {
-  def region = SourceRegion(at,at+text.length)
+class ErrorText(val region: SourceRegion, val text:String, val getParent : AnnotatedText) extends Child {
+  //def region = SourceRegion(at,at+text.length)
 }
 
 class AnnotatedComment(at:SourcePosition, val text:String, val getParent : AnnotatedText) extends Child {
@@ -291,34 +299,34 @@ class AnnotatedTheory(val semantic:Theory, val region: SourceRegion, val text : 
         off += si1
       case None =>
     }
-    assert(it.startsWith("=") || it.startsWith(">")) // TODO or abbrev?
-    it.head match {
-      case '=' =>
-        addChild(new AnnotatedKeyword("=",region.start+off,this))
-      case '>' =>
-        addChild(new AnnotatedKeyword(">",region.start+off,this))
-        val params = semantic.paramC
-        it = it.tail
-        off += 1
-        si1 = it.indexWhere(!_.isWhitespace)
-        doOthers(it.take(si1),region.start+off)
-        it = it.drop(si1)
-        off += si1
+    if(it.startsWith("=") || it.startsWith(">")) { // TODO or abbrev?
+      it.head match {
+        case '=' =>
+          addChild(new AnnotatedKeyword("=", region.start + off, this))
+        case '>' =>
+          addChild(new AnnotatedKeyword(">", region.start + off, this))
+          val params = semantic.paramC
+          it = it.tail
+          off += 1
+          si1 = it.indexWhere(!_.isWhitespace)
+          doOthers(it.take(si1), region.start + off)
+          it = it.drop(si1)
+          off += si1
 
-        si1 = it.indexOf(US.chars.head)
-        val partx = it.take(si1).trim
-        addChild(new AnnotatedTerm(params,SourceRegion(region.start+off,region.start+off+partx.length),partx,this))
-        it = it.drop(partx.length)
-        off += partx.length
+          si1 = it.indexOf(US.chars.head)
+          val partx = it.take(si1).trim
+          addChild(new AnnotatedTerm(params, SourceRegion(region.start + off, region.start + off + partx.length), partx, this))
+          it = it.drop(partx.length)
+          off += partx.length
 
-        si1 = it.indexOf('=')
-        doOthers(it.take(si1),region.start+off)
-        off += si1
-        addChild(new AnnotatedKeyword("=",region.start+off,this))
-      case _ =>
-        ???
+          si1 = it.indexOf('=')
+          doOthers(it.take(si1), region.start + off)
+          off += si1
+          addChild(new AnnotatedKeyword("=", region.start + off, this))
+        case _ =>
+          ???
+      }
     }
-
   }
   init
 }
@@ -397,19 +405,28 @@ class AnnotatedDerived(val semantic:DerivedDeclaration, val region: SourceRegion
 }
 
 object AnnotatedText {
-  def fromDocument(doc:Document,input:String)(implicit controller:Controller):AnnotatedText = {
+  def fromDocument(doc:Document,input:String, errs : List[info.kwarc.mmt.api.Error])(implicit controller:Controller):AnnotatedText = {
     SourceRef.get(doc) match {
       case Some(sr) =>
         val start = sr.region.start
         assert(start.column == 0 && start.line == 0 && start.offset == 0)
         val end = sr.region.end // end.offset == input.length-2 for some reason!
-        val ret = new AnnotatedDocument(doc,sr.region,input.substring(start.offset,end.offset+1))
+        val ret = new AnnotatedDocument(doc,sr.region,input.substring(start.offset,end.offset))
         doIn(ret,input,doc.getDeclarations)
+        errs.foreach(doError(ret,input,_))
         ret.doEnd
         ret
       case None =>
         ???
     }
+  }
+
+  private def doError(parent : AnnotatedText,input:String,err : info.kwarc.mmt.api.Error) = err match {
+    case SourceError(_, ref, mainMessage, _, _) =>
+      parent.addChild(new ErrorText(ref.region,mainMessage,parent))
+    case _ =>
+      ???
+    //parent.addChild(new ErrorText(at+off,input,this))
   }
 
   private def doIn(parent : AnnotatedText,input : String,children : List[StructuralElement])(implicit controller:Controller): Unit = {
@@ -558,3 +575,5 @@ object AnnotatedText {
      */
   }
 }
+
+ */

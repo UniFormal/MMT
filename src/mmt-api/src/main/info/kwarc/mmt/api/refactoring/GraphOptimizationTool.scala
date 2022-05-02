@@ -5,7 +5,7 @@ import java.awt.{BorderLayout, ComponentOrientation, Container, Dimension, FlowL
 import java.io.PrintWriter
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
+import info.kwarc.mmt.api.archives.{Archive, BuildTarget,Build}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMID, Term, Traverser}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
@@ -717,7 +717,7 @@ class GraphOptimizationTool extends BuildTarget {
   }
 
   /** build or update this target in a given archive */
-  override def build(a: Archive, up: Update, in: FilePath): Unit = {
+  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
     val theories = a.allContent.flatMap({p:MPath => controller.get(p) match { case dt : Theory => Some(p) case _ => None}})
     val replacements = findReplacements(theories, interactive = false)
     val output = toXML(replacements)

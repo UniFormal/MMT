@@ -296,9 +296,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    */
   def readParsedObject(context: Context, topRule: Option[ParsingRule] = None)(implicit state: ParserState): (String, SourceRegion, ParseResult) = {
     val (obj, reg) = state.reader.readObject
-    val pu = ParsingUnit(state.makeSourceRef(reg), context, obj, state.iiContext, topRule)
+    val pu = ParsingUnit(state.makeSourceRef(reg.copy(end = reg.end-1)), context, obj, state.iiContext, topRule)
     val pr = puCont(pu)
-    (obj, reg, pr)
+    (obj, reg.copy(end = reg.end-1), pr)
   }
 
   private def doComponent(tc: TermContainer, cont: Context)(implicit state: ParserState) {
@@ -446,7 +446,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   // not actually using the feature (there might be multiple for the same keyword); just checking that at least one exists
                   readDerivedModule(parentInfo, Context.empty, k)
                 case None =>
-                  throw makeError(reg, "unknown keyword: " + k)
+                  val msg = if (k == "" && reg.start.offset == 0) {
+                    "unknown characters at the beginning of the file, maybe an encoding issue"
+                  } else "unknown keyword: " + k
+                  throw makeError(reg, msg)
               }
           }
       }
@@ -526,14 +529,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           addDeclaration(c)
         //Include
         case "include" | "realize" =>
-          // FR: unifying includes in theories and links; this code is kept as a reference for the original behavior in case of theories and to be removed eventually
-          /*mod match {
-            case thy: Theory =>
-              val (fromRef, from, args) = readMPathWithParameters(thy.path,context)
-              val incl = Include(thy.toTerm,from,args)
-              SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
-              addDeclaration(incl)
-            case link: Link => */
               // either `include df` or `include tp US = df`
               val tc = new TermContainer // first term, i.e., tp or df
               doComponent(tc, context)
@@ -805,10 +800,27 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val from = OMPMOD(fromPath,fromArgs)
     SourceRef.update(from, fromRef)
     readDelimiter("->", "→")
-    val (toRef, toPath,toArgs) = readMPathWithParameters(vpath,context)
-    val to = OMPMOD(toPath,toArgs)
-    SourceRef.update(to, toRef)
-    readDelimiter("abbrev", "=") match {
+    var tos: List[(SourceRef,MPath,List[Term])] = Nil
+    var delim: (String,SourceRegion) = ("",null)
+    do {
+      val to = readMPathWithParameters(vpath,context)
+      tos = tos ::: List(to)
+      delim = state.reader.readToken
+    } while (delim._1 == "+")
+    val to = tos match {
+      case (ref,p,args) :: Nil =>
+        val t = OMPMOD(p,args)
+        SourceRef.update(t,ref)
+        t
+      case _ =>
+        val ds= tos map {case (r,p,as) =>
+          val d = IncludeVarDecl(p,as)
+          SourceRef.update(d,r)
+          d
+        }
+        ComplexTheory(Context(ds:_*))
+    }
+    delim._1 match {
       case "abbrev" =>
         val (_, _, df) = readParsedObject(context)
         val v = View(ns, name, from, to, TermContainer.asParsed(df.toTerm), isImplicit)
@@ -821,6 +833,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           readInModule(v, context ++ v.getInnerContext, noFeatures)(state.copy())
         }
         end(v)
+      case _ =>
+        throw makeError(delim._2, List("abbrev","=").map("'" + _ + "'").mkString(" or ") + "expected")
     }
   }
   

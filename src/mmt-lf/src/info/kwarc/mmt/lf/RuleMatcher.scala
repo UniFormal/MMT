@@ -27,10 +27,10 @@ case class ComplexJudgement(parameters: Context, hypotheses: List[AtomicJudgemen
  * general case: parameters and assumptions may alternate
  */
 case class DeclarativeRule(arguments: List[RuleArgument], conclusion: AtomicJudgement) {
-  def parameters: Context = arguments.collect {
+  def parameters : Context = arguments.collect {
     case RuleParameter(n,tp) => VarDecl(n,tp)
   }
-  def assumptions = arguments.collect {
+  def assumptions : List[ComplexJudgement] = arguments.collect {
     case RuleAssumption(j) => j
   }
 }

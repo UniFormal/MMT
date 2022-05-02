@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import frontend._
+import jdk.vm.ci.hotspot.HotSpotCompressedNullConstant
 import symbols._
 import uom._
 import utils._
@@ -12,6 +13,7 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.HashSet
+import scala.runtime.NonLocalReturnControl
 
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
@@ -68,8 +70,6 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
    protected object state {
-      // stateful fields
-
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
       private var _solution : Context = initUnknowns
       import scala.collection.mutable.ListMap
@@ -149,7 +149,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       private def mutable = pushedStates.isEmpty
       /** the state that is stored here for backtracking */
       private case class StateData(solutions: Context, bounds: ListMap[LocalName,List[TypeBound]],
-                                   dependencies: List[CPath], delayed: List[DelayedConstraint], allowDelay: Boolean, allowSolving: Boolean) {
+                                   dependencies: List[CPath], delayed: List[DelayedConstraint],
+                                   allowDelay: Boolean, allowSolving: Boolean) {
          var delayedInThisRun: List[DelayedConstraint] = Nil
       }
       /** a stack of states for dry runs */
@@ -252,7 +253,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /** true if unsolved variables are left */
    def hasUnsolvedVariables : Boolean = solution.toSubstitution.isEmpty
    /** true if all judgments solved so far succeeded (all variables solved, no delayed constraints, no errors) */
-   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.forall(_.level < Level.Error)
+   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.isEmpty
    /** the solution to the constraint problem
     *
     * @return None if there are unresolved constraints or unsolved variables; Some(solution) otherwise
@@ -275,7 +276,30 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /** @return the current list of dependencies */
    def getDependencies : List[CPath] = dependencies
 
-   /**
+  /** caches the results of judgements to avoid duplicating work */
+  // judgements are not cached if we are in a dry run to make sure they are run again later to solve unknowns
+  protected object JudgementStore {
+    private val store = new scala.collection.mutable.HashMap[Judgement,Boolean]
+    /** if a judgment is tried again, we may need to uncache it (e.g., when reactivating a delayed judgment) */
+    def delete(j: Judgement) {
+      store.remove(j)
+    }
+    /** lookup up result for j; if not known, run f to define it */
+    def getOrElseUpdate(j : Judgement)(f: => Boolean): Boolean = {
+      store.find {case (k,r) => r && (k implies j) || !r && (j implies k)} match {
+        case Some((_,r)) =>
+          r
+        case None =>
+          val r = f
+          if (!isDryRun) {
+            store(j) = r
+          }
+          r
+      }
+    }
+  }
+
+  /**
     * logs a string representation of the current state
     *
     * @param prefix the log prefix to use (the normal one by default)
@@ -291,7 +315,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          report(prefix, "unknowns: " + initUnknowns.toStr(shortURIs = true))
          report(prefix, "solution: " + solution.toStr(shortURIs = true))
          val unsolved = getUnsolvedVariables.map(_.name)
-         if (! unsolved.isEmpty) {
+         if (unsolved.nonEmpty) {
             report(prefix, "unsolved: " + unsolved.mkString(", "))
             unsolved foreach {u =>
               val (upper,lower) = bounds(u).partition(_.upper)
@@ -303,7 +327,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          } else {
             report(prefix, "all variables solved")
          }
-         if (! errors.isEmpty) {
+         if (errors.nonEmpty) {
             report(prefix, "errors:")
             logGroup {
                errors.foreach {case SolverError(_,e,_) =>
@@ -313,18 +337,19 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             }
          } else
             report(prefix, "no errors")
-         if (! delayed.isEmpty) {
+         if (delayed.nonEmpty) {
             report(prefix, "constraints:")
             logGroup {
                delayed.foreach {
                   case d: DelayedJudgement =>
                      report(prefix, d.constraint.present)
+                     // can be useful for debugging but is overkill in general
                      logGroup {
-                        report(prefix, d.constraint.presentAntecedent(_.toString))
-                        report(prefix, d.constraint.presentSucceedent(_.toString))
-                        if (errors.isEmpty)
+                          report(prefix, d.constraint.presentAntecedent(_.toString))
+                          report(prefix, d.constraint.presentSuccedent(_.toString))
+                          if (errors.isEmpty)
                            // if there are no errors, see the history of the constraints
-                           logHistory(d.history)
+                             logHistory(d.history)
                      }
                   case d: DelayedInference =>
                      report(prefix, "continuation after delayed inference of  " + presentObj(d.tm))
@@ -448,11 +473,21 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * returns nothing if the type could not be reconstructed
     */
    def getType(p: GlobalName)(implicit h: History): Option[Term] = {
-      val c = getConstant(p).getOrElse {return None}
+      val c = getConstant(p).getOrElse {
+        h += "constant not found"
+        return None
+      }
+      if (!c.tpC.isDefined) {
+        h += "constant has no type"
+        return None
+      }
       val t = c.tpC.getAnalyzedIfFullyChecked
-      if (t.isDefined)
+      if (t.isDefined) {
         addDependency(p $ TypeComponent)
-      t
+      } else {
+        h += "type of constant not fully checked"
+      }
+     t
    }
    
    /** retrieves the definiens of a constant and registers the dependency
@@ -649,7 +684,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
   }
 
-  // check that xs is a list of distinct bound variables (needed for solving unknowns)
+  // check that xs is a list of distinct bound variables and return their declarations (needed for solving unknowns)
   protected def isDistinctVarList(xs: List[Term])(implicit stack: Stack): Option[Context] = {
     val vds = xs map {
       case OMV(x) => stack.context.getO(x) match {
@@ -663,7 +698,13 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     else
       Some(vds)
    }
-      
+
+   private var freshUnkownCounter = -1
+   /** generates a fresh names for an unknown */
+   def freshUnknown() = {
+     freshUnkownCounter += 1
+     LocalName("") / "O" / freshUnkownCounter.toString
+   }
    /**
     * @param newVars new unknowns; creating new unknowns during checking permits variable transformations
     * @param before the variable before which to insert the new ones, otherwise insert at end
@@ -682,6 +723,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     *
     * this is implemented by adding a fresh unknown, and running the constraint
     * this can be used to compute a value in logic programming style, where the computation is given by a functional predicate
+    * @param x a fresh unknown
+    * @param tp the type of x
+    * @param constraint a program that calls checks that suffice to solve the value of x; this should return false if the solution failed
     */
    def defineByConstraint(x: LocalName, tp: Term)(constraint: Term => Boolean) = {
      addUnknowns(x%tp, None)
@@ -691,20 +735,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    // ******************************** error reporting
 
   /** registers an error, returns false */
-  override def error(message: => String)(implicit history: History): Boolean = {
+  override def error(message: => String, exc: Option[Level.Excuse] = None)(implicit history: History): Boolean = {
       log("error: " + message)
       history += message
       val level = Level.Error
-      addError(SolverError(level, history))
-      false
-  }
-  /** registers a warning, returns false */
-  def warning(message: => String)(implicit history: History): Boolean = {
-      log("warning: " + message)
-      val h = Comment(() => message)
-      history += h
-      val level = Level.Warning
-      addError(SolverError(level, history,Some(cont => h.present(cont))))
+      val e = SolverError(exc, history)
+      addError(e)
       false
   }
 
@@ -730,7 +766,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       val bi = new BranchInfo(h, getCurrentBranch)
       addConstraint(new DelayedJudgement(j, bi, notTriedYet = true))(h)
       activateRepeatedly
-      if (errors.exists(_.level >= Level.Error)) {
+      if (errors.nonEmpty) {
         // definitely disproved
         false
       } else {
@@ -748,7 +784,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * @param j the Judgement to be delayed
     * @return true (i.e., delayed Judgment's always return success)
     */
-   protected def delay(j: Judgement)(implicit history: History): Boolean = {
+   protected def delay(j: Judgement, suffices: Option[List[Equality]] = None)(implicit history: History): Boolean = {
       // testing if the same judgement has been delayed already
       if (delayed.exists {
          case d: DelayedJudgement => d.constraint hasheq j
@@ -759,7 +795,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          log("delaying: " + j.present)
          history += "(delayed)"
          val bi = new BranchInfo(history, getCurrentBranch)
-         val dc = new DelayedJudgement(j, bi)
+         val dc = new DelayedJudgement(j, bi, suffices)
          addConstraint(dc)
       }
       true
@@ -773,27 +809,46 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * @return false if disproved (if true returned, constraints and unknowns may be left)
     */
    private def activateRepeatedly: Boolean = {
+     // activates a constraint
+     def activate(dc: DelayedConstraint) = {
+       removeConstraint(dc)
+       setCurrentBranch(dc.branch)
+       dc match {
+         case dj: DelayedJudgement =>
+           val j = dj.constraint
+           JudgementStore.delete(j) // previous delay may have cached true
+           val jP = prepareJ(j)
+           log("activating: " + jP.present)
+           check(jP)(dj.history)
+         case di: DelayedInference =>
+           val tmP = prepare(di.tm)
+           val stackP = prepareS(di.stack)
+           val history = di.history + "reactivating inference of type of " + presentObj(tmP)
+           inferTypeAndThen(tmP)(stackP, history)(di.cont)
+       }
+     }
      // infinite loop, we break out with 'return' when disproved or no more progress possible
      while (true) {
-       val subs = solution.toPartialSubstitution
        // look for an activatable constraint
        val solved = getSolvedVariables
        val dcOpt = delayed.find {d => d.isActivatable(solved)}
+       if (errors.nonEmpty) return false // speed up checking files with errors
        dcOpt match {
+         case Some(dc) =>
+           // normal case
+           val mayhold = activate(dc)
+           if (!mayhold) return false
           case None =>
             // find an unsolved but bounded unknown that is not used in any constraint
             val solvableOpt = solution.find {vd =>
               vd.df.isEmpty && bounds(vd.name).nonEmpty && {
                 delayed forall {
                   case d: DelayedJudgement => true // !(d.freeVars contains vd.name)
-                  case d: DelayedInference => true // omitted types of bound variables typically lead to delayed inferences of the kind of the unknown type for which a bound has been found already 
+                  case d: DelayedInference => true // omitted types of bound variables typically lead to delayed inferences of the kind of the unknown type for which a bound has been found already
                 }
               }
             }
             solvableOpt match {
-              case None =>
-                // even if there are no errors, there might still be unsolved unknowns and constraints left
-                return errors.isEmpty
               case Some(vd) =>
                 // solve the unknown by equating it to all its bounds
                 val h = new History(Nil)
@@ -802,27 +857,39 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
                 val r = solve(vd.name, hd.bound)(h + "registering solution")
                 if (!r) return false
                 val bdR = tl forall {bd =>
-                  check(Equality(Stack.empty, hd.bound, bd.bound, vd.tp))(h + "equating to other bounds") 
+                  check(Equality(Stack.empty, hd.bound, bd.bound, vd.tp))(h + "equating to other bounds")
                 }
                 if (!bdR) return false
+              case None =>
+                // find a constraint that can be discharged by non-uniquely solving an unknown
+                val nonUniqueTryable = delayed.filter {dc => dc.suffices.isDefined}
+                val discharged = nonUniqueTryable.find {dc =>
+                  val hist = dc.history
+                  hist += "non-uniquely solving unknowns as sufficient condition to discharge constraint"
+                  val allSolved = dc.suffices.get.forall {e =>
+                    check(e)(hist.branch)
+                  }
+                  val solvedHere = getSolvedVariables diff solved
+                  if (allSolved && solvedHere.nonEmpty) {
+                    removeConstraint(dc)
+                    // add the information to the history of other constraints in case those lead to errors later
+                    val solvedHereS = "(unknowns " + solvedHere.mkString(", ") + " were solved non-uniquely on a separate branch)"
+                    delayed.foreach {dc =>
+                      if (dc.freeVars.exists(solvedHere.contains))
+                        dc.history += solvedHereS
+                    }
+                    // skip the find-iteration and try other constraints normally again
+                    true
+                  } else {
+                    false
+                  }
+                }
+                if (discharged.isEmpty) {
+                  // nothing left to try - give up
+                  // even if there are no errors, there might still be unsolved unknowns and constraints left
+                  return errors.isEmpty
+                }
             }
-          case Some(dc) =>
-             // activate a constraint
-             removeConstraint(dc)
-             setCurrentBranch(dc.branch)
-             val mayhold = dc match {
-                case dj: DelayedJudgement =>
-                   val j = dj.constraint
-                   val jP = prepareJ(j)
-                  log("activating: " + jP.present)
-                   check(jP)(dj.history)
-                case di: DelayedInference =>
-                    val tmP = prepare(di.tm)
-                    val stackP = prepareS(di.stack)
-                    val history = di.history + "reactivating inference of type of " + presentObj(tmP)
-                    inferTypeAndThen(tmP)(stackP, history)(di.cont)
-             }
-             if (!mayhold) return false
        }
      }
      true // impossible but needed for Scala
@@ -878,7 +945,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
                       if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
                         // the user explicitly asked for this term to be filled in
                         solve(vd.name, FreeOrAny(tpCon, Hole(tp)))
-                        error("unsolved hole")
+                        error("unsolved hole", Some(Level.Gap))
                       } else {
                         error("unsolved (typed) unknown: " + vd.name)
                       }
@@ -919,7 +986,7 @@ object Solver {
       val solver = new Solver(controller, cu, rules)
       solver.applyMain
       if (solver.checkSucceeded) solver.getSolution match {
-         case Some(sub) =>
+         case Some(_) =>
            val tmR = solver.substituteSolution(tmU)
            val tmI = solver.substituteSolution(etp)
            Left((tmR, tmI))
@@ -973,7 +1040,7 @@ object Solver {
                }
             }
          }
-         return None
+        None
       case OMAorAny(OMV(m), _) if unknowns.isDeclared(m) => Some((Nil, m))
       case _ => None
    }
@@ -983,20 +1050,7 @@ object Solver {
 object InferredType extends TermProperty[(Branchpoint,Term)](Solver.propertyURI / "inferred")
 
 /** used by [[Solver]] to mark a term as head-normal: no simplification rule can change the head symbol */
-class Stability(id: Int) extends BooleanTermProperty(Solver.propertyURI / "stability" / id.toString) {
-  def hasStableShape(o: Obj, sh: Shape): Boolean = {
-    (o,sh) match {
-      case (_, Wildcard) => true
-      case (t, AtomicShape(s)) =>
-        t == s && this.is(t)
-      case (ComplexTerm(op,_,_,_), ComplexShape(sop, children)) if op == sop =>
-        (o.subobjects zip children) forall {case ((_,t), c) =>
-            hasStableShape(t,c)
-        }
-      case _ => false
-    }
-  }
-}
+class Stability(id: Int) extends BooleanTermProperty(Solver.propertyURI / "stability" / id.toString)
 
 object Stability {
   private var id = -1
@@ -1007,7 +1061,7 @@ object Stability {
 case class TypeBound(bound: Term, upper: Boolean)
 
 /** error/warning produced by [[Solver]] */
-case class SolverError(level: Level.Level, history: History,msgO : Option[(Obj => String) => String]= None) {
+case class SolverError(excuse: Option[Level.Excuse], history: History,msgO : Option[(Obj => String) => String]= None) {
   def msg(implicit cont : Obj => String) = msgO.map(_.apply(cont)).getOrElse(history.steps.head.present(cont))
 }
 
@@ -1027,7 +1081,7 @@ case class Success[A](result: A) extends DryRunResult {
    override def toString = "will succeed"
 }
 
-
+// TODO variable bounds are missing
 /** experimental backtracking support in [[Solver]] */
 class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedConstraint], val depLength: Int, val solution: Context) {
   def isRoot = parent.isEmpty

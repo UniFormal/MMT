@@ -3,35 +3,70 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
-import notations._
-import frontend._
-import backend._
 import objects._
 import utils._
 import documents._
-import parser._
 import uom._
+import presentation._
 
-import scala.collection.immutable.{HashMap}
-import scala.xml.Node
+import scala.xml.Utility
 
-class MWSHarvestExporter extends Exporter {
-  val key = "mws"
-  override val outExt = "harvest"
+abstract class MWSExporter extends Exporter {
+  private lazy val pmmml = controller.extman.get(classOf[ParallelMathMLPresenter]).headOption.getOrElse({
+    val e = new ParallelMathMLPresenter
+    controller.extman.addExtension(e)
+    e
+  })
 
   def exportTheory(t: Theory, bf: BuildTask) {
-    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    t.getDeclarations foreach {d =>
+    try {controller.simplifier(t)} catch { case _ => /* am besten alles */ }
+
+    rh(xml.header)
+
+    rh(xml.openTag("mws:harvest", List(("xmlns:mws", xml.namespace("mws")), ("xmlns:m", xml.namespace("mathml")))) + "\n")
+
+    val data_id = "1"
+    rh(xml.openTag("mws:data", List(("mws:data_id", data_id))))
+
+    // id is the MMT URI
+    rh(<id>{t.path.toPath}</id>.toString + "\n")
+
+    // TODO: add "text" inside the theory, perhaps comments or other things?
+    rh(<text></text>.toString + "\n")
+    rh(<metadata></metadata>.toString + "\n")
+
+    t.getDeclarationsElaborated foreach {d =>
       d.getComponents.foreach {
-         case DeclarationComponent(comp, tc: AbstractTermContainer) =>
-            tc.get.foreach {t =>
-               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
-               rh(node.toString + "\n")
-            }
-         case _ =>
+        case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+          tc.get.foreach {t =>
+            val url = CPath(d.path,comp)
+            val mathml = pmmml.asXML(t, Some(url))
+
+            rh(xml.openTag("math", List(("local_id", url.toPath))) + "\n")
+            rh(Utility.escape(mathml.toString) + "\n")
+            rh(xml.closeTag("math"))
+          }
+        case _ =>
       }
     }
+
+    rh(xml.closeTag("mws:data") + "\n")
+
+    t.getDeclarationsElaborated foreach {d =>
+      d.getComponents.foreach {
+        case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+          tc.get.foreach {t =>
+            val url = CPath(d.path,comp)
+
+            rh(xml.openTag("mws:expr", List(("url", url.toPath), ("mws:data_id", data_id))))
+            rh(ContentMathMLPresenter(t).toString)
+            rh(xml.closeTag("mws:expr"))
+            rh("\n")
+          }
+        case _ =>
+      }
+    }
+
     rh("</mws:harvest>\n")
   }
 
@@ -49,82 +84,25 @@ class MWSHarvestExporter extends Exporter {
   }
 }
 
+class MWSHarvestExporter extends MWSExporter {
+  val key = "mws"
+  override val outExt = "harvest"
+}
 
-
-
-class FlatteningMWSExporter extends Exporter {
+class FlatteningMWSExporter extends MWSExporter {
   override val outDim = Dim("export", "mws-flat")
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
   lazy val mf = controller.simplifier
-  def exportTheory(t : Theory, bd : BuildTask) {
+
+  override def exportTheory(t: Theory, bf: BuildTask): Unit = {
     mf(t)
-    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    t.getDeclarations foreach {
-      case d => d.getComponents.foreach {
-         case DeclarationComponent(comp, tc: AbstractTermContainer) =>
-            tc.get.foreach {t =>
-               // TODO MWS interface requires mws:data node, for which we can probably put dummy nodes here 
-               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
-               rh(node.toString + "\n")
-            }
-         case _ =>
-      }
-    }
-    rh("</mws:harvest>\n")
-
+    super.exportTheory(t, bf)
   }
-    def exportView(v: View, bd: BuildTask) {
-    //excluding expressions from views for now
-  }
-
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
-    //Nothing to do - MathML in namespaces
-  }
-
-  def exportDocument(doc : Document, bt: BuildTask) {
-    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    try {
-      doc.getModules(controller.globalLookup) collect {
-        case _ =>
-      }
-    } catch {
-      case e : GetError => //doc not found, can ignore
-    }
-    rh("</mws:harvest>\n")
-  }
-
-}
-
-import presentation._
-import utils.xml._
-
-class IDMathMLPresenter extends MathMLPresenter {
-   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
-      val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
-      val mmtAtts = pc.owner match {
-         case None => Nil
-         case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
-      }
-      val idAtt = ( "id" -> o.hashCode.toString)
-      // <mstyle displaystyle="true">
-      pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
-      pc.out(openTag("semantics", Nil))
-      body
-      pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-      pc.out(o.toCML.toString)
-      pc.out(closeTag("annotation-xml"))
-      pc.out(closeTag("semantics"))
-      pc.out(closeTag("math"))
-   }
 }
 
 
-import metadata._
-
-class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
+class FlatteningPresenter extends Presenter(new ParallelMathMLPresenter) {
   def key: String = "flatmws"
   override val outExt = "html"
   lazy val mf = controller.extman.get(classOf[ElaborationBasedSimplifier]).head
@@ -138,7 +116,7 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
       case doc : Document =>
         wrapScope(standalone, doc.path)(doDocument(doc))
       case thy : Theory =>
-        val newThys = if (thy.path.toPath.contains("math")) mf.enrichFineGrained(thy) else List(thy)
+        val newThys = List(thy) // Mihnea used to call enrichment here, which added declarations induced by views to theories
         newThys foreach { t =>
           val out = (folder / t.name.toPath).setExtension("html")
           this.outputTo(out) {
@@ -161,38 +139,38 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
   private def doTheory(thy : Theory) {
     div ("theory") {
       thy.getDeclarations foreach {
-      case c : Constant =>
-        div ("constant") {
-          div ("body") {
-            text(c.name.last.toPath)
-            c.tp.foreach { o =>
-              text(" : ")
-              objectLevel(o, None)(rh)
+        case c : Constant =>
+          div ("constant") {
+            div ("body") {
+              text(c.name.last.toPath)
+              c.tp.foreach { o =>
+                text(" : ")
+                objectLevel(o, None)(rh)
+              }
+              c.df.foreach { o =>
+                text(" = ")
+                objectLevel(o, None)(rh)
+              }
             }
-            c.df.foreach { o =>
-              text(" = ")
-              objectLevel(o, None)(rh)
+            c.getOrigin match {
+              case ByStructureSimplifier(t, OMID(view)) =>
+                val origin = t.toMPath
+                val path = c.home.toMPath
+                p {
+                  text {
+                    " Induced statement found in " + path.toPath + ". "
+                  }
+                  text {
+                    path.last + " is a " + origin.last  + " if we interpret over view " + view.last + ". "
+                  }
+                  text {
+                    origin.last + " contains the statement " + c.name.last + "."
+                  }
+                }
+              case _ =>
             }
           }
-          c.getOrigin match {
-             case ByStructureSimplifier(t, OMID(view)) =>
-               val origin = t.toMPath
-               val path = c.home.toMPath
-               p {
-                 text {
-                   " Induced statement found in " + path.toPath + ". "
-                 }
-                 text {
-                   path.last + " is a " + origin.last  + " if we interpret over view " + view.last + ". "
-                 }
-                 text {
-                   origin.last + " contains the statement " + c.name.last + "."
-                 }
-               }
-             case _ =>
-          }
-        }
-      case _ => //TODO
+        case _ => //TODO
       }
     }
   }
@@ -225,14 +203,14 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
         }
         body{
           div(attributes=List("xmlns" -> utils.xml.namespace("html"),
-                              "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+            "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
             content
           }
         }
       }
     } else {
       div(attributes=List("xmlns" -> utils.xml.namespace("html"),
-                          "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+        "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
         content
       }
     }

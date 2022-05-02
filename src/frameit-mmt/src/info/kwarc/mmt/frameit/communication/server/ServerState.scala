@@ -2,21 +2,35 @@ package info.kwarc.mmt.frameit.communication.server
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
-import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.{Context, OMMOD}
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.objects.Context
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-import info.kwarc.mmt.api.{DPath, GeneralError, GlobalName, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, LocalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.business.datastructures.ScrollReference
-import info.kwarc.mmt.frameit.business.{ContentValidator, SituationTheory, Utils}
+import info.kwarc.mmt.frameit.business.{ContentValidator, SituationTheory}
+
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
   * An object wrapping all mutable state our server endpoints below are able to mutate.
   *
   * It serves encapsulating state to be as immutable as possible.
+  *
+  * @todo Some parts are thread-safe (e.g. to multiple requests to the server), some are not.
+  *       Current assumption is that everything is sequentially run only.
   */
-class ServerState(private var curSituationTheory: SituationTheory, val contentValidator: ContentValidator)(implicit val ctrl: Controller) extends Logger {
-  override def logPrefix: String = "frameit-server"
+class ServerState(val contentValidator: ContentValidator, initialSituationTheory: Option[SituationTheory])(implicit val ctrl: Controller) extends Logger {
+
+  private val factCounter = new AtomicInteger(1)
+  private val scrollViewCounter = new AtomicInteger(1)
+  private val situationTheoryCounter = new AtomicInteger(1)
+
+  var curSituationTheory: SituationTheory = initialSituationTheory.getOrElse {
+    new SituationTheory(FrameWorld.defaultRootSituationTheory).descend(nextSituationTheoryName())
+  }
+  println(s"Using situation space+theory: $situationSpace")
+
+  override val logPrefix: String = ServerState.logPrefix
   override protected def report: Report = ctrl.report
 
   val presenter : MMTSyntaxPresenter = ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
@@ -26,11 +40,17 @@ class ServerState(private var curSituationTheory: SituationTheory, val contentVa
   def situationSpace: Theory = curSituationTheory.spaceTheory
   def situationTheory: Theory = curSituationTheory.theory
 
-  private var factCounter = 1
-  def newFactPath(): GlobalName = {
+  def nextScrollViewName(): LocalName = {
+    LocalName(s"ScrollView${scrollViewCounter.getAndAdd(1)}")
+  }
+
+  def nextSituationTheoryName(): LocalName = {
+    LocalName(s"SituationTheory${situationTheoryCounter.getAndAdd(1)}")
+  }
+
+  def nextFactPath(): GlobalName = {
     this.synchronized {
-      val (factName, _) = Context.pickFresh(situationTheory.getInnerContext, LocalName(s"fact${factCounter.toString}"))
-      factCounter += 1
+      val (factName, _) = Context.pickFresh(situationTheory.getInnerContext, LocalName(s"fact${factCounter.getAndAdd(1)}"))
       situationTheory.path ? factName
     }
   }
@@ -61,8 +81,16 @@ class ServerState(private var curSituationTheory: SituationTheory, val contentVa
     curSituationTheory.space.doc ? (curSituationTheory.space.name / name)
   }
 
+  def check(): List[api.Error] = {
+    contentValidator.checkTheory(situationSpace)
+  }
+
   // make log methods from Logger public by trivially overriding them
   // TODO logging does not work currently, messages go nowhere
   override def log(e: api.Error): Unit = super.log(e)
   override def log(s: => String, subgroup: Option[String] = None): Unit = super.log(s, subgroup)
+}
+
+object ServerState {
+  val logPrefix = "frameit-mmt-server"
 }

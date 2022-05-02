@@ -1,27 +1,21 @@
 src/project/project
 src/project/build.properties
 
-# do not commit 
-
 # Do not accidentally commit test files
 test/*.scala
 
 # configuration files
 src/mmt-sbt-settings
 
-# mmtrc --created by installed
+# mmtrc --created by mmt.jar setup routine
 deploy/mmtrc
-
-# compiled MMT Jars
-deploy/mmt.jar
-deploy/main/*.jar
-
-# Compiled dependened projects
-deploy/lfcatalog/lfcatalog.jar
-deploy/lib/tiscaf.jar
 
 # Documentation & Deploy
 apidoc
+deploy/*.jar
+deploy/lfcatalog/lfcatalog.jar
+deploy/lib/tiscaf.jar
+deploy/main/*.jar
 scripts/travis/deploy_key
 
 # IntelliJ Failes
@@ -40,6 +34,7 @@ target
 
 # scala-bin compilation articfacts
 out/
+
 */.DS_Store
 
 # Artifact of https://github.com/coursier/coursier when working with IntelliJ

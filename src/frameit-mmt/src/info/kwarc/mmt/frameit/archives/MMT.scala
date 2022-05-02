@@ -10,7 +10,7 @@ import info.kwarc.mmt.lf.BinaryLFConstantScala
 // private to force all symbols to be exposed from FrameIT.FrameWorld
 private[archives] object MMT {
   object LFX {
-    private val _path = DPath(URI("http://gl.mathhub.info/MMT/LFX"))
+    val path: DPath = DPath(URI("http://gl.mathhub.info/MMT/LFX"))
   }
 
   object urtheories {

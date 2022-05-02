@@ -63,7 +63,8 @@ trait StructuralElement extends Content with NamedElement {
       case m: DerivedModule => List(m.meta, m.tp)
       case n: NestedModule => n.module.headerInfo.attributes
       case c: Constant => List(c.alias, c.rl)
-      case s: Structure => List(s.from, s.isImplicit)
+      case s: Structure => List(s.from, s.isImplicit, s.isTotal)
+      case r: RuleConstant => Nil
       case d: DerivedDeclaration => List(d.tp)
     }
     HeaderInfo(feature, path, attributes)

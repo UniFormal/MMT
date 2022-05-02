@@ -9,23 +9,14 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.URI
 
 /**
-  * Presents (hopefully) parsable MMT surface syntax from in-memory MMT knowledge items.
+  * Presents (hopefully) parsable MMT surface syntax from [[StructuralElement]]s like
+  * [[Theory theories]], [[View views]], [[Constant constants]], etc.
   *
-  * Usage
-  * {{{
-  * import info.kwarc.mmt.api.presentation
-  * import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-  *
-  * val presenter = state.ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
-  *   throw new Exception // do something
-  * )
-  *
-  * val stringRenderer = new presentation.StringBuilder
-  * val yourTheory : Theory = ???
-  * presenter(yourTheory)
-  *
-  * println(stringRenderer.get)
-  * }}}
+  * @example ''controller.presenter.asString(element)'' to present a
+  *          [[StructuralElement]] ''element'' to a String.
+  *          If you repeatedly present elements to strings, it might be more efficient
+  *          to use the [[apply()]] method with a [[StringBuilder]] (from the
+  *          mmt.api.presentation API!)
   *
   * @see The server ''info.kwarc.mmt.api.web.SyntaxPresenterServer'' exposes this syntax presenter to the web.
   *
@@ -59,21 +50,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     * @param standalone if true, include appropriate header and footer
     * @param rh         output stream
     */
-  override def apply(element: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
+  override def apply(element: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler): Unit = {
     controller.simplifier(element) //TODO simplifying here is bad for elements that are not part of the diagram yet
     present(element, rh)(new PersistentNamespaceMap)
-  }
-
-  /**
-    * Present an element such as a [[Theory]], a [[View]] or a [[Declaration]] to a string.
-    *
-    * Behavior equals [[apply()]] with [[presentation.StringBuilder]] as the [[RenderingHandler]].
-    */
-  def presentToString(element: StructuralElement, standalone: Boolean = false): String = {
-    val stringRenderer = new presentation.StringBuilder
-    apply(element, standalone)(stringRenderer)
-
-    stringRenderer.get
   }
 
   /**
@@ -147,6 +126,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
           case None => rh("module " + r.target.toPath)
           case Some(m) => present(m, rh)
         }
+      case s: SRef =>
+        controller.getO(s.target) match {
+          case None => rh("symbol " + s.target.toPath)
+          case Some(m) => present(m, rh)
+        }
       case oe: OpaqueElement =>
         rh("\n/T ")
         val pres = controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
@@ -168,13 +152,31 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       case dd: DerivedDeclaration =>
         rh << dd.feature + " "
         controller.extman.get(classOf[StructuralFeature], dd.feature) match {
-          case None => rh << dd.name + " (implementation is not known)"
+          case None => rh << dd.name.toString + " (implementation is not known)"
           case Some(sf) =>
             val header = sf.makeHeader(dd)
             apply(header, Some(dd.path $ TypeComponent))(rh)
         }
-        rh << "\n"
-        dd.module.getDeclarations.foreach { d => present(d, indented(rh)) }
+        if (dd.getDeclarations.nonEmpty) {rh << "\n"}
+        val notationElements = List(dd.notC.getParseDefault, dd.notC.getPresentDefault).zipWithIndex.map { not =>
+          (rh: RenderingHandler) => not match {
+            case (Some(not), 0) =>
+              rh("\n")
+              rh(s"# ${not.toText}")
+            case (Some(not), 1) =>
+              rh("\n" + OBJECT_DELIMITER + " ")
+              rh(s"## ${not.toText}")
+            case (None, _) => // nothing to do
+            case _ => ??? // not yet implemented
+          }
+        }
+
+        notationElements.foreach { _(indented(rh)) }
+        if (dd.getDeclarations.nonEmpty) {
+          rh(OBJECT_DELIMITER + " =\n")
+          dd.module.getDeclarations.foreach { d => present(d, indented(rh)) }
+        }
+
       case dm: DerivedModule =>
         doTheory(dm, indented(rh))
       case nm: NestedModule =>
@@ -193,6 +195,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case _: Document => /* do nothing */
     case _: DRef => // rh(MODULE_DELIMITER)
     case _: MRef => // rh(MODULE_DELIMITER)
+    case s : SRef =>
     case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER + "\n")
 
     // TODO Fix for [[Structure.isInclude]] not accounting for inclusions
@@ -229,9 +232,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" \n")
     val indentedRh = indented(rh)
     theory.getDeclarations.foreach { d =>
-      if (!d.isGenerated || presentGenerated) {
+      // if (!d.isGenerated || presentGenerated) {
+      // TODO(NR@anyone): I deactivated this because now all diagops output
+      //     is marked as generated, thus hidden
         present(d, indentedRh)
-      }
+      // }
     }
     rh("\n")
   }
@@ -249,7 +254,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" \n")
 
     val indentedRh = indented(rh)
-    val declarations = if (presentGenerated) view.getDeclarations else view.getPrimitiveDeclarations
+    // TODO(NR@anyone): I deactived this, too
+    val declarations = /*if (presentGenerated)*/ view.getDeclarations /*else view.getPrimitiveDeclarations*/
     declarations.foreach {
       case c: Constant =>
         // We want to avoid presenting types here, hence manually call doConstant and endDecl
@@ -347,9 +353,15 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       rh(s"role $roleStr")
     })
 
-    val notationElements = c.notC.parsing.toList.map(textNotation => (rh: RenderingHandler) => {
-      rh(s"# ${textNotation.toText}")
-    })
+    // zipWithIndex before collecting (filtering) since we want to enforce that
+    // parsing notations are presented with one hash ('#'), and presentation notations with two hashes ('##')
+    val notationElements = List(c.notC.getParseDefault, c.notC.getPresentDefault).zipWithIndex.collect {
+      case (Some(not), i) => (not, i)
+    }.map { x => (rh: RenderingHandler) => (x: @unchecked) match { // match is exhausting, scalac doesn't get it, though
+          case (not, 0) => rh(s"# ${not.toText}")
+          case (not, 1) => rh(s"## ${not.toText}")
+        }
+    }
 
     // TODO: (1) generalize this metadata output to theories, views (i.e. modules), and documents
     //       (2) Do not print special metadata like source references
@@ -365,7 +377,10 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       typeElements ::: definiensElements ::: roleElements ::: aliasElements ::: notationElements ::: metadataElements
 
     // present all elements
-    rh(c.name.last.toString)
+
+    // only present a simplified (possibly ambiguous) variant of the name to remain readable for humans.
+    rh(c.name.dropComplex.toString)
+
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>
       if (index == 0) {
@@ -379,9 +394,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
   }
 
   private def doStructure(s: Structure, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = s match {
-    // special case of structures: trivial include
+    // special case of structures: plain includes and realizations
     case Include(IncludeData(home, from, args, df, total)) =>
-      rh("include ")
+      if (total) rh("realize ") else rh("include ")
       doURI(OMMOD(from), rh, needsHand = true)
       // TODO args ignored
       df.foreach(definiensTerm => {
@@ -422,6 +437,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     }
   }
 }
+
+
 
 /** flattened */
 class FlatMMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends MMTSyntaxPresenter(objectPresenter) {

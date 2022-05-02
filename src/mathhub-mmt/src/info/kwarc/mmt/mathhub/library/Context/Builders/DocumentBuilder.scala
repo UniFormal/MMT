@@ -14,14 +14,14 @@ trait DocumentBuilder { this: Builder =>
   def getDocumentRef(id: String): Option[IDocumentRef] = getReferenceOf(classOf[IDocumentRef], id)
 
   /** builds a reference to a document */
-  protected def buildDocumentReference(document: Document) : Option[IDocumentRef] = makeDocumentRef(document.path)
+  protected def buildDocumentReference(document: Document) : Option[IDocumentRef] = makeDPathReference(document.path)
 
   /** optimisation to quickly build a reference to a parent without loading more content */
   protected def getDocumentReference(dRef: DRef): Option[IDocumentRef] = getReferenceOrElse(classOf[IDocumentRef], dRef.path.toPath) {
-    makeDocumentRef(dRef.target)
+    makeDPathReference(dRef.target)
   }
 
-  private def makeDocumentRef(path: DPath): Option[IDocumentRef] = {
+  private[Builders] def makeDPathReference(path: DPath): Option[IDocumentRef] = {
     // if we are the narrationBase of an archive, that is our parent
     val parent = mathHub.installedEntries.find({
       case ae: LMHHubArchiveEntry => ae.archive.narrationBase.toString == path.toPath
@@ -98,7 +98,7 @@ trait DocumentBuilder { this: Builder =>
 
   /** builds a pseudo-document containing specific text */
   protected def buildPseudoDocument(path: DPath, text: String): IDocument = {
-    val ref = makeDocumentRef(path).get
+    val ref = makeDPathReference(path).get
     val child = pseudoOpaqueElement(ref, path, text)
 
     IDocument(
@@ -112,3 +112,4 @@ trait DocumentBuilder { this: Builder =>
     )
   }
 }
+

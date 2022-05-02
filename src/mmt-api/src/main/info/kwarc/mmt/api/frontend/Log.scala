@@ -45,7 +45,7 @@ class Report extends Logger {
 
   /** output is categorized, the elements of group determine which categories are considered
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
-  private[mmt] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response", "lmh")
+  private[mmt] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response")
   /**  true if debug logging is enabled */
   def checkDebug = groups contains "debug"
   
@@ -146,7 +146,6 @@ class Report extends Logger {
 }
 
 object Report {
-  val groups = List("user", "error", "controller", "extman", "library", "archive", "backend")
   val df = new java.text.SimpleDateFormat("HH:mm:ss.S")
 }
 
@@ -172,8 +171,7 @@ abstract class ReportHandler(val id: String) {
       case _: ContentError => (contentErrorHighlight(e.shortMsg), e.getCausedBy.isEmpty)
       case _ => (systemErrorHighlight(e.shortMsg), false)
     }
-    // only report real errors
-    if (e.level >= Level.Error) apply(ind, caller, "error", List(msg))
+    apply(ind, caller, "error", List(s"(${e.levelString}) " + msg))
     if (debug && !content) {
       apply(ind, caller, "debug", utils.stringToList(e.toStringLong, "\\n"))
     }
@@ -280,8 +278,15 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
   }
 
   override def apply(ind: Int, e: Error, debug: Boolean) {
-    file.println( s"""<div class="log error" style="margin-left: $ind%">""")
+    val (cls,refO) = e match {
+      case e: ContentError => ("content-error", e.sourceRef)
+      case _ => ("error", None)
+    }
+    file.println( s"""<div class="log $cls" style="margin-left: $ind%">""")
     file.println( s"""<div><span class="timestamp">$time</span><span class="error-short">${e.shortMsg}</span></div>""")
+    refO.foreach {ref =>
+      file.println(s"""<div class="sourceref"><span class="sourceref" data-mmt-ref="${ref.toString}">${ref.toString}</span></div>""")
+    }
     if (debug) {
       e.toStringLong.split("\\n").toList.foreach { line =>
         file.println( s"""<div class="error-long"><span>$line</span></div>""")

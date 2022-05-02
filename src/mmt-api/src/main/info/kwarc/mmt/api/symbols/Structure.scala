@@ -34,7 +34,7 @@ class Structure(val home: Term, val name: LocalName, val tpC: TermContainer, val
   def translate(newHome: Term, prefix: LocalName, translator: Translator, context: Context): Structure = {
     def tl(m: Term) = translator.applyModule(context, m)
 
-    val res = new Structure(home, prefix / name, tpC map tl, dfC map tl, isImplicit, isTotal)
+    val res = new Structure(newHome, prefix / name, tpC map tl, dfC map tl, isImplicit, isTotal)
     getDeclarations foreach { d =>
       res.add(d.translate(res.toTerm, LocalName.empty, translator, context))
     }
@@ -119,6 +119,10 @@ object SimpleStructure {
   *
   * they do not carry assignments
   * their name is LocalName(from)
+  *
+  * Note that because they are a special case of [[Structure]],
+  * it is necessary to call the endAdd-style methods in controller, parser, checker, simplifiers
+  * even though includes have an empty body.
   */
 /* an include can be constitutive/definitional (typical include) or postulated (= realizations)
  * in the latter case, we set the implicit flag to false; this is awkward but works for now
@@ -169,82 +173,27 @@ object Include {
 
 /** Auxiliary class that collects information about a structure that acts like an include.
   *
-  * @param home  The module in which this include is declared (e.g. a theory T, view V, etc.)
-  * @param from  The domain D of the included theory (into T, or into domain of V)
-  * @param args  Instantiations of the parameters of from (if any, e.g. for parametric theories)
-  * @param df    Definiens (of type D(args) -> T, or D(args) -> codomain of V)
-  * @param total A total include is one that must be implemented by the containing theory
+  * @param home  the module in which this include is declared (e.g. a theory T, view V, etc.)
+  * @param from  the included theory
+  * @param args  instantiations of the parameters of from
+  * @param df    definiens (of type D(args) -> T, or D(args) -> codomain of V)
+  * @param total a total include is one that must be implemented by the containing theory
   *              this becomes available as a morphism only at the end of the containing theory (even if there is a definiens,
   *              which can happen, e.g., if the definiens refers to other total includes)
   *
-  *              invariants: if df contains mor then args.isEmpty && from is domain of df
-  *              else OMPMOD(from,args) is included theory
+  * invariants: if df contains mor then args.isEmpty && from is domain of df
+  * else OMPMOD(from,args) is included theory
   *
-  *              Note that concrete syntax may allow "include df" because D because can be infered;
-  *              in a theory, "include D" is the standard for includes without definiens;
-  *              in a view, we may also allow "include D" for the case where df is the identity of D.
+  * Note that concrete syntax may allow "include df" because D because can be infered;
+  *  in a theory, "include D" is the standard for includes without definiens;
+  *  in a view, we may also allow "include D" for the case where df is the identity of D.
   *
-  *              See the examples below!
   * @see [[https://uniformal.github.io//doc/language/implicit.html]]
-  * @example A [[Theory]] T includes a theory S in the usual way:
-  *          '''
-  *          theory S : ?someMetaTheory =
-  *          ...
-  *          ❚
-  *          theory T : ?someMetaTheory =
-  *          include ?S ❙
-  *          ❚
-  *          '''
-  *          Both theories are non-parametric, i.e. as usual. Then [[Theory.getAllIncludes T.getAllIncludes]] will
-  *          contain an `IncludeData(T.path, S.path, Nil, None, false)`.
-  * @example Assume S, T as above, as well as a [[View]] v: T -> R including another view w: S -> R:
-  *          '''
-  *          view w : S -> R = ... ❚
-  *          view v : T -> R =
-  *          include ?S ❘ = ?w ❙
-  *          ❚
-  *          '''
-  *          Then [[View.getAllIncludes v.getAllIncludes]] will contain an
-  *          `IncludeData(v.path, S.path, Nil, w.path, false)`.
-  * @example Let R, S, T be as below:
-  *          '''
-  *          theory R : ?someMetaTheory =
-  *          ...
-  *          ❚
-  *          theory S : ?someMetaTheory =
-  *          include ?R❙
-  *          ...
-  *          ❚
-  *          theory T : ?someMetaTheory =
-  *          include ?R ❙
-  *          ...
-  *          ❚
-  *          '''
-  *
-  *          Pictorially, this is an inclusion triangle (with one missing edge):
-  *          '''
-  *          R
-  *          / \
-  *          T   S
-  *          '''
-  *          Now suppose we want a [[View]] v: T -> S which is the identity on R, i.e. v_R = id_R. In surface syntax
-  *          we can do this as follows:
-  *          '''
-  *          view v: T -> S =
-  *          include ?R❙
-  *          ❚
-  *          '''
-  *          With this [[View.getAllIncludes v.getAllIncludes]] will contain an
-  *          `IncludeData(v.path, R.path, Nil, Some(OMIDENT(R.path)), false)`.
-  * @example If you have a [[View]] v: T -> S between two theories with the same meta theory mt, then
-  *          [[View.getAllIncludes v.getAllIncludes]] will automatically include
-  *          `IncludeData(v.path, mt.path, Nil, Some(OMIDENT(mt.path)), false)` similar to the previous example
-  *          where the view is the identity on the included theory.
   */
 case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Term], total: Boolean) {
   /** OMIDENT(from) or OMINST(from, args) or OMCOMP(the-former, df); OMStructuralInclude for realizations */
   def asMorphism: Term = {
-    if (isRealization) OMStructuralInclude(from, home.toMPath)
+    if (isRealization && !df.isDefined) OMStructuralInclude(from, home.toMPath)
     else OMCOMP(OMINST(from, home.toMPath, args) :: df.toList)
   }
 

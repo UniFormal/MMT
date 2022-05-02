@@ -56,7 +56,7 @@ trait CheckingCallback {
    }
 
    /** flag an error */
-   def error(message: => String)(implicit history: History): Boolean = false
+   def error(message: => String, exc: Option[Level.Excuse] = None)(implicit history: History): Boolean = false
 
    /** lookup */
    def lookup: Lookup
@@ -119,14 +119,15 @@ object TypingRule {
  */
 abstract class TypingRule(val head: GlobalName) extends SingleTermBasedCheckingRule {
    /**
-    *  @param solver provides callbacks to the currently solved system of judgments
-    *  @param tm the term
-    *  @param tp the type
-    *  @param stack its context
-    *  @return true iff the typing judgment holds
-    *
-    *  may throw SwitchToInference
-    */
+     * @param solver provides callbacks to the currently solved system of judgments
+     * @param tm the term
+     * @param tp the type
+     * @param stack its context
+     * @return Some(true) if the typing judgment holds, Some(false) if it provably does not hold,
+     *         and None if the rule cannot decide.
+     *
+     * @throws SwitchToInference when it should be switched to inference.
+     */
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean]
 }
 
@@ -180,7 +181,7 @@ class DelarativeVarianceRule(h: GlobalName, variance: List[Variance]) extends Va
   }
 }
 
-/** A SupertypeRule represnts a type as a subtype of a bigger one
+/** A SupertypeRule represents a type as a subtype of a bigger one
   *  @param head the head of the term whose type this rule infers
   */
 abstract class SupertypeRule(val head: GlobalName) extends SingleTermBasedCheckingRule {
@@ -199,6 +200,7 @@ abstract class SupertypeRule(val head: GlobalName) extends SingleTermBasedChecki
 /** An InferenceRule infers the type of an expression
  *  It may recursively infer the types of components.
  *  @param head the head of the term whose type this rule infers
+ *  @param typOP the "typing judgement symbol", e.g. ''info.kwarc.mmt.lf.OfType.path''
  */
 abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends SingleTermBasedCheckingRule with MaytriggerBacktrack {
    /**
@@ -215,15 +217,19 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
 /** A variant of InferenceRule that may additionally use the expected type.
  *  Thus it can be used both for type inference and for type checking.
  *  @param h the head of the term whose type this rule infers
+ *  @param t the "typing judgement symbol", e.g. ''info.kwarc.mmt.lf.OfType.path''
+ *  Even if the expected type is given, rules should still perform some kind of type inference on the term
+ *  as opposed to simply returning the expected type. The expected type might contain unknowns that are to be solved
+ *  by equating it to the inferred type.
  */
 abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
    /**
     *  @param tp the expected type
     *    pre: if provided, tp is covered
-    *  @param covered whether tm is covered
+    *  @param covered whether tm is covered; if so and tp is provided, then tm:tp covered
     *  @return the inferred type and the result of type-checking
-    *    post: if the former is Some(tpI), typing tm:tpI is covered
-     *         if tp provided and the latter is Some(true), tm:tp is covered
+    *    post: if the left component is Some(tpI), typing tm:tpI is covered
+    *      if tp provided and the right component is Some(true), tm:tp is covered
     */
    def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean])
 
@@ -464,6 +470,7 @@ abstract class TypeSolutionRule(val head: GlobalName) extends SolutionRule {
  * This is legal if all terms of that type are equal.
  */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
+  override def priority = -10 // make sure we don't shadow other equality rules
 
   /** if this type is proof-irrelevant, this returns the unique term of this type
    *
@@ -526,7 +533,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
     case c : Constant if (c.rl contains abbreviationTag) && c.dfC.analyzed.isDefined =>
       val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
       val ruleConst = RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
-      ruleConst.setOrigin(GeneratedBy(this))
+      ruleConst.setOrigin(GeneratedFrom(c.path, this))
       log(c.name + " ~~> " + present(c.df.get))
       controller add ruleConst
     case _ =>

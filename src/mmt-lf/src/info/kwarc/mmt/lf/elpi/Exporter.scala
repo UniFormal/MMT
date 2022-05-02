@@ -16,7 +16,7 @@ object HelpCons {
   def apply(path: GlobalName, suffix: String) : ELPI.Variable = ELPI.Variable(LocalName("help") / path.name / suffix)
 }
 
-case class ELPIError(msg: String) extends Error(msg)
+case class  ELPIError(msg: String) extends Error(msg)
 
 object ELPIExporter {
   /** straightforward translation of an LF terms to a lambda-Prolog term */
@@ -25,12 +25,13 @@ object ELPIExporter {
       case OMS(p) =>
         if (p.toString == "http://cds.omdoc.org/urtheories?NatSymbols?NAT")
           ELPI.Variable(LocalName("int"))
-        else
+        else {
           ELPI.Variable(p.name)
+        }
       case OMV(n) =>
-        ELPI.Variable(n)
+        ELPI.Variable(elpiRename(n))
       case Lambda(x, _, t) =>
-        ELPI.Lambda(x, translateTerm(t))
+        ELPI.Lambda(elpiRename(x), translateTerm(t))
       case ApplySpine(f, args) =>
         val fE = translateTerm(f)
         val argsE = args map translateTerm
@@ -40,11 +41,19 @@ object ELPIExporter {
         val bE = translateTerm(b)
         ELPI.Arrow(aE, bE)
       case Pi(x, _, b) =>
-        ELPI.Forall(x, translateTerm(b))
+        ELPI.Forall(elpiRename(x), translateTerm(b))
       case OMLIT(v, NatLit) =>
         ELPI.Integer(v.toString.toInt)
       case _ => throw ELPIError("unknown term: " + t)
     }
+  }
+
+  // We want Variables to start with capital letters, so we rename things like "t" to "T/t".
+  // "I don't anticipate any clashes here because MMT names can't contain slashes." -- Jonas, March 2021
+  def elpiRename(ln : LocalName) : LocalName = {
+    val s : String = ln.toString
+    val nln : LocalName = if (s.head.isLower) { LocalName(s.head.toUpper + "/" + s) } else { ln }
+    nln
   }
 }
 
@@ -67,7 +76,6 @@ class ELPIExporter extends Exporter {
     new HandDownHandler(ruleMatcher, name = "2"),
     new BackChainingHandler(ruleMatcher)
   ))
-
 
   private def translateTheory(thy: Theory): ELPI.Program = {
     val cons = thy.getDeclarations
@@ -103,7 +111,6 @@ class ELPIExporter extends Exporter {
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }
 
-
 private class VarCounter {
   private var i = 0
   def next(upper: Boolean) : LocalName = {
@@ -122,6 +129,8 @@ trait ConstantHandler {
   /** may be used to generate boilerplate code after processing.
     * depending on the exporter, this may not get called. */
   def finish() : List[ELPI.Decl] = List()
+
+  def elpiRename(ln : LocalName) : LocalName = ELPIExporter.elpiRename(ln)
 }
 
 class ConstantHandlerSequence(handlers : List[ConstantHandler]) extends ConstantHandler {
@@ -200,6 +209,10 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
     }
   }
 
+  def cap(dr : DeclarativeRule) : DeclarativeRule = {
+    return dr
+  }
+
   /** translates a complex judgment to the corresponding lambda-Prolog predicate
     * Example: translateComplex(ded A -> ded B) should become pi x1 \ ded/hyp x1 A => ded (X2 x1) B
     */
@@ -257,7 +270,7 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
 
   def getParNames(dr: DeclarativeRule)(implicit vc: VarCounter): (List[LocalName], List[ELPI.Expr]) = {
     val parNames = dr.arguments.collect {
-      case RuleParameter(n,_) => n
+      case RuleParameter(n,_) => elpiRename(n)
     }
     // have to add extra ones (for case covered by translateConclusion)
     val (names, _, extras) = translateConclusion(dr.conclusion)
@@ -288,15 +301,16 @@ class MainJudgmentHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(han
   def onRule(c: Constant, dr: DeclarativeRule, vc: VarCounter) : List[ELPI.Decl] = {
     // for parameters: just the given name, ignoring the type; for assumptions: a generated name and the judgment
     val (argNames,assOs) = dr.arguments.map {
-      case RuleParameter(n,_) => (n,None) // TODO make sure all parNames start with upper case letter (because printer drops outermost pi's)
+      case RuleParameter(n,_) =>
+        (elpiRename(n),None) // TODO make sure all parNames start with upper case letter (because printer drops outermost pi's)
       case RuleAssumption(cj) =>
         val (n, e) = translateComplex(cj)(vc)
-        (n, Some(e))
+        (elpiRename(n), Some(e))
     }.unzip
     val assEs = assOs.flatMap(_.toList)
     // the conclusion and a generated name for it
     val (concNames, concE, concExtra) = translateConclusion(dr.conclusion)(vc)
-    val names = concNames ::: argNames
+    val names = (concNames ::: argNames)
     // helper judgment: c/help applied to all names; providing rules for this judgment allows guiding the prover
     val help = HelpCons(c.path)(names)
     // quantify over all names, assumptions imply conclusion, with helper judgment as side condition
@@ -307,7 +321,7 @@ class MainJudgmentHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(han
 
 
 class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(handlerName = "prod", ruleMatcher) {
-  private object ProdCertCons extends ELPI.Constant(name = "prodcert")
+  private object ProdCertCons extends ELPI.BuiltInConstant(name = "prodcert")
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
     val certName = vc.next(upper = true)
@@ -360,7 +374,7 @@ class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(hand
 }
 
 class IterativeDeepeningHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(handlerName = "id", ruleMatcher) {
-  object IdCertCons extends ELPI.Constant(name = "idcert")
+  object IdCertCons extends ELPI.BuiltInConstant(name = "idcert")
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
     val hypName = ELPI.Variable(vc.next(upper = true))
@@ -392,7 +406,7 @@ class IterativeDeepeningHandler(ruleMatcher : RuleMatcher) extends JudgmentHandl
 
 class BackChainingHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("bc", ruleMatcher) {
 
-  object BcCertCons extends ELPI.Constant(name = "bccert")
+  object BcCertCons extends ELPI.BuiltInConstant(name = "bccert")
 
   override def onIntro(c: Constant, vc: VarCounter): List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
@@ -457,7 +471,7 @@ class BackChainingHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("bc
 
 
 class ProofTermHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("pt", ruleMatcher) {
-  object PtCertCons extends ELPI.Constant("ptcert")
+  object PtCertCons extends ELPI.BuiltInConstant("ptcert")
 
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)

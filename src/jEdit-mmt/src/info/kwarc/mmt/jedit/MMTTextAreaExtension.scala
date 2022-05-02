@@ -17,24 +17,33 @@ import javax.swing.ImageIcon
 
 /** A TextAreaExtension that is added to every EditPane
  *  it can be used for custom painting, e.g., background highlighting, tooltips
- *  Currently it highlights terminator characters
+ *  Currently it allows highlighting certain characters by painting over the ones painted by jEdit.
  */
 class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MMTTextAreaExtension(editPane) {
    private def log(msg: String) {controller.report("jedit-painter", msg)}
    private val painter = textArea.getPainter
-
-   //val oIMG = new ImageIcon(this.getClass().getResource("/images/object_t.png")).getImage()
-   //val dIMG = new ImageIcon(this.getClass().getResource("/images/clear_button.png")).getImage()
-   //val mIMG = new ImageIcon(this.getClass().getResource("/images/clear_button.png")).getImage()
 
   import java.awt.{Point,Color}
 
   // imperatively reusing the same variables for efficiency
   private val segment = new Segment
   private val startPoint = new Point
-  // parameters for coloring the delimiters
-  private val high = 255
-  private val low = 192
+
+  /*
+    jEdit 5.6 modes cannot highlight strings that start with high Unicode characters.
+    Therefore, we use this extension to highlight manually.
+   */
+  private val characterStyles = List(
+    // LF
+    '⟶' -> Token.KEYWORD2,
+    // delims
+    '❘' -> Token.LITERAL4, '❙' -> Token.LITERAL3, '❚' -> Token.LITERAL4
+  )
+  private val characterClassStyles = List(
+    // typical logical operators
+    Character.MATH_SYMBOL -> Token.KEYWORD3,
+    Character.NON_SPACING_MARK -> Token.KEYWORD3
+  )
 
   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
     if (editPane.getBuffer.getMode.getName != "mmt") return
@@ -62,16 +71,7 @@ class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MM
          //TODO if there is a single selection in the current line, jedit is still putting the lineHighlightColor
          None
     }
-    /** paints MMT delimiter 'letter' at 'startPoint' with background 'color' */
-    def paintDelim(startPoint: Point, color: Color, letter: String) {
-       gfx.setColor(color)
-       // left and right edges of rectangle: x and x + width - 1; top and bottom edges: y and y + height - 1
-       gfx.fillRect(startPoint.x, startPoint.y, width, height)
-       gfx.setColor(Color.WHITE)
-       gfx.setFont(new Font(font.getName(), Font.PLAIN, font.getSize()*2/3))
-       gfx.drawString(letter, startPoint.x + width/6, startPoint.y + height*2/3)
-    }
-    /** paints other character 'letter' at 'startPoint' using 'style' */
+    /** paints other character 'c' at 'startPoint' using 'style' */
     def paintChar(offset: Int, startPoint: Point, style: SyntaxStyle, c: Char) {
        /* We have to erase the text painted by jEdit. We can only do that by painting a rectangle over it.
         * To avoid undoing an intended background color and because we cannot look up the color of a pixel,
@@ -85,7 +85,7 @@ class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MM
         */
        val bgColor = fixedBgColor(offset) orElse Option(style.getBackgroundColor) getOrElse painter.getBackground
        gfx.setColor(bgColor)
-       gfx.fillRect(startPoint.x, startPoint.y, width, height)
+       //gfx.fillRect(startPoint.x, startPoint.y, width, height)
        gfx.setColor(style.getForegroundColor)
        gfx.setFont(style.getFont)
        val fm = painter.getFontMetrics
@@ -134,27 +134,24 @@ class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MM
          val res = textArea.offsetToXY(physicalLine, localOffset, startPoint)
          // if res != null: XY-coordinates of global offset assigned to startPoint (relative to the upper left corner of text area)
          // if res == null, point not visible (which sometimes happens)
-         import parser.Reader._
          if (res != null) {
-           val c = segment.charAt(localOffset).toInt
-           if (c < 32) c match {
-             case c if FS.chars.contains(c) =>
-               paintDelim(startPoint, new Color(high, high, low), "S")
-             case c if GS is c =>
-               paintDelim(startPoint, new Color(high, low, low), "M")
-             case c if RS is c =>
-               paintDelim(startPoint, new Color(low, high, low), "D")
-             case c if US is c =>
-               paintDelim(startPoint, new Color(low, low, high), "O")
+           val c = segment.charAt(localOffset)
+           val globalOffset = segment.offset + localOffset
+           def pC(c: Char, si: Int) = paintChar(globalOffset, startPoint, styles(si), c)
+           val iO = utils.listmap(characterStyles, c) orElse
+                    utils.listmap(characterClassStyles, Character.getType(c))
+           iO.foreach {i =>
+             pC(c,i)
            }
-           if (c > 32 && MMTOptions.semantichighlighting.get.getOrElse(false)) {
+
+           /* if (MMTOptions.semantichighlighting.get.getOrElse(false)) {
              // repaint c if semanticHighlighting returns a result
              val globalOffset = segment.offset + localOffset
              val styleOpt = semanticHighlighting(globalOffset)
              styleOpt foreach {style =>
                  paintChar(globalOffset, startPoint, style, c.toChar)
              }
-           }
+           }*/
          }
        }
     } catch {
@@ -229,6 +226,8 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
    }
 }
 
+/* old code for tweaking the style, did not work well but kept to document jEdit API functions
+
 //to highlight the current expression implement this
 //class MMTMatcher extends org.gjt.sp.jedit.textarea.StructureMatcher
 //call editPane.getTextArea().addStructureMatcher, e.g., in sidekick parser's activate method, to register it
@@ -262,3 +261,4 @@ class StyleChanger(editPane: EditPane, modeName: String) extends TextAreaExtensi
        }
    }
 }
+*/

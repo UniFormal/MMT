@@ -41,7 +41,7 @@ class ControllerState {
   /** base URL In the local system
    *  initially the current working directory
    */
-  var home = File(System.getProperty("user.dir"))
+  var home = File.currentDir
 
   var actionDefinitions: List[Defined] = Nil
   var currentActionDefinition: Option[Defined] = None
@@ -58,9 +58,9 @@ abstract class ROController {
 
   def get(path: Path): StructuralElement
 
-  def getDocument(path: DPath, msg: Path => String = p => "no document found at " + p): Document = Try(get(path)) match {
+  def getDocument(path: DPath, msg: String = "no document found"): Document = Try(get(path)) match {
     case scala.util.Success(d: Document) => d
-    case _ => throw GetError(msg(path))
+    case _ => throw GetError(path, msg)
   }
 }
 
@@ -96,12 +96,10 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   val library = memory.content
 
   /** convenience for getting the default text-based presenter (for error messages, logging, etc.) */
-  def presenter: Presenter = extman.get(classOf[Presenter], "present-text-notations").get
+  def presenter: Presenter = extman.get(classOf[Presenter], "present-text-notations").getOrElse(extman.get(classOf[Presenter], "present-text-notations-flat").get)
 
   /** convenience for getting the default simplifier */
   def simplifier: Simplifier = extman.get(classOf[Simplifier]).head
-  /** applies only complification rules, used to unsimplify a fully-processed object, e.g., to undo definition expansion */
-  def complifier(rules: RuleSet) = new TermTransformer("complify", this, rules, ttr => ttr.isInstanceOf[ComplificationRule])
 
   /** convenience for getting the default object parser */
   def objectParser: ObjectParser = extman.get(classOf[ObjectParser], "mmt").get
@@ -259,7 +257,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
      // The merging happens in the 'add' method.
      val oldDocOpt = localLookup.getO(dpath) map {
         case d: Document => d
-        case _ => throw AddError("a non-document with this URI already exists: " + dpath)
+        case e => throw AddError(e, "a non-document with this URI already exists")
      }
      oldDocOpt.foreach {doc =>
         // (M): deactivate the old structure
@@ -310,7 +308,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
           throw GeneralError("no importer found for " + f)
         }
         log("building " + f)
-        importer.build(a, Build.update, FilePath(p), Some(errorCont))
+        importer.build(a, BuildChanged(), FilePath(p), Some(errorCont))
       case None =>
         throw GeneralError("not in a known archive: " + f)
     }
@@ -339,18 +337,37 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** convenience for global lookup */
   def get(path: Path): StructuralElement = globalLookup.get(path)
 
-  /** like get */
-  def getO(path: Path) = try {
+  /**
+    * Tries to retrieve an element.
+    * Like [[get]] but returns None in case no element could be found for `path`.
+    **/
+  def getO(path: Path): Option[StructuralElement] = try {
     Some(get(path))
   } catch {
     case _: GetError => None
     case _: BackendError => None
   }
 
+  /**
+    * @see [[getAsO]]
+    */
   def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = getO(path) match {
     case Some(e : E@unchecked) if cls.isInstance(e) => e
-    case Some(r) => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
-    case None => throw GetError("Element doesn't exist: " + path)
+    case Some(r) => throw GetError(path, "element exists but is not a " + cls + " - it is a " + r.getClass)
+    case None => throw GetError(path, "element does not exist")
+  }
+
+  /**
+    * Tries to retrieve an element of a specific class.
+    *
+    * @return Some element in case an element is found for `path` (and that is an instance of `E`), or None if
+    *         no element could be found for `path`.
+    * @throws GetError in case the element exists, but is not an instance of `E`.
+    * @see [[getAs]]
+    */
+  def getAsO[E <: StructuralElement](cls : Class[E], path: Path): Option[E] = getO(path).map {
+    case e : E@unchecked if cls.isInstance(e) => e
+    case r => throw GetError(path, "element exists but is not a " + cls + " - it is a " + r.getClass)
   }
 
   def getConstant(path: GlobalName): Constant = getAs(classOf[Constant], path)
@@ -474,7 +491,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
             "retrieval finished, but element was not in memory afterwards (this usually means the backend loaded an element whose URI is not the one that was requested)"
           else
             "cyclic dependency while trying to retrieve"
-          throw GetError("cannot retrieve " + eprev.last.path + ": " + msg)
+          throw GetError(eprev.last.path, msg)
         } else {
           iterate({retrieve(e)}, eprev, false)
           iterate(a, eprev, true)
@@ -493,7 +510,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
         }
       } catch {
         case NotApplicable(msg) =>
-          throw GetError(msg)
+          throw GetError(nf.path, msg)
       }
     }
     log("retrieved " + nf.path)
@@ -505,7 +522,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     * Adds a knowledge item (a [[StructuralElement]]).
     *
     * If the element is a [[ContainerElement]] (incl. [[Structure]]s and [[PlainInclude]]s!),
-    * you *must* to call [[endAdd()]] sometime after calling this [[add()]] method.
+    * you *must* to call [[endAdd()]] some time after calling this [[add()]] method.
     * Otherwise, you risk an inconsistent state of MMT.
     *
     * If the element is a [[Module]] (e.g. a [[Theory]] or [[View]]) whose name indicates
@@ -662,7 +679,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   def delete(p: Path) {
     p match {
       case _: CPath =>
-         throw DeleteError("deletion of component paths not implemented")
+         throw DeleteError(p, "deletion of component paths not implemented")
       case p =>
         val seOpt = localLookup.getO(p)
         seOpt foreach {se =>
@@ -676,6 +693,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   def clear {
     memory.clear
     backend.clear
+    extman.clear
     notifyListeners.onClear
   }
 

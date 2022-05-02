@@ -49,14 +49,9 @@ private object LFLinkInversionRulesProvider {
 		* @param assignment
 		* @return
 		*/
-	private def getInverseSimplificationRule(matcher: Matcher)(domainSymbol: GlobalName,
-																														 assignment: Term)
-	: SimplificationRule = {
-
+	private def getInverseSimplificationRule(matcher: Matcher)(domainSymbol: GlobalName, assignment: Term): SimplificationRule = {
 		val someHead = DPath(URI("http://example.com")) ? "module" ? "someHead"
-
 		val LFLambdaBinder = OMID(LF._path ? "lambda")
-
 		assignment match {
 			case OMS(renamedSymbol) =>
 				new AbbrevRule(renamedSymbol, OMID(domainSymbol))
@@ -67,8 +62,9 @@ private object LFLinkInversionRulesProvider {
 				)
 			case _ =>
 				// Otherwise, always rewrite the whole RHS to the LHS of the morphism assignment.
-				new RewriteRule(someHead, Context.empty, assignment, OMID(domainSymbol))
-					.makeRule(matcher)
+				new SimplificationRule(someHead) {
+                  def apply(c: Context,t: Term): Simplifiability = if (t == assignment) Simplify(OMID(domainSymbol)) else Recurse
+                }
 		}
 	}
 

@@ -16,23 +16,23 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
 
   /** the severity of the error, override as needed */
   def level: Level = Level.Error
+  /** none by default, override for excusable errors */
+  val excuse: Option[Level.Excuse] = None
+
+  /** returns "level (excuse)" */
+  def levelString = level.toString + excuse.fold("")(e => s" ($e)")
 
   // this field is transient as some Throwables are not actually serialisable
   @transient private var causedBy: Option[Throwable] = None
-
   def getCausedBy : Option[Throwable] = causedBy
+  /** get the error due to which this error was thrown */
+  def setCausedBy(e: Throwable): this.type = {causedBy = Some(e); this}
 
   def getAllCausedBy: List[Throwable] = getCausedBy match {
     case None => Nil
     case Some(e: Error) =>
       e :: e.getAllCausedBy
     case Some(e) => List(e)
-  }
-  
-  /** get the error due to which this error was thrown */
-  def setCausedBy(e: Throwable): this.type = {
-    causedBy = Some(e)
-    this
   }
 
   protected def causedByToNode = causedBy match {
@@ -133,40 +133,51 @@ object Stacktrace {
   }
 }
 
-/** error levels, see [[Error]]
-  *
-  * even fatal errors can be ignored (by comparison)
-  */
 object Level {
-  type Level = Int
-  val Force = -1
-  val Info = 0
-  val Warning = 1
-  val Error = 2
-  val Fatal = 3
-  val Ignore = 4
-
-  def parse(s: String): Level = s match {
-    case "0" => Info
-    case "1" => Warning
-    case "" | "2" => Error
-    case "3" => Fatal
-    case _ => throw ParseError("unknown error level: " + s)
+  /** error levels, see [[Error]]
+    *
+    * even fatal errors can be ignored (by comparison)
+    */
+  sealed abstract class Level(val toInt: Int,str: String) extends Ordered[Level] {
+    override def toString = str
+    def compare(that: Level) = this.toInt - that.toInt
   }
 
-  def toString(l: Level): String = l match {
-    case -1 => "force"
-    case 0 => "info"
-    case 1 => "warn"
-    case 2 => "error"
-    case 3 => "fatal"
-    case 4 => "ignore"
-    case _ => "unknown" + l
+  case object Info extends Level(0,"info")
+  case object Warning extends Level(1,"warning")
+  case object Error extends Level(2,"error")
+  case object Fatal extends Level(3,"fatal error")
+
+  val levels = List(Info,Warning,Error,Fatal)
+  def parse(s: String): Level = {
+    levels.find(l => l.toInt.toString == s || l.toString == s).getOrElse {
+      if (s.isEmpty) Error else throw ParseError("unknown error level: " + s)
+    }
   }
+
+  /** errors may carry an excuse why the error may be acceptable */
+  sealed abstract class Excuse(str: String) {
+    override def toString = str
+  }
+  /** partial view, unresolved _, etc. */
+  case object Gap extends Excuse("gap")
+  /** MMT incompleteness */
+  case object Limitation extends Excuse("limitation")
+  def excuseOStr(e: Option[Excuse]) = e.fold("unexcused error")(_.toString)
 }
 
 /** errors in user content */
-trait ContentError
+trait ContentError {
+  def sourceRef: Option[SourceRef]
+  def logicalRef: Option[Path]
+}
+
+/** errors tied to a structural element */
+trait StructuralElementError extends ContentError {
+  def elem: StructuralElement
+  def sourceRef = SourceRef.get(elem)
+  def logicalRef = Some(elem.path)
+}
 
 /** other errors that occur during parsing */
 case class ParseError(s: String) extends Error("parse error: " + s)
@@ -174,9 +185,11 @@ case class ParseError(s: String) extends Error("parse error: " + s)
 /** errors that occur when parsing a knowledge item */
 case class SourceError(origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil,
                        override val level: Level = Level.Error) extends Error(mainMessage) with ContentError {
-  override def extraMessage: String = s"source error ($origin) at " + ref.toString + extraMessages.mkString("\n", "\n", "\n")
 
+  override def extraMessage: String = s"source error ($origin) at " + ref.toString + extraMessages.mkString("\n", "\n", "\n")
   override def toNode: Elem = xml.addAttr(xml.addAttr(super.toNode, "sref", ref.toString), "target", origin)
+  def sourceRef = Some(ref)
+  def logicalRef = None
 }
 
 /** errors that occur during compiling */
@@ -189,34 +202,65 @@ object CompilerError {
 abstract class Invalid(s: String) extends Error(s) with ContentError
 
 /** errors that occur when structural elements are invalid */
-case class InvalidElement(elem: StructuralElement, s: String) extends Invalid("invalid element: " + s + ": " + elem.path.toPath) with ContentError
+case class InvalidElement(elem: StructuralElement, s: String) extends Invalid(s"invalid element ${elem.path}: $s") with StructuralElementError
 
 /** errors that occur when objects are invalid */
-case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj)
+case class InvalidObject(obj: objects.Obj, s: String) extends Invalid(s"invalid object, $s: " + obj) {
+  def sourceRef = SourceRef.get(obj)
+  def logicalRef = None
+}
 
 /** errors that occur when judgements do not hold */
-case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid(s"invalid unit: $msg")
+case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid(s"invalid unit: $msg") {
+  def sourceRef = {
+    // some WFJudgement must exist because we always start with it
+    history.getSteps.mapFind {s =>
+      s.removeWrappers match {
+        case j: objects.WFJudgement =>
+          SourceRef.get(j.wfo)
+        case _ =>
+          None
+      }
+    }
+  }
+  def logicalRef = unit.component
+}
 
 /** run time error thrown by executing invalid program */
 case class ExecutionError(msg: String) extends Error(msg)
 
 /** other errors */
-case class GeneralError(s: String) extends Error("general error: " + s)
+case class GeneralError(s: String) extends Error("general error: " + s) {
+  override def level = Level.Fatal
+}
+
+/** errors during library operations */
+abstract class LibraryError(s: String) extends Error(s) with ContentError
 
 /** errors that occur when adding a knowledge item */
-case class AddError(s: String) extends Error("add error: " + s)
+case class AddError(elem: StructuralElement, s: String) extends
+    LibraryError(s"error adding ${elem.path}: $s") with StructuralElementError
 
 /** errors that occur when updating a knowledge item */
-case class UpdateError(s: String) extends Error("update error: " + s)
+case class UpdateError(elem: StructuralElement, s: String) extends
+    LibraryError(s"error updating ${elem.path}: $s") with StructuralElementError
 
 /** errors that occur when deleting a knowledge item */
-case class DeleteError(s: String) extends Error("delete error: " + s)
+case class DeleteError(path: Path, s: String) extends LibraryError(s"error deleting $path: $s") {
+  def sourceRef = None
+  def logicalRef = None
+}
 
 /** errors that occur when retrieving a knowledge item */
-case class GetError(s: String) extends Error("get error: " + s)
+case class GetError(path: Path, s: String) extends LibraryError(s"error getting $path: $s") {
+  def sourceRef = None
+  def logicalRef = None
+}
 
 /** errors that occur when the backend believes it should find an applicable resource but cannot */
-case class BackendError(s: String, p: Path) extends Error("Cannot find resource " + p.toString + ": " + s)
+case class BackendError(s: String, p: Path) extends Error(s"error retrieving resource $p: $s")
+/** general errors involving archives */
+case class ArchiveError(id: String, msg: String) extends Error(s"error regarding archive $id: $msg")
 
 /** errors that occur when a configuration entry is missing */
 case class ConfigurationError(id: String) extends Error(s"no entry for $id in current configuration")
@@ -230,10 +274,14 @@ case class RegistrationError(s: String) extends Error(s)
 /** errors that are not supposed to occur, e.g., when input violates the precondition of a method */
 case class ImplementationError(s: String) extends Error("implementation error: " + s)
 
-/** errors that occur during substitution with name of the variable for which the substitution is defined */
-case class SubstitutionUndefined(name: LocalName, m: String) extends Error("Substitution undefined at " + name.toString + "; " + m)
-
-case class LookupError(name: LocalName, context: objects.Context) extends Error("variable " + name.toString + " not declared in context " + context)
+/** errors involving retrieval of parts of objects */
+abstract class ObjectError(msg: String) extends Error(msg)
+/** lookup in the context */
+case class LookupError(name: LocalName, context: objects.Context) extends ObjectError("variable " + name.toString + " not declared in context " + context)
+/** lookup in a substitution */
+case class SubstitutionUndefined(name: LocalName, m: String) extends ObjectError("Substitution undefined at " + name.toString + "; " + m)
+/** lookup in the context */
+case class SubobjectError(obj: objects.Obj, pos: objects.Position) extends ObjectError(s"position $pos does not exist in $obj")
 
 case class HeapLookupError(name: LocalName) extends Error("variable " + name.toString + " not declared")
 
@@ -246,33 +294,21 @@ abstract class ExtensionError(prefix: String, s: String) extends Error(prefix + 
   * might produce a non-fatal error.
   */
 abstract class ErrorHandler {
-  /** the global indicator for errors that is not reset by mark */
-  private var newErrors = false
-  private var assumeNoErrors = true
-
-  def mark {
-    assumeNoErrors = true
-  }
-
+  /** true if an error was added since last reset */
+  protected var newErrors = false
   def reset = {
     newErrors = false
-    assumeNoErrors = true
   }
-
-  /** true if errors occurred since ~creation~ last reset */
+  /** true if errors occurred since last reset */
   def hasNewErrors: Boolean = newErrors
-
-  /** true if no new errors occurred since the last call to mark */
-  def noErrorsAdded: Boolean = assumeNoErrors
 
   /** registers an error
     *
     * This should be called exactly once on every error, usually in the order in which they are found.
     */
   def apply(e: Error) {
-    if (e.level > 1) {
+    if (e.level > Level.Warning) {
       newErrors = true
-      assumeNoErrors = false
     }
     addError(e)
   }
@@ -296,14 +332,26 @@ abstract class ErrorHandler {
 
 
 /** Filters errors before passing them to the another error handler */
-class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) extends ErrorHandler {
-  override def mark = handler.mark
-  override def hasNewErrors = handler.hasNewErrors
-  override def catchIn(a: => Unit) = handler.catchIn(a)
-  override def apply(e: Error) = if (filter(e)) handler.apply(e) //otherwise ignore
+abstract class FilteringErrorHandler(handler: ErrorHandler) extends ErrorHandler {
+  def filter(e:Error): Boolean
+  override def apply(e: Error) = {
+    if (filter(e)) {
+      newErrors = true
+      handler.apply(e)
+    } //otherwise ignore
+  }
   def addError(e : Error) = {} //nothing to do here, not called
 }
 
+/** handles only error at or above a certain threshold */
+class HandlerWithTreshold(handler: ErrorHandler, threshold: Level.Level) extends FilteringErrorHandler(handler) {
+  def filter(e: Error) = e.level >= threshold
+}
+
+/** trivial filter that accepts everything; still useful because it allows tracking if new errors have occurred */
+class TrackingHandler(handler: ErrorHandler) extends FilteringErrorHandler(handler) {
+  def filter(e: Error) = true
+}
 
 /** an error handler that needs opening and closing */
 abstract class OpenCloseHandler extends ErrorHandler {
@@ -312,7 +360,7 @@ abstract class OpenCloseHandler extends ErrorHandler {
 }
 
 /** combines the actions of multiple handlers */
-class MultipleErrorHandler(handlers: List[ErrorHandler]) extends OpenCloseHandler {
+class MultipleErrorHandler(val handlers: List[ErrorHandler]) extends OpenCloseHandler {
   def addError(e: Error) {
     handlers.foreach(_.apply(e))
   }
@@ -329,41 +377,50 @@ class MultipleErrorHandler(handlers: List[ErrorHandler]) extends OpenCloseHandle
     }
   }
 }
+object MultipleErrorHandler {
+  /** creates a MultipleErrorHandler and adds error reporting if not also present */
+  def apply(hs: List[ErrorHandler], rep: frontend.Report) = {
+    val handlers = hs.flatMap(handlersFlat)
+    val alreadyReports = handlers.exists {
+      case h: ErrorLogger => h.report == rep
+      case _ => false
+    }
+    val errorLogger = if (alreadyReports) Nil else List(new ErrorLogger(rep))
+    new MultipleErrorHandler(errorLogger:::handlers)
+  }
+  /** all atomic handlers, i.e., flattening out the multiple handlers */
+  def handlersFlat(e: ErrorHandler): List[ErrorHandler] = e match {
+    case me: MultipleErrorHandler => me.handlers.flatMap(handlersFlat)
+    case h => List(h)
+  }
+}
 
 /** stores errors in a list */
-class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
+class ErrorContainer extends ErrorHandler {
   private var errors: List[Error] = Nil
-
   protected def addError(e: Error) {
     this.synchronized {
       errors ::= e
     }
-    report.foreach(_ (e))
   }
-
   def isEmpty: Boolean = errors.isEmpty
-
   override def reset() {
     errors = Nil
     super.reset
   }
-
-
   def getErrors: List[Error] = errors.reverse
+  def maxLevel = if (errors.isEmpty) Level.Info else errors.map(_.level).max
 }
 
 /** writes errors to a file in XML syntax
   *
   * @param fileName the file to write the errors into (convention: file ending 'err')
-  * @param report if given, errors are also reported
-  *
   */
-class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends OpenCloseHandler {
+class ErrorWriter(fileName: File) extends OpenCloseHandler {
   private var file: StandardPrintWriter = null
 
   protected def addError(e: Error) {
     if (file == null) open
-    report.foreach(_ (e))
     file.write(new PrettyPrinter(240, 2).format(e.toNode) + "\n")
   }
 
@@ -379,7 +436,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends OpenC
 }
 
 /** reports errors */
-class ErrorLogger(report: frontend.Report) extends ErrorHandler {
+class ErrorLogger(val report: frontend.Report) extends ErrorHandler {
   protected def addError(e: Error) {
     report(e)
   }

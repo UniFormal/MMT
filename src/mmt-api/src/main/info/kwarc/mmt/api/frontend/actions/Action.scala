@@ -23,6 +23,11 @@ trait Action extends Extension with MMTTask {
   override def toString: String = toParseString
 }
 
+trait ActionWithErrorRecovery extends Action {
+  def apply(errorCont: Option[ErrorHandler]): Unit
+  def apply() = apply(None)
+}
+
 /** parsing of [[Action]]s relative to the parser provided by companion objects (of type [[ActionCompanion]] of the subclasses of [[Action]] */
 object Action extends CompRegexParsers {
 
@@ -112,16 +117,7 @@ object Action extends CompRegexParsers {
 
   /** build modifiers */
   def keyMod(implicit state: ActionState) = str ^^ { case km =>
-    if (km.startsWith("-"))
-      (km.tail, Clean)
-    else if ("*!&012345".contains(km.last))
-      (km.init, km.last match {
-        case '!' => Build(Update(Level.Error))
-        case '&' => BuildDepsFirst(Update(Level.Error))
-        case '*' => Build(Update(Level.Ignore))
-        case d => Build(Update(d.asDigit - 1))
-      })
-    else (km, Build)
+    BuildTargetModifier.parse(km)
   }
 }
 

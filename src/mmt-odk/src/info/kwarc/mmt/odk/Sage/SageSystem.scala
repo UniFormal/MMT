@@ -101,7 +101,7 @@ class SageSystem extends VREWithAlignmentAndSCSCP("Sage", MitMSystems.sagesym, M
   override val toTranslations: List[AcrossLibraryTranslation] = polyTo :: PolyMatcher.getAlignmentTo :: numberfieldsTo :: super.toTranslations
   override val fromTranslations: List[AcrossLibraryTranslation] = polyFrom :: PolyMatcher.getAlignmentFrom :: numberfieldsFrom :: super.fromTranslations
 
-  override protected lazy val translator_to = translator(new TranslationTarget {
+  override lazy val translator_to = translator(new TranslationTarget {
     override def inTarget(path: GlobalName, controller: Controller): Boolean = Sage._base <= path
   },toTranslations)
 }

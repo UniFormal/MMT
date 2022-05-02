@@ -113,6 +113,7 @@ object SourceRef extends metadata.Linker[SourceRef](mmt.mmtbase ? "metadata" ? "
       SourceRef(container, reg)
    }
    def toURI(s: SourceRef) = s.toURI
+   def fromString(s: String) = SourceRef.fromURI(URI(s))
    def anonymous(s: String) = {
       val reg = SourceRegion.ofString(s)
       SourceRef(URI.empty, reg)

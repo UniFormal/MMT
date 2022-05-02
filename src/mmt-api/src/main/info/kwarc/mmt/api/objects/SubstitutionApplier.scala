@@ -13,8 +13,7 @@ abstract class SubstitutionApplier {
     *
     *  When using Obj.^^, this is not called on symbols, variables, and literals.
     */
-    def
-    apply(o: Obj, sub: Substitution): o.ThisType
+    def apply(o: Obj, sub: Substitution): o.ThisType
 }
 
 /**

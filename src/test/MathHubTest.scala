@@ -12,7 +12,7 @@ object MathHubTest extends MagicTest("mathhub") {
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
-    controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
+    controller.handleLine("extension info.kwarc.mmt.api.archives.MWSHarvestExporter")
     controller.extman.addExtension(new DependencyGraphExporter)
     controller.extman.addExtension(new DeclarationTreeExporter)
     controller.extman.addExtension(new JSONBasedGraphServer)

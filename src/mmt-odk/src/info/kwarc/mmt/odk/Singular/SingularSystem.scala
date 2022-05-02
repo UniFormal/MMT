@@ -77,7 +77,7 @@ object SingularTranslations {
 
 class SingularSystem extends VREWithAlignmentAndSCSCP("Singular",MitMSystems.singularsym, MitMSystems.evaluateSym, "ODK/Singular") {
   val namespace = Singular._base
-  override protected lazy val translator_to = translator(new TranslationTarget {
+  override lazy val translator_to = translator(new TranslationTarget {
     override def inTarget(path: GlobalName, controller: Controller): Boolean = {
       namespace <= path
     }

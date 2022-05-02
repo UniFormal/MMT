@@ -88,7 +88,7 @@ trait SyntaxDrivenRule extends Rule {
 /** A RuleSet groups some Rule's. */
 abstract class RuleSet extends Rule {self =>
   /** by making this a rule, MMT theories can add entire rule sets at once */
-  override def providedRules = super.providedRules ::: getAll.toList
+  override def providedRules: List[Rule] = super.providedRules ::: getAll.toList
   
   /** the underlying set of rules */
   def getAll: Iterable[Rule]
@@ -134,6 +134,15 @@ class MutableRuleSet extends RuleSet {
 }
 
 object RuleSet {
+  /**
+    * Creates a [[RuleSet]] with the given rules.
+    */
+  def apply(rules: Rule*): RuleSet = {
+    val rs = new MutableRuleSet
+    rs.add(rules : _*)
+    rs
+  }
+
    /** collects all rules visible to a context */
   def collectRules(controller: Controller,context: Context): MutableRuleSet = {
     collectAdditionalRules(controller,None,context)
