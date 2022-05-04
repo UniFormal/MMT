@@ -21,10 +21,10 @@
             var edoc = document.getElementById("entrydoc");
             var user = document.getElementById("usermodel");
             var lang = document.getElementById("language");
-            xhr.open("GET","/:vollki/tour?path=" + edoc.options[edoc.selectedIndex].text + "&user=" + user.options[user.selectedIndex].text + "&lang=" + lang.options[lang.selectedIndex].value, true);
+            xhr.open("GET","/:vollki/tour?path=" + edoc.options[edoc.selectedIndex].value + "&amp;user=" + user.options[user.selectedIndex].value + "&amp;lang=" + lang.options[lang.selectedIndex].value, true);
             xhr.setRequestHeader('Content-type', 'text/html');
             xhr.onreadystatechange = function(e) {
-                if(xhr.readyState == 4 && xhr.status == 200) {
+                if(xhr.readyState == 4 &amp;&amp; xhr.status == 200) {
                     con.innerHTML = xhr.responseText;
                     MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
                 }
@@ -40,10 +40,10 @@
             var lang = document.getElementById("language");
             var elem = document.getElementById(id + '-collapse');
             var xhr = new XMLHttpRequest();
-            xhr.open("GET","/:vollki/frag?path=" + id + "&lang=" + lang.options[lang.selectedIndex].value, true);
+            xhr.open("GET","/:vollki/frag?path=" + id + "&amp;lang=" + lang.options[lang.selectedIndex].value, true);
             xhr.setRequestHeader('Content-type', 'text/html');
             xhr.onreadystatechange = function(e) {
-                if(xhr.readyState == 4 && xhr.status == 200) {
+                if(xhr.readyState == 4 &amp;&amp; xhr.status == 200) {
                     elem.innerHTML = xhr.responseText;
                     elem.style.display = 'flex';
                     MathJax.Hub.Queue(["Typeset",MathJax.Hub]);

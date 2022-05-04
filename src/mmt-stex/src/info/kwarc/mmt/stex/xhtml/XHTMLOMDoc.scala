@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.{AddError, ComplexStep, ContentPath, DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path, Rule, RuleSet, StructuralElement}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMID, OMIDENT, OMMOD, OMS, OMV, Obj, Term, VarDecl}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMFOREIGN, OMID, OMIDENT, OMMOD, OMS, OMV, Obj, Term, VarDecl}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration, Include, NestedModule, PlainInclude, RuleConstant, Structure, TermContainer}
 import info.kwarc.mmt.stex.Extensions.NotationExtractor
@@ -376,8 +376,12 @@ case class HTMLDefComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
           hd.df = findTerm
           true
         case hd : HasDefinientia =>
-          val gn = Path.parseS(resource)
-          findTerm.foreach(hd.dfs(gn) = _)
+          resource.split(',').foreach {r =>
+            if (r.nonEmpty) {
+              val gn = Path.parseS(r)
+              findTerm.foreach(hd.dfs(gn) = _)
+            }
+          }
           true
       }
     }
@@ -881,7 +885,7 @@ case class HTMLArg(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   }
 }
 
-case class HTMLTopLevelTerm(orig : OMDocHTML) extends OMDocHTML(orig) with HTMLConstant {
+final case class HTMLTopLevelTerm(orig : OMDocHTML) extends OMDocHTML(orig) with HTMLConstant {
   assert(sstate.forall(!_.in_term))
   sstate.foreach(_.in_term = true)
 
@@ -1000,6 +1004,22 @@ case class HTMLSParagraph(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) wi
     if (typestrings.contains("symdoc")) addSymbolDoc(fors)
   }
 }
+
+case class HTMLDoctitle(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+  override def onAdd = {
+    super.onAdd
+    collectAncestor {
+      case d : HTMLDocument => d
+    }.foreach { d =>
+      val nnode = this.plaincopy
+      nnode.label = "span"
+      nnode.classes = Nil
+      nnode.attributes.clear()
+      d.doc.metadata.update(STeX.meta_doctitle,OMFOREIGN(nnode.node))
+    }
+  }
+}
+
 case class HTMLSAssertion(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {
   var conc : Option[Term] = None
   override def onAdd = {sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {

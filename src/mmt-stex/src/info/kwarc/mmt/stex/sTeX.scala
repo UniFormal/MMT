@@ -232,4 +232,6 @@ object STeX {
   val meta_quantification = mmtmeta_path ? "quantification"
   val meta_qforall = mmtmeta_path ? "universal"
   val meta_qexists = mmtmeta_path ? "existential"
+
+  val meta_doctitle = mmtmeta_path ? "doctitle"
 }

@@ -4,16 +4,18 @@ import info.kwarc.mmt.api.{DPath, MPath, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, MMTSystem}
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser
-import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, empty}
 import info.kwarc.mmt.stex.{STeX, STeXServer}
 
 import scala.collection.{Set, mutable}
+import scala.xml.{Elem, Node, XML}
 
 class STeXGraphPopulator extends Extension {
   override def start(args: List[String]): Unit = {
@@ -54,9 +56,9 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         })
         allobjects.foreach{ n =>
           if (path.contains(n))
-            entrydoc.add(<option value={n.id} selected="true">{n.id}</option>)
+            entrydoc.add(<option value={n.id} selected="true">{n.getTitle(language)}</option>)
           else
-            entrydoc.add(<option value={n.id}>{n.id}</option>)
+            entrydoc.add(<option value={n.id}>{n.getTitle(language)}</option>)
         }
         ServerResponse(doc.toString,"application/xhtml+xml")
       case Some("frag") =>
@@ -92,7 +94,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
             nodes.foreach { node =>
               body.add(<tr style="width:100%">
                 <td>
-                  <a href={"javascript:collapse(\"" + node.id + "\")"} style="pointer-events: auto;"><b>{"> " + node.id}</b></a>
+                  <a href={"javascript:collapse(\"" + node.id + "\")"} style="pointer-events: auto;"><b><span>{"> "}</span>{node.getTitle(language)}</b></a>
                   <div class="collapsible" style="display:none;margin-left:30px;flex-direction:column;white-space:normal;" id={node.id + "-collapse"}></div>
                 </td>
               </tr>)
@@ -139,23 +141,37 @@ object FullsTeXGraph extends ServerExtension("vollki") {
   trait sTeXNode {
     val id : String
     def selectTopo : List[sTeXNode]
-    lazy val topologicalSort : List[sTeXNode] = {
+    def topologicalSort : List[sTeXNode] = {
       (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
     }
-    def getDocument(language : String) : Option[Document]
+    private def getDocumentDefinitely(language : String) = getDocument(language) match {
+      case Some(d) => Some(d)
+      case _ => getDocument("en") match {
+        case Some(d) => Some(d)
+        case _ => getDocument("")
+      }
+    }
+    def getTitle(language: String) : Node = getDocumentDefinitely(language).flatMap(
+      _.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
+        case OMFOREIGN(node) => node
+        case _ => <span>{id}</span>
+      })
+    ).getOrElse(<span>{id}</span>)
+    val parents = mutable.HashSet.empty[sTeXNode]
+    val keys = mutable.HashSet.empty[Path]
+    protected[FullsTeXGraph] val _documents = mutable.HashMap.empty[String,DPath]
+    def getDocument(language : String) : Option[Document] = _documents.get(language).flatMap(controller.getAsO(classOf[Document],_))
   }
   class sTeXDocument(val id : String) extends sTeXNode {
     private[FullsTeXGraph] var _children : List[sTeXNode] = Nil
     def children = _children
     private[FullsTeXGraph] var _languages : List[String] = Nil
     def languages = _languages
-    private[FullsTeXGraph] val _documents = mutable.HashMap.empty[String,Document]
-    def getDocument(language : String) : Option[Document] = _documents.get(language)
 
     override def selectTopo: List[sTeXNode] = _children.reverse
   }
-  class sTeXTheory(val sig: Theory) extends sTeXNode {
-    val path : MPath = sig.path
+  class sTeXTheory(val sig: MPath) extends sTeXNode {
+    val path : MPath = sig
     val id = path.toString
     private[FullsTeXGraph] var _includes : List[sTeXTheory] = Nil
     def includes = _includes
@@ -164,8 +180,6 @@ object FullsTeXGraph extends ServerExtension("vollki") {
     private[FullsTeXGraph] var _languages : List[String] = Nil
     def languages = _languages
     def getLanguageModule(language : String) : Option[Theory] = controller.getAsO(classOf[Theory],path.toDPath ? language)
-    private[FullsTeXGraph] val _documents = mutable.HashMap.empty[String,Document]
-    def getDocument(language : String) : Option[Document] = _documents.get(language)
 
     override def selectTopo: List[sTeXNode] = _includes.reverse
   }
@@ -188,14 +202,16 @@ object FullsTeXGraph extends ServerExtension("vollki") {
     val node = new sTeXDocument(id)
     allobjects ::= node
     objects(Path.parse(id)) = node
+    node.keys.add(Path.parse(id))
     if (lang == "") {
-      node._documents("") = d
+      node._documents("") = d.path
       objects(d.path) = node
+      node.keys.add(d.path)
       d.getDeclarations.foreach {
         case mr : MRef =>
-          getO(mr.target).foreach(node._children ::= _)
+          getO(mr.target).foreach{c => node._children ::= c; c.parents.add(node)}
         case dr : DRef =>
-          getO(dr.target).foreach(node._children ::= _)
+          getO(dr.target).foreach{c => node._children ::= c; c.parents.add(node)}
         case _ =>
       }
     } else {
@@ -203,13 +219,14 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         controller.getO(Path.parseD(id + "." + l + ".omdoc",NamespaceMap.empty)) match {
           case Some(d : Document) =>
             objects(d.path) = node
-            node._documents(l) = d
+            node.keys.add(d.path)
+            node._documents(l) = d.path
             node._languages ::= l
             d.getDeclarations.foreach {
               case mr : MRef =>
-                getO(mr.target).foreach(node._children ::= _)
+                getO(mr.target).foreach{c => node._children ::= c; c.parents.add(node)}
               case dr : DRef =>
-                getO(dr.target).foreach(node._children ::= _)
+                getO(dr.target).foreach{c => node._children ::= c; c.parents.add(node)}
               case _ =>
             }
           case _ =>
@@ -229,19 +246,23 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       val ls = pathstr.split('.')
       (ls.init.mkString("."),ls.last)
     } else (pathstr,"")
-    val node = new sTeXTheory(th)
+    val node = new sTeXTheory(th.path)
     allobjects ::= node
     objects(Path.parse(id)) = node
     objects(th.path) = node
+    node.keys.add(Path.parse(id))
+    node.keys.add(th.path)
     if (lang == "") {
-      node._documents("") = d
+      node._documents("") = d.path
       objects(d.path) = node
+      node.keys.add(d.path)
     } else {
       all_languages.foreach {l =>
         controller.getO(Path.parseD(id + "." + l + ".omdoc",NamespaceMap.empty)) match {
           case Some(d : Document) =>
             objects(d.path) = node
-            node._documents(l) = d
+            node.keys.add(d.path)
+            node._documents(l) = d.path
             node._languages ::= l
           case _ =>
         }
@@ -257,6 +278,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         case Some(t: Theory) =>
           node._languages ::= s
           objects(t.path) = node
+          node.keys.add(t.path)
           t.getAllIncludesWithoutMeta.flatMap(i => getO(i.from)).filter(_ != node).foreach { case ch : sTeXTheory =>
             node._uses ::= ch
           }
@@ -266,6 +288,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
     node._uses = node._uses.distinct
     th.getAllIncludesWithoutMeta.flatMap(i => getO(i.from)).foreach{ case ch : sTeXTheory =>
       node._includes ::= ch
+      ch.parents.add(node)
     }
   }
 
@@ -319,9 +342,10 @@ object FullsTeXGraph extends ServerExtension("vollki") {
                   case Some(d: Document) => checkDoc(d) match {
                     case Some(_) => doThDoc(th, d)
                     case _ =>
-                      val st = new sTeXTheory(th)
+                      val st = new sTeXTheory(th.path)
                       allobjects ::= st
                       objects(p) = st
+                      st.keys.add(p)
                       getO(d.path).foreach {
                         case doc: sTeXDocument =>
                           doc._documents.foreach { case (k, v) => st._documents(k) = v }
@@ -333,7 +357,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
                     None
                 }
                 case _ =>
-                  ???
+                  None
               }
             case List(_) if all_languages.contains(th.name.toString) =>
               getO(th.path.parent.toMPath)
@@ -380,7 +404,7 @@ object STeXGraph extends JGraphExporter("stexgraph") {
           override val id: String = th.id
           override val style: String = "theory"
           override val label: Option[String] = Some(th.sig.name.toString)
-          override val uri: Option[String] = Some(th.sig.path.toString)
+          override val uri: Option[String] = Some(th.sig.toString)
         }
       case doc : FullsTeXGraph.sTeXDocument =>
         doc.children.foreach{n =>

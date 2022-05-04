@@ -1,12 +1,14 @@
 package info.kwarc.mmt.stex.Extensions
 
+import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofsketch, HTMLSProofstep, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
+import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDoctitle, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofsketch, HTMLSProofstep, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
 
 object OMDocExtension extends DocumentExtension {
 
@@ -86,6 +88,7 @@ object OMDocExtension extends DocumentExtension {
     SimpleHTMLRule("macroname",HTMLMacroNameComponent),
     SimpleHTMLRule("assoctype",HTMLAssoctypeComponent),
     SimpleHTMLRule("reorderargs",HTMLReorderComponent),
+    SimpleHTMLRule("doctitle",HTMLDoctitle),
     SimpleHTMLRule("import",HTMLImport),
     SimpleHTMLRule("usemodule",HTMLUseModule),
     SimpleHTMLRule("copymodule",HTMLCopyModule(_,false)),
@@ -144,6 +147,24 @@ object OMDocExtension extends DocumentExtension {
 
   import DocumentExtension._
   override lazy val documentRules = List(
+    {case iref : HTMLInputref =>
+      val dp = Path.parseD(iref.resource + ".omdoc",NamespaceMap.empty)
+      controller.getO(dp) match {
+        case Some(d:Document) =>
+          controller.backend.resolveLogical(d.path.uri) match {
+            case Some((a,ls)) =>
+              val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
+              iref.parent.foreach(_.addAfter(<div><a href={"/:" + server.pathPrefix + "/browser?archive=" + a.id + "&filepath="  + path} style="pointer-events:all;color:blue">{
+                  d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
+                    case OMFOREIGN(node) => node
+                    case _ => <span>{d.path.toString}</span>
+                  }).getOrElse(<span>{d.path.toString}</span>)
+                }</a></div>,iref))
+            case _ =>
+          }
+        case _ =>
+      }
+    },
     {case thm: HTMLTheory =>
       sidebar(thm, <b style="font-size: larger">Theory: {thm.name.toString}</b> :: Nil)
     },
@@ -159,8 +180,8 @@ object OMDocExtension extends DocumentExtension {
       if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
         // TODO
       } else {
-        overlay(t, "/:" + server.pathPrefix + "/fragment?" + t.head.toString + "&language=" + getLanguage(t),
-          "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
+        overlay(t, "/:" + server.pathPrefix + "/fragment?" + t.head.toString + "&amp;language=" + getLanguage(t),
+          "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&amp;language=" + getLanguage(t))
       }
     },
   )
