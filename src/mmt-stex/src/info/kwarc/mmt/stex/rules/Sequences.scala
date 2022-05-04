@@ -10,6 +10,13 @@ import info.kwarc.mmt.stex.{SCtx, SOMB, STeX, STerm}
 trait SeqRule {
   val seqexprpath : GlobalName
   val seqtppath : GlobalName
+  object SeqLike {
+    def apply(tm : Term) = tm match {
+      case STeX.flatseq(_) => true
+      case OMV(_) if tm.metadata.get(STeX.flatseq.sym).nonEmpty => true
+      case _ => false
+    }
+  }
   object Seqtype {
     def unapply(tp : Term) = tp match {
       case OMA(OMS(`seqtppath`),List(t)) =>
@@ -47,6 +54,9 @@ case class SeqInfTypeRule(seqtppath : GlobalName,seqexprpath : GlobalName) exten
             solver.check(Typing(stack, tm, tpA))
           }
           (tp, Some(true))
+        case Some(Seqexpr(tps)) =>
+          // TODO ?
+          (tp,Some(true))
         case _ =>
           solver.inferType(h) match {
             case None => (None, None)

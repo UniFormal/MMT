@@ -117,6 +117,10 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     val TraverseMode(filter, filterDir, parallel) = mode
     def recurse(n: String): List[A] =
       traverse(dim, in / n, mode, sendLog)(onFile, onDir).toList
+
+    lazy val reg = properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
+    // if (reg.exists(_.matches("/" + inPath.toString))
+    def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (this / source).relativize(f).toString))
     val inFile = this / dim / in
     val inFileName = inFile.getName
     if (inFile.isDirectory) {
@@ -128,7 +132,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
-    } else if (filter(inFileName) && filterDir(inFile.up.getName)) {
+    } else if (filter(inFileName) && regfilter(inFile) && filterDir(inFile.up.getName)) {
       if (!forClean && !inFile.existsCompressed) {
         throw ArchiveError(id, "file does not exist: " + inFile)
       } else

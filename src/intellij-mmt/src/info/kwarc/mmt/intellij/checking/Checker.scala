@@ -70,7 +70,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
 
       e match {
         case s: SourceError =>
-          (s.ref.region, s.mainMessage, s.extraMessages, s.level == Level.Warning)
+          (s.ref.region, s.mainMessage, s.extraMessages, s.level == Level.Warning || e.excuse.isDefined)
         case e: Invalid =>
           var mainMessage = e.shortMsg
           var extraMessages: List[String] = e.extraMessage.split("\n").toList
@@ -106,9 +106,9 @@ class Checker(controller: Controller,ev : ErrorViewer) {
             mainMessage = "error with unknown location: " + mainMessage
             SourceRef(utils.FileURI(file), SourceRegion(SourcePosition(0, 0, 0), SourcePosition(0, 0, 0)))
           }
-          (ref.region, mainMessage, extraMessages.filter(_.trim != ""),e.level == Level.Warning)
+          (ref.region, mainMessage, extraMessages.filter(_.trim != ""),e.level == Level.Warning || e.excuse.isDefined)
         case e: Error =>
-          (SourceRegion.none, "error with unknown location: " + e.getMessage, e.extraMessage.split("\n").toList,e.level==Level.Warning)
+          (SourceRegion.none, "error with unknown location: " + e.getMessage, e.extraMessage.split("\n").toList,e.level==Level.Warning || e.excuse.isDefined)
       }
     }
   }

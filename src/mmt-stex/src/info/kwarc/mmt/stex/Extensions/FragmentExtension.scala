@@ -7,7 +7,8 @@ import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, Rel
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration}
 import info.kwarc.mmt.api.utils.{MMTSystem, XMLEscaping}
-import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
+import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
+import info.kwarc.mmt.stex.vollki.FullsTeXGraph
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
 //import info.kwarc.mmt.stex.xhtml.{HTMLConstant, HTMLParser, HTMLRule, HTMLTheory, HasLanguage, OMDocHTML}
@@ -67,11 +68,14 @@ object FragmentExtension extends STeXExtension {
         body.attributes((HTMLParser.ns_html,"style")) = "background-color:white"
         stripMargins(doc)
         val border = body.add(<div style="font-size:small"/>)
-        def space = scala.xml.Text("&nbsp;")
         border.add(<b>Symbol </b>)
-        border.add(space)
-        border.add(<a href={"/?"+path} target="_blank">{XMLEscaping(c.path.toString)}</a>)
+        border.add("&nbsp;")
+        border.add(<a href={"/?"+path} target="_blank" style="pointer-events:all">{XMLEscaping(c.path.toString)}</a>)
         border.add(<br/>)
+        if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {
+          border.add(<a href={"/:vollki?path=" + c.parent.toString} target="_blank" style="pointer-events:all;color:blue">{"> Guided Tour"}</a>)
+          border.add(<br/>)
+        }
         border.add(
           <table>
             <tr><th>Macro</th><th>Presentation</th><th>Type</th><th></th></tr>
