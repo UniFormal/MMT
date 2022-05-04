@@ -12,9 +12,9 @@ import objects.Conversions._
  */
 class DefinitionExpander(controller: frontend.Controller) extends StatelessTraverser {
    private def expSym(p: GlobalName)(implicit con : Context): Option[Term] =
-      controller.library.get(ComplexTheory(con),LocalName(p.module) / p.name,s => return None) match {
+      controller.library.getO(ComplexTheory(con),LocalName(p.module) / p.name) match {
        // TODO make sure lookup goes through morphisms into the context here
-      case c: Constant => c.dfC.getAnalyzedIfFullyChecked
+      case Some(c: Constant) => c.dfC.getAnalyzedIfFullyChecked
       case _ => None
    }
    def traverse(t: Term)(implicit con : Context, init: Unit): Term = {

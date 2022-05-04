@@ -15,7 +15,7 @@ trait Exporter extends BuildTarget {self =>
   protected var _rh: RenderingHandler = null
   /**
     * sends output to a certain file, file is created new and deleted if empty afterwards
- *
+    *
     * @param out the output file to be used while executing body
     * @param body any code that produces output
     */
@@ -67,14 +67,14 @@ trait Exporter extends BuildTarget {self =>
     */
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit
 
-  def build(a: Archive, up: Update, in: FilePath) {
-    narrationExporter.build(a, up, in)
+  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
+    narrationExporter.build(a, w, in, errorCont)
     // find all modules in documents at path 'in'
     val doc = controller.getAs(classOf[Document], DPath(a.narrationBase / in))
     val mods = doc.getModules(controller.globalLookup)
     mods.foreach {p =>
       val modPath = Archive.MMTPathToContentPath(p)
-      contentExporter.build(a, up, modPath)
+      contentExporter.build(a, w, modPath, errorCont)
     }
   }
 
@@ -149,7 +149,7 @@ trait Exporter extends BuildTarget {self =>
       BuildResult.empty
     }
 
-    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = {
+    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
       val dp = Archive.ContentPathToDPath(bd.inPath)
       val (nss, mps) = builtChildren.filter(!_.skipped).partition(_.isDir)
       outputTo(bd.outFile) {
@@ -173,7 +173,7 @@ trait Exporter extends BuildTarget {self =>
       BuildResult.empty
     }
 
-    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask], level: Level): BuildResult = {
+    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
       val doc = controller.getDocument(bd.narrationDPath)
       outputTo(bd.outFile) {
         exportDocument(doc, bd)

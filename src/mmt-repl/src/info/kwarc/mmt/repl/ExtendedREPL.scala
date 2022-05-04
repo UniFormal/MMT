@@ -8,12 +8,7 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   override def enter(args: ShellArguments) {
     super.enter(args)
     if (isDumb()) {
-      println(
-        """
-          |Unable to create a system terminal, falling back to dumb implementation.
-          |This terminal does not support history or tab completion.
-          |You may prefix a partial command with '@' to get a list of suggestions printed out.
-        """.stripMargin)
+      println("Unable to create a system terminal. No history or tab completion; prefix a partial command with '@' to see suggestions")
     }
   }
 
@@ -34,7 +29,7 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
       case ActionResultOK() =>
       case ae: ActionResultError =>
         report(ae.error)
-        // FR: this used to be, but it's wrong to suppress the stack trace
+        // FR: this used to be as below, but it's wrong to suppress the stack trace
         //println("\u001b[31;1m" + ae.error + "\u001b[0m")
     }
     true

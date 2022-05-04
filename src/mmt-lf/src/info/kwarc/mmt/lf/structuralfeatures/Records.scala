@@ -30,9 +30,9 @@ object RecordUtil {
 import RecordUtil._
 
 object Records {
-  def elaborateAsRecord(declarationPath: GlobalName, args: List[(Option[LocalName], Term)], fields: Context, controller: Controller)(implicit parentTerm: GlobalName) = {
+  def elaborateAsRecord(args: List[(Option[LocalName], Term)], fields: Context, controller: Controller)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
-      val path = (declarationPath.module / declarationPath.name) ? vd.name
+      val path = (parentTerm.module / parentTerm.name) ? vd.name
       new OutgoingTermLevel(path,args, vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1
@@ -72,14 +72,28 @@ object Records {
     }
   }
 
-  def introductionDeclaration(recType: Term, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
+  /**
+   * Generates the introduction declaration
+   * make: {params, tpTmDecls} declsTm_1 -> declsTm_2 -> ... -> declsTm_n -> recType params,
+   * where tpTmDecls is a context containing the typelevels declsTp
+   * and declsTp, declsTm are the type and termlevels in decls respectively
+   * @param recType
+   * @param decls
+   * @param nm
+   * @param context
+   * @param parent
+   * @return
+   */
+  def introductionDeclaration(recType: Term, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context], resolveDeclsAsContext: Boolean = true)(implicit parent : GlobalName) = {
     val Ltp = () => {
       val declsCtx = decls.map(d => OMV(LocalName(d.name)) % d.internalTp)
       val declsTp = decls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
       val params = context.getOrElse(Context.empty)++declsTp
-      val declsTm = decls.filterNot(_.isTypeLevel).map(d => d.internalTp)
+      val tmls = decls.filterNot(_.isTypeLevel)
+      val tr = OMSReplacer(gn => tmls.find(_.externalPath == gn).map(_.name.last.unary_!).map(OMV(_)))
+      val declsTm = tmls.map(d => OMV(d.name.last.unary_!) % (if (resolveDeclsAsContext) tr(d.internalTp, Context.empty) else d.internalTp))
       val TpTmDecls = decls.filter(_.isTypeLevel).map(d => OMV(LocalName("x_"+d.name)) % OMV(d.name))
-      PiOrEmpty(params++TpTmDecls, Arrow(declsTm, ApplyGeneral(recType, params.map(_.toTerm))))
+      PiOrEmpty(params++TpTmDecls, PiOrEmpty(declsTm, ApplyGeneral(recType, params.map(_.toTerm))))
     }
     makeConst(uniqueLN(nm getOrElse makeName), Ltp)
   }

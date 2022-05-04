@@ -22,16 +22,16 @@ class Setup extends ShellExtension("jeditsetup") {
   val log: String => Unit = println
 
   /** run method as ShellExtension */
-  def run(shell: Shell, args: List[String]): Boolean = {
+  def run(shell: Shell, args: List[String]): Option[Level.Level] = {
     val l = args.length
     if (l <= 0 || l > 2) {
       log(helpText)
-      return true
+      return withError
     }
     val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
     val jedit = jeditOpt.getOrElse {
       log("The jEdit settings folder was not found. If you have installed jEdit just now, you may have to run it once so that it creates the folder.")
-      return true
+      return withError
     }
     val doIt = new DoIt(shell, jedit)
     if (args.head == "customize") {
@@ -44,7 +44,7 @@ class Setup extends ShellExtension("jeditsetup") {
       }
       val install = installOpt.getOrElse {
         log(helpText)
-        return true
+        return withError
       }
       if (install) {
         log("trying to install to " + jedit)
@@ -53,7 +53,7 @@ class Setup extends ShellExtension("jeditsetup") {
       }
       doIt.install(install)
     }
-    true
+    withSuccess
   }
 
 
@@ -237,7 +237,8 @@ class Setup extends ShellExtension("jeditsetup") {
     }
 
 
-    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
+    // ErrorList 2.4.0 causes bug where errors are not removed from the Error Panel (the updates are sent and they are removed from the gutter)
+    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.2.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize() {
        // download jars from jEdit plugin central

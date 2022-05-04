@@ -1,19 +1,19 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
 import java.util.concurrent.ConcurrentHashMap
-
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.{GlobalName, NamespaceMap, Path, RuleSet}
+import info.kwarc.mmt.api.{GlobalName, RuleSet}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.LabelVerbalizationRule
 import info.kwarc.mmt.frameit.business.InvalidFactConstant
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SGeneralFact, SValueEqFact}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SEquationSystemFact, SFact, SGeneralFact, SValueEqFact}
 import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
+import info.kwarc.mmt.odk.LFX.{LFList, ListType, Sigma, Tuple}
+
 
 /**
   * A reference to an already registered fact only -- without accompanying data.
@@ -72,26 +72,8 @@ sealed case class Fact(
     val simplify: Term => Term = {
       val simplificationRules: RuleSet = {
         val rules = RuleSet.collectRules(ctrl, Context(ref.uri.module))
-
         rules.add(new LabelVerbalizationRule()(ctrl.globalLookup))
 
-        // Manually add the rule to compute multiplication of two reals
-        // as somehow the actually pre-existing rule in the MitM/Foundation formalization isn't picked up
-        //
-        // (I verified by means of debugging that pre-existing rule to be available in ''rules'', but somehow
-        // it still isn't picked up by the call to the simplifier below.)
-        rules.add({
-          val realTimes = Path.parseS("http://mathhub.info/MitM/Foundation?RealLiterals?times_real_lit", NamespaceMap.empty)
-
-          new SimplificationRule(realTimes) {
-            override def apply(context: Context, t: Term): Simplifiability = t match {
-              case ApplySpine(OMS(`realTimes`), List(FrameWorld.RealLiterals(x), FrameWorld.RealLiterals(y))) =>
-                Simplify(FrameWorld.RealLiterals(x * y))
-              case _ =>
-                Recurse
-            }
-          }
-        })
         rules
       }
 
@@ -101,14 +83,17 @@ sealed case class Fact(
       ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }
 
-    lazy val simpleTp = simplify(tp)
-    lazy val simpleDf = df.map(simplify)
+    val simpleTp = simplify(tp)
+    val simpleDf = df.map(simplify)
 
     val label = simplify(meta.label).toStr(shortURIs = true)
 
     Fact.tryRenderSValueEqFact(ref, label, tp = tp, simpleTp = simpleTp, simpleDf = simpleDf) match {
       case Some(valueEqFact) => valueEqFact
-      case _ => SGeneralFact(Some(ref), label, tp, df)
+      case _ => Fact.tryRenderSEquationSystemFact(ref, label, tp = tp, simpleTp = simpleTp, df = df, simpleDf = simpleDf) match {
+          case Some(equationSystemFact) => equationSystemFact
+          case _ => SGeneralFact(Some(ref), label, tp, df)
+      }
     }
   }
 }
@@ -163,6 +148,30 @@ object Fact {
         }
 
         Some(SValueEqFact(Some(ref), label, lhs, valueTp = Some(tp1), value, proof))
+
+      case _ => None
+    })
+  }
+
+  private def tryRenderSEquationSystemFact(ref: FactReference, label: String, tp: Term, simpleTp: Term, df: Option[Term], simpleDf: Option[Term]): Option[SEquationSystemFact] = {
+    m[Term, SEquationSystemFact](tp, simpleTp, {
+      case ListType(
+      tp1
+      ) if tp1 == OMS(FrameWorld.prop) =>
+
+        var equations = List[(Term,Term)]()
+        simpleDf match {
+          case Some(LFList(eqs)) => eqs match {
+            case eqs:List[Term] => eqs.foreach{
+                case ApplySpine(OMS(FrameWorld.eq), List(_, lhs, rhs)) => equations = (lhs,rhs) :: equations
+                case _ => None
+            }
+            case _ => None
+          }
+          case _ => None
+        }
+
+        Some(SEquationSystemFact(Some(ref), label, tp, df, equations = List.from(equations)))
 
       case _ => None
     })

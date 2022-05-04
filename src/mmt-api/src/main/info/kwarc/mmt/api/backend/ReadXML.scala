@@ -81,7 +81,7 @@ class XMLReader(controller: Controller) extends Logger {
                readInDocument(nsMap, Some(d), node)
          }
          case t: AbstractTheory => readInModule(t.modulePath, nsMap(t.path), t, node)
-         case v: View =>           readInModule(v.modulePath, nsMap(v.to.toMPath), v, node)
+         case v: View =>           readInModule(v.modulePath, v.codomainPaths.headOption.fold(nsMap)(nsMap.apply(_)), v, node)
          case s: Structure =>      readInModule(s.modulePath, nsMap, s, node)
       }
    }
@@ -277,7 +277,8 @@ class XMLReader(controller: Controller) extends Logger {
                case "" => None
                case r => Some(r)
             }
-            val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
+            val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer.empty()))
+            md.foreach(d => c.metadata.add(d.getAll:_*))
             addDeclaration(c)
          case imp @ <import>{seq @ _*}</import> =>
             val (rest, fromO) = ReadXML.getTermFromAttributeOrChild(imp, "from", nsMap)
@@ -388,7 +389,6 @@ class XMLReader(controller: Controller) extends Logger {
                case _ => throw ParseError("unexpected definition element")
             }
          case <notations>{notN}</notations> =>
-            val tp = Obj.parseTerm(notN, nsMap)
             body match {
                case d: HasNotation =>
                  val ntC = NotationContainer.parse(notN, body.path)

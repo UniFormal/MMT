@@ -10,6 +10,7 @@ import notations._
 
 import scala.xml.Elem
 import Theory._
+import info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 import info.kwarc.mmt.api.utils.MMT_TODO
 
 
@@ -77,7 +78,11 @@ class DerivedDeclaration(val home: Term, val name: LocalName, val feature: Strin
      val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy, dfT)
      val icont = con ++ getInnerContext
      getDeclarations.foreach {d =>
-       res.add(d.translate(res.toTerm, LocalName.empty, tl, icont))
+       val dTranslated = d.translate(res.toTerm, LocalName.empty, tl, icont)
+       if (this.feature == patterns.Instance.feature) d match {
+         case c: Constant if (c.rl == Some("mainDecl")) => res.add(Constant(c.home, c.name, c.alias, c.tp, c.df, None, this.notC))
+       } else
+         res.add(dTranslated)
      }
      res
    }
@@ -199,7 +204,7 @@ abstract class StructuralFeature(feature: String) extends GeneralStructuralFeatu
   * A module-level structural feature: a structural feature that can occur in documents and elaborates
   * into modules.
   *
-  * A classic example is the [[Diagram]] structural feature installing the result of diagram operators
+  * A classic example is the [[InstallDiagram]] structural feature installing the result of diagram operators
   * applied on diagrams.
   *
   * @param feature A feature string, see docs of [[GeneralStructuralFeature]].
@@ -602,13 +607,14 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     val applyPars = applyParams(body,toTerm)(vars)
     def applyType(c: Context, t: Term) = bindPi(applyPars(t, c))
     def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
+    def applyPlain(c: Context, t: Term) = applyDef(c,t) // This is probably not correct, but recovers original behavior.
   }
 
   override def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
     case VarDeclFeature(LocalName(ComplexStep(dom) :: Nil), OMMOD(q), None) if dom == q && !context.contains(dv) =>
       val thy = controller.simplifier.getBody(context, OMMOD(dom)) match {
         case t : Theory => t
-        case _ => throw GetError("Not a declared theory: " + dom)
+        case _ => throw GetError(dom, "variable feature declaration does not refer to a theory")
       }
       controller.simplifier.apply(thy)
       implicit val vars = thy.parameters.filter(_.feature.isEmpty)
@@ -649,7 +655,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     val context = controller.simplifier.elaborateContext(Context.empty,parenth.getInnerContext)
     val body = controller.simplifier.getBody(context, dom) match {
       case t : Theory => t
-      case _ => throw GetError("Not a theory: " + dom)
+      case _ => throw GetError(dd.path, "domain of derived declaration is not a theory")
     }
     controller.simplifier.apply(body)
     val parentContextIncludes = context.collect{

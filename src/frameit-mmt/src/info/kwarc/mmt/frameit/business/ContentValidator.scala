@@ -39,7 +39,7 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
   })
 
   private def createFreshCheckingEnv() = {
-    val errorContainer = new ErrorContainer(None)
+    val errorContainer = new ErrorContainer
     val checkingEnv: CheckingEnvironment = new CheckingEnvironment(ctrl.simplifier, errorContainer, RelationHandler.ignore, MMTTask.generic)
 
     (checkingEnv, errorContainer)
@@ -81,7 +81,8 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
           case None => SMiscellaneousError(err.msg)
         }
 
-      case GetError(msg) if msg.contains("no assignment for") =>
+      // FR: I've changed the wording of many error messages, so these matches might not work anymore
+      case g:GetError if g.shortMsg.contains("no assignment for") =>
         SNonTotalScrollApplication()
 
       case InvalidElement(`view`, msg) if msg.contains("not total") =>

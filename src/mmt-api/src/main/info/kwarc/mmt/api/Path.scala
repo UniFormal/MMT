@@ -279,14 +279,17 @@ abstract class LNStep {
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
    override def toString = toStr(false)
-   def toStr(implicit shortURIs: Boolean): String  
+   def toStr(implicit shortURIs: Boolean): String
 }
 
 object LNStep {
-   def parse(s: String, nsMap: NamespaceMap) = {
-      if (s.startsWith("[") && s.endsWith("]"))
-         ComplexStep(Path.parseM(s.substring(1,s.length - 1), nsMap))
-      else
+   def parse(s: String, nsMap: NamespaceMap) : LNStep = {
+      if (s.startsWith("[") && s.endsWith("]")) {
+         val ns = s.substring(1,s.length - 1)
+         if (ns.startsWith("(") && ns.endsWith(")"))
+            ComplexStep(Obj.fromPathEncoding(xml.decodeURI(s)).toMPath)
+         else ComplexStep(Path.parseM(xml.decodeURI(ns), nsMap))
+      } else
          SimpleStep(s)
    }
    val empty = SimpleStep("")

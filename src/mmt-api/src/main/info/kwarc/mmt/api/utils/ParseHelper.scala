@@ -85,7 +85,15 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
          errorExpected(s)
    }
    def takeWhile(test: Char => Boolean): String = {
-      if (test(head)) next() + takeWhile(test) else ""
+      val sb = new StringBuilder
+      while (test(head)) sb += next()
+      sb.toString()
+   }
+
+   def takeWhileSafe(test: Char => Boolean): String = {
+      val sb = new StringBuilder
+      while (!empty && test(head)) sb += next()
+      sb.toString()
    }
 
    /** drops a String if possible

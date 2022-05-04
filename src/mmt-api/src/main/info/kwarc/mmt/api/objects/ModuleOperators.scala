@@ -234,6 +234,7 @@ object Morph {
         }
         // OMCOMP disappears if result has length 1
         OMCOMP(result)
+      case m => m // anything is allowed in content that is still being checked
     }
   }
 
@@ -307,15 +308,14 @@ object TheoryExp {
   /** simplifies a theory expression using basic algebraic laws, e.g., commutativity of union */
   def simplify(thy: Term): Term = thy match {
     case OMMOD(p) => OMMOD(p)
+    case TUnion(ts) =>
+      // associativity, idempotence
+      val (noArgs,withArgs) = ts.distinct.partition(_._2.isEmpty)
+      // commutativity
+      val noArgsC = noArgs.sortBy(_.hashCode)
+      TUnion(noArgsC ::: withArgs)
     case ComplexTheory(cont) =>
       ComplexTheory(cont)
-    case TUnion(ts) =>
-      //  associativity          idempotence  commutativity
-      val tsS = (ts map simplify).flatMap(TUnion.associate).distinct.sortBy(_.hashCode)
-      tsS match {
-        case t :: Nil => t
-        case _ => TUnion(tsS)
-      }
     case _ => thy
   }
 
@@ -327,8 +327,8 @@ object TheoryExp {
     * @param all if false, stop after the first meta-theory, true by default
     */
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
-    case OMMOD(p) =>
-      val t = lib.getTheory(p)
+    case OMPMOD(p,_) =>
+      val t = lib.getAs(classOf[AbstractTheory],p)
       t.meta match {
         case None => 
           Nil
@@ -337,7 +337,7 @@ object TheoryExp {
       }
     case AnonymousTheoryCombinator(at) => at.mt.toList
     case TUnion(ts) =>
-      val ms = ts map { t => metas(t) }
+      val ms = ts map {t => metas(OMPMOD(t))}
       if (ms.nonEmpty && ms.forall(m => m == ms.head)) ms.head
       else Nil
     case _ => Nil
@@ -378,14 +378,14 @@ object TheoryExp {
   def getSupport(t: Term): List[MPath] = t match {
     case OMMOD(p) => List(p)
     case ComplexTheory(cont) => cont.getIncludes
-    case TUnion(ts) => (ts flatMap getSupport).distinct
   }
 
   /** returns a human-oriented (short) String representation of a theory expression */
   def toString(t: Term): String = t match {
-    case OMMOD(f) => f.last
+    case OMPMOD(f,as) => toString((f,as))
     case TUnion(ts) => ts.map(toString).mkString("", " + ", "")
   }
+  def toString(at: OMPMOD.AtomicTheory) = at._1.last + (if (at._2.nonEmpty) "(...)" else "")
 }
 
 object ModExp extends uom.TheoryScala {
@@ -411,6 +411,7 @@ object ModExp extends uom.TheoryScala {
   @MMT_TODO("use anonymous morphisms")
   val complexmorphism = _path ? "complexmorphism"
   @MMT_TODO("not needed but still used by Twelf")
+  // legacy OMA(tunion,args) should be interpreted as TUnion(args), which represents it as a complextheory
   val tunion = _path ? "theory-union"
 }
 
@@ -427,31 +428,36 @@ object OMMOD {
 
 /** An OMPMOD represents a reference to a parametric module applied to arguments */
 object OMPMOD {
+  /** an applied theory is a theory ID with a list of arguments */
+  type AtomicTheory = (MPath, List[Term])
   /** @param path the path to the module */
-  def apply(path: MPath, args: List[Term]) = OMAorAny(OMMOD(path), args)
+  def apply(path: MPath, args: List[Term]): Term = OMAorAny(OMMOD(path), args)
+  def apply(at: AtomicTheory): Term = apply(at._1, at._2)
 
-  def unapply(term: Term): Option[(MPath, List[Term])] = term match {
+  def unapply(term: Term): Option[AtomicTheory] = term match {
     case OMAorAny(OMMOD(m), args) => Some((m, args))
     case _ => None
   }
 }
 
+/** represents a union of atomic theories as a ComplexTheory */
 object TUnion {
-  def apply(thys: List[Term]): Term = thys match {
-    case hd :: Nil => hd
-    case _ => OMA(OMID(ModExp.tunion), thys)
+  def apply(thys: List[OMPMOD.AtomicTheory]): Term = thys match {
+    case hd :: Nil => OMPMOD(hd)
+    case _ =>
+      val ds = thys.map(thy => IncludeVarDecl(thy._1,thy._2))
+      ComplexTheory(Context(ds: _*))
   }
 
-  def unapply(union: Term): Option[List[Term]] = union match {
-    case OMA(OMID(ModExp.tunion), thys) => Some(thys)
-
+  def unapply(union: Term): Option[List[OMPMOD.AtomicTheory]] = union match {
+    case OMPMOD(p,as) => Some(List((p,as)))
+    case ComplexTheory(ctx) =>
+      val ats = ctx.variables.toList.map {
+        case IncludeVarDecl(_,OMPMOD(p,as),None) => (p,as)
+        case _ => return None
+      }
+      Some(ats)
     case _ => None
-  }
-
-  /** applies associativity of union by merging nested TUnion */
-  def associate(t: Term): List[Term] = t match {
-    case TUnion(ts) => ts flatMap associate
-    case _ => List(t)
   }
 }
 

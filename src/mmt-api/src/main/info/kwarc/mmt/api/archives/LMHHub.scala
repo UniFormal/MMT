@@ -216,8 +216,10 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
   /** reads the archive props */
   override def properties: Map[String, String] = archive.properties.toMap
 
+  private def statsEnabled(): Boolean = properties.get("statistics").exists(v => v != "false" && v != "")
+
   /** reads archive statistics */
-  override def statistics: Option[SimpleStatistics] = Some(archive.stats(controller))
+  override def statistics: Option[SimpleStatistics] = if(statsEnabled()) Some(archive.stats(controller)) else None
 
   /** the list of dependencies of this archive */
   def dependencies: List[String] = {

@@ -88,9 +88,13 @@ object MMTOptions {
   val config = new StringOption("config", "custom configuration file")
   val archives = new StringOption("archives", "local folder that contains archives (mathhub root)")
   val lowAsciiDelims = new BooleanOption("lowAsciiDelims", "use ASCII 28-31 as delimiters")
-  val semantichighlighting = new BooleanOption("SemanticHighlighting","Semantic highlighting (does not work yet)")
+
+  // taken out because it does not work well: MMT-parsing every time is too slow to run all the time
+  // But otherwise, the source references are not uptodate.
+  // val semantichighlighting = new BooleanOption("SemanticHighlighting","Semantic highlighting")
+
   /** the list of all options */
-  val all = List(startup, config, archives, lowAsciiDelims, semantichighlighting)
+  val all = List(startup, config, archives, lowAsciiDelims)
 }
 
 /** the MMT plugin options pane using the options defined in the companion object */

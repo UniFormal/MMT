@@ -69,6 +69,7 @@ testOptions in Test += Tests.Argument("-oI")
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 val deployLFCatalog = TaskKey[Unit]("deployLFCatalog", "builds a stand-alone lfcatalog.jar")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
+val testSetup = TaskKey[Unit]("testSetup", "tests the MMT :setup command")
 
 // =================================
 // DOCUMENTATION TASKS
@@ -127,7 +128,8 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   publishTo := Some(Resolver.file("file", utils.value.deploy.toJava / " main")),
 
   install := {},
-  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value
+  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
+  testSetup := utils.value.testSetup
 )
 
 // =================================
@@ -152,9 +154,9 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
+    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
     tiscaf, lfcatalog,
-    jedit, intellij, argsemcomp
+    jedit, intellij
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -167,7 +169,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -269,9 +271,11 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
-  // settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar")
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j-websocket.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "javax-websocket.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar")
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
@@ -293,21 +297,10 @@ lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("planetary-mmt"): _*)
 
-/* using MMT in the editing frontends. Orginally developed by Mihnea (?), functional but presumably obsolete
-lazy val webEdit = (project in file("mmt-webEdit")).
-  dependsOn(stex).
-  settings(mmtProjectsSettings("mmt-webEdit"): _*)
-*/
-
 // GLF (Grammatical Framework etc.). Maintainer: Frederik
 lazy val glf = (project in file("mmt-glf")).
   dependsOn(api, lf, repl).
   settings(mmtProjectsSettings("mmt-glf"): _*)
-
-// MMT in the interview server. Maintainer: Teresa
-lazy val interviews = (project in file("mmt-interviews")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-interviews"): _*)
 
 // using MMT from Python via Py4J, maintainer: Florian
 lazy val python = (project in file("python-mmt")).
@@ -330,7 +323,7 @@ lazy val repl = (project in file("mmt-repl")).
   settings(mmtProjectsSettings("mmt-repl")).
   settings(
     libraryDependencies ++= Seq(
-      "org.jline" % "jline" % "3.1.2"
+      "org.jline" % "jline" % "3.18.0"
     )
   )
 
@@ -350,14 +343,6 @@ lazy val concepts = (project in file("concept-browser")).
 // =================================
 // MMT Projects: plugins for working with other languages in MMT
 // =================================
-
-// plugin for reading TPTP
-lazy val tptp = (project in file("mmt-tptp")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-tptp"): _*).
-  settings(
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "leo.jar"
-  )
 
 // plugin for reading OWL. Originally developed by Füsun
 lazy val owl = (project in file("mmt-owl")).
@@ -385,7 +370,7 @@ lazy val frameit = (project in file("frameit-mmt"))
   .settings(
     libraryDependencies ++= Seq(
       //  a server infrastructure library
-      "com.twitter" %% "twitter-server" % "20.7.0",
+      "com.twitter" %% "twitter-server" % "20.12.0",
 
       // an incarnation of an HTTP server library for the above infrastructure
       "com.github.finagle" %% "finchx-core" % finchVersion,
@@ -397,7 +382,7 @@ lazy val frameit = (project in file("frameit-mmt"))
       "com.github.finagle" %% "finchx-test" % finchVersion % "test",
       "com.github.finagle" %% "finchx-json-test" % finchVersion % "test",
 
-      "org.scalatest" %% "scalatest" % "3.2.0" % "test",
+      "org.scalatest" %% "scalatest" % "3.2.3" % "test",
 
       // a JSON library
       "io.circe" %% "circe-generic" % circeVersion,
@@ -411,11 +396,16 @@ lazy val frameit = (project in file("frameit-mmt"))
       "-Ymacro-annotations"
     ),
 
-    // in order for @ConfiguredJsonCodec from circe-generic-extras (a FrameIT dependency above) to work
-    // resolvers += Resolver.sonatypeRepo("releases"),
-    // addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
-
+    deploy := Def.taskDyn {
+      val jar = (assembly in Compile).value
+      Def.task {
+        Utils.deployTo(utils.value.deploy / "frameit.jar")(jar)
+      }
+    }.value,
+    mainClass in Compile  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
+    mainClass in assembly := Some("info.kwarc.mmt.frameit.communication.server.Server")
   )
+	
 
 // plugin for mathscheme-related functionality. Obsolete
 lazy val mathscheme = (project in file("mmt-mathscheme")).
@@ -462,8 +452,14 @@ lazy val specware = (project in file("mmt-specware")).
 
 // plugin for reading stex. Originally developed by Mihnea, currently dormant but functional
 lazy val stex = (project in file("mmt-stex")).
-  dependsOn(api).
-  settings(mmtProjectsSettings("mmt-stex"): _*)
+  dependsOn(api,odk,lsp).
+  settings(
+    mmtProjectsSettings("mmt-stex"),
+    /*libraryDependencies ++= Seq(
+      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
+    ),*/
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "RusTeX.jar"
+  )
 
 // plugin for writing OpenMath CDs. Maintainer: Florian
 lazy val openmath = (project in file("mmt-openmath")).
@@ -478,15 +474,6 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
 
-// plugin for computing argumentation semantics
-lazy val argsemcomp = (project in file("mmt-argsemcomp")).
-  dependsOn(api).
-  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
-  settings(
-    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
-    "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
-  )
-
 // =================================
 // DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
@@ -499,7 +486,7 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
       //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
-      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test",
+      "org.slf4j" % "slf4j-simple" % "1.7.30" % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value
     ),
     test := {} // disable tests for tiscaf
@@ -523,12 +510,18 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   )
 
 // =================================
-// experimental projects that are not part of the build file: 
+// deleted projects that are still accessible in the history
+// deleted from the devel branch 2022-03-23
+//  mmt-leo, mmt-got, mmt-tptp, mmt-interviews, planetary-mmt
+//  mmt-webEdit: using MMT in editing frontends, orginally developed by Mihnea (?), functional but obsolete
+//  mmt-argsemcomp: argumentation semantics by Max
 //
+// deleted some other time
+// mmt-reflection
+//
+// deleted from the devel branch 2021-11-17
 // hets-mmt: Aivaras's work for integrating with Hets, owned by DFKI but has become obsolete.
-// marpa-mmt:
-// mmt-guidedTours: obsolete
-// mmt-leo: obsolete
-// mmt-lfs: obsolete (has been merged into mmt-lf)
-// mmt-reflection: obsolete (but worth keeping until it is superseded by foundations that handle it properly)
+// marpa-mmt
+// mmt-guidedTours
+// mmt-lfs: merged into mmt-lf
 // =================================

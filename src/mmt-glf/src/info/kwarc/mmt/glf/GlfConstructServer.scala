@@ -4,13 +4,19 @@ import info.kwarc.mmt.api.objects.{OMBIND, OMLIT, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{DPath, LocalName, MPath}
-import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONObject, JSONString, URI}
+import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONInt, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lf.elpi.{BaseConstantHandler, ELPIExporter}
 import info.kwarc.mmt.lf.{ApplySpine, Arrow, Lambda, Pi}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+
+/*
+  Future TODO: Remove protocol version 1.
+  This should only be done when the GLIF reimplementation is well-established
+  and the original implementation has been retired.
+ */
 
 /*
   Technically, the GlfConstructServer simply applies a view to particular terms.
@@ -23,20 +29,20 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
 
     val view: Option[View] = query.semanticsView.map(controller.getO(_) match {
       case Some(v: View) => controller.simplifier.apply(v); v
-      case None => return errorResponse("Could not find view " + query.semanticsView)
-      case _ => return errorResponse(query.semanticsView + " does not appear to be a view")
+      case None => return errorResponse("Could not find view " + query.semanticsView, query.version > 1)
+      case _ => return errorResponse(query.semanticsView + " does not appear to be a view", query.version > 1)
     })
 
     val langTheo = if (query.languageTheory.isEmpty) {
-      view.getOrElse(return errorResponse("Neither language theory nor semantics view provided")).from.toMPath
+      view.getOrElse(return errorResponse("Neither language theory nor semantics view provided", query.version > 1)).from.toMPath
     } else {
       query.languageTheory.get
     }
 
     val theory: Theory = controller.getO(langTheo) match {
       case Some(th: Theory) => th
-      case None => return errorResponse("Could not find theory " + langTheo)
-      case _ => return errorResponse(langTheo + " does not appear to be a theory")
+      case None => return errorResponse("Could not find theory " + langTheo, query.version > 1)
+      case _ => return errorResponse(langTheo + " does not appear to be a theory", query.version > 1)
     }
 
     val theoryMap: mutable.Map[String, Constant] = mutable.Map()
@@ -56,32 +62,55 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
     try {
       fillTheoryMap(theory.toTerm.toMPath)
     } catch {
-      case ex: Exception => return errorResponse(ex.getMessage)
+      case ex: Exception => return errorResponse(ex.getMessage, query.version > 1)
     }
 
-    val trees = query.asts
-      .map(GfAST.parseAST)
-      .map(_.toOMDocRec(theoryMap.toMap))
-      .map(t => view match {
-        case Some(v) => controller.library.ApplyMorphs(t, v.toTerm)
-        case None => t
-      })
-      .map(t => if (query.simplify) controller.simplifier(t,
-        SimplificationUnit(theory.getInnerContext, expandDefinitions = query.deltaExpansion, fullRecursion = true)) else t)
-      .map(t => removeFakeLambdas(t, Set()))
-      .distinct
+    try {
+      val trees = query.asts
+        .map(GfAST.parseAST)
+        .map(_.toOMDocRec(theoryMap.toMap))
+        .map(t => view match {
+          case Some(v) => controller.library.ApplyMorphs(t, v.toTerm)
+          case None => t
+        })
+        .map(t => if (query.simplify) controller.simplifier(t,
+          SimplificationUnit(theory.getInnerContext, expandDefinitions = query.deltaExpansion, fullRecursion = true)) else t)
+        .map(t => removeFakeLambdas(t, Set()))
+        .distinct
 
-    if (query.toElpi) {
-      ServerResponse.JsonResponse(JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*))
-    } else {
-      ServerResponse.JsonResponse(JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*))
+      val elpiresult = JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
+      val mmtresult = JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
+      if (query.version == 1) {
+        if (query.toElpi)
+          ServerResponse.JsonResponse(elpiresult)
+        else
+          ServerResponse.JsonResponse(mmtresult)
+      } else {
+        ServerResponse.JsonResponse(JSONObject(
+          ("isSuccessful", JSONBoolean(true)),
+          ("result", JSONObject(
+            ("elpi", elpiresult),
+            ("mmt", mmtresult),
+          )),
+          ("errors", JSONArray()),
+        ))
+      }
+    } catch {
+      case ex: LangTheoryIncomplete => return errorResponse(ex.getMessage, query.version > 1)
     }
   }
 
-  private def errorResponse(message: String): ServerResponse = {
-    ServerResponse.JsonResponse(
-      JSONArray(JSONString(message))
-    )
+  private def errorResponse(message: String, newresponse: Boolean): ServerResponse = {
+    if (newresponse) {
+      ServerResponse.JsonResponse(JSONObject(
+        ("isSuccessful", JSONBoolean(false)),
+        ("errors", JSONArray(JSONString(message))),
+      ))
+    } else {
+      ServerResponse.JsonResponse(
+        JSONArray(JSONString(message))
+      )
+    }
   }
 
   private def removeFakeLambdas(t: Term, bound : Set[String]): Term = {
@@ -124,7 +153,8 @@ class GlfConstructQuery(val asts : List[String],
                         val semanticsView : Option[MPath],
                         val simplify : Boolean,
                         val deltaExpansion : Boolean,
-                        val toElpi : Boolean)
+                        val toElpi : Boolean,
+                        val version : Int)
 
 object GlfConstructQuery {
   def fromJSON(json : JSON) : GlfConstructQuery = {
@@ -134,6 +164,7 @@ object GlfConstructQuery {
     var simplify = true
     var deltaExpansion = false
     var toElpi = false
+    var version = 1
 
     json match {
       case JSONObject(map) =>
@@ -151,6 +182,7 @@ object GlfConstructQuery {
             case (JSONString("simplify"), JSONBoolean(value)) => simplify = value
             case (JSONString("deltaExpansion"), JSONBoolean(value)) => deltaExpansion = value
             case (JSONString("toElpi"), JSONBoolean(value)) => toElpi = value
+            case (JSONString("version"), JSONInt(value)) => version = value.toInt
             case (key, _) => throw ServerError("Invalid JSON: can't handle entry '" + key.toFormattedString("") + "'" )
           }
         }
@@ -158,6 +190,6 @@ object GlfConstructQuery {
     }
     val semanticsView : Option[MPath] = semView.map(s => DPath(URI(s)).toMPath)
     val languageTheory = langTheo.map(p => DPath(URI(p)).toMPath)
-    new GlfConstructQuery(asts.toList, languageTheory, semanticsView, simplify, deltaExpansion, toElpi)
+    new GlfConstructQuery(asts.toList, languageTheory, semanticsView, simplify, deltaExpansion, toElpi, version)
   }
 }

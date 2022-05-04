@@ -5,8 +5,8 @@ import scala.util.matching.Regex
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend.{Controller, ReportHandler}
-import archives.{Archive, NonTraversingImporter}
-import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import archives.{Archive, NonTraversingImporter, Update}
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion, SourceRef}
 import notations._
 import symbols._
 import modules._
@@ -24,7 +24,7 @@ object Importer
 
   def init_environment(
     options: isabelle.Options,
-    progress: isabelle.Progress = isabelle.No_Progress,
+    progress: isabelle.Progress = new isabelle.Progress,
     archive_dirs: List[isabelle.Path] = Nil,
     init_archive: Boolean = false): (Controller, List[Archive]) =
   {
@@ -64,7 +64,7 @@ object Importer
       match {
         case Nil if init_archive_dir.isDefined =>
           val meta_inf = init_archive_dir.get + isabelle.Path.explode("META-INF/MANIFEST.MF")
-          isabelle.Isabelle_System.mkdirs(meta_inf.dir)
+          isabelle.Isabelle_System.make_directory(meta_inf.dir)
 
           val id = options.proper_string("mmt_archive_id").map("id: " + _)
           val title = options.proper_string("mmt_archive_title").map("title: " + _)
@@ -716,7 +716,7 @@ object Importer
   private class State(options: isabelle.Options)
   {
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
-    val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
+    val cache: isabelle.Term.Cache = isabelle.Term.Cache.make()
 
     private val imported = isabelle.Synchronized(Map.empty[String, Content])
 
@@ -750,7 +750,17 @@ object Importer
     val (controller, archives) =
       init_environment(options, progress = progress, archive_dirs = archive_dirs, init_archive = true)
 
-    object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
+    object MMT_Importer extends NonTraversingImporter {
+      val key = "isabelle-omdoc"
+
+      //these methods are called by MMT if the importer is called from MMT
+      def build(a: Archive, up: Update, in: FilePath) : Unit = {
+        throw LocalError("not implemented")
+      }
+      def clean(a: Archive, in: FilePath): Unit = {
+        throw LocalError("not implemented")
+      }
+    }
     controller.extman.addExtension(MMT_Importer, Nil)
 
     val proof_terms_enabled = options.bool("mmt_proof_terms")
@@ -838,7 +848,7 @@ object Importer
         val text_decoded = thy_export.node_source.text
         val text_encoded = isabelle.Symbol.encode(text_decoded)
 
-        isabelle.Isabelle_System.mkdirs(path.dir)
+        isabelle.Isabelle_System.make_directory(path.dir)
         isabelle.File.write(path, text_decoded)
 
         thy_draft.rdf_triple(
@@ -1194,7 +1204,7 @@ object Importer
       // RDF document
       {
         val path = thy_archive.archive_rdf_path.ext("xz")
-        isabelle.Isabelle_System.mkdirs(path.dir)
+        isabelle.Isabelle_System.make_directory(path.dir)
         isabelle.File.write_xz(path,
           isabelle.XML.header +
           isabelle.XML.string_of_tree(thy_draft.rdf_document))
@@ -1213,6 +1223,7 @@ object Importer
 
   val isabelle_tool =
     isabelle.Isabelle_Tool("mmt_import", "import Isabelle sessions into MMT",
+      isabelle.Scala_Project.here,
       args => {
         var archive_dirs: List[isabelle.Path] = Nil
         var chapter_archive_map: Map[String, String] = Map.empty
@@ -1442,10 +1453,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           unicode_symbols = true,
           process_theory = (args: isabelle.Dump.Args) => {
             val snapshot = args.snapshot
-            val rendering =
-              new isabelle.Rendering(snapshot, options, args.session) {
-                override def model: isabelle.Document.Model = ???
-              }
+            val rendering = new isabelle.Rendering(snapshot, options, args.session)
             import_theory(read_theory_export(rendering))
           })
       }
@@ -1459,7 +1467,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     lazy val pure_path: MPath = make_theory(isabelle.Thy_Header.PURE).path
 
     lazy val pure_theory: isabelle.Export_Theory.Theory =
-      isabelle.Export_Theory.read_pure_theory(state.store, cache = Some(state.cache))
+      isabelle.Export_Theory.read_pure_theory(state.store, cache = state.cache)
 
     def pure_theory_export: Theory_Export =
     {
@@ -1645,7 +1653,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           val messages =
             if (messages_enabled) {
               isabelle.Rendering.output_messages(snapshot.command_results(element_range))
-                .map(isabelle.Protocol.message_text)
+                .map(isabelle.Protocol.message_text(_))
             }
             else Nil
 

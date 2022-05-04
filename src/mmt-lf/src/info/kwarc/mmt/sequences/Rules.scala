@@ -55,6 +55,26 @@ object NTypeTerm extends InferenceRule(rep.path, OfType.path) {
  */
 object EllipsisInfer extends InferenceRule(ellipsis.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+     case Sequences.ellipsis(NatLit(n), i, t) if n == BigInt(1) =>
+       val aOpt = solver.inferType(t ^? (i / NatLit(0)))
+       aOpt flatMap {a =>
+         if (a == OMS(Typed.ktype)) {
+           // sequences of types
+           Some(rep(a,NatLit(1)))
+         } else {
+           // sequences of typed terms
+           val ok = covered || {
+               // inferred types must actually by types
+               solver.check(Typing(stack, a, OMS(Typed.ktype)))(history.branch)
+           }
+           if (ok)
+             Some(ellipsis(NatLit(1),i,a))
+           else
+           // TODO error message?
+             None
+         }
+       }
+
       case Sequences.ellipsis(n, _, t) =>
          val (i,sub) = pickFreshIndexVar(solver, tm)
          val stackI = stack ++ i%OMS(nat)
@@ -210,6 +230,46 @@ class SequenceTypeCheck(op: GlobalName) extends TypingRule(op) {
 object EllipsisTypeCheck extends SequenceTypeCheck(ellipsis.path)
 object RepTypeCheck extends SequenceTypeCheck(rep.path)
 
+class SequenceSubtypeCheck(op: GlobalName) extends VarianceRule(op) {
+  override def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
+    case (ComplexTerm(a, _,_,_), _) if this.heads.contains(a) => true
+    case (_, ComplexTerm(b, _, _, _)) if this.heads.contains(b) => true
+    case _ => false
+  }
+  override def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val equalLength = Length.checkEqual(solver, tp1, tp2)
+    equalLength match {
+      case Some(false) =>
+        return Some(false)
+      case None =>
+        throw DelayJudgment("length not known")
+      case _ =>
+    }
+    val n = Length.infer(solver, tp1).get
+    val nS = solver.simplify(solver.safeSimplifyUntil(n)(NatLit.unapply)._1)
+      // TODO solver.safeSimplify does not apply semantic operators => S(0) is not simplified to 1 and hence does not
+      // match against NatLit
+    nS match {
+      case NatLit(nI) =>
+        Some((BigInt(0) until nI) forall {iI =>
+          val iL = NatLit(iI)
+          solver.check(Subtyping(stack, index(tp1, iL), index(tp2, iL)))
+        })
+      case OMV(x) =>
+        val i = pickFreshIndexVar(solver, tp1)._1
+        val iV = OMV(i)
+        val iup = upBoundName(i)
+        val newCon = stack ++ i%OMS(nat) ++ iup%lessType(iV, nS)
+        Some(solver.check(Subtyping(newCon,index(tp1,iV),index(tp2,iV))))
+      case _ =>
+        throw DelayJudgment("length not a literal")
+    }
+  }
+}
+
+object EllipsisSubtype extends SequenceSubtypeCheck(ellipsis.path)
+object RepSubtype extends SequenceSubtypeCheck(rep.path)
+
 /**
  *  component-wise equality-checking of sequences
  *
@@ -270,15 +330,15 @@ object ExpandRep extends ComputationRule(rep.path) {
    }
 }
 
-/** inverse of ExpandRep, useful for complification */
-object ContractRep extends ComplificationRule {
-  val head = rep.path
-  def apply(matcher: Matcher, c: Context, t: Term) = {
+/** inverse of ExpandRep, useful for complification, should not be used during simplification */
+object ContractRep extends SimplificationRule(rep.path) {
+  def apply(c: Context, t: Term): Simplifiability = {
     t match {
-      case Sequences.ellipsis(n, x, t) if ! t.freeVars.contains(x) => Some(rep(t,n))
-      case _ => None
+      case Sequences.ellipsis(n, x, t) if ! t.freeVars.contains(x) => Simplify(rep(t,n))
+      case _ => Recurse
     }
   }
+  override def complificationOnly = true
 }
 
 /**

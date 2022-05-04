@@ -5,20 +5,14 @@ import actions._
 import archives._
 import backend._
 import checking._
-import libraries._
 import opaque._
 import parser._
 import presentation._
 import symbols._
 import proving._
 import uom._
-import presentation._
 import utils._
-import utils.MyList._
 import web._
-
-import scala.util.Try
-
 
 trait Extension extends Logger {
   /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
@@ -87,6 +81,9 @@ trait Extension extends Logger {
 
   /** extension-specific initialization (override as needed, empty by default) */
   def start(args: List[String]) {}
+
+  /** called when the controller is cleared; extensions must still be operational after processing this call */
+  def clear {}
 
   /** extension-specific cleanup (override as needed, empty by default)
     *
@@ -293,6 +290,14 @@ class ExtensionManager(controller: Controller) extends Logger {
     val rbs = new RuleBasedSimplifier
     val mss = new ElaborationBasedSimplifier(rbs)
     val mmtint = new TwoStepInterpreter(kwp, msc, mss)// with MMTStructureEstimator
+    // a fast interpreter that only parses structure and does not check
+    /*
+    does not work well yet because (co)domains and rules are also parsed by the object-parser and then cause parser errors
+    val fastparse = new KeywordBasedParser(DefaultObjectParser)
+    val fastint = new OneStepInterpreter(fastparse) {
+      override def format = "mmtstructure"
+      override def inExts = mmtint.inExts
+    } */
     val rbe = new execution.RuleBasedExecutor
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
@@ -310,7 +315,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     val hp = new HTMLPresenter(mp) {
       val key = "html"
     }
-    List(mp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
+    List(mp, hp, new uom.GenericScalaExporter,
       new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter,
       new MMTSyntaxPresenter(nbpr), new FlatMMTSyntaxPresenter(nbpr)).foreach(addExtension(_))
     //parser extensions
@@ -325,27 +330,31 @@ class ExtensionManager(controller: Controller) extends Logger {
     // graphs: loading these here is practical even though they need the path to dot (which will be retrieved via getEnvvar)
     List(new DeclarationTreeExporter, new DependencyGraphExporter, new TheoryGraphExporter).foreach(addExtension(_))
     // shell extensions
-    List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
+    List(new ShellSendCommand, new execution.ExecuteFromShell, new Make, new RunFile).foreach(addExtension(_))
 
     addExtension(new AbbreviationRuleGenerator)
     
     // action companions
-    List(NoActionCompanion,RemoteActionCompanion,
+    List(NoActionCompanion,
         ListReportGroupsCompanion, AddReportHandlerCompanion, LoggingOnCompanion, LoggingOffCompanion,
-        ExecFileCompanion, ScalaCompanion, MBTCompanion,
+        ExecFileCompanion, ScalaCompanion,
         InspectDefineCompanion, DefineCompanion, EndDefineCompanion, DoCompanion,
-        CheckCompanion, CheckTermCompanion, NavigateCompanion, CompareCompanion,
-        ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, ReadCompanion,
+        CheckCompanion, CheckTermCompanion, NavigateCompanion, NavigateSourceCompanion,
+        ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
         MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
         ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHOpenCompanion, LMHUseCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
-        ClearCompanion, ExitCompanion, SetBaseCompanion,
+        ClearCompanion, ExitCompanion, SetBaseCompanion, SuppressErrorsCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
-        ArchiveBuildCompanion, FinishBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion,
+        ArchiveBuildCompanion, ArchiveMarCompanion,
     ).foreach{e => addExtension(e)}
     // This **must** be at the end, to act as a default for stuff
     addExtension(GetActionCompanion)
+  }
+
+  def clear {
+    extensions.foreach(_.clear)
   }
 
   def cleanup {

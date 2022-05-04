@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.backend
-import scala.xml.{Node,Elem}
+import scala.xml.{Elem, Node}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.presentation.ContentMathMLPresenter
 
 /** Helper class to permit customizing archives */
 abstract class ArchiveCustomization {
@@ -14,7 +15,7 @@ abstract class ArchiveCustomization {
 
 class DefaultCustomization extends ArchiveCustomization {
   def mwsurl(p: Path) : String = p.toPath
-  def prepareQuery(t: Obj): scala.xml.Node = t.toCML
+  def prepareQuery(t: Obj): scala.xml.Node = ContentMathMLPresenter(t)
 }
 
 /** Customization for Mizar */
@@ -29,7 +30,7 @@ class MML extends ArchiveCustomization {
   }
 
   def prepareQuery(t: Obj): scala.xml.Node = {
-    makeHVars(removeLFApp(t.toCML), Nil, Nil, true)
+    makeHVars(removeLFApp(ContentMathMLPresenter(t)), Nil, Nil, true)
   }
 
   private def removeLFApp(n : scala.xml.Node) : scala.xml.Node = n match {
@@ -107,7 +108,7 @@ class TPTP extends ArchiveCustomization {
   /**
    * Traverse the node, fixing symbol names and translating $$ terms to qvar
    */
-  def prepareQuery(t: Obj): Node = process(t.toCML)
+  def prepareQuery(t: Obj): Node = process(ContentMathMLPresenter(t))
   def process(n: Node) : Node = n match {
       case <csymbol>{s}</csymbol> =>
         val ss = getSymbolName(s.toString)

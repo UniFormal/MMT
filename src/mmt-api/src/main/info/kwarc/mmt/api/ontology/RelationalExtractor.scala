@@ -62,10 +62,14 @@ object MMTExtractor extends RelationalExtractor {
                case _ =>
             }
          case v: View =>
-            f(HasDomain(path, v.from.toMPath))
-            f(HasCodomain(path, v.to.toMPath))
             f(IsView(path))
-            f(HasViewFrom(v.to.toMPath, v.from.toMPath))
+            v.domainAsContext.getIncludes.foreach {p => f(HasDomain(path, p))}
+            v.codomainAsContext.getIncludes.foreach {p => f(HasCodomain(path, p))}
+            v.to match {
+              case OMPMOD(to,_) =>
+                v.domainAsContext.getIncludes.foreach {from => f(HasViewFrom(from,to))}
+              case _ =>
+            }
          case _ =>
       }
       e match {

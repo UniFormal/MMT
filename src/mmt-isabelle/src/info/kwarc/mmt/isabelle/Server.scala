@@ -9,6 +9,7 @@ object Server {
 
   val isabelle_tool =
     isabelle.Isabelle_Tool("mmt_server", "start MMT HTTP server for given archive directories",
+      isabelle.Scala_Project.here,
       args => {
         var archive_dirs: List[isabelle.Path] = Nil
         var port = default_port

@@ -2,20 +2,17 @@ package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import frontend._
-import checking._
 import utils._
 import documents._
 import modules._
 import symbols._
-import patterns._
 import objects._
 import notations._
 import libraries.AlreadyDefined
 import Theory._
 import info.kwarc.mmt.api.parser.SourceRef
 
-import collection.immutable.{HashMap, HashSet}
-import scala.util.{Success, Try}
+import collection.immutable.{HashMap}
 
 /** used by [[MMTStructureSimplifier]] */
 @MMT_TODO("needs review")
@@ -98,7 +95,16 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case v: Link =>
               applyChecked(materialize(Context.empty,v.from,None, Some(v.fromC)))
               v match {
-                case v: View => applyChecked(materialize(Context.empty,v.to,None,Some(v.toC)))
+                case v: View =>
+                  v.to match {
+                    case TUnion(ats) => ats.foreach {case (p,args) =>
+                      // if the codomain is a union of atomic theories, we can handle them individually without materializing
+                      val pT = controller.get(p)
+                      applyChecked(pT)
+                    }
+                    case _ =>
+                      applyChecked(materialize(Context.empty,v.to,None,Some(v.toC)))
+                  }
                 case _: Structure =>
               }
             case _ =>
@@ -344,40 +350,55 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               Nil
         }
         // the composed include is only postulated if ID is, i.e., it can only be used as a morphism once mod is closed
-        // if id is also a realization, this will produce a defined realization
+        // if id is defined or a realization, this will produce a defined realization
         val newPost = ID.isRealization
-        val idID = Include(parent.toTerm, id.from, newArgs, newDf, newPost)
-        ElaboratedElement.setFully(idID) // recursive elaboration already handled by recursively elaborating fromThy
-        // if an include for id.from already exists in mod, we have to check equality
-        alreadyIncluded.find(_.from == id.from) match {
+        val idID = IncludeData(parent.toTerm, id.from, newArgs, newDf, newPost)
+        val idIDDecl = idID.toStructure
+        ElaboratedElement.setFully(idIDDecl) // recursive elaboration already handled by recursively elaborating fromThy
+        // if an include for id.from already exists in mod, idID is only allowed if it is redundant
+        // i.e., it is either dropped or an error
+        alreadyIncluded.find(_.from == idID.from) match {
           case Some(exid) =>
-            // if the new include has a definiens, we have to check equality
-            // either way, it is subsumed by the existing include
-            /* TODO However, if id.df.isEmpty && exid.isRealization, the implicit morphism will be generated (by composition)
+            /* TODO if id.df.isEmpty && exid.isRealization, the implicit morphism will be generated (by composition)
              * even if we id here. That will lead to an AlreadyDefined error when the realization is finally checked at the end of the theory.
              * That makes sense: a realization may only be used (e.g. here: to absorb an include) if it has been checked.
              * But it's unclear what the best design is to check the totality of the realization in time
              * (i.e., right now before the generated includes are added to the implicit-graph).
              */
-            newDf foreach {dfMor => 
-              val existingMor = exid.asMorphism
-              val existingMorN = oS(existingMor, SimplificationUnit(innerCont, false, true), rules)
-              val eq = Morph.equal(existingMorN,dfMor, OMMOD(exid.from), target)(lup)
-              if (!eq) {
-                // otherwise, it is an error
-                val List(newStr, exStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
-                val msg = if (inTheory) {
-                  "theory included twice with different definitions or parameters"
-                } else {
-                  "two unequal morphisms included for the same theory"
+            idID.df match {
+              case Some(dfMor) =>
+                // if idID has a definiens, we have to check equality with the existing include
+                val existingMor = Morph.simplify(exid.asMorphism)(lup)
+                val existingMorN = oS(existingMor,SimplificationUnit(innerCont,false,true),rules)
+                val eq = Morph.equal(existingMorN,dfMor,OMMOD(exid.from),target)(lup)
+                if (!eq) {
+                  // otherwise, it is an error
+                  val List(exStr,newStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
+                  val parStr = parent.name.toString
+                  val msg = if (inTheory) {
+                    s"theory included twice into $parStr with different definitions or parameters"
+                  } else {
+                    s"two unequal morphisms included into $parStr for the same theory"
+                  }
+                  env.errorCont(InvalidElement(dOrig,s"$msg: $newStr != $exStr are the morphisms"))
                 }
-                env.errorCont(InvalidElement(dOrig, s"$msg: $newStr != $exStr are the morphisms"))
-              }
+              case None =>
+                // if idID has no definiens, we have almost nothing to check:
+                // - idID is an include: idID is redundant because a more specific version of id.from has already been included
+                // - idID is a realization: idID is redundant because it is already satisfied because of exid
+                // The only exception is if exid is a realization (which may or may not be total at this point) and idID is not.
+                // In that case, exid may not be used yet to justify dropping idID.
+                // Otherwise, it  could lead to a cycle because later declarations in ID.from may have already used as of yet unrealized declarations of id.from.
+                if (exid.isRealization && !idID.isRealization) {
+                  val msg = s"conflict between plain include from ${idID.from}, which has previously been declared as a realization" +
+                    " (If the realization is not total at this point, this could lead to a dependency cycle. If the realization is already total, this error can be avoided by closing the theory and including it into a new one.)"
+                  env.errorCont(InvalidElement(dOrig,msg))
+                }
             }
             Nil
           // otherwise, we add the new include
           case None =>
-            List(idID)
+            List(idIDDecl)
         }
       }
     }
@@ -386,11 +407,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       // ************ includes
       case (thy: Theory, Include(id)) =>
         // plain includes (possibly defined): copy (only) includes (i.e., transitive closure of includes), composing the definitions (if any)
-        addAfter = !id.isRealization // generated includes are placed before the generating include so that they occur in dependency order
+        addAfter = id.isRealization // generated includes are placed before the generating include so that they occur in dependency order
         // from.meta is treated like any other include into from (in particular: skipped if from.meta included into thy.meta)
         // compute all includes into thy or any of its meta-theories
         val thyMetas = TheoryExp.metas(thy.toTerm)(lup).map(p => lup.getAs(classOf[Theory], p))
-        val alreadyIncluded = (thy::thyMetas).flatMap(_.getAllIncludes)
+        val alreadyIncluded = (thy::thyMetas).reverse.flatMap(_.getAllIncludes)
         flattenInclude(id, alreadyIncluded, thy.toTerm)
       case (link: Link, Include(id)) =>
         // includes in views are treated very similarly; we compose mor with includes into from and check equality of duplicates
@@ -478,7 +499,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
              var i = 0
              while (dd.getDeclarations.isDefinedAt(i)) { // awkward, but necessary to elaborate generated things as well
                try { apply(dd.getDeclarations(i)) } catch {
-                 case GetError(_) =>
+                 case _:GetError =>
                }
                i+=1
              }
@@ -606,7 +627,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   /* unclear old code of onAdd
     // if the parent was generated by a derived declaration, re-elaborate it; TODO: why would this be necessary?
     parent.getOrigin match {
-      case GeneratedBy(dp : GlobalName) =>
+      case GeneratedFrom(dp : GlobalName, _) =>
         val ddOpt = controller.getO(dp)
         ddOpt match {
           case Some(dd : DerivedDeclaration) =>
@@ -708,133 +729,5 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      case OMMOD(p) => lup.getTheory(p)
      //TODO OMPMOD
      case ComplexTheory(cont) => cont
-  }
-
-   /* everything below here is Mihnea's enrichment code, which may be outdated or incomplete */
-
-  /** auxiliary method of enriching */
-  private lazy val loadAll = {
-    memory.ontology.getInds(ontology.IsTheory) foreach {p =>
-      controller.get(p)
-    }
-    memory.ontology.getInds(ontology.IsView) foreach {p =>
-      controller.get(p)
-    }
-  }
-  private lazy val modules = controller.memory.content.getModules
-
-  /**
-   * adds declarations induced by views to all theories
-   */
-  def enrich(t : Theory) : Theory =  {
-    loadAll
-    val tbar = new Theory(t.parent, t.name, t.meta, t.paramC, t.dfC)
-    t.getDeclarations foreach {d =>
-      tbar.add(d)
-    }
-    val views = modules collect {
-      case v : View if v.to == t.toTerm => v
-    } // all views to T
-
-    views foreach { v =>
-      val s = v.from
-      implicit val rules = makeRules(v)
-      modules collect {
-        case sprime : Theory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
-          // here we have v : s -> t and sprime includes s -- (include relation is transitive, reflexive)
-          // therefore we make a structure with sprime^v and add it to tbar
-          /*
-          val str = SimpleDeclaredStructure(tbar.toTerm, (LocalName(v.path) / sprime.path.toPath), sprime.path, false)
-          sprime.getDeclarations foreach {d =>
-            str.add(rewrite(d))
-          }
-          tbar.add(str)
-          */
-          //conceptually this should be a structure, but adding the declarations directly is more efficient
-          sprime.getDeclarations foreach {
-            case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path, t.getInnerContext))
-            case _ => //nothing for now //TODO handle structures
-          }
-      }
-    }
-    tbar
-  }
-  //Flattens by generating a new theory for every view, used for flatsearch
-  def enrichFineGrained(t : Theory) : List[Theory] = {
-    loadAll
-    var thys : List[Theory] = Nil
-    val tbar = new Theory(t.parent, t.name, t.meta, t.paramC, t.dfC)
-    t.getDeclarations foreach {d =>
-      tbar.add(d)
-    }
-    thys ::= tbar
-    val views = modules collect {
-      case v : View if v.to == t.toTerm => v
-    }
-    views foreach { v=>
-      val s = v.from
-      implicit val rules = makeRules(v)
-      modules collect {
-        case sprime : Theory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
-          val tvw = new Theory(t.parent, sprime.name / v.name, t.meta, t.paramC, t.dfC)
-          sprime.getDeclarations foreach {
-            case c : Constant => tvw.add(rewrite(c, v.path, tbar.path, t.getInnerContext))
-            case _ => //nothing for now //TODO handle structures
-          }
-          thys ::= tvw
-      }
-
-    }
-
-    thys
-  }
-
-
-  private def makeRules(v : View) : HashMap[Path, Term] = {
-    val path = v.from.toMPath
-    var rules = new HashMap[Path,Term]
-    val decl = v.getDeclarations
-
-    v.getDeclarations foreach {
-      case c : Constant =>
-        c.df.foreach {t =>
-          rules += (path ? c.name -> t)
-        }
-      case s : Structure => s.df.foreach {df =>
-        try {
-          controller.get(df.toMPath) match {
-            case v : View => rules ++= makeRules(v)
-            case _ => //nothing to do
-          }
-        } catch {
-          case e : Error => // println(e)//nothing to do
-          case e : Exception => // println(e)//nothing to do
-        }
-      }
-    }
-    rules
-  }
-
-  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = {
-      val tl = new UniformTranslator {
-        def apply(c: Context, t: Term) = apply(c, rewrite(t))
-      }
-      val dT = d.translate(OMMOD(newhome), LocalName(vpath.toPath) / d.home.toMPath.toPath, tl, context)
-      dT.setOrigin(ByStructureSimplifier(d.home, OMID(vpath)))
-      dT
-  }
-
-
-  private def rewrite(t : Term)(implicit rules : HashMap[Path, Term]) : Term = {
-    t match {
-    case OMID(p) =>
-      if (rules.isDefinedAt(p)) rules(p) else t
-    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
-    case OMBINDC(b, con, bodies) => OMBINDC(rewrite(b), rewrite(con), bodies.map(rewrite))
-    case _ => t
-  }}
-
-  private def rewrite(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
-    con.mapTerms {case (_,t) => rewrite(t)}
   }
 }

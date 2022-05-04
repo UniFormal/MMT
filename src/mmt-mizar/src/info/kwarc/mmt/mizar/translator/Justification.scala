@@ -1,240 +1,102 @@
 package info.kwarc.mmt.mizar.translator
 
-import info.kwarc.mmt.mizar.objects._
-import info.kwarc.mmt.mizar.mmtwrappers._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api._
-import info.kwarc.mmt.lf._
+import info.kwarc.mmt._
+import api._
+import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType}
+import info.kwarc.mmt.mizar.mmtwrapper.MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.mmtwrapper.PatternUtils.{PiOrEmpty, lambdaBindArgs}
+import info.kwarc.mmt.mizar.translator.JustificationTranslator.lambdaBindDefCtxArgs
+import info.kwarc.mmt.mizar.translator.claimTranslator._
+import info.kwarc.mmt.mizar.translator.definitionTranslator.translate_Definition
+import info.kwarc.mmt.mizar.translator.statementTranslator.translate_Choice_Statement
+import info.kwarc.mmt.mizar.translator.termTranslator.translate_Term
+import objects._
+import mizar.syntax._
 
 object JustificationTranslator {
-
-  def translateJustification(j : MizJustification) : Term = j match {
-    case i : MizInference => translateInference(i)
-    case s : MizSkippedProof => Mizar.constant("skipped")
-    case p : MizProof => translateProof(p)
-  }
-
-
-  def translateInference(i : MizInference) : Term = i match {
-    case by : MizBy => translateBy(by)
-    case from : MizFrom => translateFrom(from)
-    case ei : MizErrorInf => Mizar.constant("error")
-  }
-
-  def translateBy(by : MizBy) : Term = {
-    val refs = by.refs.map(translateRef)
-    Mizar.apply(Mizar.by, refs : _*)
-  }
-
-  def translateFrom(from : MizFrom) : Term = {
-    val refs = from.refs.map(translateRef)
-    Mizar.apply(Mizar.from, refs : _*)
-  }
-
-  def translateRef(ref : MizRef) : Term = ref match {
-    case r : MizGlobalRef =>
-      val path = MMTUtils.getPath(r.aid, r.kind, r.absnr)
-      OMS(path)
-    case r : MizLocalRef =>
-      TranslationController.resolveProp(r.nr)
-  }
-
-  def translateProof(p : MizProof) : Term = {
-    ReasoningTranslator.translateReasoning(p.reasoning)
-  }
-
-}
-
-object ReasoningTranslator {
-  def translateReasoning(r : MizReasoning) : Term = {
-    translateProofSteps(r.proofSteps)
-  }
-
-  def translateProofSteps(pfSteps : List[MizProofItem]) : Term = pfSteps match {
-    case Nil => ??? //TODO case hd :: Nil ?
-    case (hd : MizSkeletonItem) :: tl => translateSkeletonItem(hd, tl)
-    case (hd : MizAuxiliaryItem) :: tl => translateAuxiliaryItem(hd, tl)
-    case _ => ??? //TODO
-  }
-
-  def translateSkeletonItem(sk : MizProofItem, rest : List[MizProofItem]) : Term = sk match {
-    case m : MizLet => translateLet(m, rest)
-    case m : MizConclusion => translateConclusion(m, rest)
-    case m : MizAssume => translateAssume(m, rest)
-    case m : MizGiven => translateGiven(m, rest)
-    case m : MizTake => translateTake(m, rest)
-    case m : MizTakeAsVar => translateTakeAsVar(m, rest)
-  }
-
-  //Skeleton Items
-
-  //forI
-  def translateLet(l : MizLet, rest : List[MizProofItem]) : Term = {
-    var context : Context = Context()
-    l.types.zipWithIndex map {p =>
-      val tm = TypeTranslator.translateTyp(p._1)
-      val name = TranslationController.addLocalConst(l.nr + p._2)
-      context ++= VarDecl(name, tm)
+  /** whether to also translate proof steps or only references to used statements */
+  val proofSteps = false
+  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Term) = {
+    val claim = provedClaim._claim match {
+      case Diffuse_Statement(_) => trueCon
+      case _ => translate_Claim(provedClaim._claim)(defContext)
     }
-    //TODO more precise encoding
-    Mizar.apply(Mizar.constant("forI"), Lambda(context, translateProofSteps(rest)))
-  }
-
-  //miz inference
-  def translateConclusion(c : MizConclusion, rest : List[MizProofItem]) : Term = {
-    Mizar.apply(Mizar.constant("by"), translateJustifiedProposition(c.jp, Nil), translateProofSteps(rest))
-  }
-
-  //impI
-  def translateAssume(a : MizAssume, rest : List[MizProofItem]) : Term = {
-    val decls = a.props map {p =>
-      val t = PropositionTranslator.translateProposition(p)
-      val name : LocalName = TranslationController.addLocalProp(p.nr)
-      VarDecl(name, Mizar.proof(t))
+    val prf = (provedClaim._claim, provedClaim._just) match {
+      case (_, Some(just)) => translate_Justification(just, claim)(defContext)
+      case (it: Iterative_Equality, None) => translate_Iterative_Equality_Proof(it)(defContext)
+      case (_, None) => throw ProvedClaimTranslationError("No proof given for claim, which is not an iterative-equality (proving itself). ", provedClaim)
     }
-
-    Mizar.apply(Mizar.constant("impI"), Lambda(Context(decls :_*) , translateProofSteps(rest)))
+    (proof(claim), prf)
   }
-
-  //existsE
-  def translateGiven(g : MizGiven, rest : List[MizProofItem]) : Term = {
-    val exProp = PropositionTranslator.translateProposition(g.exSt)
-    val tpDecls = g.types.zipWithIndex map {p =>
-      val (tp, i) = p
-      val tm = TypeTranslator.translateTyp(tp)
-      val name = TranslationController.addLocalConst(g.nr + i)
-      VarDecl(name, tm)
+  def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): objects.Term = just match {
+    case sj: Scheme_Justification if proofSteps => translate_Scheme_Justification(sj)
+    case _: Justification =>
+      if (proofSteps) defContext.enterProof
+      val usedFacts: List[Term] = usedInJustification(just)
+      if (proofSteps) defContext.exitProof
+      lambdaBindDefCtxArgs(uses(claim, usedFacts))
+  }
+  def globalReferences(refs: List[Reference]): List[Term] = refs.filter(_.isInstanceOf[Theorem_Reference]).map(_.asInstanceOf[GlobalReference].referencedItem)
+  private def translate_Scheme_Justification(sj:Scheme_Justification) = lf.ApplyGeneral(OMS(sj.referencedScheme),
+    sj._refs.map(_.referencedLabel.asInstanceOf[GlobalName]).map(OMS(_)))
+  private def lambdaBindDefCtxArgs(tm: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): Term = {
+    if (defContext.args.nonEmpty && bindArgs) lambdaBindArgs(tm)(defContext.args.map(_.toTerm)) else tm
+  }
+  private def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = {
+    val claim = translate_Claim(it)
+    val usedFacts: List[Term] = it._just::it._iterSteps._iterSteps.map(_._just) flatMap usedInJustification
+    lambdaBindDefCtxArgs(uses(claim, usedFacts))
+  }
+  private def translate_Exemplification(exemplification: Exemplification)(implicit defContext: => DefinitionContext): List[objects.Term] = {
+    exemplification._exams map { exam =>
+      val exemTm: Term = translate_Term(exam._tm)(defContext)
+      val exemTp: Term = TranslationController.inferType(exemTm)(defContext)
+      ProofByExample(exemTp, exemTm)
     }
-
-    val propDecls = g.props map {p =>
-      val tm = PropositionTranslator.translateProposition(p)
-      val name = TranslationController.addLocalProp(p.nr)
-      VarDecl(name, Mizar.proof(tm))
-    }
-
-    val varName = LocalName("g0")
-    val con = Context(VarDecl(varName, Mizar.proof(exProp)))
-    val exE = Mizar.apply(Mizar.constant("exE"),
-        OMV(varName),
-        Lambda(Context(tpDecls ++ propDecls : _*), translateProofSteps(rest)))
-
-    Mizar.apply(Mizar.constant("impI"), Lambda(con, exE))
   }
-
-
-  def translateTake(t : MizTake, rest : List[MizProofItem]) : Term = {
-    val tm = TypeTranslator.translateTerm(t.term)
-    Mizar.apply(Mizar.constant("ExI"), tm, translateProofSteps(rest))
-  }
-
-  def translateTakeAsVar(t : MizTakeAsVar, rest : List[MizProofItem]) : Term = {
-    val tm = TypeTranslator.translateTerm(t.term)
-    val tp = TypeTranslator.translateTyp(t.typ)
-
-    val name = TranslationController.addLocalConst(t.nr)
-    val con = Context(VarDecl(name, tp))
-    val exI = Mizar.apply(Mizar.constant("ExI"), OMV(name), translateProofSteps(rest))
-    Mizar.apply(Mizar.constant("decl"), tm, Lambda(con, exI))
-  }
-
-  def translateAuxiliaryItem(a : MizAuxiliaryItem, rest : List[MizProofItem]) : Term = a match {
-    case m : MizJustifiedProposition => translateJustifiedProposition(m, rest)
-    case m : MizConsider => translateConsider(m, rest)
-    case m : MizSet => translateSet(m, rest)
-    case m : MizReconsider => translateReconsider(m, rest)
-    case m : MizDefPred => translateDefPred(m, rest)
-    case m : MizDefFunc => translateDefFunc(m, rest)
-  }
-
-  // Auxiliary Items
-  def translateJustifiedProposition(p : MizJustifiedProposition, rest : List[MizProofItem]) : Term = p match {
-    case n : MizNow => translateNow(n, rest)
-    case i : MizIterEquality => translateIterEquality(i, rest)
-    case pj : MizPropWithJust => translatePropWithJust(pj, rest)
-  }
-
-  def translateNow(n : MizNow, rest : List[MizProofItem]) : Term = {
-    val name = TranslationController.addLocalProp(n.nr)
-    val pf = translateReasoning(n.reasoning)
-    Pi(Context(VarDecl(name)), Mizar.apply(Mizar.constant("inf"), pf, translateProofSteps(rest)))
-  }
-
-  def translateIterEquality(i : MizIterEquality, rest : List[MizProofItem]) : Term = {
-    val tm = TypeTranslator.translateTerm(i.term) //TODO
-    val eqs = i.iterSteps map { s =>
-      val t = TypeTranslator.translateTerm(s.term)
-      val inf = JustificationTranslator.translateInference(s.inf)
-      Mizar.apply(Mizar.constant("by"),
-          Mizar.apply(Mizar.constant("eq"), tm, t),
-          inf
-      )
-    }
-    val name = TranslationController.addLocalProp(i.nr)
-    val con = Context(VarDecl(name))
-    val by = Mizar.apply(Mizar.constant("by"), (eqs :+ translateProofSteps(rest)) :_*)
-    Mizar.apply(Mizar.constant("inf"), Pi(con, by))
-  }
-
-  def translatePropWithJust(p : MizPropWithJust, rest : List[MizProofItem]) : Term = {
-    val prop = PropositionTranslator.translateProposition(p.prop)
-    TranslationController.addLocalProp(p.prop.nr)
-    val just = JustificationTranslator.translateJustification(p.just)
-
-    Mizar.apply(Mizar.constant("inf"), just, translateProofSteps(rest))
-  }
-
-  def translateConsider(c : MizConsider, rest : List[MizProofItem]) : Term = {
-    val startnr = c.constnr
-   val ex_prop = PropositionTranslator.translateProposition(c.prop)
-   val ex_just = JustificationTranslator.translateJustification(c.just)
-
-   val decls = c.typs.zipWithIndex map { p =>
-      val tp = TypeTranslator.translateTyp(p._1)
-      val name = TranslationController.addLocalConst(c.nr + p._2)
-      VarDecl(name,tp)
-    }
-
-    val props = c.props map { p =>
-      val prop = PropositionTranslator.translateProposition(p)
-      val name = TranslationController.addLocalProp(p.nr)
-      VarDecl(name, Mizar.proof(prop))
-    }
-
-    val cont = Lambda(Context(decls : _*), Lambda(Context(props :_ *), translateProofSteps(rest)))
-    Mizar.apply(Mizar.constant("ExE"), ex_just, Mizar.apply(Mizar.constant("inf"), cont))
-  }
-
-  def translateSet(s : MizSet, rest : List[MizProofItem]) : Term = {
-    val tm = TypeTranslator.translateTerm(s.term)
-    val tp = TypeTranslator.translateTyp(s.typ)
-    val name = TranslationController.addLocalConst(s.nr)
-    Mizar.apply(Mizar.constant("decl"), tm, Lambda(name, tp, translateProofSteps(rest)))
-  }
-
-
-  def translateReconsider(r : MizReconsider, rest : List[MizProofItem]) : Term = {
-    val decls = r.terms.zipWithIndex map {p =>
-      val ((mtp, mtm), i) = p
-      val tm = TypeTranslator.translateTerm(mtm)
-      val tp = TypeTranslator.translateTyp(mtp)
-      val name = TranslationController.addLocalConst(r.nr + i)
-      VarDecl(name, tp, tm)
-    }
-
-    val prop = PropositionTranslator.translateProposition(r.prop)
-    //should use when foundation uses curry typing to justify new type
-    val just = JustificationTranslator.translateJustification(r.just)
-    Lambda(Context(decls : _*), translateProofSteps(rest))
-  }
-
-
-  def translateDefPred(r : MizDefPred, rest : List[MizProofItem]) : Term = {
-     //we can ignore def preds because they are local and expanded in-place where they occur
-    translateProofSteps(rest)
-  }
-
-    def translateDefFunc(r : MizDefFunc, rest : List[MizProofItem]) : Term = {
-     //we can ignore def funcs because they are local and expanded in-place where they occur
-    translateProofSteps(rest)
+  private def translate_Diffuse_Statement_Claim(ds: Diffuse_Statement, _just: Option[Justification])(implicit defContext: DefinitionContext): Term = trueCon
+  def usedInJustification(just: Justification)(implicit defContext: => DefinitionContext): List[Term] = just match {
+    case Straightforward_Justification(_refs) => globalReferences(_refs)
+    case Block(pos, _, _items) =>
+      if (proofSteps) defContext.enterProof
+      def translateSubitems(subs: List[Subitem]): List[Term] = subs.flatMap {
+        case st: Statement =>
+          val usedInJust = (st.prfClaim._claim, st.prfClaim._just) match {
+            case (it:Iterative_Equality, None) => it._iterSteps._iterSteps.map(_._just) flatMap(usedInJustification(_)(defContext))
+            case (_: Claim, jO) => usedInJustification(jO.get)(defContext)
+          }
+          (if (proofSteps) {
+            List(st match {
+              case cs: Choice_Statement =>
+                val (addArgs, (claim, _), _) = translate_Choice_Statement(cs)(defContext)
+                defContext.addArguments(addArgs)
+                claim
+              case ds: Diffuse_Statement => translate_Diffuse_Statement_Claim(ds, st.prfClaim._just)(defContext)
+              case _ => translate_Claim(st.prfClaim._claim)(defContext)
+            })
+          } else Nil) ::: usedInJust
+        case Per_Cases(_just) => usedInJustification(_just)(defContext)
+        case ex: Exemplification if (proofSteps) => translate_Exemplification(ex)(defContext)
+        case Existential_Assumption(_qual, _) if (proofSteps) =>
+          _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach defContext.addLocalBindingVar
+          Nil
+        case Default_Generalization(_qual, _conds) if (proofSteps) =>
+          _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach defContext.addLocalBindingVar
+          _conds foreach (cl => defContext.addAssumption(translate_Claim(cl)(defContext)))
+          Nil
+        case Generalization(_qual, _conds) if (proofSteps) =>
+          _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach defContext.addLocalBindingVar
+          _conds foreach (cl => defContext.addAssumption(translate_Claim(cl)(defContext)))
+          Nil
+        case prDef: PrivateDefinition if (proofSteps) =>
+          // This will add the definition to the list of local definitions inside the definition context
+          translate_Definition(prDef, None)(defContext)
+          Nil
+        case _ => Nil
+      }
+      val subitems = translateSubitems(_items map (_._subitem))
+      if (proofSteps) defContext.exitProof
+      subitems
+    case sj: Scheme_Justification => if (proofSteps) List(translate_Scheme_Justification(sj)) else OMS(sj.referencedScheme)::globalReferences(sj._refs)
   }
 }

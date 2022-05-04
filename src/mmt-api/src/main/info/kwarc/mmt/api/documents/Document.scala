@@ -60,7 +60,7 @@ class Document(val path: DPath, val level: DocumentLevel = FileLevel, val conten
   def getModules(lib: Lookup): List[MPath] = items flatMap {
     case d: Document => d.getModules(lib)
     case r: MRef => List(r.target)
-    case d: DRef => lib.get(d.target).asInstanceOf[Document].getModules(lib)
+    case d: DRef if !d.isGenerated => lib.get(d.target).asInstanceOf[Document].getModules(lib)
     case _: SRef => Nil
     case _ => Nil
   }

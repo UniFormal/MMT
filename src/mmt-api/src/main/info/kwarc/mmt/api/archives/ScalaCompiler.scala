@@ -1,12 +1,7 @@
 package info.kwarc.mmt.api.archives
 
-import java.net.URLClassLoader
-
 import info.kwarc.mmt.api._
 import utils._
-import MMTSystem._
-
-import scala.util.Try
 
 object ScalaOutDim extends RedirectableDimension("bin")
 
@@ -14,21 +9,22 @@ object ScalaOutDim extends RedirectableDimension("bin")
 class ScalaCompiler extends BuildTarget {
   val key = "scala-bin"
 
+  // the classpath separator
+  private val sep = if (OS.detect == Windows) ";" else ":"
+
   /** recursively finds the classpath of all dependencies of an archive */
   private def transitiveArchiveClasspath(a : Archive) = {
-    a.transitiveDependencies(controller.backend).map(singleArchiveClassPath).mkString(":")
+    a.transitiveDependencies(controller.backend).map(singleArchiveClassPath).mkString(sep)
   }
 
   /** find the classpath of a single archive */
   private def singleArchiveClassPath(a : Archive) = {
-    a.properties.get("classpath").map(p => a.root / p).mkString(":")
+    a.properties.get("classpath").map(p => a.root / p).mkString(sep)
   }
 
 
-   def build(a: Archive, up: Update, in: FilePath) {
+   def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
      (a / ScalaOutDim).mkdirs
-     // the classpath separator
-     val sep = if (OS.detect == Windows) ";" else ":"
      // find all source folders to collect files in
      val folderList = a.properties.getOrElse("scala", "scala")
      val folders = stringToList(folderList).map(d => a / Dim(d)).filter(_.exists)
@@ -46,19 +42,26 @@ class ScalaCompiler extends BuildTarget {
      val args = (
        if(report.groups.contains("compiler")) List("-verbose") else Nil
      ) ::: List(
-       "-classpath", System.getProperty("java.class.path") + ":" + cp,
+       "-classpath", System.getProperty("java.class.path") + sep + cp,
        "-d", (a / ScalaOutDim).toString,
      ) ::: files
 
-     val process = RunJavaClass("scala.tools.nsc.Main", args)
-     report("debug", process.command().toArray.mkString(" "))
+     val process = RunJavaClass("scala.tools.nsc.Main", args, s => report("debug", s))
 
-     // run the process and wait for it
-     val proc = process.inheritIO().start()
-     proc.waitFor()
-
-     if(proc.exitValue() != 0) {
-       throw GeneralError("scalac returned error code")
+     // run the process and process its output
+     // we must redirect error output to output -
+     //   otherwise we'd have to use two threads to read output and error output concurrently to avoid deadlocking
+     // if we used inheritIO instead of reading the output ourselves, we'd have to call proc.waitFor() afterwards
+     val proc = process.redirectErrorStream(true).start()
+     val output = StreamReading.read(proc.getInputStream)
+     log(output)
+     val ev = proc.waitFor() // waits (which shouldn't be necessary) and returns the exit value
+     if (ev != 0) {
+       val e = LocalError("scalac returned errors (see log output for error messages)")
+       errorCont match {
+         case Some(ec) => ec(e)
+         case None => throw e
+       }
      }
    }
 

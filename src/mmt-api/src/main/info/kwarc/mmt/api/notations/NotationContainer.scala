@@ -23,7 +23,7 @@ class NotationDimension {
      NotationDimension.order(options)
    }
 
-   def set(not : TextNotation) = {
+   def set(not : TextNotation): Unit = {
      val l = not.arity.length
      val nots = notations.getOrElse(l, Nil)
      notations(l) = (not :: nots).distinct // replaces previous occurrence of same notation (which might differ in metadata)
@@ -38,7 +38,16 @@ class NotationDimension {
       _maxArity = nd.maxArity
       changed
    }
-   def delete = notations.clear
+   def delete(): Unit = notations.clear()
+
+  def mapInPlace(f: TextNotation => TextNotation): Unit = collectInPlace(not => Some(f(not)))
+
+  def collectInPlace(f: TextNotation => Option[TextNotation]): Unit = {
+    _notations.mapValuesInPlace((_, not) => {
+      not.flatMap(f)
+    })
+    // TODO: recompute _maxArity?
+  }
 }
 
 object NotationDimension {
@@ -54,13 +63,13 @@ class NotationContainer extends ComponentContainer {
    private val _presentationDim = new NotationDimension
    private val _verbalizationDim = new NotationDimension
 
-   def parsingDim = _parsingDim
-   def presentationDim = _presentationDim
-   def verbalizationDim = _verbalizationDim
+   def parsingDim: NotationDimension = _parsingDim
+   def presentationDim: NotationDimension = _presentationDim
+   def verbalizationDim: NotationDimension = _verbalizationDim
 
-   def parsing = parsingDim.default
-   def presentation = presentationDim.default
-   def verbalization = verbalizationDim.default
+   def parsing: Option[TextNotation] = parsingDim.default
+   def presentation: Option[TextNotation] = presentationDim.default
+   def verbalization: Option[TextNotation] = verbalizationDim.default
 
    /** get the notation for a certain component */
    def apply(c: NotationComponentKey) = c match {
@@ -69,43 +78,49 @@ class NotationContainer extends ComponentContainer {
       case VerbalizationNotationComponent => verbalization
    }
    /** set the notation for a certain component */
-   def update(c: NotationComponentKey, tn: TextNotation) {c match {
-      case ParsingNotationComponent => parsingDim.set(tn)
-      case PresentationNotationComponent => presentationDim.set(tn)
-      case VerbalizationNotationComponent => verbalizationDim.set(tn)
-   }}
+   def update(c: NotationComponentKey, tn: TextNotation): this.type = {
+     c match {
+       case ParsingNotationComponent => parsingDim.set(tn)
+       case PresentationNotationComponent => presentationDim.set(tn)
+       case VerbalizationNotationComponent => verbalizationDim.set(tn)
+     }
+
+     this
+   }
    /** update all notations using the values of a different container */
-   def update(c: ComponentContainer) = {c match {
-      case nc: NotationContainer =>
+   def update(c: ComponentContainer): Boolean = {
+     c match {
+       case nc: NotationContainer =>
          parsingDim.update(nc.parsingDim) ||
          presentationDim.update(nc.presentationDim) ||
          verbalizationDim.update(nc.verbalizationDim)
-      case _ => throw ImplementationError("not a NotationContainer")
+       case _ => throw ImplementationError("not a NotationContainer")
    }}
-   def delete {
-      parsingDim.delete
-      presentationDim.delete
-      verbalizationDim.delete
+   def delete(): Unit = {
+      parsingDim.delete()
+      presentationDim.delete()
+      verbalizationDim.delete()
    }
    
    /** adds all notations into the current container */
-   def add(that: NotationContainer) {
+   def add(that: NotationContainer): this.type = {
       val comps = List(ParsingNotationComponent,PresentationNotationComponent,VerbalizationNotationComponent)
       comps.foreach {c =>
         (this.apply(c) orElse that.apply(c)).foreach {not =>
           update(c, not)
         }
       }
+      this
    }
     
    /** a copy of this NotationContainer with some other notations merged in */
-   def merge(that: NotationContainer) = {
-      val ntMerged = copy
+   def merge(that: NotationContainer): NotationContainer = {
+      val ntMerged = copy()
       ntMerged.add(that)
       ntMerged
    }
-   def copy = {
-     val ntCopy = NotationContainer()
+   def copy(): NotationContainer = {
+     val ntCopy = NotationContainer.empty()
      ntCopy.add(this)
      ntCopy
    }
@@ -139,6 +154,15 @@ class NotationContainer extends ComponentContainer {
           verbalizationDim.notations.values.flatten
      ).flatten
    }
+
+  def mapInPlace(f: TextNotation => TextNotation): this.type = collectInPlace(x => Some(f(x)))
+
+  def collectInPlace(f: TextNotation => Option[TextNotation]): this.type = {
+    _parsingDim.collectInPlace(f)
+    _presentationDim.collectInPlace(f)
+    _verbalizationDim.collectInPlace(f)
+    this
+  }
 
    def toNode = {
       val n1 = parsingDim.notations.values.flatten map {
@@ -181,7 +205,7 @@ object NotationContainer {
    @deprecated("use NotationContainer.empty()", "v20.0.0")
    def apply(): NotationContainer = new NotationContainer
    def apply(tnOpt: Option[TextNotation]): NotationContainer = {
-      val nc = apply()
+      val nc = NotationContainer.empty()
       tnOpt foreach {tn => nc.parsingDim.set(tn)}
       nc
    }

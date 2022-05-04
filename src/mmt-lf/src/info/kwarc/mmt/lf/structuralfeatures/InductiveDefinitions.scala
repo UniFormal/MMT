@@ -44,7 +44,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val intC = intDecls.find(_.name == c.name).getOrElse(
       throw GeneralError("Definien for declaration "+c.name+" is missing. "))
     val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
-    tr(Context.empty, intC.externalTp(indDPath))
+    tr.applyPlain(Context.empty, intC.externalTp(indDPath))
   }  
   
    /**

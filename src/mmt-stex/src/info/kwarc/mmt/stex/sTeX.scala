@@ -1,207 +1,237 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
-import parser._
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardDouble, StandardInt, StandardNat, StandardPositive, StandardRat, StandardString}
+import info.kwarc.mmt.api.utils.{URI, XMLEscaping}
+import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.LFX
+import info.kwarc.mmt.sequences.Sequences
+import info.kwarc.mmt.stex.rules.StringLiterals
+import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
+
 import scala.xml._
-import modules._
-import symbols._
 import objects._
-import informal._
-import utils._
-import metadata._
-import uom.OMLiteral.OMSTR
 
+object STeX {
+  val meta_dpath = DPath(URI.http colon "mathhub.info") / "sTeX" / "meta"
+  val meta_path = meta_dpath ? "Metatheory"
+  val mmtmeta_path = meta_dpath ? "MMTMeta"
 
-object sTeXMetaData {
-  val mod : MPath = DPath(URI("http://mathhub.info/metadata/stex.omdoc")) ? "stex"
-  val primarySymbolPath = mod ? "primary-symbol"
-  val rolePath = mod ? "role"
+  val string = mmtmeta_path ? "stringliteral"
 
-  val primarySymbol : MetaDatum = new MetaDatum(rolePath, OMSTR("primary"))
-  val conservativeExtension : MetaDatum = new MetaDatum(rolePath, OMSTR("conservative-extension"))
-}
+  val meta_notation = mmtmeta_path ? "notation"
 
-object sTeX {
-  def inSmglom(p : Path) : Boolean = {
-    //group is smglom
-    p.doc.uri.path.head == "smglom"
-  }
+  val prop = meta_path ? "proposition"
 
-  def getLanguage(p : Path) : Option[String] = {
-    val name = p.dropComp match {
-      case s : GlobalName => s.module.name.toPath
-      case m : MPath => m.name.toPath
-      case d : DPath => d.last.split('.').toList.init.mkString(".") // removing extension
+  val notation = new {
+    val tp = new {
+      val sym = mmtmeta_path ? "notationtype"
+      def apply(nsym : GlobalName, arity : String) = OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity)))
+
+      def unapply(tm : Term) = tm match {
+        case OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity))) => Some((nsym,arity))
+        case _ => None
+      }
     }
-    name.split("\\.").toList match {
-      case hd :: lang :: tl => Some(lang)
+    def apply(node : Node, prec : String, frag : String) = {
+      OMA(OMS(meta_notation),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node)))
+    }
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`meta_notation`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node))) =>
+        Some((node,prec,frag))
+      case _ => None
+    }
+  }
+  val informal = new {
+    val sym = mmtmeta_path ? "informalsym"
+    val op = new {
+      val opsym = mmtmeta_path ? "informalapply"
+      def apply(label : String,args : List[Term]) = {
+        OMA(OMS(opsym),StringLiterals(label) :: args)
+      }
+      def unapply(tm : Term) = tm match {
+        case OMA(OMS(`opsym`),StringLiterals(label) :: args) => Some((label,args))
+        case _ => None
+      }
+    }
+    def apply(n : Node) = OMA(OMS(sym),OMFOREIGN(n) :: Nil)
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),OMFOREIGN(n) :: Nil) =>
+        Some(n)
       case _ => None
     }
   }
 
-  def getMasterPath(p : GlobalName) : GlobalName = _recursePath(p)(_getMasterName)
-  def getMasterPath(p : MPath) : MPath = _recursePath(p)(_getMasterName)
-  def getMasterPath(p : DPath) : DPath = _recursePath(p)(_getMasterName)
-
-  def getLangPath(p : GlobalName, lang : String) : GlobalName = _recursePath(p)(_getLangName(lang))
-  def getLangPath(p : MPath, lang : String) : MPath = _recursePath(p)(_getLangName(lang))
-  def getLangPath(p : DPath, lang : String) : DPath = _recursePath(p)(_getLangName(lang))
-
-  private def _recursePath(p : GlobalName)(f : String => String) : GlobalName = _recursePath(p.module)(f) ? p.name.toPath
-  private def _recursePath(p : MPath)(f : String => String) : MPath = _recursePath(p.doc)(f) ? f(p.name.toPath)
-  private def _recursePath(p : DPath)(f : String => String) : DPath = p.^! / f(p.last)
-
-  private def _getLangName(lang : String)(s : String) : String = {
-    s.split("\\.").toList match {
-      case name  :: tl => (name :: lang :: tl).mkString(".")
-      case _ => s
+  val flatseq = new {
+    val sym = meta_path ? "seqexpr"
+    def apply(tms : Term*) = OMA(OMS(sym),tms.toList)
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),ls) => Some(ls)
+      case _ => None
     }
-  }
-
-  private def _getMasterName(s : String) : String = {
-    s.split("\\.").toList match {
-      case name :: lang :: tl => (name :: tl).mkString(".")
-      case _ => s
-    }
-  }
-}
-
-//COmmon OMDoc functionality that is not specific to the sTeX importer
-object OMDoc {
-
-  def getDefaultSRef(s : String, dpath : DPath) : SourceRef = {
-    val from = SourcePosition(-1, 1, 1)
-    val lines = s.split(System.lineSeparator)
-    val to = SourcePosition(-1, lines.length, lines.last.length)
-    val sreg = SourceRegion(from,to)
-    SourceRef(dpath.uri, sreg)
-  }
-
-  def parseSourceRef(n : scala.xml.Node,dpath : DPath)(implicit errorCont : ErrorHandler) : Option[SourceRef] = {
-    val attrs = n.attributes.asAttrMap
-    if (attrs.contains("stex:srcref")) { //try to parse the source ref
-      try {
-        val srcrefS = n.attributes.asAttrMap("stex:srcref")
-        val trangeIdx = srcrefS.indexOf("#textrange") + "#textrange".length
-        val trangeS = srcrefS.substring(trangeIdx)
-        val fromto = trangeS.split(",").toList
-        fromto match { //(from=4;1,to=12;16)
-          case fromS :: toS :: Nil =>
-           val frangeIdx = fromS.indexOf("from=") + "from=".length
-           val frangeS = fromS.substring(frangeIdx)
-           val fvalsS = frangeS.split(";").toList
-           val (fl, fr) = fvalsS match {
-             case lS :: rS :: Nil =>
-               val l = lS.toInt
-               val r = rS.toInt
-               (l,r)
-             case _ => throw new STeXParseError("Invalid 'from' value in STeX source reference" , Some(s"srcref value is `$srcrefS`"), None, None)
-           }
-           val trangeS = toS.substring("to=".length, toS.length - 1) //removing "to=" and ending bracket
-           val tvalsS = trangeS.split(";").toList
-           val (tl, tr) = tvalsS match {
-             case lS :: rS :: Nil =>
-               val l = lS.toInt
-               val r = rS.toInt
-               (l,r)
-             case _ => throw new STeXParseError("Invalid 'to' value in STeX source reference " , Some(s"srcref value is `$srcrefS`"), None, None)
-           }
-
-           val from = SourcePosition(-1, fl, fr)
-          val to = SourcePosition(-1, tl, tr)
-          val sreg = SourceRegion(from,to)
-          Some(SourceRef(dpath.uri, sreg))
-          case _ => throw new STeXParseError("Invalid STeX source reference " , Some(s"srcref value is `$srcrefS`"), None, None)
-        }
-      } catch {
-        case e : STeXParseError => //reporting and returning none
-          errorCont(e)
-          None
-        case e : Exception => //producing parse error and returning none
-          val err = STeXParseError.from(e, "Failed to parse SourceRef for <" + n.label + " " + n.attributes.toString + ">", None, None, Some(Level.Warning))
-          errorCont(err)
-          None
+    val tp = new {
+      val sym = meta_path ? "seqtype"
+      def apply(tp : Term) = OMA(OMS(sym),List(tp))
+      def unapply(tm : Term) = tm match {
+        case OMA(OMS(`sym`),List(tp)) => Some(tp)
+        case _ => None
       }
-    } else { //no srcref attr so returning none and producing an Info type error if actual node elem
-      if (n.isInstanceOf[Elem]) {
-        val err = new STeXParseError("No stex:srcref attribute for <" + n.label + " " + n.attributes.toString + ">", None, None, Some(Level.Info))
-        errorCont(err)
-      }
-      None
     }
   }
 
-   def parseNarrativeObject(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath,
-                                                         mpath : MPath,
-                                                         errorCont : ErrorHandler,
-                                                         resolveSPath : (Option[String], Option[String], String, MPath, SourceRef) => GlobalName) : Option[Term]= {
-    val sref = parseSourceRef(n, dpath).getOrElse(tsref)
-    n.child.find(_.label == "CMP").map(_.child) match {
-      case Some(nodes) =>
-        val narrNode = <div class="CMP"> {nodes} </div> //effectively treating CMP as a narrative div
-        val cmp =  translateCMP(rewriteCMP(narrNode, sref), sref)(dpath, mpath, errorCont)
-        Some(cmp)
-      case None =>
-        val err = new STeXParseError("No CMP in narrative object " + n.label, None, Some(sref), Some(Level.Warning))
-        errorCont(err)
+  val seqmap = new {
+    val sym = meta_path ? "seqmap"
+    def apply(seq : Term,v : LocalName,f : Term) = SOMB(OMS(sym),STerm(seq),SCtx(Context(VarDecl(v))),STerm(f))
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`sym`),List(STerm(seq),SCtx(Context(v)),STerm(f))) =>
+        Some((seq,v.name,v.tp,f))
+      case _ => None
+    }
+  }
+
+  val seqprepend = new {
+    val sym = meta_path ? "seqprepend"
+    def apply(a : Term,seq : Term) = OMA(OMS(`sym`),List(a,seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(a,seq)) =>
+        Some((a,seq))
+      case _ => None
+    }
+  }
+
+  val seqappend = new {
+    val sym = meta_path ? "seqappend"
+    def apply(seq : Term,a : Term) = OMA(OMS(`sym`),List(seq,a))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq,a)) =>
+        Some((seq,a))
+      case _ => None
+    }
+  }
+
+  import info.kwarc.mmt.api.objects.Conversions._
+
+  val seqfoldleft = new {
+    val sym = meta_path ? "seqfoldleft"
+    def apply(init:Term,seq : Term,v1 : LocalName, tp1: Term,v2:LocalName, tp2 : Term,f : Term) = SOMB(OMS(sym),STerm(init),STerm(seq),SCtx(Context(v1 % tp1)),SCtx(v2 % tp2),STerm(f))
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`sym`),List(STerm(init),STerm(seq),SCtx(Context(v1)),SCtx(Context(v2)),STerm(f))) =>
+        Some((seq,init,v1.name,v1.tp,v2.name,v2.tp,f))
+      case _ => None
+    }
+  }
+
+  val seqfoldright = new {
+    val sym = meta_path ? "seqfoldright"
+    def apply(init:Term,seq : Term,v1 : LocalName, tp1: Term,v2:LocalName, tp2 : Term,f : Term) = SOMB(OMS(sym),STerm(init),STerm(seq),SCtx(Context(v1 % tp1)),SCtx(v2 % tp2),STerm(f))
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`sym`),List(STerm(init),STerm(seq),SCtx(Context(v1)),SCtx(Context(v2)),STerm(f))) =>
+        Some((seq,init,v1.name,v1.tp,v2.name,v2.tp,f))
+      case _ => None
+    }
+  }
+
+  val seqhead = new {
+    val sym = meta_path ? "seqhead"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  val seqtail = new {
+    val sym = meta_path ? "seqtail"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  val seqlast = new {
+    val sym = meta_path ? "seqlast"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  val seqinit = new {
+    val sym = meta_path ? "seqinit"
+    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(seq)) =>
+        Some(seq)
+      case _ => None
+    }
+  }
+
+  import SOMBArg._
+
+  val binder = new {
+    val path = meta_path ? "bind"
+    def apply(ctx : Context,body : Term) = SOMB(OMS(path),ctx,body)
+    def apply(ln : LocalName,tp : Option[Term],body : Term) = SOMB(OMS(path),Context(tp match {
+      case Some(t) => OMV(ln) % t
+      case None => VarDecl(ln)
+    }),body)
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`path`),List(SCtx(Context(vd, rest @_*)),STerm(bd))) =>
+        if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
+      case _ => None
+    }
+  }
+  val implicit_binder = new {
+    val path = meta_path ? "implicitbind"
+    def apply(ctx : Context,body : Term) = SOMB(OMS(path),ctx,body)
+    def apply(ln : LocalName,tp : Option[Term],body : Term) = SOMB(OMS(path),Context(tp match {
+      case Some(t) => OMV(ln) % t
+      case None => VarDecl(ln)
+    }),body)
+    def unapply(tm : Term) = tm match {
+      case SOMB(OMS(`path`),List(SCtx(Context(vd, rest @_*)),STerm(bd))) =>
+        if (rest.isEmpty) Some(vd.name,vd.tp,bd) else Some(vd.name,vd.tp,apply(Context(rest:_*),bd))
+      case _ => None
+    }
+  }
+
+  val symboldoc = new {
+    val tp = mmtmeta_path ? "symboldoc"
+    val sym = mmtmeta_path ? "symboldocfor"
+    def apply(symbol : List[ContentPath],lang : String,doc : HTMLNode) = {
+      OMA(OMS(sym),StringLiterals(lang) :: OMFOREIGN(doc.node) :: symbol.map(s => StringLiterals(s.toString))) // OMFOREIGN
+    }
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),StringLiterals(lang) :: OMFOREIGN(n) :: ls) =>
+        Some((ls.map(StringLiterals.unapply(_).get),lang,n))
+      case _ =>
         None
     }
   }
 
-  def rewriteCMP(node : scala.xml.Node, tsref : SourceRef)(implicit mpath : MPath,
-                                                 errorCont : ErrorHandler,
-                                                 resolveSPath : (Option[String], Option[String], String, MPath, SourceRef) => GlobalName) : scala.xml.Node = node.label match {
-    case "OMS" if (xml.attr(node, "cd") == "OMPres") =>
-      <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.name.toPath} name={Narration.path.name.toPath}/>
-    case "OMS" =>
-
-      val baseO =  xml.attr(node, "base") match {
-        case "" => None
-        case s => Some(s)
-      }
-
-      val cdO =  xml.attr(node, "cd") match {
-        case "" => None
-        case s => Some(s)
-      }
-      val name = xml.attr(node, "name")
-      val sym = resolveSPath(baseO, cdO, name, mpath, tsref)
-      <om:OMS base={sym.module.parent.toPath} module={sym.module.name.last.toPath} name={sym.name.last.toPath}/>
-    //case "OME" => <om:OMV name="error"/> //TODO this was a temporary hack for OEIS
-    case "OME" => //OME(args) -> OMA(Informal.error -> args)
-      val pre = OMS(Informal.constant("error")).toNode
-      val newChild = node.child.map(n => rewriteCMP(n, tsref))
-      new Elem(node.prefix, "OMA", node.attributes, node.scope, false, (pre +: newChild) : _*)
-    case "OMR" =>
-      val baseO =  xml.attr(node, "base") match {
-        case "" => None
-        case s => Some(s)
-      }
-      val xref = xml.attr(node, "xref")
-      val sym = resolveSPath(baseO, Some(xref), xref, mpath, tsref)
-      <om:OMS base={sym.module.parent.toPath} module={sym.module.name.last.toPath} name={sym.name.last.toPath}/>
-    case "#PCDATA" => new scala.xml.Text(node.toString)
-    case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(n => rewriteCMP(n, tsref)) :_*)
-  }
-
-  private def getChildren(node : scala.xml.Node, pos : List[Int] = Nil)(implicit hasProp : scala.xml.Node => Boolean) : Seq[(Node, List[Int])] = {
-    if (hasProp(node)) {
-     List((node, pos.reverse))
-    } else {
-      node.child.zipWithIndex.flatMap(p => getChildren(p._1, p._2 :: pos)).toSeq
+  val judgmentholds = new {
+    val sym = meta_path ? "judgmentholds"
+    def apply(tm : Term) = OMA(OMS(sym),List(tm))
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(t)) => Some(t)
+      case _ => None
     }
   }
 
-  def translateCMP(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath, mpath : MPath, errorCont : ErrorHandler) : Term = {
-    val sref = parseSourceRef(n, dpath)
-    n.label match {
-      case "#PCDATA" =>
-        FlexiformalXML(scala.xml.Text(n.toString))
-      case "OMOBJ" =>
-        FlexiformalTerm(Obj.parseTerm(n, NamespaceMap(dpath)))
-      case _ => //informal (narrative) term
-        val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1, tsref), p._2))
-        FlexiformalNode(n, terms.toList)
-    }
-  }
+  val meta_macro = mmtmeta_path ? "macroname"
+  val meta_language = mmtmeta_path ? "language"
+  val meta_arity = mmtmeta_path ? "arity"
+  val meta_assoctype = mmtmeta_path ? "assoctype"
+  val meta_reorder = mmtmeta_path ? "reorder"
+
+  val meta_quantification = mmtmeta_path ? "quantification"
+  val meta_qforall = mmtmeta_path ? "universal"
+  val meta_qexists = mmtmeta_path ? "existential"
+
+  val meta_doctitle = mmtmeta_path ? "doctitle"
 }

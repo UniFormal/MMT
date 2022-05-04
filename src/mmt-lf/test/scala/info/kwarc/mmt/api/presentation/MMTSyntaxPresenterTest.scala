@@ -32,7 +32,7 @@ object MMTSyntaxPresenterTest extends MMTUnitTest {
 
   private def richAnnotatedConstantTest()(implicit ctrl: Controller, presenter: MMTSyntaxPresenter): Unit = {
     val (thy, otherThy, c) = MMTSyntaxPresenterTestFixtures.createRichAnnotatedConstantTest()
-    val str = presenter.presentToString(c)
+    val str = presenter.asString(c)
 
     log("Testing presentation of constant with type, definiens, metadata, and much more:")
     logGroup {
@@ -54,7 +54,7 @@ object MMTSyntaxPresenterTest extends MMTUnitTest {
 
   private def structureTest()(implicit ctrl: Controller, presenter: MMTSyntaxPresenter): Unit = {
     val (innerThy, outerThy) = MMTSyntaxPresenterTestFixtures.createStructureTest()
-    val str = presenter.presentToString(outerThy)
+    val str = presenter.asString(outerThy)
 
     log("Testing presentation of structures and metadata referring to constants within those structures in form of meta keys and meta values:")
     logGroup {
@@ -73,7 +73,7 @@ object MMTSyntaxPresenterTest extends MMTUnitTest {
     val doc :: _ = MMTSyntaxPresenterTestFixtures.createAllLevelMetaTest()
     log("Testing presentation of meta data across all levels (documents, modules, declarations):")
     logGroup {
-      log(presenter.presentToString(doc))
+      log(presenter.asString(doc))
     }
   }
 }

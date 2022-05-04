@@ -46,8 +46,12 @@ class LFSym(name: String) {
   */
 object Lambda extends LFSym("lambda") {
   def apply(name: LocalName, tp: Term, body: Term) = OMBIND(this.term, OMV(name) % tp, body)
-
   def apply(con: Context, body: Term) = OMBIND(this.term, con, body)
+
+  /**
+    * Behaves like [[apply(con, body)]] but returns `body` if `con` is empty.
+    */
+  def applyOrBody(con: Context, body: Term): Term = if (con.isEmpty) body else apply(con, body)
 
   def unapply(t: Term): Option[(LocalName, Term, Term)] = t match {
     case OMBIND(OMS(this.path), Context(VarDecl(n, None, Some(a), None, _), rest@_*), s) =>
@@ -151,19 +155,61 @@ object ApplySpine {
     * Like [[apply]] but forces a fully curried representation.
     * If in doubt, rather use [[apply]].
     */
-  def applyFullyCurried(f: Term, a: List[Term]): Term = a match {
+  def applyFullyCurried(f: Term, a: List[Term]): Term = (a: @unchecked) match { // Scala cannot determine that this match is exhaustive
     case Nil => throw ImplementationError("ApplySpine.applyFullyCurried called with no arguments")
     case arg :: Nil => OMA(Apply.term, List(f, arg))
     case args :+ arg => OMA(Apply.term, List(applyFullyCurried(f, args), arg))
   }
 
   /**
-    * Applies an LF function `f` to a (possibly empty) sequence of arguments `a`.
-    *
-    * In case of no arguments, `f` itself is returned.
-    * Otherwise, the behavior equals [[apply()]].
+    * Generalized apply/unapply functions from [[ApplySpine]] that also produce/match nullary application.
     */
-  def applyOrSymbol(f: Term, a: Term*): Term = if (a.isEmpty) f else apply(f, a : _*)
+  object orSymbol {
+    /**
+      * Applies an LF function `f` to a (possibly empty) sequence of arguments `a`.
+      *
+      * In case of no arguments, `f` itself is returned.
+      * Otherwise, the behavior equals [[ApplySpine.apply()]].
+      *
+      * @example Suppose you are writing code that synthesizes MMT terms at runtime. For example,
+      *          you might create constants (with path p) representing n-ary functions on-the-fly where n >= 0
+      *          is an integer.
+      *          Later on, you might decide to apply those functions to `arguments: List[Term]` that are synthesized,
+      *          too. Now, `arguments.size == n` should hold.
+      *          In case of `n == 0`, you want to output `OMS(p)`, in case of `n > 0`, you want to output
+      *          `ApplySpine(OMS(p), args : _*)`.
+      *          You can use this function to unify those cases:
+      *          {{{
+      *            ApplySpine.orSymbol(OMS(p), args : _ *)
+      *          }}}
+      */
+    def apply(f: Term, a: Term*): Term = if (a.isEmpty) f else ApplySpine(f, a : _*)
+
+    /**
+      * Matches `ApplySpine(f, args)` if possible and returns `(f, args)`, otherwise
+      * returns `(t, Nil)`.
+      *
+      * In particular, this function always matches! Beware of how you use it.
+      *
+      * @example Suppose you wanted to rewrite every reference of `p x y z`, where `p` stands for an [[OMS]]
+      *          of a [[GlobalName]] and `x`, `y`, `z` are arbitrary [[Term]]s.
+      *          E.g. the constant referenced by `p` had three parameters to begin with and you decided
+      *          to drop the first one. This would entail finding every pattern of `p x y z` and dropping
+      *          `x`.
+      *          But in terms you may also find the patterns `p`, `p x`, `p x y`.
+      *          To match all of those and `p x y z` uniformly, use this unapply function:
+      *
+      *          {{{
+      *            t match {
+      *              case ApplySymbol.orSymbol(OMS(`p`), args) => ???
+      *            }
+      *          }}}
+      */
+    def unapply(t: Term): Option[(Term, List[Term])] = t match {
+      case ApplySpine(f, args) => Some(f, args)
+      case t => Some(t, Nil)
+    }
+  }
 }
 
 /**

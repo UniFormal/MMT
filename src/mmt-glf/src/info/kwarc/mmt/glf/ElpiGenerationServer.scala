@@ -3,20 +3,30 @@ package info.kwarc.mmt.glf
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude, RuleConstant, Structure}
 import info.kwarc.mmt.api.{DPath, MPath}
-import info.kwarc.mmt.api.utils.{JSONArray, JSONBoolean, JSONObject, JSONString, URI}
+import info.kwarc.mmt.api.utils.{JSONArray, JSONBoolean, JSONInt, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lf.RuleMatcher
 import info.kwarc.mmt.lf.elpi._
+
+/*
+  Future TODO: Remove protocol version 1.
+  This should only be done when the GLIF reimplementation is well-established
+  and the original implementation has been retired.
+ */
 
 class ElpiGenerationServer extends ServerExtension("glif-elpigen") {
   override def start(args: List[String]): Unit = {
     super.start(args)
   }
 
-  private def errorResponse(message: String): ServerResponse = {
-    ServerResponse.JsonResponse(
-      JSONArray(JSONString(message))
-    )
+  private def errorResponse(message: String, version: Int): ServerResponse = {
+    if (version == 1)
+      ServerResponse.JsonResponse(JSONArray(JSONString(message)))
+    else
+      ServerResponse.JsonResponse(JSONObject(
+        ("isSuccessful", JSONBoolean(false)),
+        ("errors", JSONArray(JSONString(message))),
+      ))
   }
 
   def apply(request: ServerRequest): ServerResponse = {
@@ -24,6 +34,7 @@ class ElpiGenerationServer extends ServerExtension("glif-elpigen") {
     var mode : String = "types"
     var followMeta : Boolean = false
     var followIncludes : Boolean = true
+    var version : Int = 1
     request.body.asJSON match {
       case JSONObject(map) =>
         for (entry <- map) {
@@ -32,6 +43,7 @@ class ElpiGenerationServer extends ServerExtension("glif-elpigen") {
             case (JSONString("mode"), JSONString(value)) => mode = value
             case (JSONString("follow-meta"), JSONBoolean(value)) => followMeta = value
             case (JSONString("follow-includes"), JSONBoolean(value)) => followIncludes = value
+            case (JSONString("version"), JSONInt(value)) => version = value.toInt
             case (key, _) => throw ServerError("Invalid JSON: can't handle entry '" + key.toFormattedString("") + "'")
           }
         }
@@ -40,11 +52,11 @@ class ElpiGenerationServer extends ServerExtension("glif-elpigen") {
 
     val theory = theoryPath.map(controller.getO(_) match {
       case Some(t: Theory) => controller.simplifier.apply(t); t
-      case None => return errorResponse("Could not find theory " + theoryPath)
-      case _ => return errorResponse(theoryPath + " does not appear to be a theory")
+      case None => return errorResponse("Could not find theory " + theoryPath, version)
+      case _ => return errorResponse(theoryPath.toString + " does not appear to be a theory", version)
     })
 
-    if (theory.isEmpty) return errorResponse("No theory specified")
+    if (theory.isEmpty) return errorResponse("No theory specified", version)
 
     lazy val lup = controller.globalLookup
     lazy val ruleMatcher = new RuleMatcher(lup, List("Judgment", "TabMarker", "TabClosed"))
@@ -64,7 +76,14 @@ class ElpiGenerationServer extends ServerExtension("glif-elpigen") {
       case _ => throw ServerError("Unkown mode '" + mode + "'")
     }
     val p = translateTheory(theory.get, ctx)
-    ServerResponse.JsonResponse(JSONString(ELPI.Program(p:_*).toELPI))
+    if (version == 1)
+      ServerResponse.JsonResponse(JSONString(ELPI.Program(p:_*).toELPI))
+    else
+      ServerResponse.JsonResponse(JSONObject(
+        ("isSuccessful", JSONBoolean(true)),
+        ("result", JSONString(ELPI.Program(p:_*).toELPI)),
+        ("errors", JSONArray()),
+      ))
   }
 
   private def translateTheory(thy: Theory, ctx:ElpiGenCtx): List[ELPI.Decl] = {

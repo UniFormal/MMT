@@ -5,6 +5,9 @@ import scala.xml._
 import scala.io.Source
 
 object xml {
+   /* xml header followed by a newline */
+   val header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+
    def openTag(label: String, atts: List[(String,String)], close: Boolean = false) = {
       val attsS = atts.map(a => " " + a._1 + "=\"" + Utility.escape(a._2) + "\"").mkString("")
       "<" + label + attsS + (if (close) "/" else "") + ">"
@@ -207,6 +210,9 @@ object xml {
          case "xhtml" => "http://www.w3.org/1999/xhtml"
          case "html" => "http://www.w3.org/1999/xhtml"
          case "mathml" => "http://www.w3.org/1998/Math/MathML"
+         case "mws" => "http://search.mathweb.org/ns"
+         case "jobad" => "http://www.mathhub.info/jobad" // TODO: Not sure which one this is!
+         case _ => throw new Exception("Unknown XML Namespace " + ns)
       }
    }
 }

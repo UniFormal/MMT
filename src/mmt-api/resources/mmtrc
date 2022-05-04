@@ -13,19 +13,15 @@ thygraph    info.kwarc.mmt.api.ontology.TheoryGraphExporter
 decltree    info.kwarc.mmt.api.ontology.DeclarationTreeExporter
 index       info.kwarc.mmt.api.archives.OMDocImporter
 pvs-omdoc   info.kwarc.mmt.pvs.Plugin
-diagram     info.kwarc.mmt.api.modules.Diagram
+diagram     info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 
-sms        info.kwarc.mmt.stex.SmsGenerator
-tex-deps   info.kwarc.mmt.stex.DepsGenerator
-latexml    info.kwarc.mmt.stex.LaTeXML
 pdflatex   info.kwarc.mmt.stex.PdfLatex
 tikzsvg    info.kwarc.mmt.stex.TikzSvg
-stex-omdoc info.kwarc.mmt.stex.STeXImporter
 alltex     info.kwarc.mmt.stex.AllTeX
 allpdf     info.kwarc.mmt.stex.AllPdf
-localpaths info.kwarc.mmt.stex.LocalPaths
-
-dummy     info.kwarc.mmt.api.archives.DummyBuildTarget
+stex-xhtml info.kwarc.mmt.stex.LaTeXToHTML
+xhtml-omdoc info.kwarc.mmt.stex.HTMLToOMDoc
+stex-omdoc info.kwarc.mmt.stex.STeXToOMDoc
 
 mmttex     info.kwarc.mmt.latex.MMTTeX
 

@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.web
 
 import java.net.{URLDecoder, URLEncoder}
-
 import info.kwarc.mmt.api.{ParseError, utils}
 import info.kwarc.mmt.api.utils.JSON
 
+import scala.collection.immutable
 import scala.collection.immutable.TreeMap
 import scala.xml.Node
 
@@ -75,7 +75,7 @@ case class Session(id: String)
 /** the body of an HTTP request
   *
   */
-class Body(octets: Option[Array[Byte]]) {
+class Body(octets: Option[Array[Byte]], val params : immutable.Map[String,String] = immutable.Map.empty) {
   /** returns the body of a request as a string */
   def asString: String = {
     val bodyArray: Array[Byte] = octets.getOrElse(throw ServerError("no body found"))

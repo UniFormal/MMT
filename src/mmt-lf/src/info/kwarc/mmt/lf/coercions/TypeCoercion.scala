@@ -3,14 +3,35 @@ package info.kwarc.mmt.lf.coercions
 import info.kwarc.mmt.api._
 import objects._
 import checking._
-import info.kwarc.mmt.api.utils.MMT_TODO
-import objects.Conversions._
 import info.kwarc.mmt.lf._
 
 /** the typical case where lift(A) = Apply(operator, A) */  
 class LFTypeCoercionRule(h: GlobalName, u: List[GlobalName], operator: GlobalName) extends TypeCoercionRule(h,u) {
   def apply(tp: Term, tm: Term) = Some(Apply(OMS(operator), tm))
 }
+
+/** the typical case
+  * set: type
+  * in: set --> set --> prop
+  * Elem: set --> type
+  * elem: {A: set}{a:set} ded a in A --> Elem A
+  */
+/** UNFINISHED
+class LiftedSoftType(set: GlobalName, ded: GlobalName, in: GlobalName, Elem: GlobalName, elem: GlobalName, val under: List[GlobalName]) extends TypingRule(Elem) with ApplicableUnder {
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) = {
+     solver.inferTypeAndThen(tm, true)(stack, history) {tmI =>
+       if (tmI == OMS(set)) {
+         val
+         solver.addUnknowns(???, None)
+         solver.check(Typing())
+
+       } else {
+         throw TypingRule.SwitchToInference
+       }
+     }
+   }
+}
+*/
 
 /* old attempt, never used
 

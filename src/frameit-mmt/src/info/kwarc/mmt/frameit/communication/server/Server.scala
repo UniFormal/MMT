@@ -1,13 +1,13 @@
 package info.kwarc.mmt.frameit.communication.server
 
 import java.net.InetSocketAddress
-
 import com.twitter.finagle.Http
 import com.twitter.server.TwitterServer
 import com.twitter.util.Await
+import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.utils.{File, FilePath}
-import info.kwarc.mmt.api.{GetError, InvalidElement, LocalName, Path}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.{SituationSpace, SituationTheory, StandardContentValidator}
 
@@ -69,36 +69,32 @@ object Server extends TwitterServer {
   def initServerState(archiveRoot: File): ServerState = {
     implicit val ctrl: Controller = new Controller()
     ctrl.report.addHandler(ConsoleHandler)
+    ctrl.handleLine(s"log+ ${ServerState.logPrefix}")
 
     ctrl.handleLine(s"mathpath archive ${archiveRoot}")
     val frameitArchive = ctrl.backend.getArchive(FrameWorld.archiveID).getOrElse {
-      throw GetError(s"Archive ${FrameWorld.archiveID} could not be found!")
+      throw ArchiveError(FrameWorld.archiveID, "archive could not be found")
     }
 
-    // force-read relational data as somewhere (TODO say where) we use the depstore
-    // to get meta tags on things
+    // force-read relational data as [[info.kwarc.mmt.frameit.business.datastructures.Scroll]] uses
+    // the depstore
     frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
+    // increase performance by prefetching archive content? ctrl.backend.getArchives.foreach(_.allContent)
 
-    val situationTheory: SituationTheory = if (debug()) {
-      new SituationTheory(FrameWorld.debugSituationTheory)
-    } else {
-      new SituationTheory(FrameWorld.defaultSituationTheory)
-    }
-    println(s"Using situation space+theory: $situationTheory")
-
-    val state = new ServerState(situationTheory, new StandardContentValidator)
+    val situationTheory = if (debug()) Some(new SituationTheory(FrameWorld.debugSituationTheory)) else None
+    val state = new ServerState(new StandardContentValidator, situationTheory)
 
     //println(state.contentValidator.checkTheory(ctrl.getTheory(Path.parseM("http://mathhub.info/FrameIT/frameworld/integrationtests?SituationSpace"))))
     //sys.exit(0)
 
-    (if (debug()) state.contentValidator.checkTheory(situationTheory.spaceTheory) else Nil) match {
+    (if (debug()) state.check() else Nil) match {
       case Nil =>
         println("Situation space successfully set-up and typechecked (the latter only in release mode).")
         state
 
       case errors =>
         errors.foreach(System.err.println)
-        throw InvalidElement(situationTheory.spaceTheory, "Situation space does not typecheck, see stderr output for errors.")
+        throw InvalidElement(state.situationSpace, "Initial situation space does not typecheck, see stderr output for errors.")
     }
   }
 }

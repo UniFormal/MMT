@@ -36,7 +36,7 @@ abstract class ROArchive extends Storage with Logger {
   * @param properties a key value map
   * @param report the reporting mechanism
   */
-class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ScalaCode with ZipArchive {
+class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ZipArchive {
 
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
@@ -117,6 +117,10 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     val TraverseMode(filter, filterDir, parallel) = mode
     def recurse(n: String): List[A] =
       traverse(dim, in / n, mode, sendLog)(onFile, onDir).toList
+
+    lazy val reg = properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
+    // if (reg.exists(_.matches("/" + inPath.toString))
+    def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (this / source).relativize(f).toString))
     val inFile = this / dim / in
     val inFileName = inFile.getName
     if (inFile.isDirectory) {
@@ -128,13 +132,15 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
-    } else if (filter(inFileName) && filterDir(inFile.up.getName))
+    } else if (filter(inFileName) && regfilter(inFile) && filterDir(inFile.up.getName)) {
       if (!forClean && !inFile.existsCompressed) {
-        if (sendLog) log("file does not exist: " + inFile)
-        None
+        throw ArchiveError(id, "file does not exist: " + inFile)
       } else
         Some(onFile(Current(inFile, in)))
-    else None
+    } else {
+      log("not an included file or directory: " + in)
+      None
+    }
   }
 
   /** Returns (#Theories,#Constants)**/
@@ -261,7 +267,9 @@ object Archive {
       }
       val scheme = hd.substring(0, p)
       val schemeAuthority = hd.substring(p + 2) match {
-        case "NONE" => URI(Some(scheme), None, Nil, true) // for absent authority, path may be relative, but we don't want that
+        // "NONE" only used in archives built with versions before devel 2022-03
+        case "-" | "NONE" => URI(Some(scheme), None, Nil, true) // for absent authority, path may be relative, but we don't want that
+        case "EMPTY" => URI(Some(scheme), Some(""))
         case s => URI(scheme, s)
       }
       DPath(schemeAuthority / tl.init) ? escaper.unapply(fileNameNoExt)
@@ -286,8 +294,13 @@ object Archive {
     // TODO: Use narrationBase instead of "NONE"?
     val uri = m.parent.uri
     val schemeString = uri.scheme.fold("")(_ + "..")
+    val authString = uri.authority match {
+      case Some("") => "EMPTY" // empty authority is rarer than absent authority, so gets awkward case
+      case Some(s) => s
+      case None => "-" // can't use empty string because paths ending in . are badly supported
+    }
     FilePath(
-      (schemeString + uri.authority.getOrElse("NONE")) :: uri.path :::
+      (schemeString + authString) :: uri.path :::
         List(escaper.apply(m.name.toPath) + ".omdoc"))
   }
 

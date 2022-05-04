@@ -1,7 +1,7 @@
 package info.kwarc.mmt.lf
 
 import info.kwarc.mmt.api.{DPath, LocalName}
-import info.kwarc.mmt.api.objects.{OMLIT, Term}
+import info.kwarc.mmt.api.objects.{OMLIT, Term, UnknownOMLIT}
 import info.kwarc.mmt.api.uom.{RealizedType, StandardString, TheoryScala}
 import info.kwarc.mmt.api.utils.URI
 
@@ -18,8 +18,13 @@ object Strings extends TheoryScala {
     *
     * @todo Ask Florian where this should go. Ideally either in mmt-lf or into the archive MMT/urtheories
     */
-  def unapply(term: Term): Option[String] = term match {
+  def unapply(t: Term): Option[String] = t match {
     case OMLIT(str: String, RealizedType(string.term, StandardString)) => Some(str)
+    // Literals in surface syntax are parsed as UnknownOMLITs (see docs of that class)
+    // and persisted as those into OMDoc.
+    // Thus, when reading directly from OMDoc (in contrast to reading from memory after
+    // typechecking or mmt-omdoc building), we will face this case.
+    case UnknownOMLIT(str, string.term) => Some(str)
     case _ => None
   }
 }

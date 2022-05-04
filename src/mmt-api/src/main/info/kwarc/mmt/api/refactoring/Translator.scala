@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser.ParseResult
-import info.kwarc.mmt.api.symbols.{Constant, Structure, UniformTranslator}
+import info.kwarc.mmt.api.symbols.{Constant, Structure}
 import info.kwarc.mmt.api.uom.RealizedType
 
 import scala.collection.mutable
@@ -61,7 +61,7 @@ case class SymbolApplication(s: GlobalName, app: Application) extends Applicatio
 abstract class AcrossLibraryTranslation extends UniformTranslator {
   def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) : Boolean
   def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) : Term
-  def apply(context: Context, tm: Term) : Term = tm
+  def applyPlain(context: Context, tm: Term) : Term = tm
 }
 
 object AlignmentTranslation {
