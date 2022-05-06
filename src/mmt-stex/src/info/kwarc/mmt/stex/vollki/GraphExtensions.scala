@@ -141,8 +141,11 @@ object FullsTeXGraph extends ServerExtension("vollki") {
   trait sTeXNode {
     val id : String
     def selectTopo : List[sTeXNode]
-    def topologicalSort : List[sTeXNode] = {
-      (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
+    private var _top : Option[List[sTeXNode]] = None
+    def topologicalSort : List[sTeXNode] = _top.getOrElse {
+      val ret = (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
+      _top = Some(ret)
+      ret
     }
     private def getDocumentDefinitely(language : String) = getDocument(language) match {
       case Some(d) => Some(d)

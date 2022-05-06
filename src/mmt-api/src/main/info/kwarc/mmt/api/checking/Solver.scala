@@ -995,17 +995,17 @@ object Solver {
          Right(solver)
   }
   /** infers the type of a term that is known to be well-formed */
-  def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet]): Option[Term] = {
+  def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet],unknowns:Context = Context.empty): Option[Term] = {
       val rules = rulesOpt.getOrElse {
          RuleSet.collectRules(controller, context)
       }
       implicit val stack = Stack(Context.empty)
       implicit val history = new History(Nil)
-      val cu = CheckingUnit(None, context, Context.empty, null) // awkward but works because we do not call applyMain
+      val cu = CheckingUnit(None, context, unknowns, null) // awkward but works because we do not call applyMain
       val solver = new Solver(controller, cu, rules)
       val tpOpt = solver.inferType(tm, true)
       val tpSOpt = tpOpt map {t => solver.simplify(t)}
-      tpSOpt // map {tp => solver.simplify(tp)}
+      tpSOpt//.map(t => solver.substituteSolution(t)) // map {tp => solver.simplify(tp)}
   }
 
   /** checks a term without unknowns against a type, returns the solver if not successful */

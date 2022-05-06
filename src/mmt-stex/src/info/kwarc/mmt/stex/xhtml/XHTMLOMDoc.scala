@@ -666,11 +666,12 @@ case class HTMLSymbol(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with H
           OMDocHTML.setReorder(c,reorders)
           sourceref.foreach(s => SourceRef.update(c,s))
           state.controller.add(c)
-          th match {
+          state.check(c)
+          /*th match {
             case _:HTMLTheory =>
               state.check(c)
             case _ =>
-          }
+          }*/
           assoctype match {
             case "" =>
             case "binr" | "bin" =>
@@ -801,8 +802,24 @@ case class HTMLCopyModule(orig : HTMLParser.HTMLNode,istotal:Boolean) extends OM
       assignments.foreach {
         case (p,alias,df) =>
           val c = Constant(struct.toTerm,ComplexStep(p.module) / p.name,alias.toList,None,df,None)
+          df match {
+            case Some(OMS(p)) =>
+              state.controller.getO(p) match {
+                case Some(d) => d.metadata.getAll.foreach(c.metadata.update)
+                case _ =>
+                  print("")
+              }
+            case Some(o) =>
+              println(o)
+            case None =>
+          }
+          state.controller.getO(p) match {
+            case Some(d) => d.metadata.getAll.foreach(c.metadata.update)
+            case _ =>
+              print("")
+          }
           state.controller.add(c)
-          //state.check(c)
+          state.check(c)
       }
       state.controller.endAdd(struct)
       state.check(struct)

@@ -203,16 +203,16 @@ object AssocBinRModComp extends ComputationRule(Getfield.path) {
           if (OMDocHTML.getAssoctype(c).contains("binr") || OMDocHTML.getAssoctype(c).contains("bin")) {
             args match {
               case IsSeq(Nil, ls, Nil) =>
-                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("x"))._1
-                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("y"))._1
+                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrightx"))._1
+                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrighty"))._1
                 val tp = check.inferType(ls) match {
                   case Some(STeX.flatseq.tp(t)) => t
                   case _ => return Simplifiability.NoRecurse
                 }
                 Simplify(STeX.seqfoldright(STeX.seqlast(ls), STeX.seqinit(ls), x, tp, y, tp, OMA(Getfield(mod, field), List(OMV(x), OMV(y)))))
               case IsSeq(Nil, ls, rest) =>
-                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("x"))._1
-                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("y"))._1
+                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrightx"))._1
+                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrighty"))._1
                 val tp = check.inferType(ls) match {
                   case Some(STeX.flatseq.tp(t)) => t
                   case _ => return Simplifiability.NoRecurse
@@ -233,16 +233,16 @@ object AssocBinR extends ParametricRule {
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
       case OMA(OMS(`head`),args) => args match {
         case IsSeq(Nil,ls,Nil) =>
-          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("x"))._1
-          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("y"))._1
+          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrightx"))._1
+          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrighty"))._1
           val tp = check.inferType(ls) match {
             case Some(STeX.flatseq.tp(t)) => t
             case _ => return Simplifiability.NoRecurse
           }
           Simplify(STeX.seqfoldright(STeX.seqlast(ls),STeX.seqinit(ls),x,tp,y,tp,OMA(OMS(head),List(OMV(x),OMV(y)))))
         case IsSeq(Nil,ls,rest) =>
-          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("x"))._1
-          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("y"))._1
+          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrightx"))._1
+          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrighty"))._1
           val tp = check.inferType(ls) match {
             case Some(STeX.flatseq.tp(t)) => t
             case _ => return Simplifiability.NoRecurse

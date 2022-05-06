@@ -197,9 +197,9 @@ object HTMLParser {
         error("???")
       }
       val elem = _parent.get
+      elem.onAddI
       _parent = elem._parent
       _namespace = _parent.map(_.namespace).getOrElse("")
-      elem.onAddI
       elem
     }
 

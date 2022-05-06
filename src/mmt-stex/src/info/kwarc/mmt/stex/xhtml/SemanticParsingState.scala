@@ -1,12 +1,12 @@
 package info.kwarc.mmt.stex.xhtml
 
-import info.kwarc.mmt.api.{DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
-import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, Solver}
+import info.kwarc.mmt.api.{ComplexStep, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.ParseResult
-import info.kwarc.mmt.api.symbols.{Constant, RuleConstantInterpreter}
-import info.kwarc.mmt.stex.rules.{BindingRule, Getfield, HTMLTermRule, ModelsOf, RecType}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter}
+import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType}
 import info.kwarc.mmt.stex.{SCtx, SOMB, SOMBArg, STeX, STeXError, STerm}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
 
@@ -100,46 +100,156 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
       var unknowns: List[LocalName] = Nil
     }
     val traverser = new Traverser[(NameSet,Boolean)] {
-      def reorder(tm: OMA): OMA = {
-        val head = tm match {
-          case OMA(OMS(p),_) => p
-          case OMA(OMV(_),_) => return tm
-          case OMA(Getfield(t,f),_) => getOriginal(t,f).map(_.path).getOrElse{ return tm}
+
+      object IsSeq {
+        def apply(tm : Term) = tm match {
+          case STeX.flatseq(_) => true
+          case OMV(_) if tm.metadata.get(STeX.flatseq.sym).nonEmpty => true
+          case _ => false
         }
-        controller.getO(head) match {
+        def unapply(tms : List[Term]) = {
+          val i = tms.indexWhere(apply)
+          if (i == -1) None else {
+            Some(tms.take(i),tms(i),tms.drop(i+1))
+          }
+        }
+      }
+
+      def getRuleHead(tm : Term) : Option[GlobalName] = tm match {
+        case OMS(p) => p.name match {
+          case LocalName(_ :: ComplexStep(ip) :: n) =>
+            getRuleHead(OMS(ip?n))
+          case _ => controller.getO(p) match {
+            case Some(d:Declaration) if d.path != p => getRuleHead(OMS(d.path))
+            case _ => Some(p)
+          }
+        }
+        case OMV(_) => None
+        case Getfield(t,f) => getOriginal(t,f).flatMap(c => getRuleHead(c.toTerm))
+        case _ => None
+      }
+
+      def reorder(tm: OMA)(implicit cont:Context, names: (NameSet,Boolean)): Term = {
+        val OMA(f,args) = tm
+        getRuleHead(f).flatMap(controller.getO) match {
           case Some(c: Constant) =>
             val reordered = OMDocHTML.getReorder(c) match {
-              case Nil => tm.args
-              case ls => ls.map(tm.args(_)) //OMA(tm.fun, ls.map(tm.args(_)))
+              case Nil => args
+              case ls => ls.map(args(_)) //OMA(tm.fun, ls.map(tm.args(_)))
             }
-            tm.copy(args=reordered)
+            OMDocHTML.getAssoctype(c) match {
+              case Some("conj") =>
+                reordered match {
+                  case IsSeq(pre, STeX.flatseq(a :: b :: Nil), Nil) =>
+                    val ret = OMA(f, pre ::: List(a, b))
+                    ret.copyFrom(tm)
+                    ret
+                  case IsSeq(pre, STeX.flatseq(a :: Nil), List(b)) =>
+                    val ret = OMA(f, pre ::: List(a, b))
+                    ret.copyFrom(tm)
+                    ret
+                  case IsSeq(pre,STeX.flatseq(ls),Nil) if ls.length > 2 =>
+                    getRules.get(classOf[ConjunctionRule]).toList match {
+                      case ConjunctionRule(p) :: _ =>
+                        val ret = ls.init.init.foldRight(OMA(f,pre ::: List(ls.init.last,ls.last)))((t,r) =>
+                          OMA(OMS(p),List(r,OMA(f,pre ::: List(t,ls.last))))
+                        )
+                        ret.copyFrom(tm)
+                        ret
+                      case _ =>
+                        val ret = tm.copy(args=reordered)
+                        ret.copyFrom(tm)
+                        ret
+                    }
+                  case IsSeq(pre,STeX.flatseq(ls),List(b)) if ls.length > 2 =>
+                    getRules.get(classOf[ConjunctionRule]).toList match {
+                      case ConjunctionRule(p) :: _ =>
+                        val ret = ls.init.foldRight(OMA(f,pre ::: List(ls.last,b)))((t,r) =>
+                          OMA(OMS(p),List(r,OMA(f,pre ::: List(t,b))))
+                        )
+                        ret.copyFrom(tm)
+                        ret
+                      case _ =>
+                        val ret = tm.copy(args=reordered)
+                        ret.copyFrom(tm)
+                        ret
+                    }
+                  case _ =>
+                    // TODO
+                    val ret = tm.copy(args=reordered)
+                    ret.copyFrom(tm)
+                    ret
+                }
+              case Some("bin"|"binr") =>
+                reordered match {
+                  case IsSeq(Nil,OMV(v),rest) =>
+                    val fcont = getVariableContext ::: cont
+                    val x = Context.pickFresh(fcont, LocalName("foldrightx"))._1
+                    val y = Context.pickFresh(fcont, LocalName("foldrighty"))._1
+                    val tp = fcont.findLast(_.name == v) match {
+                      case Some(v) if v.tp.isDefined =>
+                        v.tp match {
+                          case Some(STeX.flatseq.tp(t)) => t
+                          case _ =>
+                            val vn = getUnknownTp
+                            names._1.unknowns = names._1.unknowns ::: vn :: Nil
+                            makeUnknown(vn)
+                        }
+                      case _ =>
+                        val vn = getUnknownTp
+                        names._1.unknowns = names._1.unknowns ::: vn :: Nil
+                        makeUnknown(vn)
+                    }
+                    val nf = traverse(f)
+                    val ret = if (rest.isEmpty) STeX.seqfoldright(STeX.seqlast(OMV(v)), STeX.seqinit(OMV(v)), x, tp, y, tp, OMA(nf, List(OMV(x), OMV(y))))
+                    else STeX.seqfoldright(OMA(nf,STeX.seqlast(OMV(v)) :: rest), STeX.seqinit(OMV(v)), x, tp, y, tp, OMA(nf, List(OMV(x), OMV(y))))
+                    ret.copyFrom(tm)
+                    ret
+                  case IsSeq(Nil,STeX.flatseq(tms),Nil)  if tms.length >= 2 =>
+                    val ret = tms.init.init.foldRight(OMA(f,List(tms.init.last,tms.last)))((a,r) => OMA(f,List(a,r)))
+                    ret.copyFrom(tm)
+                    ret
+                  case IsSeq(Nil,STeX.flatseq(tms),rest)  if tms.nonEmpty =>
+                    val ret = if (rest.isEmpty) tms.init.init.foldRight(OMA(f,List(tms.last,tms.init.last)))((a,r) => OMA(f,List(a,r)))
+                    else tms.init.foldRight(OMA(f,tms.last :: rest))((a,r) => OMA(f,List(a,r)))
+                    ret.copyFrom(tm)
+                    ret
+                  case _ =>
+                    val ret = tm.copy(args=reordered)
+                    ret.copyFrom(tm)
+                    ret
+                }
+              case _ =>
+                val ret = tm.copy(args=reordered)
+                ret.copyFrom(tm)
+                ret
+            }
           case _ => tm
         }
       }
 
-      def reorder(tm: OMBINDC): OMBINDC = tm match {
-        case SOMB(f@OMS(p), args) =>
-          controller.getO(p).collect {
-            case c: Constant =>
-              val reordered = OMDocHTML.getReorder(c) match {
-                case Nil => args
-                case ls => ls.map(args(_))
-              }
-              (OMDocHTML.getAssoctype(c),reordered) match {
-                case (None,_) => return SOMB(f, reordered :_*)
-                case (Some("pre"),SCtx(ctx) :: rest) if ctx.nonEmpty =>
-                  val ret = ctx.variables.init.foldRight(SOMB(f,SCtx(Context(ctx.variables.last)) :: rest :_*))((vd,t) =>
-                    SOMB(f,SCtx(Context(vd)),t)
-                  )
-                  ret.copyFrom(tm)
-                  return ret
-                case (Some(s),_) =>
-                  println(s)
-                  ???
-              }
-          }
-          tm
-        case _ => tm
+      def reorder(tm: OMBINDC): OMBINDC = {
+        val (f,args) = SOMB.unapply(tm).getOrElse { return tm}
+        getRuleHead(f).flatMap(controller.getO) match {
+          case Some(c : Constant) =>
+            val reordered = OMDocHTML.getReorder(c) match {
+              case Nil => args
+              case ls => ls.map(args(_))
+            }
+            OMDocHTML.getAssoctype(c) match {
+              case None => SOMB(f,reordered :_*)
+              case Some("pre") =>
+                reordered match {
+                  case SCtx(ctx) :: rest if ctx.nonEmpty =>
+                    val ret = ctx.variables.init.foldRight(SOMB(f,SCtx(Context(ctx.variables.last)) :: rest :_*))((vd,t) =>
+                      SOMB(f,SCtx(Context(vd)),t)
+                    )
+                    ret.copyFrom(tm)
+                    ret
+                }
+            }
+          case _ => tm
+        }
       }
 
       def getArgs(tp: Term): List[LocalName] = tp match {
@@ -172,8 +282,9 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
       def getOriginal(tm : Term, fieldname : LocalName) : Option[Constant] = tm match {
         case OMV(n) => getVariableContext.findLast(_.name == n).flatMap { vd =>
           vd.tp match {
-            case Some(ModelsOf(mod@OMPMOD(_,_))) =>
-              Try(controller.library.get(mod,fieldname)).toOption match {
+            case Some(ModelsOf(OMPMOD(mp,as))) =>
+              ModuleType(mp,as,controller.library).getOrig(fieldname)(controller.library,new History(Nil)) match {
+              //Try(controller.library.get(mod,fieldname)).toOption match {
                 case Some(c : Constant) => Some(c)
                 case _ => None
               }
@@ -183,8 +294,9 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
         case OMS(p) => controller.getO(p).flatMap {
           case c : Constant =>
             c.tp match {
-              case Some(ModelsOf(mod@OMPMOD(_,_))) =>
-                Try(controller.library.get(mod,fieldname)).toOption match {
+              case Some(ModelsOf(OMPMOD(mp,as))) =>
+                ModuleType(mp,as,controller.library).getOrig(fieldname)(controller.library,new History(Nil)) match {
+                  //Try(controller.library.get(mod,fieldname)).toOption match {
                   case Some(c : Constant) => Some(c)
                   case _ => None
                 }
@@ -225,32 +337,55 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
               case _ => t
             }
           } else t
-        case OMS(p) if names._2 =>
-          getTerm(p) match {
+        case OMS(p) =>
+          val nt = controller.getO(p) match {
+            case Some(d : Declaration) =>
+              val r = OMS(d.path)
+              r.copyFrom(t)
+              r
+            case _ => t
+          }
+          if (names._2) getTerm(p) match {
             case Some(tm) => getArgs(tm) match {
-              case Nil => t
+              case Nil => nt
               case ls =>
                 names._1.unknowns = names._1.unknowns ::: ls
-                OMA(t,ls.map(makeUnknown))
+                OMA(nt,ls.map(makeUnknown))
             }
-            case None => t
-          }
+            case None => nt
+          } else nt
         case o: OMA =>
-          val OMA(f, args) = reorder(o)
-          val ret = (f match {
-            case OMV(n) => getTerm(n)
-            case OMS(p) => getTerm(p)
-            case Getfield(t,f) => getOriginal(t,f).flatMap(c => getTerm(c.path))
-            case _ => ???
-          }) match {
-            case Some(tm) =>
-              val ls = getArgs(tm)
-              names._1.unknowns = names._1.unknowns ::: ls
-              OMA(traverse(f)(con,(names._1,false)), ls.map(makeUnknown) ::: args.map(traverse))
-            case None => OMA(traverse(f)(con,(names._1,false)), args.map(traverse))
+          val t = reorder(o)
+          t match {
+            case OMA(f, args) =>
+              val ret = (f match {
+                case OMV(n) => getTerm(n)
+                case OMS(p) => getTerm(p)
+                case Getfield(t, f) => getOriginal(t, f).flatMap(c => getTerm(c.path))
+                case _ => ???
+              }) match {
+                case Some(tm) =>
+                  val ls = getArgs(tm)
+                  names._1.unknowns = names._1.unknowns ::: ls
+                  OMA(traverse(f)(con, (names._1, false)), ls.map(makeUnknown) ::: args.map(traverse))
+                case None => OMA(traverse(f)(con, (names._1, false)), args.map(traverse))
+              }
+              ret.copyFrom(o)
+              ret
+            case SOMB(f, args) =>
+              (f match {
+                case OMV(n) => getTerm(n)
+                case OMS(p) => getTerm(p)
+                case Getfield(t,f) => getOriginal(t,f).flatMap(c => getTerm(c.path))
+                case _ => ???
+              }) match {
+                case Some(tm) =>
+                  val ls = getArgs(tm)
+                  names._1.unknowns = names._1.unknowns ::: ls
+                  SOMB(traverse(f)(con,(names._1,false)), ls.map(n => STerm(makeUnknown(n))) ::: recurse(args): _*)
+                case None => SOMB(traverse(f)(con,(names._1,false)), recurse(args): _*)
+              }
           }
-          ret.copyFrom(o)
-          ret
         case b@OMBINDC(_, _, _) =>
           val ret = reorder(b) match {
             case SOMB(f, args) =>

@@ -43,8 +43,16 @@ object MathStructureRule extends RuleSet {
     RecTypeCongruence,
     RecExpCongruence,
     CanonicalSolution,
-    RecSubtype
+    RecSubtype,
+    ModTypeInhabitable
   )
+}
+
+object ModTypeInhabitable extends InhabitableRule(ModelsOf.sym) {
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+    case ModelsOf(OMPMOD(_,_)) => Some(true)
+    case _ => None
+  }
 }
 
 
@@ -870,6 +878,8 @@ abstract class Merged(children_ : => List[RecordBodyLike]) extends RecordBodyLik
 
 trait RecordTypeLike extends RecordBodyLike {
 
+  def getOrig(name:LocalName)(implicit lookup : Lookup,history: History) : Option[Declaration] = None
+
   private val _defs : mutable.HashMap[(Term,LocalName),Option[Term]] = mutable.HashMap.empty
   private val _tps : mutable.HashMap[(Term,LocalName),Option[Term]] = mutable.HashMap.empty
   private var tpcycle : Option[(Term,LocalName)] = None
@@ -918,6 +928,11 @@ trait RecordTypeLike extends RecordBodyLike {
 case class RecordError(s : String) extends Throwable
 
 class MergedType(children_ : => List[RecordBodyLike]) extends Merged(children_) with RecordTypeLike {
+  override def getOrig(name: LocalName)(implicit lookup : Lookup,history: History): Option[Declaration] =
+    MyList(children).mapFind {
+      case rtl : RecordTypeLike => rtl.getOrig(name)
+      case r => throw RecordError("Merge of non-type records in record type " + r.asTerm)
+    }
 
   override def getDefiniensForTerm(name: LocalName, cont: LocalName => Option[Term],projectioncase : Term => Option[LocalName])(implicit lookup : Lookup,history: History): Option[Term] = {
     MyList(children).mapFind {
@@ -937,8 +952,9 @@ class MergedType(children_ : => List[RecordBodyLike]) extends Merged(children_) 
 }
 
 trait RecordExpressionLike extends RecordBodyLike {
-  private val _defs :mutable.HashMap[LocalName,Option[Term]] = mutable.HashMap.empty
-  private var dfcycle : Option[LocalName] = None
+  private val _defs: mutable.HashMap[LocalName, Option[Term]] = mutable.HashMap.empty
+  private var dfcycle: Option[LocalName] = None
+
   def getDefiniens(name: LocalName)(implicit lookup : Lookup,history:History):Option[Term] =
     _defs.getOrElseUpdate(name,{
       if (dfcycle contains name) {
@@ -1142,6 +1158,13 @@ class SimpleModule(val theory : Theory, args : List[Term], _names : => List[Glob
   private lazy val localNames = _names.map(ModuleType.makepath(_,getD))
   override def asTerm: Term = ModelsOf(OMPMOD(theory.path,args))
   override def names : List[LocalName] = localNames.map(gn => ModuleType.makeName(gn.name))
+
+  override def getOrig(name: LocalName)(implicit lookup: Lookup, history: History): Option[Declaration] = {
+    Try(lookup.getO(OMPMOD(theory.path,args),name)).toOption.flatten match {
+      case Some(c : Constant) => Some(c)
+      case _ => None
+    }
+  }
 
   override def prfields(projectioncase : Term => Option[LocalName]): List[OML] = localNames.map(gn => {
     val n = ModuleType.makepath(gn,getD)

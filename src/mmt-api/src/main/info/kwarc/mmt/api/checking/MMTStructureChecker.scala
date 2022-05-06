@@ -327,14 +327,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 (pr.unknown, t, false)
               case None =>
                 // try to guess the type of d by inferring without checking
-                val dIO = Solver.infer(controller, context ++ pr.unknown ++ pr.free, pr.term, Some(env.rules))
+                val dIO = Solver.infer(controller, context ++ pr.free ++ pr.unknown, pr.term, Some(env.rules))//,pr.unknown)
                 dIO match {
                   // we can only use the inferred type if no extra variables are left in it
-                  case Some(dI) if dI.freeVars.forall(x => context.isDeclared(x))  =>
+                  case Some(dI) if dI.freeVars.forall(x => (context++pr.unknown).isDeclared(x))  =>
                     // dI was computed by trusting d, so we need to check it as well; also this call sets c.tp
-                    checkInhabitable(ParseResult(Context.empty,Context.empty, dI))
-                    (pr.unknown, dI, false)
-                  case None =>
+                    //checkInhabitable(ParseResult(pr.unknown.filter(v => dI.freeVars.contains(v.name)),pr.free, dI))
+                    (pr.unknown ++ VarDecl(tpVar,None,None,Some(dI),None), dI, true)
+                  case _ =>
                     (pr.unknown ++ VarDecl(tpVar, None, None, None, None), OMV(tpVar), true)
                 }
             }

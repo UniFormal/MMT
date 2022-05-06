@@ -777,7 +777,7 @@ trait SolverAlgorithms {self: Solver =>
      if (checkingUnit.isKilled) {
        return tm
      }
-     history += "trying to simplify " + presentObj(tm) 
+     history += "trying to simplify " + presentObj(tm)
      val tmS = tm match {
        case OMS(p) =>
          val d = getDef(p)
