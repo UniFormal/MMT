@@ -41,11 +41,21 @@ abstract class Escaping {
 
   /** the escape used for characters outside the legal range that are not otherwise escaped */
   def defaultEscape(c: Char) = c.toInt.formatted("%4h").replace(" ", "0")
+  /** pulls an escaped character from the beginning of a string and returns that char and the number of characters consumed */
+  def defaultUnescape(s: String) : Option[(Char,Int)] = {
+    try {
+      val hex = s.substring(0,4)
+      val char = Integer.parseInt(hex,16).toChar
+      Some((char,5))
+    } catch {
+      case _: Exception => None
+    }
+  }
 
   /** characters that are escaped because of an escape rule */
   protected lazy val escapedChars = usePlainEscapeVal ::: useCustomEscapeVal.map(_._1)
 
-  /** check invariant that guarantees invertibility of escaping */
+  /** check invariant that guarantees invertibility of escaping (not guaranteed if the default functions are overridden) */
   def check {
     useCustomEscapeVal foreach {case (c,s) =>
       if (s == "")
@@ -91,18 +101,14 @@ abstract class Escaping {
                 if (usePlainEscapeVal contains second)
                   (second,2)
                 else {
-                  try {
-                     val hex = rest.substring(0,4)
-                   val char = Integer.parseInt(hex, 16).toChar
-                   (char, 5)
-                  } catch {case _: Exception =>
-                    throw Error("illegal escape: " + escaped)
+                  defaultUnescape(rest).getOrElse {
+                    throw Error("illegal escape: " + rest)
                   }
                 }
             }
         }
-         unescaped += next
-       escaped = escaped.substring(length)
+        unescaped += next
+        escaped = escaped.substring(length)
       }
       unescaped
   }
