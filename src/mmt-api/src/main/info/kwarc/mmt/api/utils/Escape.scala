@@ -39,6 +39,9 @@ abstract class Escaping {
   def useCustomEscape: List[(Char,String)] = List('\n' -> "n", '\t' -> "t")
   private lazy val useCustomEscapeVal = useCustomEscape
 
+  /** the escape used for characters outside the legal range that are not otherwise escaped */
+  def defaultEscape(c: Char) = c.toInt.formatted("%4h").replace(" ", "0")
+
   /** characters that are escaped because of an escape rule */
   protected lazy val escapedChars = usePlainEscapeVal ::: useCustomEscapeVal.map(_._1)
 
@@ -63,9 +66,7 @@ abstract class Escaping {
        val e = if (usePlainEscapeVal contains c)
          c.toString
        else
-         useCustomEscapeVal.find(_._1 == c).map(_._2).getOrElse {
-            c.toInt.formatted("%4h").replace(" ", "0")
-         }
+         useCustomEscapeVal.find(_._1 == c).map(_._2).getOrElse {defaultEscape(c)}
        escapeChar + e
      }
   }
@@ -131,6 +132,7 @@ object XMLEscaping extends Escaping {
   override def useCustomEscape = List(
     '>' -> "gt;", '<' -> "lt;", '"' -> "quot;", '&' -> "amp;"//, '\'' -> "#39;"
   )
+  override def defaultEscape(c: Char) = c.toString
 }
 
 /** escapes a string using the %-escapes for URLs */
