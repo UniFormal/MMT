@@ -95,7 +95,8 @@ object RecordsGeneral {
   def makeRecBody(checker: CheckingCallback, tm: Term)(implicit stack: Stack, history: History) = {
     implicit val lookup : Lookup = checker.lookup
     def unappl(t : Term) : Option[RecordBodyLike] = t match {
-      case RecordBodyLike(bd) => Some(bd)
+      case RecordBodyLike(bd) =>
+        Some(bd)
       case RecMerge(stp) =>
         val nstp = stp map {it =>
           checker.safeSimplifyUntil(it)(unappl)._1
@@ -709,6 +710,7 @@ object RecType extends SimpleRecordLike("rectp") {
     // case OMBINDC(this.term, Context(VarDecl(n, None, None, None, _), rest@_*), OMLList(fs)) if rest.isEmpty => Some(RecordBody(Some(n), fs,isType))
     case _ => None
   }
+  def make(fs : OML*) = OMA(this.term,fs.toList)
 }
 
 object RecExp extends SimpleRecordLike("recexpr") {

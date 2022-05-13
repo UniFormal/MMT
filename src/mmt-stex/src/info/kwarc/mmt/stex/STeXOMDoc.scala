@@ -2,9 +2,15 @@ package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.objects.{Context, OMA, OMBINDC, OMS, OMV, Obj, Term}
 
-sealed class SOMBArg
-case class STerm(tm : Term) extends SOMBArg
-case class SCtx(ctx : Context) extends SOMBArg
+sealed abstract class SOMBArg {
+  def obj:Obj
+}
+case class STerm(tm : Term) extends SOMBArg {
+  val obj = tm
+}
+case class SCtx(ctx : Context) extends SOMBArg {
+  val obj = ctx
+}
 
 object SOMBArg {
   implicit def toSOMB(ctx: Context) = SCtx(ctx)

@@ -12,9 +12,10 @@
     display:block;
     z-index:100;
     transition: opacity 0.2s ease-in-out;
+    background-color: white;
 }
 .stexoverlaycontainer {
-    display: inline;
+    /*display: inline;*/
     pointer-events: auto;
     cursor: pointer;
 }

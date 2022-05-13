@@ -44,7 +44,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
 
-   private def doNameAsSpanList(p: Path, n: LocalName) {
+   protected def doNameAsSpanList(p: Path, n: LocalName) {
      val l = n.length - 1
      n.zipWithIndex.foreach {case (step,i) =>
        step match {
@@ -57,7 +57,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
      }
    }
 
-   private def doName(d: Declaration) {
+   protected def doName(d: Declaration) {
       val (name,_) = d.primaryNameAndAliases
       val (adaptedName, path) = name match {
          case LocalName(ComplexStep(t)::Nil) => (t.name, t) // hardcoding the important case of includes
@@ -68,7 +68,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
    /** renders a MMT URI outside a math object */
-   private def doPath(p: Path) {
+   protected def doPath(p: Path) {
       span("mmturi", attributes=List(href -> p.toPath)) {
          val pS = p match {
             case d: DPath => d.last
@@ -79,14 +79,14 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          text {pS}
       }
    }
-   private def doMath(t: Obj, owner: Option[CPath]) {
+   protected def doMath(t: Obj, owner: Option[CPath]) {
         objectLevel(t match {
           case tm : Term => ParseResult.fromTerm(tm).term
           case o => o
         }, owner)(rh)
    }
 
-   private object cssClasses {
+   protected object cssClasses {
       def compRow(c: ComponentKey) = {
          "component-" + c.toString.toLowerCase
       }
@@ -143,6 +143,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       div(basicCss + generatedCss, attributes = List(toggleTarget -> "generated")) {
          div("constant-header") {
            span {text({d match {
+             case Include(d) if d.total => "realization"
              case Include(_) => "include"
              case _ => d.feature
            }} + " ")}
@@ -247,11 +248,11 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
 
-   private def doComponent(cpath: CPath, t: Obj) {
+   protected def doComponent(cpath: CPath, t: Obj) {
       td {span(compLabel) {text(cpath.component.toString)}}
       td {doMath(t, Some(cpath))}
    }
-   private def doNotComponent(cpath: CPath, tn: TextNotation) {
+   protected def doNotComponent(cpath: CPath, tn: TextNotation) {
       td {span(compLabel) {text(cpath.component.toString)}}
       td {span {
          val firstVar = tn.arity.firstVarNumberIfAny

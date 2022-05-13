@@ -7,9 +7,9 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Conversions.localName2OMV
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardString}
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardNat, StandardString}
 import info.kwarc.mmt.stex.xhtml.{OMDocHTML, SemanticState}
-import info.kwarc.mmt.stex.{SCtx, SOMB, STeX, rules}
+import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMB, STeX, rules}
 
 object Rules {
   import info.kwarc.mmt.api.objects.Conversions._
@@ -78,6 +78,7 @@ trait UsesPatterns extends SingleTermBasedCheckingRule {
 }
 
 object StringLiterals extends RepresentedRealizedType(OMS(STeX.string),StandardString)
+object NatLiterals extends RepresentedRealizedType(OMS(STeX.nat),StandardNat)
 
 trait BindingRule extends Rule {
   def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
@@ -90,7 +91,7 @@ object InformalBindingRule extends BindingRule {
         val v = state.markAsUnknown(OMV(state.getUnknownTp))
         VarDecl(x,tp=v)
       }
-      vd.metadata.update(STeX.meta_notation,tm)
+      //vd.metadata.update(STeX.meta_notation,tm)
       Some(Context(vd))
     case _ => None
   }
@@ -169,7 +170,7 @@ object NotationRules extends RuleSet {
     override def applicable(t: Term): Boolean = NInhabitableRule.applicable(t)
 
     override def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = (tm,tp) match {
-      case (STeX.notation(_,_,_),STeX.notation.tp(_,_)) => Some(true)
+      case (STeX.notation(_,_,_,_),STeX.notation.tp(_,_)) => Some(true)
       case _ => None
     }
   }

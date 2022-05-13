@@ -1,16 +1,135 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.checking.History
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.metadata.HasMetaData
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardDouble, StandardInt, StandardNat, StandardPositive, StandardRat, StandardString}
 import info.kwarc.mmt.api.utils.{URI, XMLEscaping}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX
 import info.kwarc.mmt.sequences.Sequences
-import info.kwarc.mmt.stex.rules.StringLiterals
-import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
+import info.kwarc.mmt.stex.Extensions.NotationExtractor
+import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, StringLiterals}
+import info.kwarc.mmt.stex.xhtml.HTMLParser
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 
 import scala.xml._
 import objects._
+
+
+object OMDocHTML {
+
+  def getNotations(s : GlobalName)(implicit controller:Controller) = {
+    val ret = controller.depstore.queryList(s,-NotationExtractor.notation)
+    ret.flatMap(controller.getO).collect {
+      case c : Constant if c.tp.exists(t => STeX.notation.tp.unapply(t).exists(_._1 == s)) =>
+        c.df.flatMap(STeX.notation.unapply).map(t => (c.parent,t._1,t._2,t._3,t._4))
+    }.flatten
+  }
+
+  def getRuleInfo(tm : Term)(implicit controller:Controller,context:Context) : Option[(List[Int],Option[String],String)] = tm match {
+    case OMS(p) => p.name match {
+      case LocalName(_ :: ComplexStep(ip) :: n) =>
+        getRuleInfo(OMS(ip?n))
+      case LocalName(s :: rest) if rest.nonEmpty =>
+        controller.getO(p.module ? s) match {
+          case Some(s : Structure) => s.tp match {
+            case Some(OMPMOD(mod,_)) =>
+              getRuleInfo(OMS(mod ? rest))
+            case _ => controller.getO(p) match {
+              case Some(d:Declaration) if d.path != p => getRuleInfo(OMS(d.path))
+              case Some(d) => Some((OMDocHTML.getReorder(d),OMDocHTML.getAssoctype(d),OMDocHTML.getArity(d).getOrElse("")))
+            }
+          }
+          case _ => controller.getO(p) match {
+            case Some(d:Declaration) if d.path != p => getRuleInfo(OMS(d.path))
+            case Some(d) => Some((OMDocHTML.getReorder(d),OMDocHTML.getAssoctype(d),OMDocHTML.getArity(d).getOrElse("")))
+          }
+        }
+      case _ => controller.getO(p) match {
+        case Some(d:Declaration) if d.path != p => getRuleInfo(OMS(d.path))
+        case Some(d) => Some((OMDocHTML.getReorder(d),OMDocHTML.getAssoctype(d),OMDocHTML.getArity(d).getOrElse("")))
+      }
+    }
+    case OMV(n) =>
+      val vd = context.findLast(_.name == n)
+      vd.map(v => (OMDocHTML.getReorder(v),OMDocHTML.getAssoctype(v),OMDocHTML.getArity(v).getOrElse("")))
+    case Getfield(t,f) => getOriginal(t,f).flatMap(c => getRuleInfo(c.toTerm))
+    case _ => None
+  }
+
+  def getOriginal(tm : Term, fieldname : LocalName)(implicit controller:Controller,context:Context) : Option[Constant] = tm match {
+    case OMV(n) => context.findLast(_.name == n).flatMap { vd =>
+      vd.tp match {
+        case Some(ModelsOf(OMPMOD(mp,as))) =>
+          ModuleType(mp,as,controller.library).getOrig(fieldname)(controller.library,new History(Nil)) match {
+            //Try(controller.library.get(mod,fieldname)).toOption match {
+            case Some(c : Constant) => Some(c)
+            case _ => None
+          }
+        case _ => None
+      }
+    }
+    case OMS(p) => controller.getO(p).flatMap {
+      case c : Constant =>
+        c.tp match {
+          case Some(ModelsOf(OMPMOD(mp,as))) =>
+            ModuleType(mp,as,controller.library).getOrig(fieldname)(controller.library,new History(Nil)) match {
+              //Try(controller.library.get(mod,fieldname)).toOption match {
+              case Some(c : Constant) => Some(c)
+              case _ => None
+            }
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+
+  def setMacroName(se : HasMetaData, s : String) = if (s != "") {
+    se.metadata.update(STeX.meta_macro,StringLiterals(s))
+  }
+
+  def getMacroName(se : HasMetaData) = se.metadata.getValues(STeX.meta_macro).collectFirst {
+    case StringLiterals(mn) => mn
+  }
+
+  def setAssoctype(se : HasMetaData, s : String) =  if (s != "") se.metadata.update(STeX.meta_assoctype,StringLiterals(s))
+  def getAssoctype(se : HasMetaData) =  se.metadata.getValues(STeX.meta_assoctype).collectFirst {
+    case StringLiterals(at) => at
+  }
+  def setReorder(se : HasMetaData,s : String) = if (s != "") se.metadata.update(STeX.meta_reorder,StringLiterals(s))
+  def getReorder(se : HasMetaData) =  se.metadata.getValues(STeX.meta_reorder).collectFirst {
+    case StringLiterals(at) => at.split(',').map(_.toInt - 1).toList
+  }.getOrElse(Nil)
+
+  def setArity(se : HasMetaData,s : String) = if (s != "") se.metadata.update(STeX.meta_arity,StringLiterals(s))
+  def getArity(se : HasMetaData) =  se.metadata.getValues(STeX.meta_arity).collectFirst {
+    case StringLiterals(at) => at
+  }
+
+  def getNotations(se : StructuralElement,controller : Controller) = {
+    val server = controller.extman.get(classOf[STeXServer]).head
+    controller.depstore.queryList(se.path,NotationExtractor.notation).map(controller.getO).map {
+      case Some(c : Constant) =>
+        val arity = c.tp match {
+          case Some(STeX.notation.tp(_,a)) => a
+          case _ =>
+            print("")
+            ???
+        }
+        val (fragment,prec,node,op) = c.df match {
+          case Some(STeX.notation(n,p,f,o)) => (f,p,n,o)
+          case _ =>
+            print("")
+            ???
+        }
+        (fragment,prec,arity,HTMLParser(node.toString())(new ParsingState(controller,server.extensions.flatMap(_.rules))),
+          op.map(n => HTMLParser(n.toString())(new ParsingState(controller,server.extensions.flatMap(_.rules)))))
+    }
+  }
+}
 
 object STeX {
   val meta_dpath = DPath(URI.http colon "mathhub.info") / "sTeX" / "meta"
@@ -18,6 +137,7 @@ object STeX {
   val mmtmeta_path = meta_dpath ? "MMTMeta"
 
   val string = mmtmeta_path ? "stringliteral"
+  val nat = mmtmeta_path ? "natliteral"
 
   val meta_notation = mmtmeta_path ? "notation"
 
@@ -33,12 +153,19 @@ object STeX {
         case _ => None
       }
     }
-    def apply(node : Node, prec : String, frag : String) = {
-      OMA(OMS(meta_notation),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node)))
+    def apply(node : Node, prec : String, frag : String,op:Option[Node]) = {
+      op match {
+        case Some(op) =>
+          OMA(OMS(meta_notation),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node),OMFOREIGN(op)))
+        case None =>
+          OMA(OMS(meta_notation),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node)))
+      }
     }
     def unapply(tm : Term) = tm match {
       case OMA(OMS(`meta_notation`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node))) =>
-        Some((node,prec,frag))
+        Some((node,prec,frag,None))
+      case OMA(OMS(`meta_notation`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node),OMFOREIGN(op))) =>
+        Some((node,prec,frag,Some(op)))
       case _ => None
     }
   }

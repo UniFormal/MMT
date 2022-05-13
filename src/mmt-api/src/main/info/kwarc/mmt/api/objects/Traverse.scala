@@ -43,8 +43,8 @@ abstract class Traverser[A] {
    def traverseContext(cont: Context)(implicit con : Context, state : State): Context = {
       cont.mapVarDecls {case (before, vd) =>
          val curentContext = con ++ before
-         vd map {t => traverse(t)(curentContext, state)}
-      }
+        (vd map {t => traverse(t)(curentContext, state)}).from(vd)
+      }.from(cont)
    }
 
    /** traverses any object by mapping all the terms in it */
@@ -98,7 +98,7 @@ object Traverser {
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
          c.mapVarDecls {case (before, vd) =>
             val curentContext = con ++ before
-            vd.map(t => rec(t)(curentContext, state))
+            vd.map(t => rec(t)(curentContext, state)).from(vd)
          }
       t match {
         case OMA(f, args) =>

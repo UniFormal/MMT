@@ -46,9 +46,16 @@ span {
 a {
     color: inherit;
     text-decoration: inherit;
+    display: inline-block;
+    pointer-events: all;
 }
 .raise {
     position: relative;
+    display: inline-block;
+}
+.moveright {
+    position: relative;
+    display: inline-block;
 }
 .paragraph {
     hyphens: auto;
