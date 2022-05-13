@@ -128,9 +128,48 @@ object FileNameEscaping extends Escaping {
 object XMLEscaping extends Escaping {
   val escapeChar = '&'
   override def usePlainEscape = Nil
-  override def useCustomEscape = List(
-    '>' -> "gt;", '<' -> "lt;", '"' -> "quot;", '&' -> "amp;"//, '\'' -> "#39;"
+  override val useCustomEscape = List(
+    '>' -> "gt", '<' -> "lt", '"' -> "quot", '&' -> "amp"//, '\'' -> "#39;"
   )
+
+  override def apply(c: Char): String = {
+    if (legal(c)) c.toString
+    else {
+        val e = useCustomEscape.find(_._1 == c).map(_._2).getOrElse {
+          "#" + c.toInt.toString
+        }
+      escapeChar + e + ";"
+    }
+  }
+  override def unapply(s: String): String = {
+    var escaped = s
+    var unescaped = ""
+    while (escaped.nonEmpty) {
+      val first = escaped(0)
+      val rest = escaped.substring(1)
+      // the next character to produce, and the number of characters that were consumed
+      val (next, length): (Char,Int) = if (first != escapeChar) {
+        (first,1)
+      } else {
+        useCustomEscape.find(cs => rest.startsWith(cs._2 + ";")) match {
+          case Some((c,s)) => (c,2+s.length)
+          case None =>
+              val ind = if (rest.head == '#') 1 else 0
+              val endind = rest.indexOf(';')
+              try {
+                val int = rest.substring(ind,endind)
+                val char = Integer.parseInt(int).toChar
+                (char, endind)
+              } catch {case _: Exception =>
+                throw Error("illegal escape: " + escaped)
+              }
+        }
+      }
+      unescaped += next
+      escaped = escaped.substring(length)
+    }
+    unescaped
+  }
 }
 
 /** escapes a string using the %-escapes for URLs */
