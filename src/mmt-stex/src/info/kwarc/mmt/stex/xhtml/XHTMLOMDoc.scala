@@ -485,6 +485,14 @@ case class HTMLTheory(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with H
 
   def open : Unit = sstate.foreach { state =>
     val pth = collectAncestor {case th : HTMLTheory => th}
+    metatheory.foreach { p =>
+      state.controller.getO(p) match {
+        case None =>
+          state.missings ::= p
+          metatheory = None
+        case _ =>
+      }
+    }
     pth match {
       case Some(t) =>
         t.signature_theory.foreach {t =>
@@ -711,7 +719,7 @@ trait NotationLike extends OMDocHTML with HasArity {
 }
 
 case class HTMLNotation(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLConstant with NotationLike {
-
+  print("")
   override def onAdd: Unit = sstate.foreach { state =>
     collectAncestor {
       case t: HTMLModuleLike => t
@@ -759,12 +767,6 @@ case class HTMLVarDecl(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with 
         case t: HTMLGroupLike => t
       }.foreach { g =>
         val vd = VarDecl(LocalName(resource),None,tp.map(state.applyTerm),None,None)
-        /*if (bindtype != "") {
-          vd.metadata.update(STeX.meta_quantification,OMS(
-            if (bindtype == "forall") STeX.meta_qforall else STeX.meta_qexists
-          ))
-        }*/
-
         OMDocHTML.setArity(vd,arity)
         OMDocHTML.setAssoctype(vd,assoctype)
         OMDocHTML.setReorder(vd,reorders)
@@ -779,7 +781,65 @@ case class HTMLVarDecl(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with 
     }
   }
 }
-case class HTMLVarSeqDecl(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLVariable
+case class HTMLVarSeqDecl(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLVariable with HasMacroName with NotationLike {
+  var startidx : Option[Term] = None
+  var endidx : Option[Term] = None
+  override def onAdd: Unit = {
+    sstate.foreach { state =>
+      collectAncestor {
+        case t: HTMLGroupLike => t
+      }.foreach { g =>
+        assert(startidx.isDefined && endidx.isDefined)
+        tp = tp.map {
+          case OMV(n) => state.getVariableContext.findLast(_.name == n).flatMap(_.tp) match {
+            case Some(STeX.flatseq.tp(_)) => OMV(n)
+            case _ => STeX.flatseq.tp(OMV(n))
+          }
+          case t => STeX.flatseq.tp(t)
+        }
+        val vd = VarDecl(LocalName(resource),None,tp.map(state.applyTerm),None,None)
+        OMDocHTML.setArity(vd,arity)
+        //OMDocHTML.setAssoctype(vd,assoctype)
+        //OMDocHTML.setReorder(vd,reorders)
+        OMDocHTML.setMacroName(vd,macroname)
+        notation.foreach { not =>
+          vd.metadata.update(STeX.notation.tp.sym, STeX.notation(
+            not.node,precedence,fragment,opnotation.map(_.node)
+          ))
+        }
+        g.variables = g.variables ++ vd
+      }
+    }
+  }
+}
+case class HTMLVarSeqStart(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLVariable {
+  assert(sstate.forall(!_.in_term))
+  sstate.foreach(_.in_term = true)
+  override def onAdd = {
+    sstate.foreach(_.in_term = false)
+    collectAncestor {
+      case c : HTMLVarSeqDecl => c
+    }.foreach {p => p.startidx = findTerm.map {
+      case STeX.informal.op("mrow",List(t)) => t
+      case t => t
+    } }
+  }
+}
+
+case class HTMLVarSeqEnd(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLVariable {
+  assert(sstate.forall(!_.in_term))
+  sstate.foreach(_.in_term = true)
+  override def onAdd = {
+    sstate.foreach(_.in_term = false)
+    collectAncestor {
+      case c : HTMLVarSeqDecl => c
+    }.foreach {p => p.endidx = findTerm.map {
+      case STeX.informal.op("mrow",List(t)) => t
+      case t => t
+    } }
+  }
+}
+
 case class HTMLVarStructDecl(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLVariable with HasSimpleAssignments with HasDomain {
   override def onAdd: Unit = {
     tp = if (assignments.isEmpty) domain.map(ModelsOf(_)) else {
@@ -1240,7 +1300,7 @@ case class HTMLOMV(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTML
 
 case class HTMLOMA(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with ComplexTerm {
   override def toTerm: Term = {
-    val tm = OMA(headTerm,sortArgs.map(_._2))
+    val tm = OMDocHTML.OMAorSOMA(headTerm,sortArgs.map(_._2))
     if (fragment != "") tm.metadata.update(STeX.meta_notation,StringLiterals(fragment))
     tm
   }

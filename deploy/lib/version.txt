@@ -10,6 +10,7 @@ Scala modules:
  parallel-collections: 1.0.0
 
 xz: 1.8
+jgit: 6.1.0
 
 
 ------------

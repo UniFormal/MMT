@@ -11,7 +11,7 @@ import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX
 import info.kwarc.mmt.sequences.Sequences
 import info.kwarc.mmt.stex.Extensions.NotationExtractor
-import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, StringLiterals}
+import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, RecordError, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.HTMLParser
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 
@@ -41,16 +41,19 @@ object OMDocHTML {
             case _ => controller.getO(p) match {
               case Some(d:Declaration) if d.path != p => getRuleInfo(OMS(d.path))
               case Some(d) => Some((OMDocHTML.getReorder(d),OMDocHTML.getAssoctype(d),OMDocHTML.getArity(d).getOrElse("")))
+              case _ => None
             }
           }
           case _ => controller.getO(p) match {
             case Some(d:Declaration) if d.path != p => getRuleInfo(OMS(d.path))
             case Some(d) => Some((OMDocHTML.getReorder(d),OMDocHTML.getAssoctype(d),OMDocHTML.getArity(d).getOrElse("")))
+            case _ => None
           }
         }
       case _ => controller.getO(p) match {
         case Some(d:Declaration) if d.path != p => getRuleInfo(OMS(d.path))
         case Some(d) => Some((OMDocHTML.getReorder(d),OMDocHTML.getAssoctype(d),OMDocHTML.getArity(d).getOrElse("")))
+        case _ => None
       }
     }
     case OMV(n) =>
@@ -64,10 +67,13 @@ object OMDocHTML {
     case OMV(n) => context.findLast(_.name == n).flatMap { vd =>
       vd.tp match {
         case Some(ModelsOf(OMPMOD(mp,as))) =>
-          ModuleType(mp,as,controller.library).getOrig(fieldname)(controller.library,new History(Nil)) match {
-            //Try(controller.library.get(mod,fieldname)).toOption match {
-            case Some(c : Constant) => Some(c)
-            case _ => None
+          try {
+            ModuleType(mp, as, controller.library).getOrig(fieldname)(controller.library, new History(Nil)) match {
+              case Some(c: Constant) => Some(c)
+              case _ => None
+            }
+          } catch {
+            case RecordError(_) => None
           }
         case _ => None
       }
@@ -129,6 +135,13 @@ object OMDocHTML {
           op.map(n => HTMLParser(n.toString())(new ParsingState(controller,server.extensions.flatMap(_.rules)))))
     }
   }
+  def OMAorSOMA(f : Term,args : List[Term]) = (f,args) match {
+    case (ModelsOf.term,List(OMPMOD(m,as))) =>
+      ModelsOf(m,as:_*)
+    case (OMS(STeX.flatseq.sym),_) => STeX.flatseq(args:_*)
+    case (OMS(STeX.flatseq.tp.sym),List(tp)) => STeX.flatseq.tp(tp)
+    case _ => SOMA(f,args:_*)
+  }
 }
 
 object STeX {
@@ -137,11 +150,13 @@ object STeX {
   val mmtmeta_path = meta_dpath ? "MMTMeta"
 
   val string = mmtmeta_path ? "stringliteral"
-  val nat = mmtmeta_path ? "natliteral"
+  val nat = meta_path ? "natliteral"
 
   val meta_notation = mmtmeta_path ? "notation"
 
   val prop = meta_path ? "proposition"
+
+  val apply = meta_path ? "apply"
 
   val notation = new {
     val tp = new {
@@ -198,9 +213,9 @@ object STeX {
     }
     val tp = new {
       val sym = meta_path ? "seqtype"
-      def apply(tp : Term) = OMA(OMS(sym),List(tp))
+      def apply(tp : Term/*,lower:Term,upper:Term*/) = OMA(OMS(sym),List(tp/*,lower,upper*/))
       def unapply(tm : Term) = tm match {
-        case OMA(OMS(`sym`),List(tp)) => Some(tp)
+        case OMA(OMS(`sym`),List(tp/*,lower,upper*/)) => Some(tp)
         case _ => None
       }
     }
@@ -218,9 +233,9 @@ object STeX {
 
   val seqprepend = new {
     val sym = meta_path ? "seqprepend"
-    def apply(a : Term,seq : Term) = OMA(OMS(`sym`),List(a,seq))
+    def apply(a : Term,seq : Term) = SOMA(OMS(`sym`),a,seq)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(a,seq)) =>
+      case SOMA(OMS(`sym`),List(a,seq)) =>
         Some((a,seq))
       case _ => None
     }
@@ -228,9 +243,9 @@ object STeX {
 
   val seqappend = new {
     val sym = meta_path ? "seqappend"
-    def apply(seq : Term,a : Term) = OMA(OMS(`sym`),List(seq,a))
+    def apply(seq : Term,a : Term) = SOMA(OMS(`sym`),seq,a)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(seq,a)) =>
+      case SOMA(OMS(`sym`),List(seq,a)) =>
         Some((seq,a))
       case _ => None
     }
@@ -260,9 +275,9 @@ object STeX {
 
   val seqhead = new {
     val sym = meta_path ? "seqhead"
-    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def apply(seq : Term) = SOMA(OMS(`sym`),seq)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(seq)) =>
+      case SOMA(OMS(`sym`),seq) =>
         Some(seq)
       case _ => None
     }
@@ -270,9 +285,9 @@ object STeX {
 
   val seqtail = new {
     val sym = meta_path ? "seqtail"
-    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def apply(seq : Term) = SOMA(OMS(`sym`),seq)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(seq)) =>
+      case SOMA(OMS(`sym`),seq) =>
         Some(seq)
       case _ => None
     }
@@ -280,9 +295,9 @@ object STeX {
 
   val seqlast = new {
     val sym = meta_path ? "seqlast"
-    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def apply(seq : Term) = SOMA(OMS(`sym`),seq)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(seq)) =>
+      case SOMA(OMS(`sym`),seq) =>
         Some(seq)
       case _ => None
     }
@@ -290,9 +305,9 @@ object STeX {
 
   val seqinit = new {
     val sym = meta_path ? "seqinit"
-    def apply(seq : Term) = OMA(OMS(`sym`),List(seq))
+    def apply(seq : Term) = SOMA(OMS(`sym`),seq)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(seq)) =>
+      case SOMA(OMS(`sym`),seq) =>
         Some(seq)
       case _ => None
     }
@@ -343,9 +358,9 @@ object STeX {
 
   val judgmentholds = new {
     val sym = meta_path ? "judgmentholds"
-    def apply(tm : Term) = OMA(OMS(sym),List(tm))
+    def apply(tm : Term) = SOMA(OMS(sym),tm)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(t)) => Some(t)
+      case SOMA(OMS(`sym`),List(t)) => Some(t)
       case _ => None
     }
   }

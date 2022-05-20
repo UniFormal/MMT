@@ -2,6 +2,7 @@ package info.kwarc.mmt.stex.rules
 
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, Rule, RuleSet, utils}
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, Continue, EliminationRule, ExtendedCheckingEnvironment, ExtensionalityRule, FormationRule, History, InhabitableRule, IntroductionRule, Solver, SubtypingRule, TermHeadBasedEqualityRule, TypingRule, ValueSolutionRule}
+import info.kwarc.mmt.api.frontend.NotFound
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory}
 import info.kwarc.mmt.api.notations.{LabelArg, LabelInfo, Marker, SimpArg}
@@ -1130,9 +1131,13 @@ object ModuleType {
       val is : List[(MPath,List[Term])] = getIncludes(sm.theory,ia).map(id => (id.from, id.args.map(_ ^? sm.subs))) //TODO id may now inlcude a definition
       is.flatMap(p => getAll(p._1,p._2)) ::: List(sm)
     }
-    val th = lookup.getO(mp) match {
-      case Some(t : Theory) => t
-      case _ => throw RecordError("Not a theory: " + mp)
+    val th = try {
+      lookup.getO(mp) match {
+        case Some(t: Theory) => t
+        case _ => throw RecordError("Not a theory: " + mp)
+      }
+    } catch {
+      case NotFound(_,_) => throw RecordError("Not found: " + mp)
     }
     if (getIncludes(th,args).isEmpty) get(mp,args) else
       new MergedType({ getAll(mp,args).distinct })

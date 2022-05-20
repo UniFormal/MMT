@@ -48,8 +48,18 @@ trait ArchiveActionHandling {self: Controller =>
     *
     */
   def buildArchive(ids: List[String], key: String, mod: BuildTargetModifier, inRaw: FilePath, errorCont: Option[ErrorHandler]) {
-    ids.foreach { id =>
-      val arch = backend.getArchive(id) getOrElse (throw ArchiveError(id, "archive not found"))
+    val archs = ids.flatMap {s =>
+      backend.getArchive(s) match {
+        case None =>
+          backend.getArchives.filter(_.id.startsWith(s + "/")) match {
+            case Nil =>
+              throw ArchiveError(s, "archive not found")
+            case o => o
+          }
+        case o => o.toList
+      }
+    }.distinct
+    archs.foreach { arch =>
       // if the current directory is the archive's source directory, an initial "." refers to the current directory
       val in = if (inRaw.segments.headOption contains ".") {
         (state.home - arch/source) match {
@@ -65,9 +75,10 @@ trait ArchiveActionHandling {self: Controller =>
           arch.readRelational(in, this, "occ")
           log("done reading relational index")
         case "close" =>
-          val arch = backend.getArchive(id).getOrElse(throw ArchiveError(id, "archive not found"))
-          backend.closeArchive(id)
-          notifyListeners.onArchiveClose(arch)
+          val ar = backend.getArchive(arch.id).getOrElse(throw ArchiveError(arch.id, "archive not found"))
+          // ^ is it intentional that the archive is retrieved from backend a second time?
+          backend.closeArchive(ar.id)
+          notifyListeners.onArchiveClose(ar)
         case _ =>
           val bt = extman.getOrAddExtension(classOf[BuildTarget], key) getOrElse {
             throw RegistrationError("build target not found: " + key)

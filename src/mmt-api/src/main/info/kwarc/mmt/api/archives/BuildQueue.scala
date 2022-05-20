@@ -18,6 +18,18 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
   // TODO make this part of constructor to avoid having a var?
   var lowPriority : Boolean = true
 
+  var originalTarget = target
+  def copy(newtarget : TraversingBuildTarget,result : BuildResult = estRes) = {
+    val ret = new QueuedTask(newtarget,result,task)
+    ret.originalTarget = target
+    ret.missingDeps = missingDeps
+    ret.willProvide = willProvide
+    ret.allowblocking = allowblocking
+    ret
+  }
+
+  var allowblocking : Boolean = true
+
   /** task should be queued at beginning */
   def highPriority : Boolean = !lowPriority
 

@@ -16,6 +16,8 @@ pvs-omdoc   info.kwarc.mmt.pvs.Plugin
 diagram     info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 
 pdflatex   info.kwarc.mmt.stex.PdfLatex
+pdfbiblatex info.kwarc.mmt.stex.PdfBibLatex
+fullstex info.kwarc.mmt.stex.FullsTeX
 tikzsvg    info.kwarc.mmt.stex.TikzSvg
 alltex     info.kwarc.mmt.stex.AllTeX
 allpdf     info.kwarc.mmt.stex.AllPdf

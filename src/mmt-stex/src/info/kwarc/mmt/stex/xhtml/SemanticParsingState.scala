@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPM
 import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType}
-import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMB, SOMBArg, STeX, STeXError, STerm}
+import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STerm}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
 
 import scala.collection.mutable
@@ -119,7 +119,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
         OMDocHTML.getRuleInfo(tm)(controller,getVariableContext).map(t => (t._1,t._2))
 
       def reorder(tm: OMA)(implicit cont:Context, names: (NameSet,Boolean)): Term = {
-        val OMA(f, args) = tm
+        val SOMA(f, args) = tm
         val (ros, assoc) = getRuleInfo(f).getOrElse {
           return tm
         }
@@ -131,42 +131,42 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
           case Some("conj") =>
             reordered match {
               case IsSeq(pre, STeX.flatseq(a :: b :: Nil), Nil) =>
-                val ret = OMA(f, pre ::: List(a, b))
+                val ret = SOMA(f, pre ::: List(a, b) :_*)
                 ret.copyFrom(tm)
                 ret
               case IsSeq(pre, STeX.flatseq(a :: Nil), List(b)) =>
-                val ret = OMA(f, pre ::: List(a, b))
+                val ret = SOMA(f, pre ::: List(a, b) :_*)
                 ret.copyFrom(tm)
                 ret
               case IsSeq(pre, STeX.flatseq(ls), Nil) if ls.length > 2 =>
                 getRules.get(classOf[ConjunctionRule]).toList match {
                   case ConjunctionRule(p) :: _ =>
-                    val ret = ls.init.init.foldRight(OMA(f, pre ::: List(ls.init.last, ls.last)))((t, r) =>
-                      OMA(OMS(p), List(r, OMA(f, pre ::: List(t, ls.last))))
+                    val ret = ls.init.init.foldRight(SOMA(f, pre ::: List(ls.init.last, ls.last) :_*))((t, r) =>
+                      SOMA(OMS(p), r, SOMA(f, pre ::: List(t, ls.last) :_*))
                     )
                     ret.copyFrom(tm)
                     ret
                   case _ =>
-                    val ret = tm.copy(args = reordered)
+                    val ret = SOMA(f,reordered :_*)
                     ret.copyFrom(tm)
                     ret
                 }
               case IsSeq(pre, STeX.flatseq(ls), List(b)) if ls.length > 2 =>
                 getRules.get(classOf[ConjunctionRule]).toList match {
                   case ConjunctionRule(p) :: _ =>
-                    val ret = ls.init.foldRight(OMA(f, pre ::: List(ls.last, b)))((t, r) =>
-                      OMA(OMS(p), List(r, OMA(f, pre ::: List(t, b))))
+                    val ret = ls.init.foldRight(SOMA(f, pre ::: List(ls.last, b) :_*))((t, r) =>
+                      SOMA(OMS(p), r, SOMA(f, pre ::: List(t, b) :_*))
                     )
                     ret.copyFrom(tm)
                     ret
                   case _ =>
-                    val ret = tm.copy(args = reordered)
+                    val ret = SOMA(f,reordered :_*)
                     ret.copyFrom(tm)
                     ret
                 }
               case _ =>
                 // TODO
-                val ret = tm.copy(args = reordered)
+                val ret = SOMA(f,reordered :_*)
                 ret.copyFrom(tm)
                 ret
             }
@@ -191,26 +191,26 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                     makeUnknown(vn)
                 }
                 val nf = traverse(f)
-                val ret = if (rest.isEmpty) STeX.seqfoldright(STeX.seqlast(OMV(v)), STeX.seqinit(OMV(v)), x, tp, y, tp, OMA(nf, List(OMV(x), OMV(y))))
-                else STeX.seqfoldright(OMA(nf, STeX.seqlast(OMV(v)) :: rest), STeX.seqinit(OMV(v)), x, tp, y, tp, OMA(nf, List(OMV(x), OMV(y))))
+                val ret = if (rest.isEmpty) STeX.seqfoldright(STeX.seqlast(OMV(v)), STeX.seqinit(OMV(v)), x, tp, y, tp, SOMA(nf, OMV(x), OMV(y)))
+                else STeX.seqfoldright(SOMA(nf, STeX.seqlast(OMV(v)) :: rest :_*), STeX.seqinit(OMV(v)), x, tp, y, tp, SOMA(nf, OMV(x), OMV(y)))
                 ret.copyFrom(tm)
                 ret
               case IsSeq(Nil, STeX.flatseq(tms), Nil) if tms.length >= 2 =>
-                val ret = tms.init.init.foldRight(OMA(f, List(tms.init.last, tms.last)))((a, r) => OMA(f, List(a, r)))
+                val ret = tms.init.init.foldRight(SOMA(f, tms.init.last, tms.last))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
                 ret
               case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty =>
-                val ret = if (rest.isEmpty) tms.init.init.foldRight(OMA(f, List(tms.last, tms.init.last)))((a, r) => OMA(f, List(a, r)))
-                else tms.init.foldRight(OMA(f, tms.last :: rest))((a, r) => OMA(f, List(a, r)))
+                val ret = if (rest.isEmpty) tms.init.init.foldRight(SOMA(f, tms.last, tms.init.last))((a, r) => SOMA(f, a, r))
+                else tms.init.foldRight(SOMA(f, tms.last :: rest :_*))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
                 ret
               case _ =>
-                val ret = tm.copy(args = reordered)
+                val ret = SOMA(f, reordered :_*)
                 ret.copyFrom(tm)
                 ret
             }
           case _ =>
-            val ret = tm.copy(args = reordered)
+            val ret = SOMA(f,reordered :_*)
             ret.copyFrom(tm)
             ret
         }
@@ -297,7 +297,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 case Nil => t
                 case ls =>
                   names._1.unknowns = names._1.unknowns ::: ls
-                  OMA(t, ls.map(makeUnknown))
+                  SOMA(t, ls.map(makeUnknown) :_*)
               }
               case _ => t
             }
@@ -315,25 +315,25 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
               case Nil => nt
               case ls =>
                 names._1.unknowns = names._1.unknowns ::: ls
-                OMA(nt,ls.map(makeUnknown))
+                SOMA(nt,ls.map(makeUnknown) :_*)
             }
             case None => nt
           } else nt
-        case o: OMA =>
-          val t = reorder(o)
+        case o@SOMA(_,_) =>
+          val t = reorder(o.asInstanceOf[OMA])
           t match {
-            case OMA(f, args) =>
+            case SOMA(f, args) =>
               val ret = (f match {
                 case OMV(n) => getTerm(n)
                 case OMS(p) => getTerm(p)
                 case Getfield(t, f) => getOriginal(t, f).flatMap(c => getTerm(c.path))
-                case _ => ???
+                case _ => None
               }) match {
                 case Some(tm) =>
                   val ls = getArgs(tm)
                   names._1.unknowns = names._1.unknowns ::: ls
-                  OMA(traverse(f)(con, (names._1, false)), ls.map(makeUnknown) ::: args.map(traverse))
-                case None => OMA(traverse(f)(con, (names._1, false)), args.map(traverse))
+                  SOMA(traverse(f)(con, (names._1, false)), ls.map(makeUnknown) ::: args.map(traverse) :_*)
+                case None => SOMA(traverse(f)(con, (names._1, false)), args.map(traverse) :_*)
               }
               ret.copyFrom(o)
               ret
@@ -342,7 +342,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 case OMV(n) => getTerm(n)
                 case OMS(p) => getTerm(p)
                 case Getfield(t,f) => getOriginal(t,f).flatMap(c => getTerm(c.path))
-                case _ => ???
+                case _ => None
               }) match {
                 case Some(tm) =>
                   val ls = getArgs(tm)
@@ -358,7 +358,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 case OMV(n) => getTerm(n)
                 case OMS(p) => getTerm(p)
                 case Getfield(t,f) => getOriginal(t,f).flatMap(c => getTerm(c.path))
-                case _ => ???
+                case _ => None
               }) match {
                 case Some(tm) =>
                   val ls = getArgs(tm)
@@ -386,9 +386,9 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
               vd
             case Some(vd) =>
               vd.df.foreach(traverse)
-              val n = getUnknownTp
-              names.unknowns = names.unknowns ::: n :: Nil
-              val tp = Solver.makeUnknown(n,(names.frees.reverse.map(i => OMV(i.name)) ::: con.map(v => OMV(v.name))).distinct)
+              val ntp = getUnknownTp
+              names.unknowns = names.unknowns ::: ntp :: Nil
+              val tp = Solver.makeUnknown(ntp,(names.frees.reverse.map(i => OMV(i.name)) ::: con.map(v => OMV(v.name))).distinct)
               val v = VarDecl(n,None,Some(tp),vd.df,None)
               v.copyFrom(vd)
               v

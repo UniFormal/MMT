@@ -163,6 +163,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   // ***************** abstract or overridable methods for configuring basic properties such as file extensions
 
+  def onBlock(bt: QueuedTask,br : BuildResult): QueuedTask = bt
+
   /** the input dimension/archive folder */
   def inDim: ArchiveDimension
 

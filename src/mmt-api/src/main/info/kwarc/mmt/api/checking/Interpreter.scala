@@ -57,9 +57,9 @@ abstract class Interpreter extends Importer {
        case e: Error => throw LocalError("no document produced")
     }
     index(doc)
-    val provided = doc.getModulesResolved(controller.globalLookup).map {m =>
+    val provided = DocumentDependency(doc.path) :: (doc.getModulesResolved(controller.globalLookup).map {m =>
        m.path
-    } map LogicalDependency
+    } map LogicalDependency)
     // TODO this is an ugly hack and should be replaced by a precise method. Requires some planning though; in the meantime it's better than nothing
     // TODO handle definiens
     val used = doc.getModulesResolved(controller.globalLookup).flatMap {
@@ -67,7 +67,7 @@ abstract class Interpreter extends Importer {
       case v : View => v.domainAsContext.getIncludes ::: v.codomainAsContext.getIncludes ::: v.getAllIncludes.map(_.from)
     }.distinct.map(LogicalDependency)
     val missing = used.collect {
-        case ld if Try(controller.getO(ld.mpath)).toOption.flatten.isEmpty => ld
+        case ld : LogicalDependency if Try(controller.getO(ld.mpath)).toOption.flatten.isEmpty => ld
       }
     if (missing.nonEmpty) {
       MissingDependency(missing,provided,used)
