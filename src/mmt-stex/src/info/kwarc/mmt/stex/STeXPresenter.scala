@@ -68,12 +68,13 @@ trait STeXPresenter extends ObjectPresenter {
       case _ => (Nil,args)
     }
     t match {
-      case SOMA(f,args) =>
+      case SOMA(f,args) => implicits(OMA(f,args))
+      case OMA(f,args) =>
         val (i,r) = getImplicitTerm(f) match {
           case Some(t) => getArgs(t,args.map(STerm))
           case _ => (Nil,args.map(STerm))
         }
-        val (ii,rr,s) = reorder(SOMA(f,r.map(_.asInstanceOf[STerm].tm) :_*))
+        val (ii,rr,s) = reorder(OMA(f,r.map(_.asInstanceOf[STerm].tm) ))
         ((i ::: ii).distinct,s,rr)
       case SOMB(f,args) =>
         val (i,r) = getImplicitTerm(f) match {
@@ -88,7 +89,7 @@ trait STeXPresenter extends ObjectPresenter {
 
   protected def reorder(t : Term)(implicit context:Context) : (List[SOMBArg],Term,String) = {
     t match {
-      case SOMA(f,args) =>
+      case OMA(f,args) =>
         val (ros,assoc,arity) = OMDocHTML.getRuleInfo(f)(controller,context).getOrElse{ return (Nil,t,"") }
         val reordered = ros match {
           case Nil => args
@@ -97,38 +98,35 @@ trait STeXPresenter extends ObjectPresenter {
         (assoc,arity,reordered) match {
           case (Some("bin"|"binr"),"a",List(a,b)) =>
             b match {
-              case SOMA(`f`,_) =>
+              case SOMA(`f`,_) | OMA(`f`,_) =>
                 val (is,_,nit) = implicits(b)
                 nit match {
-                  case SOMA(`f`,List(STeX.flatseq(na))) =>
-                    (is,SOMA(f,STeX.flatseq(a :: na :_*)),arity)
+                  case OMA(`f`,List(STeX.flatseq(na))) =>
+                    (is,OMA(f,List(STeX.flatseq(a :: na :_*))),arity)
                   case _ =>
-                    println("Here")
-                    (is,SOMA(f,reordered.toList :_*),arity)
+                    (is,OMA(f,reordered.toList),arity)
                 }
               case _ =>
-                (Nil,SOMA(f,STeX.flatseq(reordered:_*)),arity)
+                (Nil,OMA(f,List(STeX.flatseq(reordered:_*))),arity)
             }
           case (Some("bin"|"binr"),"ai",List(a,b)) =>
             b match {
-              case SOMA(`f`,_) =>
+              case SOMA(`f`,_) | OMA(`f`,_) =>
                 val (is,_,nit) = implicits(b)
                 nit match {
-                  case SOMA(`f`,List(STeX.flatseq(na),l)) =>
-                    (is,SOMA(f,STeX.flatseq(a :: na :_*),l),arity)
+                  case OMA(`f`,List(STeX.flatseq(na),l)) =>
+                    (is,OMA(f,List(STeX.flatseq(a :: na :_*),l)),arity)
                   case _ =>
-                    println("Here")
-                    (is,SOMA(f,STeX.flatseq(a),b),arity)
+                    (is,OMA(f,List(STeX.flatseq(a),b)),arity)
                 }
               case _ =>
-                (Nil,SOMA(f,STeX.flatseq(a),b),arity)
+                (Nil,OMA(f,List(STeX.flatseq(a),b)),arity)
             }
           case (Some("conj"),"a",List(a,b)) =>
-            (Nil,SOMA(f,STeX.flatseq(a,b)),arity)
+            (Nil,OMA(f,List(STeX.flatseq(a,b))),arity)
           case (Some(s),_,_) =>
-            println("Here: " + s)
-            (Nil,SOMA(f,reordered.toList :_*),arity)
-          case (_,_,_) => (Nil,SOMA(f,reordered.toList :_*),arity)
+            (Nil,OMA(f,reordered.toList),arity)
+          case (_,_,_) => (Nil,OMA(f,reordered.toList),arity)
         }
       case SOMB(f,args) =>
         val (ros,assoc,arity) = OMDocHTML.getRuleInfo(f)(controller,context).getOrElse{ return (Nil,t,"") }
@@ -145,14 +143,12 @@ trait STeXPresenter extends ObjectPresenter {
                   case SOMB(`f`,List(SCtx(ctx2),bd)) =>
                     (is,SOMB(f,List(SCtx(ctx1 ++ ctx2),bd) :_*),arity)
                   case _ =>
-                    println("Here!")
                     (is,SOMB(f,reordered.toList :_*),arity)
                 }
               case _ =>
                 (Nil,SOMB(f,reordered.toList :_*),arity)
             }
           case (Some("pre"),_,_) =>
-            println("Here!")
             (Nil,SOMB(f,reordered.toList :_*),arity)
           case (_,_,_) =>
             (Nil,SOMB(f,reordered.toList :_*),arity)
@@ -348,24 +344,13 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         args.foreach(recurse(_))
         pc.out("</" + label + ">")
         0
+      case SOMA(f,args) => recurse(OMA(f,args),bracket)
       case tm : Term =>
         val (is,ar,t) = implicits(tm)(pc.getContext)
         def ret() = t match {
           case STeX.symboldoc(ls,s,n) =>
             pc.out("<mtext>Documentation (" + s + ") for " + ls.mkString(",") + " :")
             pc.out(n.toString())
-          case SOMA(OMS(p),args) =>
-            getMainNotation(p) match {
-              case Some((_,n,a,b,_)) =>
-                substitute(n,ar.zip(args.map(STerm)).toList,p.name.toString)
-              case None =>
-                pc.out("<mrow>")
-                pc.out(<mi>{p.name}</mi>.toString)
-                pc.out("<mo>(</mo>")
-                  args.foreach(recurse)
-                pc.out("<mo>)</mo>")
-                pc.out("</mrow>")
-            }
           case OMA(OMS(p),args) =>
             getMainNotation(p) match {
               case Some((_,n,a,b,_)) =>
@@ -378,7 +363,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
                 pc.out("<mo>)</mo>")
                 pc.out("</mrow>")
             }
-          case SOMA(OMV(n),args) =>
+          case OMA(OMV(n),args) =>
             getMainNotation(n)(pc.getContext) match {
               case Some((n,a,b,_)) =>
                 substitute(n,ar.zip(args.map(STerm)).toList,n.toString)
@@ -466,6 +451,7 @@ class STeXPresenterTex extends STeXPresenter {
       pc.out("\\" + macroname.getOrElse("svar{" + vd.name + "}"))
 
     case c : Context =>
+    case SOMA(f,args) => recurse(OMA(f,args))
     case tm : Term =>
       val (_,ar,t) = implicits(tm)(pc.getContext)
       t match {

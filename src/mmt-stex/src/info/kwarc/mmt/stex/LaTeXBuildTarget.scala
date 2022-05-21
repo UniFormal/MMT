@@ -165,6 +165,8 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
         case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))
         case _ => Nil
       }
+      case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
+      case _ => Nil
     }.filterNot(results.contains)
     state.missings match {
       case Nil => BuildSuccess(used,results)

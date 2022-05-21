@@ -54,7 +54,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
     val usestex = d.isInstanceOf[Constant] && (getParent(d) match {
       case None => false
       case Some(m) => m.metadata.get(DPath(mmt.baseURI) ? "metadata" ? "importedby").headOption.map(_.value) match {
-        case Some(o:OMLITTrait) if o.toString == "stex-omdoc" || o.toString == "xhtml-omdoc" => true
+        case Some(o:OMLITTrait) if o.toString == "stex-omdoc" || o.toString == "xhtml-omdoc" || o.toString == "fullstex" => true
         case _ => false
       }
     })
