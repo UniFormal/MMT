@@ -450,7 +450,8 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
       case _ =>
         val ntm = applyTerm(tm)
         getRules.get(classOf[BindingRule]).collectFirst{rl => rl(ntm,assoc)(this) match {
-          case Some(ct) => return ct
+          case Some(ct) =>
+            return ct
         }}
         Context(VarDecl(LocalName.empty,tp=tm))
     }

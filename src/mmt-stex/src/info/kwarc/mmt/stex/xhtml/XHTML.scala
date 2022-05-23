@@ -35,10 +35,17 @@ object HTMLParser {
   val ns_stex = "http://kwarc.info/ns/sTeX"
   val ns_mmt = "http://uniformal.github.io/MMT"
   val ns_rustex = "http://kwarc.info/ns/RusTeX"
+  val ns_svg = "http://www.w3.org/2000/svg"
   val empty = '\u200E'
 
   class ParsingState(val controller : Controller, rules : List[HTMLRule]) {
     val namespaces = mutable.Map.empty[String,String]
+    namespaces("xhtml") = ns_html
+    namespaces("mml") = ns_mml
+    namespaces("stex") = ns_stex
+    namespaces("mmt") = ns_mmt
+    namespaces("rustex") = ns_rustex
+    namespaces("svg") = ns_svg
 
     private[HTMLParser] var _top : Option[HTMLNode] = None
     protected var _parent : Option[HTMLNode] = None

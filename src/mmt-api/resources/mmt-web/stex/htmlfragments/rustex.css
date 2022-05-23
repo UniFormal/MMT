@@ -1,6 +1,31 @@
 body {
+    /*font-family: Noto Serif, serif, STIXgeneral, Times, Symbol, cmr10, CMSY10, CMEX10, serif*/;
     font-family: STIXgeneral, Times, Symbol, cmr10, CMSY10, CMEX10, serif;
     margin:auto;
+}
+
+.resetfont {
+    /*font-family: Noto Serif, serif, STIXgeneral, Times, Symbol, cmr10, CMSY10, CMEX10, serif*/;
+    font-family: STIXgeneral, Times, Symbol, cmr10, CMSY10, CMEX10, serif;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+}
+
+.monospaced {
+    font-family: FreeMono, Courier New, monospace;
+}
+
+.blackboard {
+    font-family: msbm;
+}
+
+.script {
+    font-family: URW Chancery L, cursive;
+}
+
+.sansserif {
+    font-family: sans-serif;
 }
 
 .body {
