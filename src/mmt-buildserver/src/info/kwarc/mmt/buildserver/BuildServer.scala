@@ -29,11 +29,38 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     private[BuildServer] val queue: mutable.Queue[QueuedTask] = mutable.Queue.empty
     /** tasks that were queued but are blocked due to missing dependencies; they are to be re-queued when the queue is empty */
     private[BuildServer] var blocked: List[QueuedTask] = Nil
-    private[BuildServer] var running : Option[QueuedTask] = None
+    private[BuildServer] val running = mutable.HashMap.empty[Int,Option[QueuedTask]]
     private[BuildServer] var finished: List[(QueuedTask,BuildResult)] = Nil
     private[BuildServer] var failed: List[(QueuedTask,BuildResult)] = Nil
     def addSafe(qt : QueuedTask) = this.synchronized { toqueue = toqueue ::: List(qt) }
+    private[BuildServer] var threadnumber : Int = 0
   }
+
+  override def start(args: List[String]): Unit = {
+    log("Starting")
+    controller.extman.get(classOf[BuildQueue]).foreach(bq => {
+      controller.extman.removeExtension(bq)
+      bq.destroy
+    })
+    State.synchronized {
+      State.threadnumber = args.headOption match {
+        case Some(s) if s.forall(_.isDigit) => s.toInt
+        case _ => 1
+      }
+      log("Using " + State.threadnumber + " threads")
+    }
+    FileDeps.init
+    queuemanagementthread.start()
+    State.synchronized {
+      buildThreads = (0 until State.threadnumber).map { i =>
+        val th = BuildThread(i)
+        State.running(i) = None
+        th.start()
+        th
+      }.toList
+    }
+  }
+
   override def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
     case List("clear") =>
       //clear()
@@ -69,7 +96,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     val firsts = (if (qSize > num + 12) iter.take(num) else iter).toList.map(_.toJson)
     val hasMore = iter.hasNext
     val rest = if (hasMore) firsts :+ JSONString("and " + (qSize - num) + " more ...") else firsts
-    val q = State.running.toList.map(q => JSONString("running: " + q.toJString)) ++ rest
+    val q = State.running.values.collect{case Some(qt) => qt}.map(q => JSONString("running: " + q.toJString)).toList ++ rest
     val bs = State.blocked.map(_.toJson)
     val fs = (State.finished ::: State.failed).map {
       case (d,r) =>
@@ -114,17 +141,6 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     def parserActual(implicit state: ActionState) = "gitupdate"  ~> stringList ^^ { ids =>
         GitUpdateAction(ids)
     }
-  }
-
-  override def start(args: List[String]): Unit = {
-    log("Starting")
-    controller.extman.get(classOf[BuildQueue]).foreach(bq => {
-      controller.extman.removeExtension(bq)
-      bq.destroy
-    })
-    FileDeps.init
-    queuemanagementthread.start()
-    buildThread.start()
   }
 
   private val queuemanagementthread = new Thread {
@@ -283,6 +299,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       provides.foreach(_.foreach(donedeps ::= _))
       provides.foreach(l => q.willProvide = l.collect{case dp:ResourceDependency => dp})
       val deps = FileDeps.getDeps(q.task.archive,q.task.inFile,q.target)
+      q.neededDeps = deps.getOrElse(Nil)
       provides.foreach(clean)
       deps.foreach{_.foreach {
         case d if !donedeps.contains(d) =>
@@ -320,21 +337,37 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     case _ =>
       println("Here!")
   }
-
-  private val buildThread = new Thread {
+  private case class BuildThread(num:Int) extends Thread {
+    private def getNext(currents: List[QueuedTask]) : Option[QueuedTask] = {
+      var prevs : List[QueuedTask] = Nil
+      State.queue.foreach { q =>
+        if ((q.missingDeps ::: q.neededDeps).distinct.forall(d => (currents ::: prevs).forall(t => !t.willProvide.contains(d)))) {
+          return Some(q)
+        } else prevs ::= q
+      }
+      None
+    }
     override def run(): Unit = {
       while (true) {
         State.synchronized {
+          val currentrunning = State.running.values.collect {case Some(qt) => qt}.toList
           if (State.queue.nonEmpty) {
-            val r = State.queue.dequeue()
-            State.running = Some(r)
-            Some(r)
+            val r = getNext(currentrunning)
+            //val r = State.queue.dequeue()
+            r.foreach{qt =>
+              State.queue.remove(State.queue.indexOf(qt))
+              State.running(num) = Some(qt)
+            }
+            r
           } else if (State.blocked.nonEmpty) {
             //State.blocked.tail.foreach{q => q.allowblocking=false; State.queue.addOne(q)}
-            State.running = Some(State.blocked.last)
-            State.blocked = State.blocked.init
-            State.running.get.allowblocking = false
-            State.running
+            val r = State.queue.findLast(q => (q.missingDeps ::: q.neededDeps).distinct.forall(d => currentrunning.forall(t => !t.willProvide.contains(d))))
+            r.foreach{qt =>
+              State.running(num) = Some(qt)
+              State.blocked = State.blocked.filterNot(_ == qt)
+              qt.allowblocking = false
+            }
+            r
           } else None
         } match {
           case Some(qt) =>
@@ -352,17 +385,20 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
                 qt.task.errorCont(err)
                 BuildFailure(Nil,Nil)
             }
-            doBuildResult(res,qt)
+            doBuildResult(res,qt,num)
           case _ => Thread.sleep(2000)
         }
       }
     }
   }
+  private var buildThreads : List[BuildThread] = Nil
 
-  private def doBuildResult(res : BuildResult,qt : QueuedTask): Unit = State.synchronized {
+
+  private def doBuildResult(res : BuildResult,qt : QueuedTask,num:Int): Unit = State.synchronized {
     res match {
       case BuildSuccess(used, provided) =>
         FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, used, provided)
+        qt.neededDeps = used
         val needed = used.filter(g => State.blocked.exists(_.willProvide.contains(g)) || State.queue.exists(_.willProvide.contains(g)))
         if (needed.isEmpty || !qt.allowblocking) {
           log("Success")
@@ -383,6 +419,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           }
         }
       case MissingDependency(needed, provided, used) =>
+        qt.neededDeps = (used ::: needed).distinct
         if (qt.allowblocking) {
           log("(blocked) Missing dependencies: " + needed.mkString(", "))
           qt.missingDeps = needed
@@ -394,6 +431,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         }
       case BuildFailure(used, provided) =>
         log("Failed")
+        qt.neededDeps = used
         val oldprovides = FileDeps.getProvides(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
         val olddeps = FileDeps.getDeps(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
 
@@ -410,7 +448,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       case _ =>
         println("Here!")
     }
-    State.running = None
+    State.running(num) = None
   }
 
 

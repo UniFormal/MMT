@@ -38,7 +38,7 @@ object RusTeX {
     }
   }
   def parse(f : File,p:Params,memories:List[String] = Nil) = {
-    if (Bridge.initialized()) Bridge.parse(f.toString,p,memories) else ""
+    if (Bridge.initialized()) this.synchronized { Bridge.parse(f.toString,p,memories) } else ""
   }
 
 }

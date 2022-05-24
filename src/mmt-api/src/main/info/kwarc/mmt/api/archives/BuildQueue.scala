@@ -42,7 +42,7 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
   var forceRun: List[Dependency] = Nil
 
   /** dependencies that are needed for an up-to-date check */
-  val neededDeps: List[Dependency] = estRes.used
+  var neededDeps: List[Dependency] = estRes.used
 
   /** dependencies that will be used but are not available */
   var missingDeps: List[Dependency] = estRes.used
