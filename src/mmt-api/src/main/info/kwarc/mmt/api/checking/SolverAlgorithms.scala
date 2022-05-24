@@ -533,7 +533,7 @@ trait SolverAlgorithms {self: Solver =>
      history += "inferring type of " + presentObj(tm)
      // return previously inferred type, if any (previously unsolved variables are substituted)
      InferredType.get(tm) match {
-        case Some((bp,tmI)) if getCurrentBranch.descendsFrom(bp) =>
+        case Some(tmI)  =>
            return Some(tmI ^^ solution.toPartialSubstitution)
         case _ =>
      }
@@ -635,7 +635,7 @@ trait SolverAlgorithms {self: Solver =>
      history += "inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed")
      //remember inferred type
      if (!isDryRun) {
-       res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
+       res foreach {r => InferredType.put(tm, r)}
      }
      res map {r => substituteSolution(r)} // this used to call simplify (without defnition expansion)
    }
@@ -651,8 +651,8 @@ trait SolverAlgorithms {self: Solver =>
          case Some(tp) =>
             cont(tp)
          case None =>
-            val bi = new BranchInfo(history + "(inference delayed)", getCurrentBranch)
-            addConstraint(new DelayedInference(stack, bi, tm, cont))
+
+            addConstraint(new DelayedInference(stack, h , tm, cont))
             true
       }
    }
