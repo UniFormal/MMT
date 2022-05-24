@@ -66,4 +66,9 @@
 		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, true);
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-proofdockable-show">
+		<CODE>
+			wm.addDockableWindow("mmt-proofdockable");
+		</CODE>
+	</ACTION>
 </ACTIONS>

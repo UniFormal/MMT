@@ -18,7 +18,7 @@ import scala.runtime.NonLocalReturnControl
  *  factored out from the [[Solver]] class, which holds all bureaucracy
  */ 
 trait SolverAlgorithms {self: Solver =>
-  import state._
+  import currentStateObj._
   private implicit val sa = new MemoizedSubstitutionApplier
   
    /** precomputes relevant rule sets, ordered by priority */

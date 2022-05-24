@@ -37,6 +37,7 @@ mmt-insert-GS.label=Insert Module Delimiter (MD)
 mmt-introduce-hole.label=Introduce hole for expected type
 mmt-show-normalization.label=Show normalization
 mmt-normalize-selection.label=Normalize selection
+mmt-proofdockable-show.label=Show Proof Dockable
 
 # labels for actions defined in browser.actions.xml
 mmt-browser-build.label=Build
@@ -55,6 +56,7 @@ mmt-dockable.title=MMT
 mmt-treedockable.title=Theory Tree
 mmt-refactordockable.title=MMT refactoring
 mmt-graphdockable.title=MMT Theory Graphing
+mmt-proofdockable.title=MMT Proof
 
 # options pane
 plugin.info.kwarc.mmt.jedit.MMTPlugin.option-pane=info.kwarc.mmt.jedit.MMTPlugin
