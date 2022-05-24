@@ -1124,13 +1124,3 @@ case class Success[A](result: A) extends DryRunResult {
    override def toString = "will succeed"
 }
 
-// TODO variable bounds are missing
-/** experimental backtracking support in [[Solver]] */
-class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedConstraint], val depLength: Int, val solution: Context) {
-  def isRoot = parent.isEmpty
-  /** @return true if this branch contains anc */
-  def descendsFrom(anc: Branchpoint): Boolean = parent.contains(anc) || (parent match {
-    case None => false
-    case Some(p) => p.descendsFrom(anc)
-  })
-}
