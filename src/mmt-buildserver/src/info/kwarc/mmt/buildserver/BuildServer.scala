@@ -361,7 +361,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
             r
           } else if (State.blocked.nonEmpty) {
             //State.blocked.tail.foreach{q => q.allowblocking=false; State.queue.addOne(q)}
-            val r = State.queue.findLast(q => (q.missingDeps ::: q.neededDeps).distinct.forall(d => currentrunning.forall(t => !t.willProvide.contains(d))))
+            val r = State.blocked.findLast(q => (q.missingDeps ::: q.neededDeps).distinct.forall(d => currentrunning.forall(t => !t.willProvide.contains(d))))
             r.foreach{qt =>
               State.running(num) = Some(qt)
               State.blocked = State.blocked.filterNot(_ == qt)

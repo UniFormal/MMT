@@ -675,7 +675,11 @@ case class HTMLSymbol(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with H
           OMDocHTML.setArity(c,arity)
           sourceref.foreach(s => SourceRef.update(c,s))
           state.controller.add(c)
-          state.check(c)
+          (df,tp) match {
+            case (Some(OMS(_)),None) =>
+            case _ =>
+              state.check(c)
+          }
           /*th match {
             case _:HTMLTheory =>
               state.check(c)

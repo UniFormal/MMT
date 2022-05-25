@@ -53,7 +53,7 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
 
   def toJString: String = {
     val str = task.inPath.toString
-    (if (str.isEmpty) task.archive.id else str) + " (" + target.key + ")" +
+    "[" + task.archive.id + "] " + str + " (" + target.key + ")" +
       missingDeps.map(_.toJString).mkString(" [", ", ", "]")
   }
 
