@@ -464,16 +464,33 @@ case class HTMLStructureFeature(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig
     val nt = new NestedModule(t.toTerm,path.name,th)
     state.controller.add(nt)
     signature_theory = Some(th)
-  }}}
+  }
+    ml.language_theory.foreach {t =>
+      val th = Theory(t.modulePath.parent,t.name / path.name,None)
+      val nt = new NestedModule(t.toTerm,path.name,th)
+      val incl = PlainInclude(path.module.parent ? path.toMPath.name,th.path)
+      state.controller.add(nt)
+      state.controller.add(incl)
+      state.controller.endAdd(incl)
+      language_theory = Some(th)
+      this.language = ml.language
+    }
+  }}
 
   override def onAdd: Unit = {
-    sstate.foreach { state => signature_theory.foreach{th =>
-      state.controller.endAdd(th)
-      state.check(th)
-      val rname = LocalName(path.name.toString.dropRight(10))
-      val c = Constant(parentmodule.get.toTerm,rname,Nil,Some(OMS(ModelsOf.tp)),Some(ModelsOf(path.toMPath)),None)
-      state.controller.add(c)
-    }}
+    sstate.foreach { state =>
+      signature_theory.foreach { th =>
+        state.controller.endAdd(th)
+        state.check(th)
+        val rname = LocalName(path.name.toString.dropRight(10))
+        val c = Constant(parentmodule.get.toTerm, rname, Nil, Some(OMS(ModelsOf.tp)), Some(ModelsOf(path.toMPath)), None)
+        state.controller.add(c)
+      }
+      language_theory.foreach { th =>
+        state.controller.endAdd(th)
+        //state.check(th)
+      }
+    }
 
   }
 }
@@ -1042,7 +1059,8 @@ trait HTMLStatement extends OMDocHTML with HTMLGroupLike with HasLanguage {
   def addSymbolDoc(paths:List[ContentPath]): Unit = if (paths.nonEmpty) {
     sstate.foreach { state =>
       collectAncestor {
-        case t: HTMLModuleLike =>
+        case t: HTMLModuleLike => t
+      }.foreach{ t =>
           if (language == "") language = t.language
           t.language_theory.foreach{th =>
             val c = Constant(OMID(th.path),state.newName("symboldoc"),Nil,None,Some(STeX.symboldoc(paths.distinct,language,this)),Some("symboldoc"))

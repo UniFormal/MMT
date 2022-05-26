@@ -1,10 +1,10 @@
 package info.kwarc.mmt.stex.Extensions
 
 import info.kwarc.mmt.api.documents.Document
-import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
-import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.api.{NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.rules.MathStructureFeature
@@ -217,9 +217,9 @@ object NotationExtractor extends RelationalExtractor with STeXExtension {
 
   override val allUnary: List[Unary] = List()
   override def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = e match {
-    case t : Theory =>
-      t.getConstants.foreach {
-        case c if c.rl.contains("notation") =>
+    case t : AbstractTheory =>
+      t.getDeclarations.foreach {
+        case c : Constant if c.rl.contains("notation") =>
           c.tp match {
             case Some(STeX.notation.tp(sym,_)) =>
               f(notation(c.path,sym))
@@ -227,6 +227,7 @@ object NotationExtractor extends RelationalExtractor with STeXExtension {
             case _ =>
               // structures maybe?
           }
+        case nm : NestedModule => apply(nm.module)
         case _ =>
       }
     case _ =>
@@ -242,9 +243,9 @@ object SymdocRelational extends RelationalExtractor with STeXExtension {
   override val allUnary: List[Unary] = List()
 
   override def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = e match {
-    case t : Theory =>
-      t.getConstants.foreach {
-        case c if c.rl.contains("symboldoc") =>
+    case t : AbstractTheory =>
+      t.getDeclarations.foreach {
+        case c : Constant if c.rl.contains("symboldoc") =>
           c.df match {
             case Some(STeX.symboldoc(s,_,_)) =>
               s.foreach { s =>
@@ -254,6 +255,7 @@ object SymdocRelational extends RelationalExtractor with STeXExtension {
               }
             case _ =>
           }
+        case nm : NestedModule => apply(nm.module)
         case _ =>
       }
     case _ =>
