@@ -195,15 +195,6 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     controller = new Controller
     controller.report.addHandler(errorReport)
 
-    /** Options */
-    val mslf = home / "startup.msl"
-    if (mslf.toJava.exists())
-      controller.runMSLFile(mslf, None, true, None)
-    else {
-      mslf.createNewFile()
-      File.append(mslf, "extension info.kwarc.mmt.odk.Plugin")
-    }
-
     val rc = home / "mmtrc"
     if (!rc.toJava.exists()) {
       rc.createNewFile()
@@ -215,6 +206,16 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     /** MathHub Folder */
     controller.setHome(home)
     controller.addArchive(home)
+
+    /** Options */
+    val mslf = home / "startup.msl"
+    if (mslf.toJava.exists())
+      controller.runMSLFile(mslf, None, true, None)
+    else {
+      mslf.createNewFile()
+      File.append(mslf, "extension info.kwarc.mmt.odk.Plugin")
+      controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
+    }
   }
 
   def syntaxTree(node: DefaultMutableTreeNode, docS: String): Unit = {
