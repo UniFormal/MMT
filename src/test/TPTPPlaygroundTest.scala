@@ -12,10 +12,10 @@ object TPTPPlaygroundTest extends MagicTest {
 
   def run(): Unit = {
     controller.handleLine("log+ debug")
+    //controller.handleLine("log+ object-checker")
     if (!loadMMTExtensionFromArchives("latin2.tptp.TPTPExporter")(controller)) {
       throw ImplementationError("Extension cannot be loaded from archive!")
     }
-    controller.handleLine("log+ debug")
     //controller.handleLine("build MMT/LATIN2 mmt-omdoc casestudies/2022-tptp/tptp-exporter_monoid.mmt")
     //controller.handleLine("build MMT/LATIN2 tptp casestudies/2022-tptp/tptp-exporter_monoid.omdoc")
 

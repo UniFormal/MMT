@@ -71,7 +71,7 @@ object InferProve extends InferenceAndTypingRule(Prove.path, Prove.path) {
 object InferUnknown extends InferenceAndTypingRule(UnknownTerm.path, UnknownTerm.path) {
   def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History) = {
     tm match {
-      case UnknownTerm(_) => (None, Some(true))
+      case UnknownTerm(_) => (tp, Some(true))
       case _ => (None,None)
     }
   }
