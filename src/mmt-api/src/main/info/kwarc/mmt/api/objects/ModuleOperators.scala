@@ -234,6 +234,7 @@ object Morph {
         }
         // OMCOMP disappears if result has length 1
         OMCOMP(result)
+      case m => m // anything is allowed in content that is still being checked
     }
   }
 
@@ -326,7 +327,7 @@ object TheoryExp {
     * @param all if false, stop after the first meta-theory, true by default
     */
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
-    case OMMOD(p) =>
+    case OMPMOD(p,_) =>
       val t = lib.getAs(classOf[AbstractTheory],p)
       t.meta match {
         case None => 

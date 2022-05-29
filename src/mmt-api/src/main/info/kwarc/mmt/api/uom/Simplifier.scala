@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import frontend._
 import checking._
-import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 import symbols._
 import modules._
@@ -18,7 +17,7 @@ trait ObjectSimplifier extends Extension {self =>
    def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType
    
    def toTranslator(rules: RuleSet, expDef: Boolean) = new UniformTranslator {
-     def apply(c: Context, t: Term) = self.apply(t, SimplificationUnit(c, expDef, true), rules)
+     def applyPlain(c: Context, t: Term) = self.apply(t, SimplificationUnit(c, expDef, true), rules)
    }
 }
 

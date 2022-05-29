@@ -7,6 +7,51 @@ import Level.Level
 import frontend._
 import utils._
 
+/** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
+  * from an input dimension.
+  */
+abstract class BuildTarget extends FormatBasedExtension {
+  /** a string identifying this build target, used for parsing commands, logging, error messages */
+  def key : String
+
+  override def toString : String = super.toString + " with key " + key
+
+  def isApplicable(format: String) : Boolean = format == key
+
+  /** defaults to the key */
+  override def logPrefix : String = key
+
+  /** build or update this target in a given archive */
+  def build(a: Archive, which: Build, in: FilePath, errorCont: Option[ErrorHandler]) : Unit
+
+  /** clean this target in a given archive */
+  def clean(a: Archive, in: FilePath): Unit
+
+  /** the main function to run the build target
+    *
+    * en empty in filepath addresses the whole archive
+    *
+    * @param modifier chooses build, clean, or update
+    * @param arch     the archive to build on
+    * @param in       the folder inside the archive's inDim folder to which building is restricted
+    * @param errorCont continuation for reporting errors that this target recovered from (fatal errors should be thrown instead)
+    */
+  def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath, errorCont: Option[ErrorHandler]) {
+    modifier match {
+      case w:Build => build(arch, w, in, errorCont)
+      case Clean => clean(arch, in)
+    }
+  }
+
+  /** auxiliary method for deleting a file */
+  protected def delete(f: File) {
+    if (f.exists) {
+      log("deleting " + f)
+      f.deleteDir
+    }
+  }
+}
+
 /** when calling a [[BuildTarget]] we can use modifiers for, e.g., cleaning */
 sealed abstract class BuildTargetModifier {
   def toString(dim: String): String
@@ -45,8 +90,8 @@ object BuildChanged {
 }
 
 /**
- * parsing method for build target modifiers
- */
+  * parsing method for build target modifiers
+  */
 object BuildTargetModifier {
   /**
     * parses m.toString(d) into (d,m)
@@ -64,50 +109,6 @@ object BuildTargetModifier {
         val w = BuildSome(mods.contains('C'), mods.contains('E'))
         (d, w)
       }
-    }
-  }
-}
-
-/** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
-  * from an input dimension.
-  */
-abstract class BuildTarget extends FormatBasedExtension {
-  /** a string identifying this build target, used for parsing commands, logging, error messages */
-  def key : String
-
-  override def toString : String = super.toString + " with key " + key
-
-  def isApplicable(format: String) : Boolean = format == key
-
-  /** defaults to the key */
-  override def logPrefix : String = key
-
-  /** build or update this target in a given archive */
-  def build(a: Archive, which: Build, in: FilePath) : Unit
-
-  /** clean this target in a given archive */
-  def clean(a: Archive, in: FilePath): Unit
-
-  /** the main function to run the build target
-    *
-    * en empty in filepath addresses the whole archive
-    *
-    * @param modifier chooses build, clean, or update
-    * @param arch     the archive to build on
-    * @param in       the folder inside the archive's inDim folder to which building is restricted
-    */
-  def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
-    modifier match {
-      case w:Build => build(arch, w, in)
-      case Clean => clean(arch, in)
-    }
-  }
-
-  /** auxiliary method for deleting a file */
-  protected def delete(f: File) {
-    if (f.exists) {
-      log("deleting " + f)
-      f.deleteDir
     }
   }
 }
@@ -161,6 +162,8 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
 abstract class TraversingBuildTarget extends BuildTarget {
 
   // ***************** abstract or overridable methods for configuring basic properties such as file extensions
+
+  def onBlock(bt: QueuedTask,br : BuildResult): QueuedTask = bt
 
   /** the input dimension/archive folder */
   def inDim: ArchiveDimension
@@ -232,11 +235,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getFolderOutFile(a: Archive,inPath: FilePath): File = getOutFile(a,inPath / folderName)
 
-  protected def getErrorFile(a: Archive,inPath: FilePath): File =
-    FileBuildDependency(key,a,inPath).getErrorFile(controller) //TODO why is this method not like the others?
+  protected def getErrorFile(a: Archive,inPath: FilePath): File = (a / errors / key / inPath).setExtension("err")
 
-  // TODO why is this not protected?
-  // Because it also gets called from ErrorManager
+  // This should be protected but also gets called from ErrorManager
   def getFolderErrorFile(a: Archive,inPath: FilePath): File = a / errors / key / inPath / (folderName + ".err")
 
   protected def getOutPath(a: Archive,outFile: File): FilePath = outFile.toFilePath
@@ -246,15 +247,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     log(s,Some("result"))
   }
 
-  // ***************** building (i.e., create build tasks and add them to build manager)
-
-  /** delegates to build */
-  def build(a: Archive,w: Build,in: FilePath) {
-    build(a,w,in,None)
-  }
+  // ***************** building (i.e., create build tasks and add them to build manager
 
   /** entry point for recursive building */
-  def build(a: Archive,w: Build,in: FilePath,errorCont: Option[ErrorHandler] = None) {
+  def build(a: Archive,w: Build,in: FilePath,errorCont: Option[ErrorHandler]) {
     val qts = makeBuildTasks(a,in,errorCont)
     controller.buildManager.addTasks(w,qts)
   }
@@ -296,11 +292,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     */
   private def makeBuildTask(a: Archive,inPath: FilePath,inFile: File,
                             children: Option[List[BuildTask]],eCOpt: Option[ErrorHandler]): BuildTask = {
-    val errorWriter = makeHandler(a,inPath,children.isDefined)
-    val errorCont = eCOpt match {
-      case None => errorWriter
-      case Some(eC) => new MultipleErrorHandler(List(eC,errorWriter))
-    }
+    val ew = makeHandler(a,inPath,children.isDefined)
+    val errorCont = MultipleErrorHandler(ew :: eCOpt.toList, report)
     val outFile = if (children.isDefined) getFolderOutFile(a,inPath) else getOutFile(a,inPath)
     new BuildTask(key,a,inFile,children,inPath,outFile,errorCont)
   }
@@ -314,10 +307,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** auxiliary function to create an error handler */
-  private def makeHandler(a: Archive,inPath: FilePath,isDir: Boolean = false) = {
+  private def makeHandler(a: Archive,inPath: FilePath, isDir: Boolean = false) = {
     val errFileName = if (isDir) getFolderErrorFile(a,inPath)
     else getErrorFile(a,inPath)
-    new ErrorWriter(errFileName,Some(report))
+    new ErrorWriter(errFileName)
   }
 
   // ******************* Actual building (i.e., when the build manager calls a build task)

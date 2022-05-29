@@ -62,6 +62,7 @@ object STeXContentError {
 // TODO deprecate/reimplement rest:
 
 //COmmon OMDoc functionality that is not specific to the sTeX importer
+
 object OMDoc {
 
   def getDefaultSRef(s : String, dpath : DPath) : SourceRef = {
@@ -126,6 +127,7 @@ object OMDoc {
     }
   }
 
+  @deprecated("needs full revision, should be deleted")
   def parseNarrativeObject(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath,
                                                                   mpath : MPath,
                                                                   errorCont : ErrorHandler,
@@ -143,6 +145,7 @@ object OMDoc {
     }
   }
 
+  @deprecated("needs full revision, should be deleted")
   def rewriteCMP(node : scala.xml.Node, tsref : SourceRef)(implicit mpath : MPath,
                                                            errorCont : ErrorHandler,
                                                            resolveSPath : (Option[String], Option[String], String, MPath, SourceRef) => GlobalName) : scala.xml.Node = node.label match {
@@ -187,6 +190,7 @@ object OMDoc {
     }
   }
 
+  @deprecated("needs full revision, should be deleted")
   def translateCMP(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath, mpath : MPath, errorCont : ErrorHandler) : Term = {
     val sref = parseSourceRef(n, dpath)
     n.label match {

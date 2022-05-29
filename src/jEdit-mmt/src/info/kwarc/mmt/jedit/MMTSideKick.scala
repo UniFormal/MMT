@@ -97,7 +97,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val path = File(buffer.getPath)
       val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
       //TODO there is a synchronization problem with multiple parse calls causing a concurrent access exception in ErrorList
-      errorCont.reset
+      mmt.errorSource.removeMMTFileErrors(path)
       try {
          val uri = utils.FileURI(path)
          val text = buffer.getText

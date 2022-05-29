@@ -62,9 +62,11 @@ class Shell extends StandardIOHelper {
         controller.cleanup
         // We do not re-throw the exception here but instead simply exit with a non-zero code
         // Make sure ShellArguments is configured in such a way that we log to the console by default; otherwise, this would suppress errors
-        sys.exit(Shell.EXIT_CODE_FAIL_EXCEPTION)
+        exitFail
     }
   }
+
+  protected def exitFail = sys.exit(Level.Fatal.toInt)
 
   private def loadConfig(cfg: File) {
      if (cfg.exists) {
@@ -73,7 +75,7 @@ class Shell extends StandardIOHelper {
   }
   private def loadMsl(msl: File) {
      if (msl.exists) {
-        controller.runMSLFile(msl, None)
+        controller.runMSLFile(msl, None, true, None)
      }
   }
 
@@ -83,12 +85,15 @@ class Shell extends StandardIOHelper {
        case Some(se) =>
           controller.report.addHandler(ConsoleHandler)
           controller.report.groups += se.logPrefix
-          val doCleanup = se.run(this, args)
-          if (doCleanup) {
-             controller.cleanup
+          val result = se.run(this, args)
+          result.foreach {l =>
+            controller.cleanup
+            if (l > Level.Warning)
+              sys.exit(l.toInt)
           }
        case None =>
           println("no shell extension found for " + key)
+          exitFail
     }
   }
 
@@ -151,7 +156,7 @@ class Shell extends StandardIOHelper {
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
       controller.handle(HelpAction("usage_short"))
-      sys.exit(Shell.EXIT_CODE_FAIL_ARGUMENT)
+      exitFail
     }
 
     // configure logging
@@ -247,15 +252,6 @@ class StandardREPL extends REPLExtension {
     }
   }
   def exit {input.close()}
-}
-
-object Shell {
-  /** exit code for when everything is OK */
-  final val EXIT_CODE_OK : Int = 0
-  /** exit code for when parsing arguments fails */
-  final val EXIT_CODE_FAIL_ARGUMENT : Int = 1
-  /** exit code for when an unexpected exception occurs */
-  final val EXIT_CODE_FAIL_EXCEPTION : Int = 2
 }
 
 /** A shell, the default way to run MMT as an application */

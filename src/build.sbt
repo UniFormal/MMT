@@ -69,6 +69,7 @@ testOptions in Test += Tests.Argument("-oI")
 val deploy = TaskKey[Unit]("deploy", "copies packaged jars for MMT projects to deploy location.")
 val deployLFCatalog = TaskKey[Unit]("deployLFCatalog", "builds a stand-alone lfcatalog.jar")
 val install = TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
+val testSetup = TaskKey[Unit]("testSetup", "tests the MMT :setup command")
 
 // =================================
 // DOCUMENTATION TASKS
@@ -127,7 +128,8 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   publishTo := Some(Resolver.file("file", utils.value.deploy.toJava / " main")),
 
   install := {},
-  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value
+  deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
+  testSetup := utils.value.testSetup
 )
 
 // =================================
@@ -152,9 +154,9 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, got, coq, glf,
+    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
     tiscaf, lfcatalog,
-    jedit, intellij, argsemcomp
+    jedit, intellij,buildserver
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -167,7 +169,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp, buildserver).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -201,7 +203,8 @@ def apiJars(u: Utils) = Seq(
   "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
-  "scala-parallel-collections.jar"
+  "scala-parallel-collections.jar",
+  //"jgit.jar"
 ).map(u.lib.toJava / _)
 
 // The kernel upon which everything else depends. Maintainer: Florian
@@ -257,6 +260,21 @@ lazy val jedit = (project in file("jEdit-mmt")).
 lazy val intellij = (project in file("intellij-mmt")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("intellij-mmt"): _*)
+
+// MMT build server. Maintainer: Dennis
+lazy val buildserver = (project in file("mmt-buildserver")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-buildserver"): _*).
+  settings(
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "jgit.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "jgit.jar",
+  )
+/*.
+  settings(
+    libraryDependencies ++= Seq(
+      "io.methvin" %% "directory-watcher-better-files" % "0.15.1"
+    )
+  )*/
 
 lazy val coq = (project in file("mmt-coq")).
   dependsOn(api, lf).
@@ -472,15 +490,6 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
 
-// plugin for computing argumentation semantics
-lazy val argsemcomp = (project in file("mmt-argsemcomp")).
-  dependsOn(api).
-  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
-  settings(
-    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
-    "org.slf4j" % "slf4j-simple" % "1.7.30", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
-  )
-
 // =================================
 // DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
@@ -521,6 +530,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
 // deleted from the devel branch 2022-03-23
 //  mmt-leo, mmt-got, mmt-tptp, mmt-interviews, planetary-mmt
 //  mmt-webEdit: using MMT in editing frontends, orginally developed by Mihnea (?), functional but obsolete
+//  mmt-argsemcomp: argumentation semantics by Max
 //
 // deleted some other time
 // mmt-reflection

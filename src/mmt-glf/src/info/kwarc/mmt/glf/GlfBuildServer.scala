@@ -31,7 +31,7 @@ class GlfBuildServer extends ServerExtension("glf-build"){
             case None => return errorResponse("File doesn't appear to have an extension")
         }
 
-        val errorcontainer = new ErrorContainer(None)
+        val errorcontainer = new ErrorContainer
 
         val result = if (isGf) {
             val buildtask = new BuildTask("mmt-gf", archive, archive / gfImporter.inDim / file,

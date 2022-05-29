@@ -10,7 +10,7 @@ import objects._
 class RuleCache extends ChangeListener {
   override val logPrefix = "rule-cache"
 
-  private var rules = new utils.HashMapToSet[MPath,Rule]
+  private val rules = new utils.HashMapToSet[MPath,Rule]
 
   override def onAdd(e: StructuralElement) {
      e match {

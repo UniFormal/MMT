@@ -2,20 +2,17 @@ package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import frontend._
-import checking._
 import utils._
 import documents._
 import modules._
 import symbols._
-import patterns._
 import objects._
 import notations._
 import libraries.AlreadyDefined
 import Theory._
 import info.kwarc.mmt.api.parser.SourceRef
 
-import collection.immutable.{HashMap, HashSet}
-import scala.util.{Success, Try}
+import collection.immutable.{HashMap}
 
 /** used by [[MMTStructureSimplifier]] */
 @MMT_TODO("needs review")
@@ -371,12 +368,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             idID.df match {
               case Some(dfMor) =>
                 // if idID has a definiens, we have to check equality with the existing include
-                val existingMor = exid.asMorphism
+                val existingMor = Morph.simplify(exid.asMorphism)(lup)
                 val existingMorN = oS(existingMor,SimplificationUnit(innerCont,false,true),rules)
                 val eq = Morph.equal(existingMorN,dfMor,OMMOD(exid.from),target)(lup)
                 if (!eq) {
                   // otherwise, it is an error
-                  val List(newStr,exStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
+                  val List(exStr,newStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
                   val parStr = parent.name.toString
                   val msg = if (inTheory) {
                     s"theory included twice into $parStr with different definitions or parameters"
@@ -732,133 +729,5 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      case OMMOD(p) => lup.getTheory(p)
      //TODO OMPMOD
      case ComplexTheory(cont) => cont
-  }
-
-   /* everything below here is Mihnea's enrichment code, which may be outdated or incomplete */
-
-  /** auxiliary method of enriching */
-  private lazy val loadAll = {
-    memory.ontology.getInds(ontology.IsTheory) foreach {p =>
-      controller.get(p)
-    }
-    memory.ontology.getInds(ontology.IsView) foreach {p =>
-      controller.get(p)
-    }
-  }
-  private lazy val modules = controller.memory.content.getModules
-
-  /**
-   * adds declarations induced by views to all theories
-   */
-  def enrich(t : Theory) : Theory =  {
-    loadAll
-    val tbar = new Theory(t.parent, t.name, t.meta, t.paramC, t.dfC)
-    t.getDeclarations foreach {d =>
-      tbar.add(d)
-    }
-    val views = modules collect {
-      case v : View if v.to == t.toTerm => v
-    } // all views to T
-
-    views foreach { v =>
-      val s = v.from
-      implicit val rules = makeRules(v)
-      modules collect {
-        case sprime : Theory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
-          // here we have v : s -> t and sprime includes s -- (include relation is transitive, reflexive)
-          // therefore we make a structure with sprime^v and add it to tbar
-          /*
-          val str = SimpleDeclaredStructure(tbar.toTerm, (LocalName(v.path) / sprime.path.toPath), sprime.path, false)
-          sprime.getDeclarations foreach {d =>
-            str.add(rewrite(d))
-          }
-          tbar.add(str)
-          */
-          //conceptually this should be a structure, but adding the declarations directly is more efficient
-          sprime.getDeclarations foreach {
-            case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path, t.getInnerContext))
-            case _ => //nothing for now //TODO handle structures
-          }
-      }
-    }
-    tbar
-  }
-  //Flattens by generating a new theory for every view, used for flatsearch
-  def enrichFineGrained(t : Theory) : List[Theory] = {
-    loadAll
-    var thys : List[Theory] = Nil
-    val tbar = new Theory(t.parent, t.name, t.meta, t.paramC, t.dfC)
-    t.getDeclarations foreach {d =>
-      tbar.add(d)
-    }
-    thys ::= tbar
-    val views = modules collect {
-      case v : View if v.to == t.toTerm => v
-    }
-    views foreach { v=>
-      val s = v.from
-      implicit val rules = makeRules(v)
-      modules collect {
-        case sprime : Theory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
-          val tvw = new Theory(t.parent, sprime.name / v.name, t.meta, t.paramC, t.dfC)
-          sprime.getDeclarations foreach {
-            case c : Constant => tvw.add(rewrite(c, v.path, tbar.path, t.getInnerContext))
-            case _ => //nothing for now //TODO handle structures
-          }
-          thys ::= tvw
-      }
-
-    }
-
-    thys
-  }
-
-
-  private def makeRules(v : View) : HashMap[Path, Term] = {
-    val path = v.from.toMPath
-    var rules = new HashMap[Path,Term]
-    val decl = v.getDeclarations
-
-    v.getDeclarations foreach {
-      case c : Constant =>
-        c.df.foreach {t =>
-          rules += (path ? c.name -> t)
-        }
-      case s : Structure => s.df.foreach {df =>
-        try {
-          controller.get(df.toMPath) match {
-            case v : View => rules ++= makeRules(v)
-            case _ => //nothing to do
-          }
-        } catch {
-          case e : Error => // println(e)//nothing to do
-          case e : Exception => // println(e)//nothing to do
-        }
-      }
-    }
-    rules
-  }
-
-  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = {
-      val tl = new UniformTranslator {
-        def apply(c: Context, t: Term) = apply(c, rewrite(t))
-      }
-      val dT = d.translate(OMMOD(newhome), LocalName(vpath.toPath) / d.home.toMPath.toPath, tl, context)
-      dT.setOrigin(ByStructureSimplifier(d.home, OMID(vpath)))
-      dT
-  }
-
-
-  private def rewrite(t : Term)(implicit rules : HashMap[Path, Term]) : Term = {
-    t match {
-    case OMID(p) =>
-      if (rules.isDefinedAt(p)) rules(p) else t
-    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
-    case OMBINDC(b, con, bodies) => OMBINDC(rewrite(b), rewrite(con), bodies.map(rewrite))
-    case _ => t
-  }}
-
-  private def rewrite(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
-    con.mapTerms {case (_,t) => rewrite(t)}
   }
 }

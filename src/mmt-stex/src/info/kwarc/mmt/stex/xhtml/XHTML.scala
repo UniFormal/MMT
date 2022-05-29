@@ -35,10 +35,17 @@ object HTMLParser {
   val ns_stex = "http://kwarc.info/ns/sTeX"
   val ns_mmt = "http://uniformal.github.io/MMT"
   val ns_rustex = "http://kwarc.info/ns/RusTeX"
+  val ns_svg = "http://www.w3.org/2000/svg"
   val empty = '\u200E'
 
   class ParsingState(val controller : Controller, rules : List[HTMLRule]) {
     val namespaces = mutable.Map.empty[String,String]
+    namespaces("xhtml") = ns_html
+    namespaces("mml") = ns_mml
+    namespaces("stex") = ns_stex
+    namespaces("mmt") = ns_mmt
+    namespaces("rustex") = ns_rustex
+    namespaces("svg") = ns_svg
 
     private[HTMLParser] var _top : Option[HTMLNode] = None
     protected var _parent : Option[HTMLNode] = None
@@ -197,22 +204,22 @@ object HTMLParser {
         error("???")
       }
       val elem = _parent.get
+      elem.onAddI
       _parent = elem._parent
       _namespace = _parent.map(_.namespace).getOrElse("")
-      elem.onAddI
       elem
     }
 
-    private[HTMLParser] def present(n : HTMLNode,indent : Int = 0) : String = {
+    private[HTMLParser] def present(n : HTMLNode,indent : Int = 0,forcenamespace : Boolean = false) : String = {
       {if (_top.contains(n)) header else ""} +
       {
         if (n.startswithWS) "\n" + {if (indent>0) (0 until indent).map(_ => "  ").mkString else ""} else ""
       } + {n match {
         case t : HTMLText =>
-          t.text + {if(t.endswithWS) "\n" else ""}
+          t.toString() + {if(t.endswithWS) "\n" else ""}
         case _ =>
           "<" + n.label + {
-            if (!n._parent.exists(_.namespace == n.namespace)) " xmlns=\"" + n.namespace + "\"" else ""
+            if (!n._parent.exists(_.namespace == n.namespace) || forcenamespace) " xmlns=\"" + n.namespace + "\"" else ""
           } + {
             if (_top.contains(n)) namespaces.toList.map {
               case (p,v) => " xmlns:" + p + "=\"" + v + "\""
@@ -223,7 +230,7 @@ object HTMLParser {
               else if (namespaces.values.toList.contains(ns))
                 " " + namespaces.toList.collectFirst{case p if p._2 == ns => p._1}.get + ":"
               else " " + ns + ":"
-              } + key + "=\"" + XMLEscaping(value) + "\""
+              } + key + "=\"" + value.replace("\"","\'") + "\""
           }.mkString + {
             if (n._sourceref.isDefined && !n._parent.exists(_._sourceref == n._sourceref)) " " + "stex:sourceref=\"" + n._sourceref.get.toString + "\"" else ""
           } + {
@@ -240,7 +247,7 @@ object HTMLParser {
     }
   }
 
-  class HTMLNode(var state : ParsingState, val namespace : String, val label : String) {
+  class HTMLNode(var state : ParsingState, val namespace : String, var label : String) {
     override def toString: String = state.present(this)
 
     val attributes = mutable.Map.empty[(String, String), String]
@@ -252,6 +259,14 @@ object HTMLParser {
       ret.classes = classes
       attributes.foreach(e => ret.attributes(e._1) = e._2)
       children.foreach(c => ret.add(c.copy))
+      ret
+    }
+
+    def plaincopy: HTMLNode = {
+      val ret = new HTMLNode(state, namespace, label)
+      ret.classes = classes
+      attributes.foreach(e => ret.attributes(e._1) = e._2)
+      children.foreach(c => ret.add(c.plaincopy))
       ret
     }
 
@@ -414,7 +429,7 @@ object HTMLParser {
     }
 
     def node = try {
-      XML.loadString(this.toString.trim)
+      XML.loadString(state.present(this,forcenamespace=true).trim)
     } catch {
       case o =>
         println(o.toString)
@@ -424,10 +439,13 @@ object HTMLParser {
   }
 
   class HTMLText(state : ParsingState, val text : String) extends HTMLNode(state,"","") {
-    override def toString() = text//XMLEscaping(text)
+    override def toString() = text//.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll("\"","&quot;")
     override def isEmpty = toString() == "" || toString() == empty.toString
 
     override def copy : HTMLText = {
+      new HTMLText(state,text)
+    }
+    override def plaincopy : HTMLText = {
       new HTMLText(state,text)
     }
   }
@@ -536,10 +554,10 @@ object HTMLParser {
         case c =>
           var txt = c + in.takeWhileSafe(_ != '<')
           val endWS = txt.lastOption.exists(_.isWhitespace)
-          txt = if (txt.trim == empty.toString) empty.toString else Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
+          txt = if (txt.trim == empty.toString) empty.toString else txt.trim/*Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
             print("")
             txt.trim
-          })
+          })*/
           if (txt.nonEmpty) {
             val n = new HTMLText(state, txt)
             n.startswithWS = startWS

@@ -45,7 +45,7 @@ class Report extends Logger {
 
   /** output is categorized, the elements of group determine which categories are considered
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
-  private[mmt] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response", "lmh")
+  private[mmt] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response")
   /**  true if debug logging is enabled */
   def checkDebug = groups contains "debug"
   
@@ -146,7 +146,6 @@ class Report extends Logger {
 }
 
 object Report {
-  val groups = List("user", "error", "controller", "extman", "library", "archive", "backend")
   val df = new java.text.SimpleDateFormat("HH:mm:ss.S")
 }
 
@@ -172,8 +171,7 @@ abstract class ReportHandler(val id: String) {
       case _: ContentError => (contentErrorHighlight(e.shortMsg), e.getCausedBy.isEmpty)
       case _ => (systemErrorHighlight(e.shortMsg), false)
     }
-    // only report real errors
-    if (e.level >= Level.Error) apply(ind, caller, "error", List(msg))
+    apply(ind, caller, "error", List(s"(${e.levelString}) " + msg))
     if (debug && !content) {
       apply(ind, caller, "debug", utils.stringToList(e.toStringLong, "\\n"))
     }

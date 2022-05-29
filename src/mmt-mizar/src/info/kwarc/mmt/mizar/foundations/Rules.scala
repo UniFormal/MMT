@@ -10,10 +10,6 @@ import info.kwarc.mmt.mizar.mmtwrapper._
 import MizarPrimitiveConcepts._
 
 object IntroductionRule {
-  val metaVarBase = LocalName("")
-  def context(n: Int) = List("x","y","z").take(n).map {s => VarDecl(LocalName(metaVarBase / s))}
-  val X = OMV(metaVarBase / "x")
-  val Y = OMV(metaVarBase / "y")
 
   val boundVar = "BOUND"
   def hasBoundVar(f: Term) = apply(f, OMV(boundVar))
@@ -21,14 +17,20 @@ object IntroductionRule {
   val allRules = List(IntroduceImplication,IntroduceEquivalence,IntroduceExistential,ContractRep)
 }
 
-import IntroductionRule._
-
 /**
  * (X implies Y) and (Y implies X) ---> X equiv Y
  */
-object IntroduceEquivalence extends RewriteRule(constantName("iff"), context(2), And(List(implies(X,Y),implies(Y,X))), iff(X,Y)) with ComplificationRule {
+object IntroduceEquivalence extends SimplificationRule(constantName("iff")) {
+  def apply(c: Context, t: Term) = {
+    t match {
+      case And(List(implies(x,y),implies(y2,x2))) if y == y2 && x == x2 => Simplify(iff(x,y))
+      case _ => Recurse
+    }
+  }
   /** lower than [[IntroduceImplication]] because it can only fire afterwards anyway */
   override def priority = -10
+
+  override def complificationOnly = true
 }
 
 /**
@@ -37,10 +39,9 @@ object IntroduceEquivalence extends RewriteRule(constantName("iff"), context(2),
  *
  * this cannot easily be a rewrite rule because m and n can be arbitrary
  */
-object IntroduceImplication extends TermTransformationRule with ComplificationRule {
+object IntroduceImplication extends SimplificationRule(constantName("implies")) {
   import lf._
-  val head = constantName("implies")
-  def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
+  def apply(goalContext: Context, goal: Term): Simplifiability = {
     goal match {
       case Apply(OMS(negCon), ApplySpine(OMS(andCon), NoSeqs(args))) =>
         var succ: List[Term] = Nil
@@ -56,7 +57,7 @@ object IntroduceImplication extends TermTransformationRule with ComplificationRu
         }
         if (succ.isEmpty)
         // n = 0, nothing to do
-          None
+          Recurse
         else {
           val disj = if (succ.length == 1) succ.head else Or(succ)
           val anteL = args.length-succ.length
@@ -68,11 +69,12 @@ object IntroduceImplication extends TermTransformationRule with ComplificationRu
             val conj = if (anteL == 1) args.head else And(args.take(anteL))
             implies(conj, disj)
           }
-          Some(res)
+          Simplify(res)
         }
-      case _ => None
+      case _ => Recurse
     }
   }
+  override def complificationOnly = true
 }
 
 /**
@@ -81,18 +83,18 @@ object IntroduceImplication extends TermTransformationRule with ComplificationRu
  * this cannot be a RewriteRule because HOAS matching cannot match for the name of the bound variable
  * so we use basic Scala matching instead
  */
-object IntroduceExistential extends TermTransformationRule with ComplificationRule {
-  val head = constantName("exists")
+object IntroduceExistential extends SimplificationRule(constantName("exists"))  {
   import lf._
   // extract the names of the Mizar constants
   private val dummy = OMV("dummy")
   private val Apply(neg, ApplySpine(univ, List(_, Lambda(_, any, _)))) = not(forall(dummy.name.toString, dummy, dummy))
 
-  def apply(matcher: Matcher, goalContext: Context, goal: Term): Option[Term] = {
+  def apply(goalContext: Context, goal: Term): Simplifiability = {
     goal match {
-      case not(forall(n, x, not(y))) => Some(exists(n, x, y))
-      case _ => None
+      case not(forall(n, x, not(y))) => Simplify(exists(n, x, y))
+      case _ => Recurse
     }
   }
+  override def complificationOnly = true
 }
 

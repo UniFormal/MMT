@@ -15,7 +15,7 @@ class SimpleIrrelevanceRule(p : GlobalName, default: Option[Term] = None) extend
     solver.prove(tp, allowUnknowns = false) orElse {default flatMap {d =>
       tp match {
         case Apply(OMS(`p`),prop) =>
-          solver.warning("using default value to solve " + solver.presentObj(tp))
+          solver.error("using default value to solve " + solver.presentObj(tp), Some(Level.Gap))
           Some(Apply(d,prop))
         case _ => None
       }

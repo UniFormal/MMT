@@ -15,7 +15,7 @@ class BuildActions(mmtplugin: MMTPlugin) {
    def build(f: String) {
       val file = File(f)
       val errorCont = new ErrorListForwarder(errorSource, controller, file)
-      errorCont.reset
+      errorSource.removeMMTFileErrors(file)
       if (file.isFile) {
          log("build file " + file)
          try {

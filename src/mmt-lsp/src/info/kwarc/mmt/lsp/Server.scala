@@ -154,11 +154,7 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
         case Level.Info => DiagnosticSeverity.Information
         case Level.Error => DiagnosticSeverity.Error
         case Level.Warning => DiagnosticSeverity.Warning
-        case Level.Ignore => DiagnosticSeverity.Hint
         case Level.Fatal => DiagnosticSeverity.Error
-        case _ =>
-          print("")
-          ???
       })
       d.setMessage(e.getMessage + "\n\n" + e.extraMessage)
       d

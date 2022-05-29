@@ -138,8 +138,8 @@ object DocumentExtension extends STeXExtension {
   }
 
   def sidebar(elem : HTMLNode, content: List[Node]) = {
-    val sidenotes = getTop(elem).get()()("sidenote-container").head
-    sidenotes.add(<div>{content}</div>)
+    val sidenotes = getTop(elem).get()()("sidenote-container").headOption
+    sidenotes.foreach(_.add(<div>{content}</div>))
   }/*{
     val id = elem.state.generateId
     val side = <span id={id} class="sidenote-container"><span class="sidenote-container-b"><small class="sidenote">{content}</small></span></span>

@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.Conversions._
-import info.kwarc.mmt.api.symbols.UniformTranslator
 
 /**
   * A Traverser is a function on Term defined by context-sensitive induction.
@@ -44,8 +43,8 @@ abstract class Traverser[A] {
    def traverseContext(cont: Context)(implicit con : Context, state : State): Context = {
       cont.mapVarDecls {case (before, vd) =>
          val curentContext = con ++ before
-         vd map {t => traverse(t)(curentContext, state)}
-      }
+        (vd map {t => traverse(t)(curentContext, state)}).from(vd)
+      }.from(cont)
    }
 
    /** traverses any object by mapping all the terms in it */
@@ -65,8 +64,8 @@ abstract class Traverser[A] {
    /** this traverser as a translator
     *  @param newInit creates a fresh initial state
     */
-   def toTranslator(newInit: () => A): UniformTranslator = new symbols.UniformTranslator {
-     def apply(c: Context, t: Term): Term = traverse(t)(c, newInit())
+   def toTranslator(newInit: () => A): UniformTranslator = new UniformTranslator {
+     def applyPlain(c: Context, t: Term): Term = traverse(t)(c, newInit())
    }
 
   /** diagrammatic composition (first this, then that) */
@@ -99,7 +98,7 @@ object Traverser {
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
          c.mapVarDecls {case (before, vd) =>
             val curentContext = con ++ before
-            vd.map(t => rec(t)(curentContext, state))
+            vd.map(t => rec(t)(curentContext, state)).from(vd)
          }
       t match {
         case OMA(f, args) =>

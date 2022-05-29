@@ -20,6 +20,9 @@ abstract class SimplificationRule(h: GlobalName) extends MatchingSimplificationR
   def apply(context: Context, rules: RuleSet, t: Term): Simplifiability = apply(context, t)
 
   def apply(context: Context, t: Term): Simplifiability
+
+  /** override and set to true for rules that should only be used for complification */
+  def complificationOnly = false
 }
 
 /** return type of applying a simplification rule to a term t */
@@ -70,54 +73,3 @@ class AbbrevRule(h: GlobalName, val term: Term) extends SimplificationRule(h) {
   def apply(context: Context, t: Term) =
     if (t == OMS(h)) Simplify(term) else Simplifiability.NoRecurse
 }
-
-/**
-  * a general rewrite rule
-  *
-  * @param templateVars the free variables to fill in through matching
-  * @param template     the left-hand side
-  * @param ths          the right-hand side (relative to the template variables)
-  *
-  *                     to allow for using the same rewrite rule in different contexts (where different solution rules for matching may be available),
-  *                     this class must be provided with a Matcher before producing an actual rule
-  */
-// TODO this is barely used so far (once in Mizar)
-class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val rhs: Term) extends TermTransformationRule {
-  /**
-    * @param matcher the matcher to use
-    * @return the simplification rule
-    */
-  def makeRule(matcher: Matcher) = new SimplificationRule(head) {
-    def apply(goalContext: Context, goal: Term) = {
-      matcher(goalContext, goal, templateVars, template) match {
-        case MatchSuccess(sub, total) =>
-          if (total || utils.subset(rhs.freeVars, sub.domain))
-            Simplify(rhs ^? sub)
-          else
-            Recurse
-        case _ =>
-          Recurse // TODO this is terrible for stability
-      }
-    }
-  }
-
-  def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
-    val rule = makeRule(matcher)
-    rule(goalContext, goal).get
-  }
-}
-
-/**
-  * general purpose transformation rule
-  * //TODO this is barely used and should be merged with SimplificationRule
-  */
-trait TermTransformationRule extends SimplifierRule {
-  /** try to apply this, return result if applicable */
-  def apply(matcher: Matcher, goalContext: Context, goal: Term): Option[Term]
-}
-
-/** the term transformation rules that should be used for complification
-  *
-  * separating these rules is important to avoid cycles during simplification
-  */
-trait ComplificationRule extends TermTransformationRule

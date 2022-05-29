@@ -23,7 +23,7 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
     ce.errorCont(e)
   }
 
-  def extSimpEnv = new uom.ExtendedSimplificationEnvironment(ce.simpEnv, ce.simplifier.objectLevel, rules)
+  def extSimpEnv = uom.ExtendedSimplificationEnvironment(ce.simpEnv, ce.simplifier.objectLevel, rules)
 }
 
 /** auxiliary class for the [[MMTStructureChecker]] to store expectations about a constant */
@@ -132,10 +132,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
     implicit val ce = env.ce
     val path = e.path
-    log("checking " + path,e match {
-      case _:AbstractTheory | _:Constant => Some("simple")
-      case _ => None
-    })//+ " using the following rules: " + env.rules.toString)
+    log("checking " + path)//+ " using the following rules: " + env.rules.toString)
     UncheckedElement.set(e)
 
     // Global switch-case on what to check
@@ -198,39 +195,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
 
       case c: Constant =>
-        /**
-          * Tries to apply a morphism homomorphically on a term.
-          * We use [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs ApplyMorphs]] and forward caught [[GetError]]
-          * exceptions (plus ''specificError'', if given) to the error continuation in [[env]].
-          *
-          * Use case: in checking of constants below (e.g. of the form ''c: tp = df''), it might happen
-          * that a particular morphism ''mor'' is defined on ''c'' and for further checking needs to be
-          * applied homomorphically on ''tp'' and/or ''df''.
-          * Even though ''mor'' is defined on ''c'', it might not be defined on all constants referenced in
-          * either ''tp'' or ''df''.
-          * In such a scenario, [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs ApplyMorphs]] throws a
-          * [[GetError]].
-          *
-          * Ideally, all morphisms are dependency-closed wrt. domain symbols such that this scenario cannot happen.
-          * These morphisms are called partial. But still, end users might want to typecheck "less than partial"
-          * morphisms without the type checking aborting unexpectedly with a [[GetError]], which would preclude
-          * end users from getting *other* useful type errors.
-          *
-          * @return Upon success, the resulting term is returned. Upon failure with a [[GetError]],
-          *         both the error and ''specificError'' (if given) are messaged to [[env]] and
-          *         [[None]] is returned.
-          */
-        def tryApplyMorphism(mor: Term, specificError: Option[Error]): Term => Option[Term] = t => {
-          try {
-            Some(content.ApplyMorphs(t, mor))
-          } catch {
-            case err: GetError if err.getMessage.contains("no assignment") => // string containment checking a bit brittle
-              env.errorCont(err)
-              specificError foreach env.errorCont
-              None
-          }
-        }
-
         // determine the expected type and definiens (if any) based on the parent element
         /* TODO if computation of the expected type fails due to a missing assignments, we could generate a fresh unknown and try to infer
            the assignment during the later checks
@@ -253,8 +217,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                     content.getO(r ? c.name.tail) match {
                       case Some(cOrg: Constant) =>
                         val mor = real.asMorphism
-                        def tr = tryApplyMorphism(mor, Some(InvalidObject(mor, "not total")))
-                        Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
+                        def tr(t: Term) = content.ApplyMorphs(t, real.asMorphism)
+                        Expectation(cOrg.tp map tr, cOrg.df map tr)
                       case _ =>
                         env.errorCont(InvalidElement(c, "cannot find realized constant"))
                         defaultExp
@@ -274,8 +238,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                      catch {case g: GetError => throw GetError(g.path, "cannot find realized constant").setCausedBy(g)}
             rc match {
               case cOrg: Constant =>
-                def tr = tryApplyMorphism(link.toTerm, Some(InvalidElement(link, "link not total")))
-                Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
+                def tr(t: Term) = content.ApplyMorphs(t, link.toTerm)
+                Expectation(cOrg.tp map tr, cOrg.df map tr)
               case _ =>
                 env.errorCont(InvalidElement(c, "cannot find realized constant"))
                 Expectation(None, None)
@@ -345,7 +309,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             case None =>
               // c has no type: copy over the expected type
               val tr = env.ce.simplifier.objectLevel.toTranslator(env.rules, false)
-              val expTpS = tr(context, expTp)
+              val expTpS = tr.applyPlain(context, expTp)
               c.tpC.analyzed = expTpS
           }
         }
@@ -363,14 +327,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 (pr.unknown, t, false)
               case None =>
                 // try to guess the type of d by inferring without checking
-                val dIO = Solver.infer(controller, context ++ pr.unknown ++ pr.free, d, Some(env.rules))
+                val dIO = Solver.infer(controller, context ++ pr.free ++ pr.unknown, pr.term, Some(env.rules))//,pr.unknown)
                 dIO match {
                   // we can only use the inferred type if no extra variables are left in it
-                  case Some(dI) if dI.freeVars.forall(x => context.isDeclared(x))  =>
-                    // dI was not computed by trusting d, so we need to check it as well; also this call sets c.tp 
-                    checkInhabitable(ParseResult(Context.empty,Context.empty, dI))
-                    (pr.unknown, dI, false)
-                  case None =>
+                  case Some(dI) if dI.freeVars.forall(x => (context++pr.unknown).isDeclared(x))  =>
+                    // dI was computed by trusting d, so we need to check it as well; also this call sets c.tp
+                    //checkInhabitable(ParseResult(pr.unknown.filter(v => dI.freeVars.contains(v.name)),pr.free, dI))
+                    (pr.unknown ++ VarDecl(tpVar,None,None,Some(dI),None), dI, true)
+                  case _ =>
                     (pr.unknown ++ VarDecl(tpVar, None, None, None, None), OMV(tpVar), true)
                 }
             }
@@ -609,7 +573,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val total = unmappedNames.isEmpty
     if (!total) {
       val ie = new InvalidElement(mod, mod.feature + " is not total") {
-        override def level = Level.Warning
+        override val excuse = Some(Level.Gap)
         override def extraMessage = unmappedNames.mkString("\n")
       }
       env.errorCont(ie)
@@ -812,15 +776,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         (m, t, t)
       case OMCOMP(ms) => ms.filter(_ != OMCOMP()) match {
         case Nil => (m, dom, cod)
-        case hd :: tl =>
-          val (hdR, r, s1) = checkMorphism(context, hd, Some(dom), None)
-          if (tl.isEmpty)
-            (hdR, r, s1)
-          else {
-            val (tlR, s2, t) = checkMorphism(context, OMCOMP(tl), Some(s1), Some(cod))
-            // implicit morphism s1 -> s2 is inserted into tlR by recursive call
-            (OMCOMP(hdR, tlR), r, t)
-          }
+        case ms =>
+          val (initR, r, s1) = checkMorphism(Context.empty, OMCOMP(ms.init), Some(dom), None)
+          val (lastR, s2, t) = checkMorphism(context, ms.last, Some(s1), Some(cod))
+          // implicit morphism s1 -> s2 is inserted into lastR by recursive call
+          (OMCOMP(initR :: List(lastR)), r, t)
       }
       case ComplexMorphism(body) =>
         // get domain and codomain as contexts
@@ -842,7 +802,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val mRR = (implDom, implCod) match {
       case (Some(l0), Some(l1)) => OMCOMP(l0, mR, l1)
       case _ =>
-        content.getImplicit(codI, ComplexTheory(context ++ codC)) // DELETE
+        // content.getImplicit(codI, ComplexTheory(context ++ codC)) // helpful for debugging if the error below occurs
         env.errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + domI + " -> " + codI))
         m
     }
@@ -863,9 +823,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @return the reconstructed term and a flag to signal if there were errors
     */
   private def checkTermTop(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): (Term, Boolean) = {
-    env.ce.errorCont.mark
-    val tR = checkTerm(context, t)(env,t)
-    (tR, env.ce.errorCont.noErrorsAdded)
+    // wrap the error handler in a tracker to see if this term introduced errors
+    val envTracking = env.copy(ce = env.ce.copy(errorCont = new TrackingHandler(env.ce.errorCont)))
+    val tR = checkTerm(context, t)(envTracking,t)
+    (tR, !envTracking.ce.errorCont.hasNewErrors)
   }
 
   /**
@@ -1089,8 +1050,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     // subs is total if all names in fromDomain have been removed or are defined to begin with
     if (!allowPartial) {
       val left = fromDomain.filterNot(_.defined)
-      if (left.nonEmpty)
-        env.errorCont(InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")))
+      if (left.nonEmpty) {
+        val e = new InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")) {
+          override val excuse = Some(Level.Gap)
+        }
+        env.errorCont(e)
+      }
     }
     // finally, check the individual maps in subs
     subs.map {

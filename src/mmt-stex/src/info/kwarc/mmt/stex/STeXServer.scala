@@ -3,9 +3,11 @@ package info.kwarc.mmt.stex
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.{BrowserExtension, DocumentExtension, FragmentExtension, OMDocExtension, STeXExtension}
+import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, STeXGraph}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml._
 
@@ -69,11 +71,20 @@ class STeXServer extends ServerExtension("sTeX") {
     //addExtension(DemoExtension)
     //addExtension(classOf[PillarFeature])
     //addExtension(classOf[DefinitionFeature])
+    //addExtension(FullsTeXGraph)
+    //addExtension(STeXGraph)
 
     controller.backend.getArchives.filter{a =>
       a.properties.get("format").contains("stex")
     }.foreach(_.readRelational(Nil, controller, "rel"))
+
+    controller.extman.get(classOf[Presenter], "html").foreach {p =>
+      controller.extman.removeExtension(p)
+    }
+    controller.extman.addExtension(htmlpres)
   }
+
+  lazy val htmlpres = new MMTsTeXPresenter(texPresenter,xhtmlPresenter)
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
@@ -126,6 +137,11 @@ class STeXServer extends ServerExtension("sTeX") {
 
     extensions.foreach(_.doHeader(nhead,body))
     nhead
+  }
+
+  def getState : ParsingState = {
+    val rules = extensions.flatMap(_.rules)
+    new ParsingState(controller,rules)
   }
 
   def emptydoc = {

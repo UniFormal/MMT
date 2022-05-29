@@ -23,6 +23,11 @@ trait Action extends Extension with MMTTask {
   override def toString: String = toParseString
 }
 
+trait ActionWithErrorRecovery extends Action {
+  def apply(errorCont: Option[ErrorHandler]): Unit
+  def apply() = apply(None)
+}
+
 /** parsing of [[Action]]s relative to the parser provided by companion objects (of type [[ActionCompanion]] of the subclasses of [[Action]] */
 object Action extends CompRegexParsers {
 

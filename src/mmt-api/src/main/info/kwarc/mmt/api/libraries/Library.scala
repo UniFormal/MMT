@@ -73,6 +73,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private val documents = new scala.collection.mutable.HashMap[DPath,Document]
   /** all known root modules (which also induce root documents) */
   private val modules = new ModuleHashMap
+  // private val computedModules = new scala.collection.mutable.HashMap[Term,Module]
+  // private val generalizedMorphisms = new scala.collection.mutable.HashMap[Term,ExpressionTransformer]
   /** the diagram of implicit morphisms */
   private val implicitGraph = new ImplicitGraph
 
@@ -505,7 +507,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val afrom = a.from
             val adf = a.df getOrElse {
               (l,a) match {
-                case (_: AbstractTheory, Include(id)) if !id.isRealization =>
+                case (_: AbstractTheory, Include(id)) if !(id.isRealization && id.df.isEmpty) =>
                   // if l is a theory that already includes afrom
                   // we have to be careful to avoid a cycle because the realization itself is found at this point if an assignment is missing
                   id.asMorphism

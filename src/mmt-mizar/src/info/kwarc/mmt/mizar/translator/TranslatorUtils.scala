@@ -1,6 +1,6 @@
 package info.kwarc.mmt.mizar.translator
 
-import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType, OMSReplacer}
+import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.api.{objects, _}
 import objects._
 import info.kwarc.mmt.mizar._

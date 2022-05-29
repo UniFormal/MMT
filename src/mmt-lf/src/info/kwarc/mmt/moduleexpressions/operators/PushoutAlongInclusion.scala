@@ -2,9 +2,9 @@ package info.kwarc.mmt.moduleexpressions.operators
 
 import info.kwarc.mmt.api.{GeneralError, LocalName}
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
+import info.kwarc.mmt.api.objects.OMLReplacer
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.OMLReplacer
-import info.kwarc.mmt.api.uom.{BinaryConstantScala, RecurseOnly, Simplifiability, Simplify}
+import info.kwarc.mmt.api.uom.{Simplify, BinaryConstantScala, Simplifiability, RecurseOnly}
 import info.kwarc.mmt.api.utils.SkipThis
 
 object PushoutAlongInclusion extends BinaryConstantScala(Combinators._path, "pushout_inclusion")
@@ -84,8 +84,8 @@ object ComputePushoutAlongInclusion extends ComputationRule(PushoutAlongInclusio
         throw GeneralError(s"Cannot compute canonical pushout due to name clash of ${decl.name} in anonymous theory with equally called declaration in anonymous theory")
       } else { // Homomorphically translate and adopt in pushout
         val declInPushout = decl.copy(
-          tp = decl.tp.map(omlTranslator.apply(Context.empty, _)),
-          df = decl.df.map(omlTranslator.apply(Context.empty, _))
+          tp = decl.tp.map(omlTranslator.applyPlain(Context.empty, _)),
+          df = decl.df.map(omlTranslator.applyPlain(Context.empty, _))
         )
 
         val declInMorphismIntoPushout = OML(decl.name, None, Some(OML(decl.name, tp = None, df = None)))

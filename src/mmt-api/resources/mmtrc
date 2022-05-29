@@ -16,14 +16,14 @@ pvs-omdoc   info.kwarc.mmt.pvs.Plugin
 diagram     info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 
 pdflatex   info.kwarc.mmt.stex.PdfLatex
+pdfbiblatex info.kwarc.mmt.stex.PdfBibLatex
+fullstex info.kwarc.mmt.stex.FullsTeX
 tikzsvg    info.kwarc.mmt.stex.TikzSvg
 alltex     info.kwarc.mmt.stex.AllTeX
 allpdf     info.kwarc.mmt.stex.AllPdf
 stex-xhtml info.kwarc.mmt.stex.LaTeXToHTML
 xhtml-omdoc info.kwarc.mmt.stex.HTMLToOMDoc
 stex-omdoc info.kwarc.mmt.stex.STeXToOMDoc
-
-dummy     info.kwarc.mmt.api.archives.DummyBuildTarget
 
 mmttex     info.kwarc.mmt.latex.MMTTeX
 

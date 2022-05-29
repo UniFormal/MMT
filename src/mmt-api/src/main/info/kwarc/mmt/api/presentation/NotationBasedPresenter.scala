@@ -5,6 +5,7 @@ import symbols._
 import patterns._
 import objects._
 import documents._
+import info.kwarc.mmt.api.utils.XMLEscaping
 import modules._
 import symbols._
 import objects.Conversions._
@@ -518,7 +519,7 @@ class NotationBasedPresenter extends ObjectPresenter {
          }
          -1
       case f@OMFOREIGN(_) => {
-        pc.out(f.toString)
+        pc.out("<mtext>" + XMLEscaping.apply(f.toString) + "</mtext>")
         -1
       }
    }
@@ -571,7 +572,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return 1 if the term was bracketed
     */
-   private def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pcOrg: PresentationContext): Int = {
+   protected def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pcOrg: PresentationContext): Int = {
          val pc = pcOrg.copy(source = SourceRef.get(obj))
          // recovery if no notation or other problem
          lazy val default = doDefault(obj)(pc)

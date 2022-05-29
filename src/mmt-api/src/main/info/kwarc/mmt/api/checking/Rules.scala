@@ -56,7 +56,7 @@ trait CheckingCallback {
    }
 
    /** flag an error */
-   def error(message: => String)(implicit history: History): Boolean = false
+   def error(message: => String, exc: Option[Level.Excuse] = None)(implicit history: History): Boolean = false
 
    /** lookup */
    def lookup: Lookup
