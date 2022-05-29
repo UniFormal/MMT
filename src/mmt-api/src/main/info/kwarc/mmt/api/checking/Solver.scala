@@ -12,7 +12,7 @@ import objects._
 import proving._
 import parser.ParseResult
 
-import scala.collection.mutable.HashSet
+import scala.collection.mutable.{HashSet, ListMap}
 import scala.runtime.NonLocalReturnControl
 
 /* ideas
@@ -51,7 +51,7 @@ import scala.runtime.NonLocalReturnControl
  *
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.
  */
-class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet)
+class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet, val initstate : Option[state]  = None)
       extends CheckingCallback with SolverAlgorithms with Logger {
 
    /** for Logger */
@@ -956,6 +956,55 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    }
 }
 
+
+class state(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+            var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
+            var allowDelay: Boolean = true , var allowSolving: Boolean = true , var isDryRun : Boolean = false , var parent : Option[state] = None ) {
+
+  def copy( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
+            _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
+            allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun ,  parent : Option[state] = this.parent): state ={
+    new state(_solution , _bounds, _dependencies,  _delayed,  solveEqualityStack ,  _errors, allowDelay ,  allowSolving ,  isDryRun ,  parent)
+  }
+
+  def copyFromState(s : state = this): state ={
+    new state(s._solution , s._bounds, s._dependencies,  s._delayed,  s.solveEqualityStack ,  s._errors, s.allowDelay ,  s.allowSolving ,  s.isDryRun ,  s.parent)
+  }
+
+  def copyValues(s : state) = {
+    _solution = s._solution
+    _bounds = s._bounds
+    _dependencies = s._dependencies
+    _delayed = s._delayed
+    solveEqualityStack = s.solveEqualityStack
+    _errors = s._errors
+    allowDelay = s.allowDelay
+    allowSolving = s.allowSolving
+    isDryRun = s.isDryRun
+    parent = s.parent
+  }
+
+  var delayedInThisRun: List[DelayedConstraint] = Nil
+  def head = parent.getOrElse(this)
+  def tail = parent.get.parent.get
+  def isroot = parent.isEmpty
+  def pushState( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
+                 _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
+                 allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun) = {
+    val tmp = this.copy(_solution , _bounds , _dependencies, _delayed, solveEqualityStack,_errors, allowDelay, allowSolving,isDryRun ,parent = Some(this))
+    tmp
+  }
+  def popState = parent match {
+    case Some(v) => {
+      parent = v.parent
+    }
+    case None =>
+  }
+  def descendsFrom(anc: state): Boolean = parent.contains(anc) || (parent match {
+    case None => false
+    case Some(p) => p.descendsFrom(anc)
+  })
+}
 /** auxiliary methods and high-level type reconstruction API */
 object Solver {
   /** counter for debugging */
