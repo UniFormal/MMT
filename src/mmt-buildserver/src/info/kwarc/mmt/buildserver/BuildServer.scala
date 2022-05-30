@@ -59,7 +59,10 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         th
       }.toList
     }
+    controller.extman.addExtension(GitUpdateActionCompanion)
   }
+
+  override def destroy: Unit = GitUpdateActionCompanion.destroy
 
   override def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
     case List("clear") =>
@@ -120,14 +123,37 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
   case class GitUpdateAction(ids:List[String]) extends ResponsiveAction {
     def toParseString = s"gitupdate ${MyList(ids).mkString("[", ",", "]")}"
     override def apply(): Unit = {
-      while(!ready) Thread.sleep(2000)
-      State.synchronized {
+      //while(!ready) Thread.sleep(2000)
+      val commits = State.synchronized {
         State.failed = Nil
         State.finished = Nil
-        val as = ids.flatMap { s =>
-          controller.backend.getArchives.filter(_.id.startsWith(s))
+        ids.flatMap { s =>
+          controller.backend.getArchives.filter(_.id.startsWith(s)).map { a =>
+            log("pulling " + a.id)
+            val git = GitRepo(a)
+            (git,git.pullDivs)
+          }
         }
-
+      }
+      val configs = controller.extman.get(classOf[BuildServerConfig])
+      commits.foreach {
+        case (a,Some(commit)) =>
+          commit.diffs.foreach {
+            case Delete(p) =>
+              log("Delete [" + a.archive + "] " + p)
+              FileDeps.delete(a.archive,(a.archive / source) / p)
+              None
+            case c@(Change(_)|Add(_)) =>
+              log("Update [" + a.archive + "] " + c.path)
+              configs.collectFirst{
+                case cf if cf.applies(a.archive,(a.archive / source) / c.path).isDefined =>
+                  val bt = cf.applies(a.archive,(a.archive / source) / c.path).get
+                  log("Using " + bt.key)
+                  controller.handleLine("build " + a.archive.id + " " + bt.key + " " + c.path)
+              }
+          }
+        case _ =>
+          None
       }
     }
   }
@@ -138,9 +164,10 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
 
   object GitUpdateActionCompanion extends ActionCompanion("git pull an archive, build changed/new files and notify aterwards","gitupdate") {
     import info.kwarc.mmt.api.frontend.actions.Action._
-    def parserActual(implicit state: ActionState) = "gitupdate"  ~> stringList ^^ { ids =>
-        GitUpdateAction(ids)
-    }
+
+    override val keywords: List[String] = List("gitupdate")
+    override val addKeywords: Boolean = false
+    def parserActual(implicit state: ActionState) = strs(keyRegEx) ^^ GitUpdateAction
   }
 
   private val queuemanagementthread = new Thread {
@@ -166,7 +193,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
 
   object FileDeps {
     val targets = mutable.HashMap.empty[Dependency,(TraversingBuildTarget,Archive,File)]
-    class FileDeps(val a : Archive,jsonfile : File) {
+    class FileDeps(val a : Archive,val jsonfile : File) {
       val future = mutable.HashMap.empty[TraversingBuildTarget,mutable.HashSet[(TraversingBuildTarget,Archive,File)]]
       val sourcefile = a / source / (a / RedirectableDimension("buildresults")).relativize(jsonfile).toString.dropRight(5)
       val yields: mutable.HashMap[TraversingBuildTarget, List[Dependency]] = mutable.HashMap.empty
@@ -225,6 +252,15 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         jsonfile.up.mkdirs()
         jsonfile.createNewFile()
         File.write(jsonfile,"{}")
+      }
+    }
+    def delete(a : Archive, f : File) = this.synchronized {
+      deps.get(a,f) match {
+        case Some(fd) =>
+          clean(fd.yields.values.flatten.toList)
+          fd.jsonfile.delete()
+          deps.remove((a,f))
+        case _ =>
       }
     }
     private val deps = mutable.HashMap.empty[(Archive,File),FileDeps]
