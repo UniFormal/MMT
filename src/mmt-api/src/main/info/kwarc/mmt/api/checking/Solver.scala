@@ -69,7 +69,14 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
-   protected object state {
+   object state {
+
+     var currentState: state = if(initstate.nonEmpty) {initstate.get} else{ new state(_solution = checkingUnit.unknowns) }
+     def getCurrentState = currentState
+     def saveCurrentState() = currentState = currentState.pushState()
+     def undoCurrentState() = currentState = currentState.head
+
+/*
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
       private var _solution : Context = initUnknowns
       import scala.collection.mutable.ListMap
@@ -87,7 +94,25 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       def errors = _errors
       def dependencies = _dependencies
       def bounds(n: LocalName) = _bounds.getOrElse(n,Nil)
-      
+
+
+ */
+
+
+     // accessor methods for the above
+     def solution = currentState._solution // _solution
+     def solution_= (news : Context) { currentState._solution = news}
+     def delayed = currentState._delayed // _delayed
+     def delayed_= (ds : List[DelayedConstraint]){currentState._delayed = ds}
+
+     def errors =  currentState._errors // _errors
+     def errors_= (ers : List[SolverError] ){currentState._errors = ers}
+     // def _errors_= (ers : List[SolverError] ){currentState._errors = ers}
+     def dependencies = currentState._dependencies // _dependencies
+     def dependencies_= (deps : List[CPath]){currentState._dependencies = deps}
+     def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
+     def isDryRun = currentState.isDryRun
+     def isDryRun_= (b : Boolean) {currentState.isDryRun = b}
       // adder methods for the stateful lists
 
       /** registers a constraint */
