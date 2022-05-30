@@ -111,7 +111,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      def dependencies = currentState._dependencies // _dependencies
      def dependencies_= (deps : List[CPath]){currentState._dependencies = deps}
      def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
-     def isDryRun = currentState.isDryRun
+//     def isDryRun = currentState.isDryRun
      def isDryRun_= (b : Boolean) {currentState.isDryRun = b}
       // adder methods for the stateful lists
 
@@ -120,7 +120,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         if (!mutable && !pushedStates.head.allowDelay) {
           throw MightFail(history)
         } else {
-          _delayed ::= d
+          currentState._delayed ::= d
           if (!mutable) {
             pushedStates.head.delayedInThisRun ::= d
           }
@@ -128,7 +128,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
       /** registers an error */
       def addError(e: SolverError) {
-         if (mutable) _errors ::= e
+         if (mutable) currentState._errors ::= e
          else {
            throw WouldFail
          }
@@ -136,13 +136,13 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
       /** registers a dependency */
       def addDependency(p: CPath) {
-         _dependencies ::= p
+         currentState._dependencies ::= p
       }
 
       // more complex mutator methods for the stateful lists
 
       def removeConstraint(dc: DelayedConstraint) {
-         _delayed = _delayed filterNot (_ == dc)
+         currentState._delayed = currentState._delayed filterNot (_ == dc)
          if (!mutable) {
            val state = pushedStates.head
            state.delayedInThisRun = state.delayedInThisRun.filterNot(_ == dc)
@@ -152,18 +152,18 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
-         _solution = newSol
+         currentState._solution = newSol
       }
       // special case of setNewSolution that does not count as a side effect
       def reorderSolution(newSol: Context) {
-         _solution = newSol
+         currentState._solution = newSol
       }
       
       def setNewBounds(n: LocalName, bs: List[TypeBound]) {
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
-        _bounds(n) = bs
+        currentState._bounds(n) = bs
       }
 
       // instead of full backtracking, we allow exploratory runs that do not have side effects
@@ -190,15 +190,15 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
        * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
       def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
-         val tempState = StateData(solution, _bounds, dependencies, _delayed, allowDelay, allowSolving)
+         val tempState = StateData(solution, currentState._bounds, dependencies, currentState._delayed, allowDelay, allowSolving)
          pushedStates ::= tempState
          def rollback {
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
-            _solution = oldState.solutions
-            _bounds = oldState.bounds
-            _dependencies = oldState.dependencies
-            _delayed = oldState.delayed
+            currentState._solution = oldState.solutions
+            currentState._bounds = oldState.bounds
+            currentState._dependencies = oldState.dependencies
+            currentState._delayed = oldState.delayed
          }
          try {
            val aR = a
@@ -240,11 +240,11 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** restore the state from immediately before bp was created */
       private def backtrack(bp: Branchpoint) {
         // restore constraints
-        _delayed = bp.delayed
+        currentState._delayed = bp.delayed
         // remove new dependencies
-        _dependencies = _dependencies.drop(_dependencies.length - bp.depLength)
+        currentState._dependencies = currentState._dependencies.drop(currentState._dependencies.length - bp.depLength)
         // restore old solution
-        _solution = bp.solution
+        currentState._solution = bp.solution
         // no need to restore errors - any error should result in backtracking when !currentBranch.isRoot
       }
       private def makeBranchpoint(parent: Option[Branchpoint] = Some(currentBranch)) = {
