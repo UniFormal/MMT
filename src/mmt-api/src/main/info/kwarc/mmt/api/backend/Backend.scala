@@ -151,7 +151,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
             case None =>
           }
           addStore(arch)
-          val files = utils.splitAtWhitespace(arch.properties.getOrElse("classpath", "")).map {cp =>
+          val files = arch.classpath.map {cp =>
             val rF = root / cp
             log("loading realization archive" + rF)
             rF
