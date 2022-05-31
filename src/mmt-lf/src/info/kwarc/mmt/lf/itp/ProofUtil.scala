@@ -541,6 +541,14 @@ object ProofUtil {
       }
     }
   }
+
+  def dryRunAllowErrors[A](s : Solver)(a: => A): A = {
+    s.saveCurrentState()
+    val res = a
+    s.undoCurrentState()
+    res
+  }
+
 }
 
 
