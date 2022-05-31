@@ -51,7 +51,7 @@ import scala.runtime.NonLocalReturnControl
  *
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.
  */
-class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet, val initstate : Option[state]  = None)
+class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet, val initstate : Option[solverState]  = None)
       extends CheckingCallback with SolverAlgorithms with Logger {
 
    /** for Logger */
@@ -65,16 +65,15 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /** for marking objects as stable, created fresh for every run because stability depends on the context and we do not want to have to remove the marker */
    // There is a memory leak here because we never remove Stability markers. But it's unclear when and how it's best to remove them.
    val stability = Stability.make
-   
+
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
-   object state {
+   protected object state {
 
-     var currentState: state = if(initstate.nonEmpty) {initstate.get} else{ new state(_solution = checkingUnit.unknowns) }
-     def getCurrentState = currentState
-     def saveCurrentState() = currentState = currentState.pushState()
-     def undoCurrentState() = currentState = currentState.head
+     var currentState: solverState = if(initstate.nonEmpty) {initstate.get} else{ new solverState(_solution = checkingUnit.unknowns) }
+    // def getCurrentState = currentState
+
 
 /*
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
@@ -88,31 +87,18 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** tracks the dependencies in reverse order of encountering */
       private var _dependencies : List[CPath] = Nil
 
-      // accessor methods for the above
-      def solution = _solution
-      def delayed = _delayed
-      def errors = _errors
-      def dependencies = _dependencies
-      def bounds(n: LocalName) = _bounds.getOrElse(n,Nil)
 
 
  */
 
 
-     // accessor methods for the above
+     // accessor methods for [currentState]
      def solution = currentState._solution // _solution
-     def solution_= (news : Context) { currentState._solution = news}
      def delayed = currentState._delayed // _delayed
-     def delayed_= (ds : List[DelayedConstraint]){currentState._delayed = ds}
-
      def errors =  currentState._errors // _errors
-     def errors_= (ers : List[SolverError] ){currentState._errors = ers}
-     // def _errors_= (ers : List[SolverError] ){currentState._errors = ers}
      def dependencies = currentState._dependencies // _dependencies
-     def dependencies_= (deps : List[CPath]){currentState._dependencies = deps}
      def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
-//     def isDryRun = currentState.isDryRun
-     def isDryRun_= (b : Boolean) {currentState.isDryRun = b}
+
       // adder methods for the stateful lists
 
       /** registers a constraint */
@@ -158,7 +144,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       def reorderSolution(newSol: Context) {
          currentState._solution = newSol
       }
-      
+
       def setNewBounds(n: LocalName, bs: List[TypeBound]) {
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
@@ -272,6 +258,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
    }
    import state._
+
+   def saveCurrentState() = currentState = currentState.pushState()
 
    /** true if unresolved constraints are left */
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
@@ -394,7 +382,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
        }
      }
    }
-   
+
    /**
     * tries to evaluate an expression without any generating new constraints
     *
@@ -436,11 +424,11 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     }
     def is(t: Term) = unapply(t).isDefined
   }
-   
+
   /** substitutes some unknowns with solutions
-   *  pre: solutions are of the form Free(xs,s) where xs.length is the number of arguments of the unknown 
+   *  pre: solutions are of the form Free(xs,s) where xs.length is the number of arguments of the unknown
    *  getSolution returns such a substitution
-   *  
+   *
    */
   // TODO this breaks structure sharing
   protected class SubstituteUnknowns(sub: Substitution) extends StatelessTraverser {
@@ -514,7 +502,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
      t
    }
-   
+
    /** retrieves the definiens of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
@@ -543,7 +531,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   def getVar(name: LocalName)(implicit stack: Stack) = (constantContext ++ solution ++ stack.context)(name)
 
    // ******************************** methods for solving solving unknowns ***********************************
-   
+
    /** registers the solution for an unknown variable
     *
     * If a solution exists already, their equality is checked.
@@ -569,12 +557,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          val newSolution = left ::: vd :: right
          setNewSolution(newSolution)
          val newSolutionS = substituteSolution(newSolution)
-         setNewSolution(newSolutionS)         
+         setNewSolution(newSolutionS)
          val r = typeCheckSolution(vd)
          if (!r) return false
          bounds(name) forall {case TypeBound(bound, below) =>
            val j = subOrSuper(below)(Stack.empty, value, bound)
-           check(j)(history + "solution must conform to existing bound")           
+           check(j)(history + "solution must conform to existing bound")
          }
       }
    }
@@ -589,7 +577,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * precondition: value is well-typed if the the overall check succeeds
     */
    protected def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
-      lazy val msg = "solving type of " + name + " as " + presentObj(value) 
+      lazy val msg = "solving type of " + name + " as " + presentObj(value)
       log(msg)
       history += msg
       val newSolution = simplify(substituteSolution(value))(Stack.empty, history)
@@ -614,9 +602,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    }
 
    protected def subOrSuper(sub: Boolean)(stack: Stack, t1: Term, t2: Term) = {
-     if (sub) Subtyping(stack, t1, t2) else Subtyping(stack, t2, t1) 
+     if (sub) Subtyping(stack, t1, t2) else Subtyping(stack, t2, t1)
    }
-   
+
    /**
     * solves a type bound for an unknown
     * @param below if true, name <: value, else name :> value
@@ -756,7 +744,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      addUnknowns(x%tp, None)
      constraint(OMV(x))
    }
-   
+
    // ******************************** error reporting
 
   /** registers an error, returns false */
@@ -770,7 +758,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   }
 
   // ************************************* the main algorithm
-  
+
    /**
     * main entry method: runs the solver on the judgment in the checking unit
     */
@@ -938,10 +926,10 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          EqualityContext(prepareS(stack), prepare(c1, true), prepare(c2, true), a)
    }
    private def prepareS(s: Stack) = {
-      Stack(s.context map {t => prepare(t)}) // this used to fully simplify (without definition expansion) 
+      Stack(s.context map {t => prepare(t)}) // this used to fully simplify (without definition expansion)
    }
    private def prepare(o: Obj, covered: Boolean = false): o.ThisType = {
-      substituteSolution(o) // no need to simplify anymore because no beta-redexes are introduced 
+      substituteSolution(o) // no need to simplify anymore because no beta-redexes are introduced
    }
 
    /**
@@ -982,21 +970,14 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 }
 
 
-class state(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
-            var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
-            var allowDelay: Boolean = true , var allowSolving: Boolean = true , var isDryRun : Boolean = false , var parent : Option[state] = None ) {
 
-  def copy( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
-            _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
-            allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun ,  parent : Option[state] = this.parent): state ={
-    new state(_solution , _bounds, _dependencies,  _delayed,  solveEqualityStack ,  _errors, allowDelay ,  allowSolving ,  isDryRun ,  parent)
-  }
+case class solverState(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+                  var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
+                  var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[solverState] = None ) {
 
-  def copyFromState(s : state = this): state ={
-    new state(s._solution , s._bounds, s._dependencies,  s._delayed,  s.solveEqualityStack ,  s._errors, s.allowDelay ,  s.allowSolving ,  s.isDryRun ,  s.parent)
-  }
 
-  def copyValues(s : state) = {
+
+  def copyValues(s : solverState) = {
     _solution = s._solution
     _bounds = s._bounds
     _dependencies = s._dependencies
@@ -1019,13 +1000,16 @@ class state(var _solution: Context = Context.empty, var _bounds: ListMap[LocalNa
     val tmp = this.copy(_solution , _bounds , _dependencies, _delayed, solveEqualityStack,_errors, allowDelay, allowSolving,isDryRun ,parent = Some(this))
     tmp
   }
+
+
+
   def popState = parent match {
     case Some(v) => {
       parent = v.parent
     }
     case None =>
   }
-  def descendsFrom(anc: state): Boolean = parent.contains(anc) || (parent match {
+  def descendsFrom(anc: solverState): Boolean = parent.contains(anc) || (parent match {
     case None => false
     case Some(p) => p.descendsFrom(anc)
   })
