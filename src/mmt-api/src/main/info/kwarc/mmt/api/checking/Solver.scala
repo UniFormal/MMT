@@ -260,6 +260,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    import state._
 
    def saveCurrentState() = currentState = currentState.pushState()
+  def undoCurrentState() = currentState = currentState.head
 
    /** true if unresolved constraints are left */
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
