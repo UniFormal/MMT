@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.objects.{Context, Equality, Free, OMID, OMV, PlainSubs
 import info.kwarc.mmt.api.proving.itp.ProofUtil.standAloneInfer
 import info.kwarc.mmt.api.proving.itp.{Goal, HasError, Msg, NoMsg, Proof, WarningMsg}
 import info.kwarc.mmt.lf.itp.{InteractiveProof, ProofUtil, Tactic, TacticError, TacticParser}
-import info.kwarc.mmt.lf.itp.ProofUtil.{Appremover, makeSubgoals}
+import info.kwarc.mmt.lf.itp.ProofUtil.{Appremover, dryRunAllowErrors, makeSubgoals}
 import info.kwarc.mmt.lf.{Apply, ApplySpine, Arrow, Lambda, Pi}
 
 
@@ -542,7 +542,7 @@ case class simp(tup : Option[(Term,Context)], h : Option[String]) extends Tactic
         NoMsg()
       }
       case (None,true) => {
-        val rep  = ProofUtil.substitute(gg , t , res, ((x,y,addc) => ip.slvr.currentStateObj.dryRunAllowErrors(ip.slvr.check(Equality(Stack(ctx ++ addc) , x , y, None)) (ip.hist))))
+        val rep  = ProofUtil.substitute(gg , t , res, ((x,y,addc) => dryRunAllowErrors(ip.slvr)(ip.slvr.check(Equality(Stack(ctx ++ addc) , x , y, None)) (ip.hist))))
         ip.pr.update(Goal(rep , ctx, uks))
         NoMsg()
       }
@@ -550,7 +550,7 @@ case class simp(tup : Option[(Term,Context)], h : Option[String]) extends Tactic
         if (ctx.getO(nm).isEmpty) return HasError("no such hypothesis named " + nm)
         val newctx = ctx.map(x =>{
           if (x.name.toString == nm ){
-            val newtp = ProofUtil.substitute(x.tp.get , t , res, ((x,y,addc) => ip.slvr.currentStateObj.dryRunAllowErrors(ip.slvr.check(Equality(Stack(ctx ++ addc) , x , y, None)) (ip.hist))))
+            val newtp = ProofUtil.substitute(x.tp.get , t , res, ((x,y,addc) => dryRunAllowErrors(ip.slvr)(ip.slvr.check(Equality(Stack(ctx ++ addc) , x , y, None)) (ip.hist))))
             x.copy(tp = Some(newtp))
           }else {
             x

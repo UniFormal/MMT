@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.{LocalName, MPath, RuleSet}
 object StandAloneChecks {
   def standAloneEqCheck(s: Solver, uks: List[(LocalName, Term)], localctx: Context, tm: Term, tm0: Term) = {
     val clondestate = new SolverState() //.copyValues(s.currentStateObj.getCurrentState)
-    clondestate.copyValues(s.state.getCurrentState)
+    clondestate.copyValues(s.getCurrentState)
     val clones = new Solver(s.controller, s.checkingUnit, s.rules, Some(clondestate))
     clones.addUnknowns(uks.map(f => VarDecl(f._1, tp = f._2)), None)
     clones.check(Equality(Stack(localctx), tm, tm0, None))(new History(Nil))
