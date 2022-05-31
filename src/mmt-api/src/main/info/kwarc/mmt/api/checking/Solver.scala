@@ -51,7 +51,7 @@ import scala.runtime.NonLocalReturnControl
  *
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.
  */
-class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet, val initstate : Option[solverState]  = None)
+class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet, val initstate : Option[SolverState]  = None)
       extends CheckingCallback with SolverAlgorithms with Logger {
 
    /** for Logger */
@@ -71,7 +71,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     */
    protected object state {
 
-     var currentState: solverState = if(initstate.nonEmpty) {initstate.get} else{ new solverState(_solution = checkingUnit.unknowns) }
+     var currentState: SolverState = if(initstate.nonEmpty) {initstate.get} else{ new SolverState(_solution = checkingUnit.unknowns) }
     // def getCurrentState = currentState
 
 
@@ -259,8 +259,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    }
    import state._
 
-   def saveCurrentState() = currentState = currentState.pushState()
+  def saveCurrentState() = currentState = currentState.pushState()
   def undoCurrentState() = currentState = currentState.head
+  def getCurrentState() = currentState
 
    /** true if unresolved constraints are left */
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
@@ -972,13 +973,13 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 
-case class solverState(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
-                  var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
-                  var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[solverState] = None ) {
+case class SolverState(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+                       var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
+                       var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[SolverState] = None ) {
 
 
 
-  def copyValues(s : solverState) = {
+  def copyValues(s : SolverState) = {
     _solution = s._solution
     _bounds = s._bounds
     _dependencies = s._dependencies
@@ -1010,7 +1011,7 @@ case class solverState(var _solution: Context = Context.empty, var _bounds: List
     }
     case None =>
   }
-  def descendsFrom(anc: solverState): Boolean = parent.contains(anc) || (parent match {
+  def descendsFrom(anc: SolverState): Boolean = parent.contains(anc) || (parent match {
     case None => false
     case Some(p) => p.descendsFrom(anc)
   })
