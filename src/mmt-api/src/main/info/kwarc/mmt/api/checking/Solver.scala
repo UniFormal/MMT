@@ -100,6 +100,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      def errors =  currentState._errors // _errors
      def errors_= (e : List[SolverError]) {currentState = currentState.copy(_errors = e)}
      def dependencies = currentState._dependencies // _dependencies
+     def dependencies_= (c : List[CPath]) {currentState = currentState.copy(_dependencies = c)}
      def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
 
       // adder methods for the stateful lists
@@ -125,7 +126,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
       /** registers a dependency */
       def addDependency(p: CPath) {
-         currentState._dependencies ::= p
+         dependencies ::= p
       }
 
       // more complex mutator methods for the stateful lists
@@ -186,7 +187,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             pushedStates = pushedStates.tail
             solution = oldState.solutions
             currentState._bounds = oldState.bounds
-            currentState._dependencies = oldState.dependencies
+            dependencies = oldState.dependencies
             delayed = oldState.delayed
          }
          try {
@@ -231,7 +232,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         // restore constraints
         delayed = bp.delayed
         // remove new dependencies
-        currentState._dependencies = currentState._dependencies.drop(currentState._dependencies.length - bp.depLength)
+        dependencies = currentState._dependencies.drop(currentState._dependencies.length - bp.depLength)
         // restore old solution
         solution = bp.solution
         // no need to restore errors - any error should result in backtracking when !currentBranch.isRoot
@@ -977,7 +978,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
-                       var _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
+                        _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
                        var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[SolverState] = None ) {
 
 
