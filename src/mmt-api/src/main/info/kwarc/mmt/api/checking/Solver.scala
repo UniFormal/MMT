@@ -108,7 +108,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         if (!mutable && !pushedStates.head.allowDelay) {
           throw MightFail(history)
         } else {
-          currentState._delayed ::= d
+          delayed ::= d
           if (!mutable) {
             pushedStates.head.delayedInThisRun ::= d
           }
