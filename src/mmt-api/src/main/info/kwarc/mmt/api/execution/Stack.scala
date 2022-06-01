@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.execution
 import info.kwarc.mmt.api._
 import objects._
 
+
 class Stack {
    private var frames = List(Context.empty)
 
@@ -16,9 +17,11 @@ class Stack {
       setTop(top ++ vd)
    }
    def assign(n: LocalName, value: Term) {
+      // currently implemented using mutation: maybe change in the future
       val vd = top(n)
       val vdN = vd.copy(df = Some(value))
       val topNew = top.before(n) ::: vdN :: top.after(n)
+      frames = topNew :: frames.tail
    }
    def removeVariables(n: Int) {
       setTop(top.take(top.length - n))

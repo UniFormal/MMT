@@ -93,7 +93,7 @@ trait ActionHandling extends
         val context = contOpt.getOrElse(Context.empty)
         val pu = ParsingUnit(SourceRef.anonymous(text), context, text, InterpretationInstructionContext(getNamespaceMap))
         val checked = interpreter(pu)(ErrorThrower)
-        val simplified = simplifier(checked.term, SimplificationUnit(context, false, true))
+        val simplified = simplifier(checked.term, SimplificationUnit(context, false,false, true))
         val presented = presenter.asString(simplified)
         ObjectResponse(presented, "html")
 

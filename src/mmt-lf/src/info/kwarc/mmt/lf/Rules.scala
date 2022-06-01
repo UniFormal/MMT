@@ -428,7 +428,7 @@ object Beta extends GenericBeta(StandardArgumentChecker) {
     * Effectively applies the simplifier to the term using only one rule, namely `this`.
     */
   def reduce(t: Term)(implicit ctrl: Controller): Term = {
-    val su = SimplificationUnit(Context.empty, expandDefinitions = false, fullRecursion = true)
+    val su = SimplificationUnit(Context.empty, expandConDefs = false, expandVarDefs=false, fullRecursion = true)
     ctrl.simplifier(t, su, RuleSet(lf.Beta))
   }
 }

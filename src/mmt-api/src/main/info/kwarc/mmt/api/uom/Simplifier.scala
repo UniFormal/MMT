@@ -17,7 +17,7 @@ trait ObjectSimplifier extends Extension {self =>
    def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType
    
    def toTranslator(rules: RuleSet, expDef: Boolean) = new UniformTranslator {
-     def applyPlain(c: Context, t: Term) = self.apply(t, SimplificationUnit(c, expDef, true), rules)
+     def applyPlain(c: Context, t: Term) = self.apply(t, SimplificationUnit(c, expDef,expDef, true), rules)
    }
 }
 
@@ -26,7 +26,7 @@ trait ObjectSimplifier extends Extension {self =>
  *  @param expandDefinitions if true, expand all definitions of constant (we speak of *deep* simplification) 
  *  @param fullRecursion if false, only recurse into subexpressions that contribute to head-normalizations 
  */
-case class SimplificationUnit(context: Context, expandDefinitions: Boolean, fullRecursion: Boolean, solverO: Option[Solver] = None) extends MMTTask {
+case class SimplificationUnit(context: Context, expandConDefs: Boolean, expandVarDefs: Boolean, fullRecursion: Boolean, solverO: Option[Solver] = None) extends MMTTask {
   def ++(c: Context) = copy(context = context ++ c)
 }
 

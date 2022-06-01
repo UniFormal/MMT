@@ -119,7 +119,7 @@ object AnonymousDiagramInfer extends InferenceRule(ModExp.anonymousdiagram, OfTy
 
 object DiagramCheck extends TypingRule(ModExp.anonymousdiagram) {
   override def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
-    val simplificationUnit = SimplificationUnit(stack.context, expandDefinitions = true, fullRecursion = true, solverO = Some(solver))
+    val simplificationUnit = SimplificationUnit(stack.context, expandConDefs=true,expandVarDefs = true, fullRecursion = true, solverO = Some(solver))
 
     solver.controller.simplifier(tm, simplificationUnit) match {
       case AnonymousDiagramCombinator(_) =>

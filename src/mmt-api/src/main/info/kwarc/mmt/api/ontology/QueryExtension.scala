@@ -117,9 +117,9 @@ class Simplify extends QueryFunctionExtension("simplify", ObjType, ObjType) {
     val mp = mpath(params)
     argument match {
       case OMBIND(QueryEvaluator.free, cont, body) =>
-        controller.simplifier(body, SimplificationUnit(Context(mp) ++ cont, false, true))
+        controller.simplifier(body, SimplificationUnit(Context(mp) ++ cont, false,false, true))
       case o: Obj =>
-        controller.simplifier(o, SimplificationUnit(Context(mp), false, true))
+        controller.simplifier(o, SimplificationUnit(Context(mp), false,false, true))
       case _ => throw ImplementationError("evaluation of ill-typed query")
     }
   }

@@ -755,7 +755,7 @@ object DefinitionExpander extends Preprocessor {
         val ntp = c.tp.map { tp =>
           val ret = traverser(tp, ())
           try {
-            simplifier(ret, SimplificationUnit(th.getInnerContext, false, true), RuleSet.collectRules(controller, th.getInnerContext))
+            simplifier(ret, SimplificationUnit(th.getInnerContext, false,false, true), RuleSet.collectRules(controller, th.getInnerContext))
           } catch {
             case _ : info.kwarc.mmt.api.Error => ret
           }

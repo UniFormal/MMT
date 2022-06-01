@@ -19,7 +19,7 @@ private object RealTimesSimplifierBug {
 
     val simplify: Term => Term = {
       val ctx = Context(Path.parseM("http://mathhub.info/MitM/Foundation?RealLiterals", NamespaceMap.empty))
-      val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
+      val simplicationUnit = SimplificationUnit(ctx, expandConDefs = true, expandVarDefs = true, fullRecursion = true)
 
       t => ctrl.simplifier(t, simplicationUnit)
     }

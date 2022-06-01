@@ -28,7 +28,8 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
 
     val su = SimplificationUnit(
       Context(applyModuleExpression(expressionContext(c)).toMPath),
-      expandDefinitions = false,
+      expandConDefs = true,
+      expandVarDefs = false,
       fullRecursion = true
     )
 

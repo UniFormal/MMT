@@ -162,7 +162,7 @@ sealed case class Scroll(
     * @param context The context in which the facts live. Needs to include at least [[ref.solutionTheory]].
     */
   private def verbalizeScroll(context: Context)(implicit ctrl: Controller): Scroll = {
-    val simplificationUnit = SimplificationUnit(context, expandDefinitions = false, fullRecursion = true)
+    val simplificationUnit = SimplificationUnit(context, expandConDefs = false, expandVarDefs = false, fullRecursion = true)
 
     val ruleSet: RuleSet = {
       val foundRules = RuleSet.collectRules(ctrl, simplificationUnit.context)
