@@ -101,10 +101,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      def errors_= (e : List[SolverError]) {currentState = currentState.copy(_errors = e )}
      def dependencies = currentState._dependencies // _dependencies
      def dependencies_= (dps : List[CPath]) {currentState = currentState.copy(_dependencies = dps)}
-  //   def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
-  //   def bounds_= (n : LocalName)(ls : List[TypeBound]) {currentState._bounds(n) = ls }
-     def bounds = currentState._bounds
-     def bounds_= (bds : ListMap[LocalName , List[TypeBound]]) {currentState = currentState.copy(_bounds = bds)}
+     def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
+     def _bounds = currentState._bounds
+     def _bounds_= (bds : ListMap[LocalName , List[TypeBound]]) {currentState = currentState.copy(_bounds = bds)}
 
       // adder methods for the stateful lists
 
@@ -113,7 +112,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         if (!mutable && !pushedStates.head.allowDelay) {
           throw MightFail(history)
         } else {
-          delayed ::= d
+          currentState._delayed ::= d
           if (!mutable) {
             pushedStates.head.delayedInThisRun ::= d
           }
@@ -121,7 +120,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
       /** registers an error */
       def addError(e: SolverError) {
-         if (mutable) errors ::= e
+         if (mutable) currentState._errors ::= e
          else {
            throw WouldFail
          }
@@ -129,7 +128,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
       /** registers a dependency */
       def addDependency(p: CPath) {
-         dependencies ::= p
+         currentState._dependencies ::= p
       }
 
       // more complex mutator methods for the stateful lists
@@ -156,7 +155,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
-        bounds(n) = bs
+        currentState._bounds(n) = bs
       }
 
       // instead of full backtracking, we allow exploratory runs that do not have side effects
@@ -189,7 +188,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
             solution = oldState.solutions
-            bounds = oldState.bounds
+            _bounds = oldState.bounds
             dependencies = oldState.dependencies
             delayed = oldState.delayed
          }
