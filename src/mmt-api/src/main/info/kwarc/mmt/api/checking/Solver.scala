@@ -101,7 +101,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      def errors_= (e : List[SolverError]) {currentState = currentState.copy(_errors = e )}
      def dependencies = currentState._dependencies // _dependencies
      def dependencies_= (dps : List[CPath]) {currentState = currentState.copy(_dependencies = dps)}
-
+  //   def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
+  //   def bounds_= (n : LocalName)(ls : List[TypeBound]) {currentState._bounds(n) = ls }
      def bounds = currentState._bounds
      def bounds_= (bds : ListMap[LocalName , List[TypeBound]]) {currentState = currentState.copy(_bounds = bds)}
 
