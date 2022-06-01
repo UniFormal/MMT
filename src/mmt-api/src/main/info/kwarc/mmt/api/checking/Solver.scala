@@ -94,6 +94,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
      // accessor methods for [currentState]
      def solution = currentState._solution // _solution
+     def solution_= (s : Context) {currentState = currentState.copy(_solution = s)}
      def delayed = currentState._delayed // _delayed
      def errors =  currentState._errors // _errors
      def dependencies = currentState._dependencies // _dependencies
@@ -138,11 +139,11 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
-         currentState._solution = newSol
+         solution = newSol
       }
       // special case of setNewSolution that does not count as a side effect
       def reorderSolution(newSol: Context) {
-         currentState._solution = newSol
+         solution = newSol
       }
 
       def setNewBounds(n: LocalName, bs: List[TypeBound]) {
@@ -181,7 +182,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          def rollback {
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
-            currentState._solution = oldState.solutions
+            solution = oldState.solutions
             currentState._bounds = oldState.bounds
             currentState._dependencies = oldState.dependencies
             currentState._delayed = oldState.delayed
@@ -230,7 +231,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         // remove new dependencies
         currentState._dependencies = currentState._dependencies.drop(currentState._dependencies.length - bp.depLength)
         // restore old solution
-        currentState._solution = bp.solution
+        solution = bp.solution
         // no need to restore errors - any error should result in backtracking when !currentBranch.isRoot
       }
       private def makeBranchpoint(parent: Option[Branchpoint] = Some(currentBranch)) = {
@@ -973,12 +974,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 
-case class SolverState(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
                        var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
                        var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[SolverState] = None ) {
 
 
-
+/*
   def copyValues(s : SolverState) = {
     _solution = s._solution
     _bounds = s._bounds
@@ -992,6 +993,8 @@ case class SolverState(var _solution: Context = Context.empty, var _bounds: List
     parent = s.parent
   }
 
+ */
+
   var delayedInThisRun: List[DelayedConstraint] = Nil
   def head = parent.getOrElse(this)
   def tail = parent.get.parent.get
@@ -1002,6 +1005,8 @@ case class SolverState(var _solution: Context = Context.empty, var _bounds: List
     val tmp = this.copy(_solution , _bounds , _dependencies, _delayed, solveEqualityStack,_errors, allowDelay, allowSolving,isDryRun ,parent = Some(this))
     tmp
   }
+
+  
 
 
 
