@@ -96,6 +96,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      def solution = currentState._solution // _solution
      def solution_= (s : Context) {currentState = currentState.copy(_solution = s)}
      def delayed = currentState._delayed // _delayed
+     def delayed_= (d : List[DelayedConstraint]) {currentState = currentState.copy(_delayed = d)}
      def errors =  currentState._errors // _errors
      def dependencies = currentState._dependencies // _dependencies
      def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
@@ -129,7 +130,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       // more complex mutator methods for the stateful lists
 
       def removeConstraint(dc: DelayedConstraint) {
-         currentState._delayed = currentState._delayed filterNot (_ == dc)
+         delayed = currentState._delayed filterNot (_ == dc)
          if (!mutable) {
            val state = pushedStates.head
            state.delayedInThisRun = state.delayedInThisRun.filterNot(_ == dc)
@@ -185,7 +186,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             solution = oldState.solutions
             currentState._bounds = oldState.bounds
             currentState._dependencies = oldState.dependencies
-            currentState._delayed = oldState.delayed
+            delayed = oldState.delayed
          }
          try {
            val aR = a
@@ -227,7 +228,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** restore the state from immediately before bp was created */
       private def backtrack(bp: Branchpoint) {
         // restore constraints
-        currentState._delayed = bp.delayed
+        delayed = bp.delayed
         // remove new dependencies
         currentState._dependencies = currentState._dependencies.drop(currentState._dependencies.length - bp.depLength)
         // restore old solution
@@ -975,7 +976,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
-                       var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
+                       var _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
                        var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[SolverState] = None ) {
 
 
@@ -1006,7 +1007,7 @@ case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap
     tmp
   }
 
-  
+
 
 
 
