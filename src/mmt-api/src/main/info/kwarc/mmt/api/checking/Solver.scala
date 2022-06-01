@@ -98,6 +98,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      def delayed = currentState._delayed // _delayed
      def delayed_= (d : List[DelayedConstraint]) {currentState = currentState.copy(_delayed = d)}
      def errors =  currentState._errors // _errors
+     def errors_= (e : List[SolverError]) {currentState = currentState.copy(_errors = e)}
      def dependencies = currentState._dependencies // _dependencies
      def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
 
@@ -116,7 +117,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
       /** registers an error */
       def addError(e: SolverError) {
-         if (mutable) currentState._errors ::= e
+         if (mutable) errors ::= e
          else {
            throw WouldFail
          }
@@ -976,7 +977,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
-                       var _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
+                       var _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
                        var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[SolverState] = None ) {
 
 
