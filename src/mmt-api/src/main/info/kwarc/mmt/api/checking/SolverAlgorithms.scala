@@ -1118,7 +1118,7 @@ trait SolverAlgorithms {self: Solver =>
             val remainingFreeVars = notAllowedInSolution(m, mBd)
             if (remainingFreeVars.isEmpty) {
               // check if the bound is subsumed by an existing one
-              val redundant = bounds(m) exists {case TypeBound(tp, b) =>
+              val redundant = getbounds(m) exists {case TypeBound(tp, b) =>
                 if (b == below) {
                   val subsumption = subOrSuper(below)(Stack.empty, tp, mBd) 
                   val r = tryToCheckWithoutEffect(subsumption)
