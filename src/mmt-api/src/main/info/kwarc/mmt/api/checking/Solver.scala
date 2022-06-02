@@ -101,9 +101,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      def errors_= (e : List[SolverError]) {currentState = currentState.copy(_errors = e)}
      def dependencies = currentState._dependencies // _dependencies
      def dependencies_= (c : List[CPath]) {currentState = currentState.copy(_dependencies = c)}
-     def getbounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
-     def bounds = currentState._bounds
-     def bounds_= (b : ListMap[LocalName, List[TypeBound] ]) {currentState = currentState.copy(_bounds = b )}
+     def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
+
       // adder methods for the stateful lists
 
       /** registers a constraint */
@@ -187,7 +186,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
             solution = oldState.solutions
-            bounds = oldState.bounds
+            currentState._bounds = oldState.bounds
             dependencies = oldState.dependencies
             delayed = oldState.delayed
          }
@@ -338,7 +337,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (unsolved.nonEmpty) {
             report(prefix, "unsolved: " + unsolved.mkString(", "))
             unsolved foreach {u =>
-              val (upper,lower) = getbounds(u).partition(_.upper)
+              val (upper,lower) = bounds(u).partition(_.upper)
               if (upper.nonEmpty)
                 report(prefix, "upper bounds of " + u + ": " + upper.map(b => presentObj(b.bound)).mkString(", "))
               if (lower.nonEmpty)
@@ -567,7 +566,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          setNewSolution(newSolutionS)
          val r = typeCheckSolution(vd)
          if (!r) return false
-         getbounds(name) forall {case TypeBound(bound, below) =>
+         bounds(name) forall {case TypeBound(bound, below) =>
            val j = subOrSuper(below)(Stack.empty, value, bound)
            check(j)(history + "solution must conform to existing bound")
          }
@@ -602,7 +601,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          setNewSolution(left ::: vd :: right)
          val r = typeCheckSolution(vd)
          if (!r) return false
-         getbounds(name).forall {case TypeBound(bound, _) =>
+         bounds(name).forall {case TypeBound(bound, _) =>
             check(Typing(Stack.empty, bound, newSolution))(history + "solution to type must be compatible with existing bound")
          }
       }
@@ -634,7 +633,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         }
         val bnd = TypeBound(newBound, below)
         // remove all bounds subsumed by the new one
-        val newBounds = getbounds(name) filter {case TypeBound(oldBound, oldBelow) =>
+        val newBounds = bounds(name) filter {case TypeBound(oldBound, oldBelow) =>
           if (below != oldBelow)
             true
           else {
@@ -667,7 +666,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      var toEnd = Context(it)
      var toEndNames = List(name)
      rest.foreach {vd =>
-       val vdVars = vd.freeVars ::: state.getbounds(vd.name).flatMap(_.bound.freeVars)
+       val vdVars = vd.freeVars ::: state.bounds(vd.name).flatMap(_.bound.freeVars)
        if (utils.disjoint(vdVars, toEndNames)) {
          // no dependency: move over vd
          toLeft = toLeft ++ vd
@@ -861,7 +860,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
           case None =>
             // find an unsolved but bounded unknown that is not used in any constraint
             val solvableOpt = solution.find {vd =>
-              vd.df.isEmpty && getbounds(vd.name).nonEmpty && {
+              vd.df.isEmpty && bounds(vd.name).nonEmpty && {
                 delayed forall {
                   case d: DelayedJudgement => true // !(d.freeVars contains vd.name)
                   case d: DelayedInference => true // omitted types of bound variables typically lead to delayed inferences of the kind of the unknown type for which a bound has been found already
@@ -873,7 +872,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
                 // solve the unknown by equating it to all its bounds
                 val h = new History(Nil)
                 h += s"solving ${vd.name}, for which no constraints are left, by equating it to its bounds"
-                val hd::tl = getbounds(vd.name)
+                val hd::tl = bounds(vd.name)
                 val r = solve(vd.name, hd.bound)(h + "registering solution")
                 if (!r) return false
                 val bdR = tl forall {bd =>
@@ -978,7 +977,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 
-case class SolverState( _solution: Context = Context.empty,  _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
                         _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
                        var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false,  parent : Option[SolverState] = None ) {
 
