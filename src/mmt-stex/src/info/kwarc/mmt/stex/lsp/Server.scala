@@ -60,9 +60,13 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
 
    lazy val stexserver = controller.extman.get(classOf[STeXServer]) match {
      case Nil =>
-       val ss = new STeXServer
-       controller.extman.addExtension(ss)
-       ss
+       this.synchronized {
+         client.log("starting sTeX server...")
+         val ss = new STeXServer
+         controller.extman.addExtension(ss)
+         client.log("done.")
+         ss
+       }
      case a :: _ =>
        a
    }
@@ -84,8 +88,11 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
    override def initialized(params: InitializedParams): Unit = {
      client.client.getMathHub.thenApply{msg =>
        val mh = File(msg.mathhub)
-       RusTeX.initializeBridge(mh)
        this.mathhub_top = Some(mh)
+       controller.handleLine("mathpath archive " + mh.toString)
+       controller.handleLine("lmh root " + mh.toString)
+       RusTeX.initializeBridge(mh)
+       stexserver
      }
    }
 

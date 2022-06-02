@@ -24,19 +24,19 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
       case Some(pre) => s.split('\n').map(s => pre + ": " + s).mkString("\n")
       case None => s
     }
-    override def log(s: String): Unit = client.log(prefix(Some("rustex-log"),s))
+    override def log(s: String): Unit = {}// client.log(prefix(Some("rustex-log"),s))
     override def write_16(s: String): Unit = client.log(prefix(Some("rustex-16"),s))
     override def write_17(s: String): Unit = client.log(prefix(Some("rustex-17"),s))
     override def write_18(s: String): Unit = client.log(prefix(Some("rustex-18"),s))
-    override def write_neg_1(s: String): Unit = client.log(prefix(Some("rustex--1"),s))
-    override def write_other(s: String): Unit = client.log(prefix(Some("rustex-other"),s))
+    override def write_neg_1(s: String): Unit = {}//client.log(prefix(Some("rustex--1"),s))
+    override def write_other(s: String): Unit = {}//client.log(prefix(Some("rustex-other"),s))
     override def message(s: String): Unit = client.log(prefix(Some("rustex-msg"),s))
     def file_open(s: String): Unit = {
       files ::= s
-      client.log(prefix(Some("rustex-file-open"),s))
+      //client.log(prefix(Some("rustex-file-open"),s))
     }
     def file_close(): Unit = {
-      client.log(prefix(Some("rustex-file-close"),files.head))
+      //client.log(prefix(Some("rustex-file-close"),files.head))
       files = files.tail
     }
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
@@ -64,24 +64,36 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
       case Some(f) =>
         Future {
           val html = RusTeX.parse(f, params)
-          val msg = this.synchronized {
+          client.log("parsed")
+          this.synchronized {
             val newhtml = HTMLParser(html)(parsingstate)
-            server.stexserver.doHeader(newhtml)
+            client.log("html parsed")
+            try {
+              server.stexserver.doHeader(newhtml)
 
-            val exts = server.stexserver.extensions
-            val docrules = exts.collect {
-              case e: DocumentExtension =>
-                e.documentRules
-            }.flatten
+              val exts = server.stexserver.extensions
+              val docrules = exts.collect {
+                case e: DocumentExtension =>
+                  e.documentRules
+              }.flatten
 
-            def doE(e: HTMLNode): Unit = docrules.foreach(r => r.unapply(e))
+              def doE(e: HTMLNode): Unit = docrules.foreach(r => r.unapply(e))
 
-            newhtml.iterate(doE)
-            this.html = Some(newhtml)
-            val msg = new HTMLUpdateMessage
-            msg.html = (server.controller.server.get.baseURI / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
-            msg
+              newhtml.iterate(doE)
+              this.html = Some(newhtml)
+            } catch {
+              case t : Throwable =>
+                client.log("Error: " + t.getMessage)
+            }
           }
+          val msg = new HTMLUpdateMessage
+          try {
+            client.log("baseURI: " + server.controller.server.get.baseURI)
+          } catch {
+            case t : Throwable =>
+              client.log("Error: Server not running")
+          }
+          msg.html = (server.controller.server.get.baseURI / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
           this.client.client.updateHTML(msg)
         }
       case _ =>
