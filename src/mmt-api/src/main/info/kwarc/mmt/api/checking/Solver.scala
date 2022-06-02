@@ -983,7 +983,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 
-case class SolverState( _solution: Context = Context.empty, var _bounds: IListMap[LocalName,List[TypeBound]] = new IListMap[LocalName,List[TypeBound]](),
+case class SolverState( _solution: Context = Context.empty,  _bounds: IListMap[LocalName,List[TypeBound]] = new IListMap[LocalName,List[TypeBound]](),
                         _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
                        var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false,  parent : Option[SolverState] = None ) {
 
