@@ -91,7 +91,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
        this.mathhub_top = Some(mh)
        controller.handleLine("mathpath archive " + mh.toString)
        controller.handleLine("lmh root " + mh.toString)
-       RusTeX.initializeBridge(mh)
+       RusTeX.initializeBridge(mh / ".rustex")
        stexserver
      }
    }
