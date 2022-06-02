@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api.utils.JSONObject.toList
 import info.kwarc.mmt.api.utils.{File, Git, JSON, JSONArray, JSONBoolean, JSONInt, JSONNull, JSONObject, JSONString, MMTSystem, MyList}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
+import info.kwarc.mmt.stex.FullsTeX
 //import io.methvin.better.files.RecursiveFileMonitor
 
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -16,6 +17,16 @@ import scala.collection.mutable
 
 abstract class BuildServerConfig extends Extension {
   def applies(a : Archive,f:File) : Option[TraversingBuildTarget]
+}
+
+object sTeXBuildConfig extends BuildServerConfig {
+  override def applies(a: Archive, f: File): Option[TraversingBuildTarget] = if (f.getExtension.contains("tex"))
+    controller.extman.get(classOf[FullsTeX]).headOption else None
+}
+object MMTBuildConfig extends BuildServerConfig {
+  override def applies(a: Archive, f: File): Option[TraversingBuildTarget] = if (f.getExtension.contains("mmt"))
+    controller.extman.get(classOf[TraversingBuildTarget],"mmt-omdoc") else None
+
 }
 
 
@@ -60,6 +71,8 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       }.toList
     }
     controller.extman.addExtension(GitUpdateActionCompanion)
+    controller.extman.addExtension(sTeXBuildConfig)
+    controller.extman.addExtension(MMTBuildConfig)
   }
 
   override def destroy: Unit = GitUpdateActionCompanion.destroy
@@ -140,11 +153,11 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         case (a,Some(commit)) =>
           commit.diffs.foreach {
             case Delete(p) =>
-              log("Delete [" + a.archive + "] " + p)
+              log("Delete [" + a.archive.id + "] " + p)
               FileDeps.delete(a.archive,(a.archive / source) / p)
               None
             case c@(Change(_)|Add(_)) =>
-              log("Update [" + a.archive + "] " + c.path)
+              log("Update [" + a.archive.id + "] " + c.path)
               configs.collectFirst{
                 case cf if cf.applies(a.archive,(a.archive / source) / c.path).isDefined =>
                   val bt = cf.applies(a.archive,(a.archive / source) / c.path).get

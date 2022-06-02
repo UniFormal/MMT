@@ -263,7 +263,7 @@ lazy val intellij = (project in file("intellij-mmt")).
 
 // MMT build server. Maintainer: Dennis
 lazy val buildserver = (project in file("mmt-buildserver")).
-  dependsOn(api, lf).
+  dependsOn(api, lf, stex).
   settings(mmtProjectsSettings("mmt-buildserver"): _*).
   settings(
     unmanagedJars in Compile += baseDirectory.value / "lib" / "jgit.jar",

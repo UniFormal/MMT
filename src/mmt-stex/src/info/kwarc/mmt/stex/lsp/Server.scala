@@ -6,7 +6,8 @@ import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
-import org.eclipse.lsp4j.jsonrpc.services.{JsonRequest, JsonSegment}
+import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams}
+import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest, JsonSegment}
 
 import java.util.concurrent.CompletableFuture
 
@@ -18,9 +19,14 @@ class HTMLUpdateMessage {
   var html: String = null
 }
 
+class MathHubMessage {
+  var mathhub : String = null
+}
+
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
   @JsonRequest def getMainFile: CompletableFuture[MainFileMessage]
+  @JsonRequest def getMathHub: CompletableFuture[MathHubMessage]
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
 }
 class STeXLSPWebSocket extends LSPWebsocket(classOf[STeXClient],classOf[STeXLSPServer])
@@ -72,6 +78,14 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
          RusTeX.initializeBridge(File(v) / ".rustex")
          this.mathhub_top = Some(File(v))
        }
+     }
+   }
+
+   override def initialized(params: InitializedParams): Unit = {
+     client.client.getMathHub.thenApply{msg =>
+       val mh = File(msg.mathhub)
+       RusTeX.initializeBridge(mh)
+       this.mathhub_top = Some(mh)
      }
    }
 
