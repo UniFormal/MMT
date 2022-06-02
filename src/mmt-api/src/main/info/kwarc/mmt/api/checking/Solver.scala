@@ -74,38 +74,28 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    protected object state {
 
      var currentState: SolverState = if(initstate.nonEmpty) {initstate.get} else{ new SolverState(_solution = checkingUnit.unknowns) }
-    // def getCurrentState = currentState
-
-
-/*
-      /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
-      private var _solution : Context = initUnknowns
-      import scala.collection.mutable.ListMap
-      private var _bounds = new ListMap[LocalName,List[TypeBound]] //TODO bounds should be saved as a part of the context (that may require an artificial symbol)
-      /** tracks the delayed constraints, in any order */
-      private var _delayed : List[DelayedConstraint] = Nil
-      /** tracks the errors in reverse order of encountering */
-      private var _errors: List[SolverError] = Nil
-      /** tracks the dependencies in reverse order of encountering */
-      private var _dependencies : List[CPath] = Nil
 
 
 
- */
 
-
-     // accessor methods for [currentState]
-     def solution = currentState._solution // _solution
+     // accessor and setter methods for [currentState], used to simulate mutable state
+     def solution = currentState._solution
      def solution_= (s : Context) {currentState = currentState.copy(_solution = s)}
-     def delayed = currentState._delayed // _delayed
+     def delayed = currentState._delayed
      def delayed_= (d : List[DelayedConstraint]) {currentState = currentState.copy(_delayed = d)}
-     def errors =  currentState._errors // _errors
+     def errors =  currentState._errors
      def errors_= (e : List[SolverError]) {currentState = currentState.copy(_errors = e)}
-     def dependencies = currentState._dependencies // _dependencies
+     def dependencies = currentState._dependencies
      def dependencies_= (c : List[CPath]) {currentState = currentState.copy(_dependencies = c)}
-     def getbounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
 
-      // adder methods for the stateful lists
+     /**
+       *
+       * @param n
+       * @return the bounds for n
+       */
+     def getbounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil)
+
+      // adder methods for the "stateful" lists
 
       /** registers a constraint */
       def addConstraint(d: DelayedConstraint)(implicit history: History) {
@@ -270,7 +260,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    import state._
 
   def saveCurrentState() = currentState = currentState.pushState()
-  def undoCurrentState() = currentState = currentState.head
+  def undoCurrentState() = currentState = currentState.last
   def getCurrentState() = currentState
 
    /** true if unresolved constraints are left */
@@ -981,55 +971,49 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    }
 }
 
-
-
+//TODO bounds should be saved as a part of the context (that may require an artificial symbol)
+/**
+  * The SolverState represents the state of the solver. The solver state is basically implemented as a stack where
+  * the top element is the current state of the [[Solver]] and everything below the top elements are saved, former
+  * states of the solver
+  *
+  * @param _solution tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable
+  * @param _bounds contains the bounds used for subtyping
+  * @param _dependencies tracks the dependencies in reverse order of encountering
+  * @param _delayed tracks the delayed constraints, in any order
+  * @param _errors tracks the errors in reverse order of encountering
+  * @param parent the parent SolverState, usually this is a former, saved state of the [[Solver]]
+  */
 case class SolverState( _solution: Context = Context.empty,  _bounds: IListMap[LocalName,List[TypeBound]] = new IListMap[LocalName,List[TypeBound]](),
-                        _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
-                       var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false,  parent : Option[SolverState] = None ) {
+                        _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil,  _errors : List[SolverError] = Nil, parent : Option[SolverState] = None ) {
 
 
-/*
-  def copyValues(s : SolverState) = {
-    _solution = s._solution
-    _bounds = s._bounds
-    _dependencies = s._dependencies
-    _delayed = s._delayed
-    solveEqualityStack = s.solveEqualityStack
-    _errors = s._errors
-    allowDelay = s.allowDelay
-    allowSolving = s.allowSolving
-    isDryRun = s.isDryRun
-    parent = s.parent
-  }
+  /**
+    *
+    * @return the latest saved [[SolverState]], if there is none, then this function returns "this"
+    *         this behaviour is useful for undo actions in the interactive prover since
+    */
+  def last = parent.getOrElse(this)
 
- */
-
-
-  def head = parent.getOrElse(this)
+  /**
+    * adds a new state in front of the saved states, "this" becomes a saved state and the new state becomes the descendant of "this
+    *
+    * @param _solution tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable
+    * @param _bounds contains the bounds used for subtyping
+    * @param _dependencies tracks the dependencies in reverse order of encountering
+    * @param _delayed tracks the delayed constraints, in any order
+    * @param _errors tracks the errors in reverse order of encountering
+    * @return
+    */
   def pushState( _solution: Context = this._solution,  _bounds: IListMap[LocalName,List[TypeBound]] = this._bounds,
-                 _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
-                 allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun) = {
-    val tmp = this.copy(_solution , _bounds , _dependencies, _delayed, solveEqualityStack,_errors, allowDelay, allowSolving,isDryRun ,parent = Some(this))
+                 _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,    _errors : List[SolverError] = this._errors) = {
+    val tmp = this.copy(_solution , _bounds , _dependencies, _delayed, _errors,parent = Some(this))
     tmp
   }
 
-
-
-
-/*
-  def popState = parent match {
-    case Some(v) => {
-      parent = v.parent
-    }
-    case None =>
-  }
-
- */
-  def descendsFrom(anc: SolverState): Boolean = parent.contains(anc) || (parent match {
-    case None => false
-    case Some(p) => p.descendsFrom(anc)
-  })
 }
+
+
 /** auxiliary methods and high-level type reconstruction API */
 object Solver {
   /** counter for debugging */
@@ -1042,7 +1026,7 @@ object Solver {
   val propertyURI = utils.mmt.baseURI / "clientProperties" / "solver"
   
   /** type reconstruction: checks a single term against a partially known type
-   *  
+   *
    *  @param tm the term (as a [[ParseResult]])
    *  @param expectedType the expected type and the unknowns that additionally occur in it; if omitted a fresh unknown is generated for the type
    *  @param rulesOpt the typing rules if known (to avoid computing them again)
