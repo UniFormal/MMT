@@ -145,8 +145,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
-      //  currentState._bounds(n) = bs
 
+        // since _bounds in [[currentState]] is immutable , we first have to create a new bounds list
         val newbounds =  currentState._bounds.updated(n , bs)
         currentState = currentState.copy(_bounds = newbounds)
       }
@@ -169,10 +169,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** true if we are currently in a dry run */
       def isDryRun = !mutable
 
+     //TODO: make StateData also use the immutable version of ListMap
       /**
        * evaluates its arguments without generating new constraints
        *
        * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
+        *
        */
       def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
          val tempState = StateData(solution, new ListMap[LocalName, List[TypeBound]]().++=(currentState._bounds), dependencies, currentState._delayed, allowDelay, allowSolving)
@@ -181,8 +183,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
             solution = oldState.solutions
-            // currentState._bounds = oldState.bounds
-           currentState = currentState.copy(_bounds = IListMap.from(oldState.bounds.toList))
+            // since oldState uses a mutable ListMap to save the bounds it has to be converted to an immutable list first (using IListMap.from)
+            currentState = currentState.copy(_bounds = IListMap.from(oldState.bounds.toList))
             dependencies = oldState.dependencies
             delayed = oldState.delayed
          }
