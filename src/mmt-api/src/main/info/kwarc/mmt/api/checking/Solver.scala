@@ -13,6 +13,8 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.{HashSet, ListMap}
+import scala.collection.immutable.{ListMap => IListMap}
+import scala.collection.mutable
 import scala.runtime.NonLocalReturnControl
 
 /* ideas
@@ -153,7 +155,10 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
-        currentState._bounds(n) = bs
+      //  currentState._bounds(n) = bs
+
+        val newbounds =  currentState._bounds.updated(n , bs)
+        currentState = currentState.copy(_bounds = newbounds)
       }
 
       // instead of full backtracking, we allow exploratory runs that do not have side effects
@@ -180,13 +185,14 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
        * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
       def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
-         val tempState = StateData(solution, currentState._bounds, dependencies, currentState._delayed, allowDelay, allowSolving)
+         val tempState = StateData(solution, new ListMap[LocalName, List[TypeBound]]().++=(currentState._bounds), dependencies, currentState._delayed, allowDelay, allowSolving)
          pushedStates ::= tempState
          def rollback {
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
             solution = oldState.solutions
-            currentState._bounds = oldState.bounds
+            // currentState._bounds = oldState.bounds
+           currentState = currentState.copy(_bounds = IListMap.from(oldState.bounds.toList))
             dependencies = oldState.dependencies
             delayed = oldState.delayed
          }
@@ -977,7 +983,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 
-case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+case class SolverState( _solution: Context = Context.empty, var _bounds: IListMap[LocalName,List[TypeBound]] = new IListMap[LocalName,List[TypeBound]](),
                         _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
                        var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false,  parent : Option[SolverState] = None ) {
 
@@ -1000,7 +1006,7 @@ case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap
 
 
   def head = parent.getOrElse(this)
-  def pushState( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
+  def pushState( _solution: Context = this._solution,  _bounds: IListMap[LocalName,List[TypeBound]] = this._bounds,
                  _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
                  allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun) = {
     val tmp = this.copy(_solution , _bounds , _dependencies, _delayed, solveEqualityStack,_errors, allowDelay, allowSolving,isDryRun ,parent = Some(this))
