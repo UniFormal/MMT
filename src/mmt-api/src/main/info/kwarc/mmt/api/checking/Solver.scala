@@ -979,7 +979,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
                         _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
-                       var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[SolverState] = None ) {
+                       var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false,  parent : Option[SolverState] = None ) {
 
 
 /*
@@ -998,10 +998,8 @@ case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap
 
  */
 
-  var delayedInThisRun: List[DelayedConstraint] = Nil
+
   def head = parent.getOrElse(this)
-  def tail = parent.get.parent.get
-  def isroot = parent.isEmpty
   def pushState( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
                  _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
                  allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun) = {
@@ -1012,13 +1010,15 @@ case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap
 
 
 
-
+/*
   def popState = parent match {
     case Some(v) => {
       parent = v.parent
     }
     case None =>
   }
+
+ */
   def descendsFrom(anc: SolverState): Boolean = parent.contains(anc) || (parent match {
     case None => false
     case Some(p) => p.descendsFrom(anc)
