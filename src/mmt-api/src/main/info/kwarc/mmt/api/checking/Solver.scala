@@ -12,7 +12,7 @@ import objects._
 import proving._
 import parser.ParseResult
 
-import scala.collection.mutable.HashSet
+import scala.collection.mutable.{HashSet, ListMap}
 import scala.runtime.NonLocalReturnControl
 
 /* ideas
@@ -51,7 +51,7 @@ import scala.runtime.NonLocalReturnControl
  *
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.
  */
-class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet)
+class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rules: RuleSet , val initstate : Option[state]  = None)
       extends CheckingCallback with SolverAlgorithms with Logger {
 
    /** for Logger */
@@ -69,185 +69,182 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
-   protected object state {
-      /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
-      private var _solution : Context = initUnknowns
-      import scala.collection.mutable.ListMap
-      private var _bounds = new ListMap[LocalName,List[TypeBound]] //TODO bounds should be saved as a part of the context (that may require an artificial symbol)
-      /** tracks the delayed constraints, in any order */
-      private var _delayed : List[DelayedConstraint] = Nil
-      /** tracks the errors in reverse order of encountering */
-      private var _errors: List[SolverError] = Nil
-      /** tracks the dependencies in reverse order of encountering */
-      private var _dependencies : List[CPath] = Nil
 
-      // accessor methods for the above
-      def solution = _solution
-      def delayed = _delayed
-      def errors = _errors
-      def dependencies = _dependencies
-      def bounds(n: LocalName) = _bounds.getOrElse(n,Nil)
-      
-      // adder methods for the stateful lists
+   object currentStateObj {
 
-      /** registers a constraint */
-      def addConstraint(d: DelayedConstraint)(implicit history: History) {
-        if (!mutable && !pushedStates.head.allowDelay) {
-          throw MightFail(history)
-        } else {
-          _delayed ::= d
-          if (!mutable) {
-            pushedStates.head.delayedInThisRun ::= d
-          }
-        }
-      }
-      /** registers an error */
-      def addError(e: SolverError) {
-         if (mutable) _errors ::= e
-         else {
-           throw WouldFail
+
+
+     var currentState: state = if(initstate.nonEmpty) {initstate.get} else{ new state(_solution = checkingUnit.unknowns) }
+     def getCurrentState = currentState
+     def saveCurrentState() = currentState = currentState.pushState()
+     def undoCurrentState() = currentState = currentState.head
+
+
+     /**
+       * For cycle detection in solveEquality
+       */
+
+     //    private var currentState : state = state(initUnknowns , new ListMap[LocalName,List[TypeBound]]  , Nil , Nil , Nil, Nil, allowDelay = true , allowSolving = true)
+     //  private def solveEqualityStack : List[Equality] = currentState.solveEqualityStack
+     object SolveEqualityStack {
+       def apply(j : Equality)(a : => Boolean): Boolean = try {
+         if (currentState.solveEqualityStack contains j) {
+           log("Cycle in solveEquality!")
+           return false
          }
-      }
+         currentState.solveEqualityStack ::= j
+         val ret = a
+         assert(currentState.solveEqualityStack.head == j)
+         currentState = currentState.copy(solveEqualityStack = currentState.solveEqualityStack.tail)
+         ret
+       } catch {
+         case rc : NonLocalReturnControl[Boolean@unchecked] =>
+           assert(currentState.solveEqualityStack.head == j)
+           currentState = currentState.copy( solveEqualityStack =  currentState.solveEqualityStack.tail)
+           rc.value
+       }
+     }
 
-      /** registers a dependency */
-      def addDependency(p: CPath) {
-         _dependencies ::= p
-      }
 
-      // more complex mutator methods for the stateful lists
+     // accessor methods for the above
+     def solution = currentState._solution // _solution
+     def solution_= (news : Context) { currentState._solution = news}
+     def delayed = currentState._delayed // _delayed
+     def delayed_= (ds : List[DelayedConstraint]){currentState._delayed = ds}
+     def errors =  currentState._errors // _errors
+     def errors_= (ers : List[SolverError] ){currentState._errors = ers}
+     def dependencies = currentState._dependencies // _dependencies
+     def dependencies_= (deps : List[CPath]){currentState._dependencies = deps}
+     def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
+     def isDryRun = currentState.isDryRun
+     def isDryRun_= (b : Boolean) {currentState.isDryRun = b}
 
-      def removeConstraint(dc: DelayedConstraint) {
-         _delayed = _delayed filterNot (_ == dc)
+
+
+
+
+     // adder methods for the stateful lists
+
+     def pushedStates = currentState.parent
+
+     /** registers a constraint */
+     def addConstraint(d: DelayedConstraint)(implicit history: History) {
+       if (!mutable && !currentState.allowDelay) {
+         throw MightFail(history)
+       } else {
+         currentState._delayed ::= d
          if (!mutable) {
-           val state = pushedStates.head
-           state.delayedInThisRun = state.delayedInThisRun.filterNot(_ == dc)
+           currentState.delayedInThisRun ::= d
          }
-      }
-      def setNewSolution(newSol: Context) {
-         if (!mutable && !pushedStates.head.allowSolving) {
-           throw MightFail(NoHistory)
-         }
-         _solution = newSol
-      }
-      // special case of setNewSolution that does not count as a side effect
-      def reorderSolution(newSol: Context) {
-         _solution = newSol
-      }
-      
-      def setNewBounds(n: LocalName, bs: List[TypeBound]) {
-         if (!mutable && !pushedStates.head.allowSolving) {
-           throw MightFail(NoHistory)
-         }
-        _bounds(n) = bs
-      }
+       }
+     }
+     /** registers an error */
+     def addError(e: SolverError) {
+       if (mutable) currentState._errors ::= e
+       else {
+         throw WouldFail
+       }
+     }
 
-      // instead of full backtracking, we allow exploratory runs that do not have side effects
+     /** registers a dependency */
+     def addDependency(p: CPath) {
+       currentState._dependencies ::= p
+     }
 
-      /** if false, all mutator methods have no effect on the state
+     // more complex mutator methods for the stateful lists
+
+     def removeConstraint(dc: DelayedConstraint) {
+       currentState._delayed = currentState._delayed filterNot (_ == dc)
+       if (!mutable) {
+         val state = pushedStates.head
+         state.delayedInThisRun = state.delayedInThisRun.filterNot(_ == dc)
+       }
+     }
+     def setNewSolution(newSol: Context) {
+       if (!mutable && !currentState.allowSolving) {
+         throw MightFail(NoHistory)
+       }
+       currentState._solution = newSol
+     }
+     // special case of setNewSolution that does not count as a side effect
+     def reorderSolution(newSol: Context) {
+       currentState._solution = newSol
+     }
+
+     def setNewBounds(n: LocalName, bs: List[TypeBound]) {
+       if (!mutable && !currentState.allowSolving) {
+         throw MightFail(NoHistory)
+       }
+       currentState._bounds(n) = bs
+     }
+
+     // instead of full backtracking, we allow exploratory runs that do not have side effects
+
+     /** if false, all mutator methods have no effect on the state
        *  they may throw a [[DryRunResult]]
        */
-      private def mutable = pushedStates.isEmpty
-      /** the state that is stored here for backtracking */
-      private case class StateData(solutions: Context, bounds: ListMap[LocalName,List[TypeBound]],
-                                   dependencies: List[CPath], delayed: List[DelayedConstraint],
-                                   allowDelay: Boolean, allowSolving: Boolean) {
-         var delayedInThisRun: List[DelayedConstraint] = Nil
-      }
-      /** a stack of states for dry runs */
-      private var pushedStates: List[StateData] = Nil
+     private def mutable =  !currentState.isDryRun // pushedStates.isEmpty
 
-      /** true if we are currently in a dry run */
-      def isDryRun = !mutable
 
-      /**
+     /** (kept for backwards copatability)
        * evaluates its arguments without generating new constraints
        *
        * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
-      def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
-         val tempState = StateData(solution, _bounds, dependencies, _delayed, allowDelay, allowSolving)
-         pushedStates ::= tempState
-         def rollback {
-            val oldState = pushedStates.head
-            pushedStates = pushedStates.tail
-            _solution = oldState.solutions
-            _bounds = oldState.bounds
-            _dependencies = oldState.dependencies
-            _delayed = oldState.delayed
-         }
-         try {
-           val aR = a
-           if (tempState.delayedInThisRun.nonEmpty) {
-              activateRepeatedly
-              tempState.delayedInThisRun.headOption.foreach {h =>
-                 throw MightFail(h.history)
-              }
+     def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
+       currentState = currentState.pushState(allowDelay = allowDelay , allowSolving = allowSolving)
+       currentState.isDryRun = true
+       def rollback {
+         currentState = pushedStates.head
+       }
+       try {
+         val aR = a
+         if (currentState.delayedInThisRun.nonEmpty) {
+           activateRepeatedly
+           currentState.delayedInThisRun.headOption.foreach {h =>
+             throw MightFail(h.history)
            }
-           if (commitOnSuccess(aR)) {
-             pushedStates = pushedStates.tail
-           } else {
-             rollback
-           }
-           Success(aR)
-         } catch {
-            case e: ThrowableDryRunResult =>
-              rollback
-              e
          }
-      }
+         if (commitOnSuccess(aR)) {
+           // pushedStates = pushedStates.tail
+           currentState.popState
+           currentState.isDryRun = false
+         } else {
+           rollback
+         }
+         Success(aR)
+       } catch {
+         case e: ThrowableDryRunResult =>
+           rollback
+           e
+       }
+     }
 
-      /* first attempt at full backtracking; the code below is already partially used but has no effect yet
-       * - branchpoints build the tree and save the current state
-       * - backtracking restores current state
-       * - cached inferred types store the branchpoint, results are only valid if on branch
-       *
-       * - new solutions are still collected in the state but not used anymore (minor de-optimization) to make constraints stateless
-       *
-       * problems
-       * - how to avoid reproving constraints that are unaffected by backtracking?
-       * - how to backtrack when an error stems from a delayed constraint and the call to backtrackable has already terminated?
-       */
-      private var currentBranch: Branchpoint = makeBranchpoint(None)
-      def getCurrentBranch = currentBranch
-      def setCurrentBranch(bp: Branchpoint) {
-        currentBranch = bp
-      }
-      /** restore the state from immediately before bp was created */
-      private def backtrack(bp: Branchpoint) {
-        // restore constraints
-        _delayed = bp.delayed
-        // remove new dependencies
-        _dependencies = _dependencies.drop(_dependencies.length - bp.depLength)
-        // restore old solution
-        _solution = bp.solution
-        // no need to restore errors - any error should result in backtracking when !currentBranch.isRoot
-      }
-      private def makeBranchpoint(parent: Option[Branchpoint] = Some(currentBranch)) = {
-        new Branchpoint(parent, delayed, dependencies.length, solution)
-      }
-      class Backtrack extends Throwable
-      /** set a backtracking point and run code
-       *  @return result of code or None if error occurred
-       *
-       *  even if this succeeds, new constraints may have been added that will fail in the future
-       */
-      def backtrackable[A](code: => A): Option[A] = {
-        val bp = makeBranchpoint()
-        currentBranch = bp
-        try {
-          Some(code)
-        } catch {
-          case b: Backtrack =>
-            backtrack(bp)
-            None
-        } finally {
-          // even if we do not backtrack, we must update the current branch
-          currentBranch = currentBranch.parent.get // is defined because it was set above
-        }
-      }
+     def dryRunAllowErrors[A](a: => A): A = {
+       saveCurrentState()
+       val res = a
+       undoCurrentState()
+       res
+     }
+
+
+     def undoSlvr() : Solver = {
+
+       val tmp = new Solver(controller ,checkingUnit , rules , Some(currentState.head))
+       //tmp.currentStateObj.setCurrentState(currentState.head)   // states.appendAll(states.asInstanceOf[ListBuffer[tmp.SolverState]] )
+       tmp
+     }
+
+     def resetErrors(e : List[SolverError]) = {
+       currentState._errors = Nil
+     }
+
    }
-   import state._
 
+
+
+
+  import currentStateObj._
    /** true if unresolved constraints are left */
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
    /** true if unsolved variables are left */
@@ -647,7 +644,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      var toEnd = Context(it)
      var toEndNames = List(name)
      rest.foreach {vd =>
-       val vdVars = vd.freeVars ::: state.bounds(vd.name).flatMap(_.bound.freeVars)
+       val vdVars = vd.freeVars ::: bounds(vd.name).flatMap(_.bound.freeVars)
        if (utils.disjoint(vdVars, toEndNames)) {
          // no dependency: move over vd
          toLeft = toLeft ++ vd
@@ -763,8 +760,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     */
    def apply(j: Judgement): Boolean = {
       val h = new History(Nil)
-      val bi = new BranchInfo(h, getCurrentBranch)
-      addConstraint(new DelayedJudgement(j, bi, notTriedYet = true))(h)
+
+      addConstraint(new DelayedJudgement(j, h ,  notTriedYet = true))(h)
       activateRepeatedly
       if (errors.nonEmpty) {
         // definitely disproved
@@ -794,8 +791,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       } else {
          log("delaying: " + j.present)
          history += "(delayed)"
-         val bi = new BranchInfo(history, getCurrentBranch)
-         val dc = new DelayedJudgement(j, bi, suffices)
+         val dc = new DelayedJudgement(j, history, suffices)
          addConstraint(dc)
       }
       true
@@ -812,7 +808,6 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      // activates a constraint
      def activate(dc: DelayedConstraint) = {
        removeConstraint(dc)
-       setCurrentBranch(dc.branch)
        dc match {
          case dj: DelayedJudgement =>
            val j = dj.constraint
@@ -955,6 +950,54 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
    }
 }
+class state(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+            var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
+            var allowDelay: Boolean = true , var allowSolving: Boolean = true , var isDryRun : Boolean = false , var parent : Option[state] = None ) {
+
+  def copy( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
+            _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
+            allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun ,  parent : Option[state] = this.parent): state ={
+    new state(_solution , _bounds, _dependencies,  _delayed,  solveEqualityStack ,  _errors, allowDelay ,  allowSolving ,  isDryRun ,  parent)
+  }
+
+  def copyFromState(s : state = this): state ={
+    new state(s._solution , s._bounds, s._dependencies,  s._delayed,  s.solveEqualityStack ,  s._errors, s.allowDelay ,  s.allowSolving ,  s.isDryRun ,  s.parent)
+  }
+
+  def copyValues(s : state) = {
+    _solution = s._solution
+    _bounds = s._bounds
+    _dependencies = s._dependencies
+    _delayed = s._delayed
+    solveEqualityStack = s.solveEqualityStack
+    _errors = s._errors
+    allowDelay = s.allowDelay
+    allowSolving = s.allowSolving
+    isDryRun = s.isDryRun
+    parent = s.parent
+  }
+
+  var delayedInThisRun: List[DelayedConstraint] = Nil
+  def head = parent.getOrElse(this)
+  def tail = parent.get.parent.get
+  def isroot = parent.isEmpty
+  def pushState( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
+                 _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
+                 allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun) = {
+    val tmp = this.copy(_solution , _bounds , _dependencies, _delayed, solveEqualityStack,_errors, allowDelay, allowSolving,isDryRun ,parent = Some(this))
+    tmp
+  }
+  def popState = parent match {
+    case Some(v) => {
+      parent = v.parent
+    }
+    case None =>
+  }
+  def descendsFrom(anc: state): Boolean = parent.contains(anc) || (parent match {
+    case None => false
+    case Some(p) => p.descendsFrom(anc)
+  })
+}
 
 /** auxiliary methods and high-level type reconstruction API */
 object Solver {
@@ -1047,7 +1090,7 @@ object Solver {
 }
 
 /** used by [[Solver]] to store inferred types with terms */
-object InferredType extends TermProperty[(Branchpoint,Term)](Solver.propertyURI / "inferred")
+object InferredType extends TermProperty[Term](Solver.propertyURI / "inferred")
 
 /** used by [[Solver]] to mark a term as head-normal: no simplification rule can change the head symbol */
 class Stability(id: Int) extends BooleanTermProperty(Solver.propertyURI / "stability" / id.toString)
@@ -1081,13 +1124,3 @@ case class Success[A](result: A) extends DryRunResult {
    override def toString = "will succeed"
 }
 
-// TODO variable bounds are missing
-/** experimental backtracking support in [[Solver]] */
-class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedConstraint], val depLength: Int, val solution: Context) {
-  def isRoot = parent.isEmpty
-  /** @return true if this branch contains anc */
-  def descendsFrom(anc: Branchpoint): Boolean = parent.contains(anc) || (parent match {
-    case None => false
-    case Some(p) => p.descendsFrom(anc)
-  })
-}

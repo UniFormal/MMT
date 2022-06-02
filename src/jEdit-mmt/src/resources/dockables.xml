@@ -11,4 +11,7 @@
 	<DOCKABLE NAME="mmt-graphdockable">
 		new info.kwarc.mmt.jedit.MMTGraphDockable(view, position);
 	</DOCKABLE>
+	<DOCKABLE NAME="mmt-proofdockable">
+		new info.kwarc.mmt.jedit.proofgui.MMTProofStateDockable(view, position);
+	</DOCKABLE>
 </DOCKABLES>
