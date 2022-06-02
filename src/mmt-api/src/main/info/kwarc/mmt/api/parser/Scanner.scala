@@ -342,7 +342,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
     currentIndex = 0
     numCurrentTokens = 0
     next()
-    if (active != Nil) throw ImplementationError("active notation left after scanning")
+    if (active != Nil) throw ImplementationError("active notation left after scanning for " + active.head.rules.head.name)
   }
 
   /** scan using all notations in the ruleTable */

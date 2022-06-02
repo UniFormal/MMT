@@ -19,7 +19,7 @@ class ScalaCompiler extends BuildTarget {
 
   /** find the classpath of a single archive */
   private def singleArchiveClassPath(a : Archive) = {
-    a.properties.get("classpath").map(p => a.root / p).mkString(sep)
+    a.classpath.map(p => a.root / p).mkString(sep)
   }
 
 
