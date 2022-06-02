@@ -94,9 +94,13 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
      // accessor methods for [currentState]
      def solution = currentState._solution // _solution
+     def solution_= (s : Context) {currentState = currentState.copy(_solution = s)}
      def delayed = currentState._delayed // _delayed
+     def delayed_= (d : List[DelayedConstraint]) {currentState = currentState.copy(_delayed = d)}
      def errors =  currentState._errors // _errors
+     def errors_= (e : List[SolverError]) {currentState = currentState.copy(_errors = e)}
      def dependencies = currentState._dependencies // _dependencies
+     def dependencies_= (c : List[CPath]) {currentState = currentState.copy(_dependencies = c)}
      def bounds(n: LocalName) =  currentState._bounds.getOrElse(n ,Nil) // _bounds.getOrElse(n,Nil)
 
       // adder methods for the stateful lists
@@ -106,7 +110,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         if (!mutable && !pushedStates.head.allowDelay) {
           throw MightFail(history)
         } else {
-          currentState._delayed ::= d
+          delayed ::= d
           if (!mutable) {
             pushedStates.head.delayedInThisRun ::= d
           }
@@ -114,7 +118,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
       /** registers an error */
       def addError(e: SolverError) {
-         if (mutable) currentState._errors ::= e
+         if (mutable) errors ::= e
          else {
            throw WouldFail
          }
@@ -122,13 +126,13 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
       /** registers a dependency */
       def addDependency(p: CPath) {
-         currentState._dependencies ::= p
+         dependencies ::= p
       }
 
       // more complex mutator methods for the stateful lists
 
       def removeConstraint(dc: DelayedConstraint) {
-         currentState._delayed = currentState._delayed filterNot (_ == dc)
+         delayed = currentState._delayed filterNot (_ == dc)
          if (!mutable) {
            val state = pushedStates.head
            state.delayedInThisRun = state.delayedInThisRun.filterNot(_ == dc)
@@ -138,11 +142,11 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
-         currentState._solution = newSol
+         solution = newSol
       }
       // special case of setNewSolution that does not count as a side effect
       def reorderSolution(newSol: Context) {
-         currentState._solution = newSol
+         solution = newSol
       }
 
       def setNewBounds(n: LocalName, bs: List[TypeBound]) {
@@ -181,10 +185,10 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          def rollback {
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
-            currentState._solution = oldState.solutions
+            solution = oldState.solutions
             currentState._bounds = oldState.bounds
-            currentState._dependencies = oldState.dependencies
-            currentState._delayed = oldState.delayed
+            dependencies = oldState.dependencies
+            delayed = oldState.delayed
          }
          try {
            val aR = a
@@ -226,11 +230,11 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** restore the state from immediately before bp was created */
       private def backtrack(bp: Branchpoint) {
         // restore constraints
-        currentState._delayed = bp.delayed
+        delayed = bp.delayed
         // remove new dependencies
-        currentState._dependencies = currentState._dependencies.drop(currentState._dependencies.length - bp.depLength)
+        dependencies = currentState._dependencies.drop(currentState._dependencies.length - bp.depLength)
         // restore old solution
-        currentState._solution = bp.solution
+        solution = bp.solution
         // no need to restore errors - any error should result in backtracking when !currentBranch.isRoot
       }
       private def makeBranchpoint(parent: Option[Branchpoint] = Some(currentBranch)) = {
@@ -973,12 +977,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 
 
 
-case class SolverState(var _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
-                       var _dependencies: List[CPath] = Nil, var _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, var _errors : List[SolverError] = Nil,
-                       var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false, var parent : Option[SolverState] = None ) {
+case class SolverState( _solution: Context = Context.empty, var _bounds: ListMap[LocalName,List[TypeBound]] = new ListMap[LocalName,List[TypeBound]](),
+                        _dependencies: List[CPath] = Nil,  _delayed: List[DelayedConstraint] = Nil, var solveEqualityStack : List[Equality] = Nil, _errors : List[SolverError] = Nil,
+                       var allowDelay: Boolean = true, var allowSolving: Boolean = true, var isDryRun : Boolean = false,  parent : Option[SolverState] = None ) {
 
 
-
+/*
   def copyValues(s : SolverState) = {
     _solution = s._solution
     _bounds = s._bounds
@@ -992,10 +996,10 @@ case class SolverState(var _solution: Context = Context.empty, var _bounds: List
     parent = s.parent
   }
 
-  var delayedInThisRun: List[DelayedConstraint] = Nil
+ */
+
+
   def head = parent.getOrElse(this)
-  def tail = parent.get.parent.get
-  def isroot = parent.isEmpty
   def pushState( _solution: Context = this._solution,  _bounds: ListMap[LocalName,List[TypeBound]] = this._bounds,
                  _dependencies: List[CPath] = this._dependencies,  _delayed: List[DelayedConstraint] = this._delayed,  solveEqualityStack : List[Equality] = this.solveEqualityStack,  _errors : List[SolverError] = this._errors,
                  allowDelay: Boolean = this.allowDelay ,  allowSolving: Boolean = this.allowSolving ,  isDryRun : Boolean = this.isDryRun) = {
@@ -1005,12 +1009,16 @@ case class SolverState(var _solution: Context = Context.empty, var _bounds: List
 
 
 
+
+/*
   def popState = parent match {
     case Some(v) => {
       parent = v.parent
     }
     case None =>
   }
+
+ */
   def descendsFrom(anc: SolverState): Boolean = parent.contains(anc) || (parent match {
     case None => false
     case Some(p) => p.descendsFrom(anc)
