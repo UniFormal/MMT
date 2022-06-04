@@ -497,9 +497,9 @@ case class ignore() extends Tactic {
   }
 }
 
-
+//TODO: replace with a tactic that only combines two tactics. also due to time constraints it was necessary that [[multiTactic]] does parsing which should not be the case
 /**
-  * execute multiple tactics in a sequence
+  * tactic for chaining multiple tactics as in "fix x; assume h; use h"
   * @param ls
   * @param tp
   */
@@ -684,7 +684,7 @@ case class gettyperaw(t : Term  , uks : Context) extends  Tactic {
 }
 
 /**
-  * print a term fully qualified
+  * print a term fully qualified form of the term t. Example: "a + b" will be printed as   "lf?apply sometheory/mathops?add  sometheory/constants?a sometheory0/constans?b"
   * @param t
   */
 case class printraw(t : Term) extends Tactic {
