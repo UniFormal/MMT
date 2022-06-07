@@ -11,6 +11,7 @@ import info.kwarc.mmt.lf.{Apply, ApplySpine, Arrow, Lambda, Pi}
 
 /**
   * takes unnamed hypothesis from the goal an puts them in the local context
+  * |- x -> y  ==> hs:x |- y
   * @param hs optional names for the newly introduced hypothesis
   */
 case class assume(hs : Option[String]) extends Tactic {
