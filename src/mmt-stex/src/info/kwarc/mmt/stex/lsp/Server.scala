@@ -21,20 +21,25 @@ class HTMLUpdateMessage {
 
 class MathHubMessage {
   var mathhub : String = null
+  var remote: String = null
 }
+
+class ArchiveMessage {
+  var archive : String = null
+}
+
 
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
-  @JsonRequest def getMainFile: CompletableFuture[MainFileMessage]
-  @JsonRequest def getMathHub: CompletableFuture[MathHubMessage]
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
+  @JsonNotification def updateMathHub(): Unit
 }
 class STeXLSPWebSocket extends LSPWebsocket(classOf[STeXClient],classOf[STeXLSPServer])
 class STeXLSP extends LSP(classOf[STeXClient],classOf[STeXLSPServer],classOf[STeXLSPWebSocket])("stex",5007,5008){
   override def newServer(style: RunStyle): STeXLSPServer = new STeXLSPServer(style)
 }
 
-class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
+class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with MathHubServer
   with TextDocumentServer[STeXClient,sTeXDocument]
   with WithAutocomplete[STeXClient]
   with WithAnnotations[STeXClient,sTeXDocument]
@@ -71,6 +76,35 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
        a
    }
 
+   @JsonNotification("sTeX/setMathHub")
+   def setMathHub(msg:MathHubMessage) : Unit = {
+     val mh = File(msg.mathhub)
+     this.mathhub_top = Some(mh)
+     this.remoteServer = msg.remote
+     controller.handleLine("mathpath archive " + mh.toString)
+     controller.handleLine("lmh root " + mh.toString)
+     RusTeX.initializeBridge(mh / ".rustex")
+     stexserver
+     controller.backend.getArchive("MMT/urtheories") match {
+       case None =>
+         installArchives("MMT/urtheories")
+       case _ =>
+     }
+     controller.backend.getArchive("sTeX/meta-inf") match {
+       case None =>
+         installArchives("sTeX/meta-inf")
+       case _ =>
+     }
+   }
+
+   @JsonRequest("sTeX/getMathHubContent")
+   def getMathHubContent() : CompletableFuture[java.util.List[MathHubEntry]] = Completable {
+     getMathHubContentI()
+   }
+
+   @JsonNotification("sTeX/installArchive")
+   def installArchive(arch: ArchiveMessage) : Unit = installArchives(arch.archive)
+
    override def connect: Unit = {
      controller.extman.addExtension(lspdocumentserver)
      client.log("Connected to sTeX!")
@@ -82,17 +116,6 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient])
          RusTeX.initializeBridge(File(v) / ".rustex")
          this.mathhub_top = Some(File(v))
        }
-     }
-   }
-
-   override def initialized(params: InitializedParams): Unit = {
-     client.client.getMathHub.thenApply{msg =>
-       val mh = File(msg.mathhub)
-       this.mathhub_top = Some(mh)
-       controller.handleLine("mathpath archive " + mh.toString)
-       controller.handleLine("lmh root " + mh.toString)
-       RusTeX.initializeBridge(mh / ".rustex")
-       stexserver
      }
    }
 

@@ -3,7 +3,7 @@ package info.kwarc.mmt.lsp
 import info.kwarc.mmt.api.SourceError
 
 import java.util.concurrent.CompletableFuture
-import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, Diagnostic, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageParams, MessageType, Position, PublishDiagnosticsParams, ReferenceParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkspaceEdit, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, Diagnostic, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageParams, MessageType, Position, ProgressParams, PublishDiagnosticsParams, ReferenceParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkDoneProgressBegin, WorkDoneProgressCreateParams, WorkDoneProgressEnd, WorkDoneProgressNotification, WorkDoneProgressReport, WorkspaceEdit, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware}
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.messages.{Either3, Either => JEither}
@@ -13,17 +13,15 @@ import java.util
 import java.util.logging.LogManager
 import java.util.logging.Logger
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
-import info.kwarc.mmt.api.utils.File
 import org.eclipse.jetty.server.{Server, ServerConnector}
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
 import org.eclipse.lsp4j
-import org.eclipse.lsp4j.adapters.SemanticTokensFullDeltaResponseAdapter
+import org.eclipse.lsp4j.adapters.{SemanticTokensFullDeltaResponseAdapter, WorkDoneProgressNotificationAdapter}
 import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
-import java.io.{BufferedWriter, FileWriter, PrintWriter}
 import javax.websocket.server.ServerEndpointConfig
 import scala.jdk.CollectionConverters._
 
@@ -65,12 +63,13 @@ abstract class LSP[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClas
     // startLocalServer(System.in, System.out)
 
     //val controller = new Controller()
-    val end = new AbstractLSPServer(newServer(LocalStyle),self) {}
+    val server = newServer(LocalStyle)
+    val end = new AbstractLSPServer(server,self) {}
     controller.extman.addExtension(end,"local" :: Nil)
     //val logFile = File("/home/jazzpirate/templog.txt").toJava//java.io.File.createTempFile("mmtlsp/log_","")
     //val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
-    val launcher = new Launcher.Builder().setLocalService(end).setRemoteInterface(clc).setInput(System.in).
-      setOutput(System.out).validateMessages(true)/*.traceMessages(wr)*/.create()
+    val launcher = new Launcher.Builder().setLocalServices(Seq(end,server).asJava).setRemoteInterface(clc).setInput(System.in).
+      setOutput(System.out).validateMessages(true)/*.traceMessages(wr)*/.setClassLoader(this.getClass.getClassLoader).create()
     val client = launcher.getRemoteProxy//.asInstanceOf[LanguageClient]
     end.connect(client)
     launcher.startListening()
@@ -89,10 +88,11 @@ abstract class LSP[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClas
           //val logFile = java.io.File.createTempFile("mmtlsp/log_", "")
           //val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
           //log(logFile.toString)
-          val end = new AbstractLSPServer(newServer(SocketStyle),self) {}
+          val server = newServer(SocketStyle)
+          val end = new AbstractLSPServer(server,self) {}
           controller.extman.addExtension(end, Nil)
-          val launcher = new Launcher.Builder().setLocalService(end).setRemoteInterface(clc).setInput(conn.getInputStream).
-            setOutput(conn.getOutputStream).validateMessages(true)/*.traceMessages(wr)*/.create()
+          val launcher = new Launcher.Builder().setLocalServices(Seq(end,server).asJava).setRemoteInterface(clc).setInput(conn.getInputStream).
+            setOutput(conn.getOutputStream).validateMessages(true).setClassLoader(this.getClass.getClassLoader)/*.traceMessages(wr)*/.create()
           end.connect(launcher.getRemoteProxy)
           launcher.startListening()
         }
@@ -170,9 +170,10 @@ class LSPWebsocket[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClas
     val lsp = LSP.controller.extman.get(classOf[LSP[ClientClass,ServerClass,this.type]]).headOption.getOrElse({
       ???
     })
-    val server = new AbstractLSPServer(lsp.newServer(WebSocketStyle),lsp) {}
-    LSP.controller.extman.addExtension(server,Nil)
-    builder.setLocalService(server).setRemoteInterface(clct)
+    val server = lsp.newServer(WebSocketStyle)
+    val end = new AbstractLSPServer(server,lsp) {}
+    LSP.controller.extman.addExtension(end,Nil)
+    builder.setLocalServices(Seq(end,server).asJava).setClassLoader(this.getClass.getClassLoader).setRemoteInterface(clct)
   }
 
   override def connect(localServices: util.Collection[AnyRef], remoteProxy: ClientClass): Unit = {
@@ -201,6 +202,50 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   private[lsp] def connectI(cl : LSPClient) = {
     _client = Some(new ClientWrapper(cl.asInstanceOf[ClientType]))
     connect
+  }
+  protected object Completable {
+    import scala.concurrent.Future
+    import scala.concurrent.ExecutionContext.Implicits._
+    import scala.compat.java8.FutureConverters._
+    def apply[T](t : => T) = Future.apply(t).toJava.toCompletableFuture
+    def list[T](t : => List[T]) : CompletableFuture[util.List[T]] = apply{ t.asJava }
+  }
+
+
+
+  def withProgress[A](payload: Any,title:String,msg:String = "")(f : ((Double,String) => Unit) => (A,String)) : A = {
+    val token = payload.hashCode();
+    {
+      val params = new WorkDoneProgressCreateParams
+      params.setToken(token)
+      client.client.createProgress(params)
+      val nparams = new ProgressParams
+      nparams.setToken(token)
+      val nt = new WorkDoneProgressBegin
+      nt.setMessage(msg)
+      nt.setTitle(title)
+      nt.setPercentage(0)
+      nparams.setValue(JEither.forLeft(nt))
+      client.client.notifyProgress(nparams)
+    }
+    val (ret,end) = f((i,s) => {
+      val np = new ProgressParams
+      np.setToken(token)
+      val nt = new WorkDoneProgressReport
+      nt.setMessage(s)
+      nt.setPercentage(math.round(i * 100).toInt)
+      np.setValue(JEither.forLeft(nt))
+      client.client.notifyProgress(np)
+    });
+    {
+      val np = new ProgressParams
+      np.setToken(token)
+      val nt = new WorkDoneProgressEnd
+      nt.setMessage(end)
+      np.setValue(JEither.forLeft(nt))
+      client.client.notifyProgress(np)
+    }
+    ret
   }
 
   def connect: Unit = {}

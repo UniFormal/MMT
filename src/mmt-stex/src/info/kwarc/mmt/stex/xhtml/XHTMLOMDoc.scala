@@ -1110,6 +1110,10 @@ case class HTMLConclusionComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML
   }
 }
 
+case class HTMLSolution(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {
+  this.classes ::= "solution"
+}
+
 case class HTMLSDefinition(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement with HasDefinientia {
   override def onAdd = { sstate.foreach{ state =>
     super.onAdd
@@ -1186,9 +1190,6 @@ case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with
 case class HTMLSpfcase(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
 case class HTMLSpfeq(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
 
-case class HTMLSolution(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  this.classes ::= "solution"
-}
 case class HTMLFrame(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   this.classes ::= "frame"
 }

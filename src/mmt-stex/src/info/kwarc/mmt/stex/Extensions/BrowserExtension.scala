@@ -78,7 +78,7 @@ object BrowserExtension extends STeXExtension {
         val tex = {
           if ((toptex / fp).exists) (toptex / fp).children else Nil
         }.flatMap(f => if (f.isDirectory) Some(toptex.relativize(f),true) else if (f.getExtension.contains("tex")) Some(toptex.relativize(f).stripExtension,false) else None)
-        (tex ::: html).distinct
+        tex.filter(html.contains)
       }
       def iterate(fp: FilePath): JSON = JSONArray(
         children(fp).collect {

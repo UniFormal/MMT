@@ -63,34 +63,38 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
     this.file match {
       case Some(f) =>
         Future {
-          val html = RusTeX.parse(f, params)
-          client.log("parsed")
-          this.synchronized {
-            val newhtml = HTMLParser(html)(parsingstate)
-            client.log("html parsed")
-            try {
-              server.stexserver.doHeader(newhtml)
+          server.withProgress(uri, "Building " + uri, "Building html... (1/2)") { update =>
+            val html = RusTeX.parse(f, params)
+            update(0, "Parsing HTML... (2/2)")
+            this.synchronized {
+              val newhtml = HTMLParser(html)(parsingstate)
+              client.log("html parsed")
+              try {
+                server.stexserver.doHeader(newhtml)
 
-              val exts = server.stexserver.extensions
-              val docrules = exts.collect {
-                case e: DocumentExtension =>
-                  e.documentRules
-              }.flatten
+                val exts = server.stexserver.extensions
+                val docrules = exts.collect {
+                  case e: DocumentExtension =>
+                    e.documentRules
+                }.flatten
 
-              def doE(e: HTMLNode): Unit = docrules.foreach(r => r.unapply(e))
+                def doE(e: HTMLNode): Unit = docrules.foreach(r => r.unapply(e))
 
-              newhtml.iterate(doE)
-              this.html = Some(newhtml)
-            } catch {
-              case t : Throwable =>
-                client.log("Error: " + t.getMessage)
+                newhtml.iterate(doE)
+                this.html = Some(newhtml)
+                ((), "Done")
+              } catch {
+                case t: Throwable =>
+                  client.log("Error: " + t.getMessage)
+                  ((), "Failed")
+              }
             }
           }
           val msg = new HTMLUpdateMessage
           try {
             client.log("baseURI: " + server.controller.server.get.baseURI)
           } catch {
-            case t : Throwable =>
+            case t: Throwable =>
               client.log("Error: Server not running")
           }
           msg.html = (server.controller.server.get.baseURI / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri

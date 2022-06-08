@@ -466,11 +466,13 @@ lazy val specware = (project in file("mmt-specware")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-specware"): _*)
 
-// plugin for reading stex. Originally developed by Mihnea, currently dormant but functional
+// plugin for reading stex. Maintainer: Dennis
 lazy val stex = (project in file("mmt-stex")).
   dependsOn(api,odk,lsp).
   settings(
     mmtProjectsSettings("mmt-stex"),
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "jgit.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "jgit.jar",
     /*libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),*/
