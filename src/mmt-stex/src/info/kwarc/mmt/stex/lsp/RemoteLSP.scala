@@ -22,13 +22,12 @@ class RemoteLSP extends STeXExtension {
     RedirectableDimension("relational"),
     RedirectableDimension("bin"),
     RedirectableDimension("buildresults"),
-    RedirectableDimension("export"),
-    Dim(".git")
+    RedirectableDimension("export")
   )
 
   override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.lastOption match {
     case Some("allarchives") =>
-      val archs = controller.backend.getArchives.filter(_.properties.get("format").contains("stex"))
+      val archs = controller.backend.getArchive("MMT/urtheories").get :: controller.backend.getArchives.filter(_.properties.get("format").contains("stex"))
       Some(ServerResponse.JsonResponse(JSONArray(archs.map(a => JSONObject(
         ("id",JSONString(a.id)),
         ("deps",JSONArray(a.dependencies.map(JSONString):_*)),
@@ -48,7 +47,9 @@ class RemoteLSP extends STeXExtension {
         case Some(a) =>
           Some(ServerResponse.JsonResponse(JSONArray(dimensions.map(d => JSONObject(("dim",JSONString(d.toString)),("files",JSONArray({
             val top = a / d
-            top.descendants.map(f => JSONString(top.relativize(f).toString))
+            (if (top.exists() && top.isDirectory) {
+              top.descendants.map(f => JSONString(top.relativize(f).toString))
+            } else Nil)
           } :_*)))) :_*)))
         case _ => Some(ServerResponse.JsonResponse(JSONArray()))
       }

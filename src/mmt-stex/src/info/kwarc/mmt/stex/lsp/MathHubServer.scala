@@ -7,6 +7,8 @@ import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject, JSONString}
 import org.eclipse.jgit.api.Git
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 
+import java.io.FileOutputStream
+import java.net.URL
 import java.util.concurrent.CompletableFuture
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -47,7 +49,7 @@ trait MathHubServer { this : STeXLSPServer =>
 
   def installArchives(ids : String) = {
     getAllRemotes
-    getDeps(ids).distinct.foreach(installArchiveI)
+    getDeps(ids,new {var ls : List[Any] = Nil}).distinct.foreach(installArchiveI)
     client.client.updateMathHub()
   }
 
@@ -62,16 +64,19 @@ trait MathHubServer { this : STeXLSPServer =>
     }
   }
 
-  private def getDeps(id : String) : List[Remote] = allRemotes.collect{case r if r.id == id || r.id.startsWith(id + "/") => r}.flatMap(r => r :: r.deps.flatMap(getDeps))
+  private def getDeps(id : String,currs:{var ls : List[Any]}) : List[Remote] = allRemotes.collect{case r if (r.id == id || r.id.startsWith(id + "/")) && !currs.ls.contains(r) => r}.flatMap{r =>
+    currs.ls ::= r
+    r :: r.deps.flatMap(getDeps(_,currs))
+  }
 
   private def installArchiveI(archive: Remote) = {
-    mathhub_top match {
-      case Some(mh) =>
+    (mathhub_top,controller.backend.getArchive(archive.id)) match {
+      case (Some(mh),None) =>
         withProgress(archive,"Installing " + archive.id,"Cloning git repository"){update =>
           //Thread.sleep(1000)
 
-          Git.cloneRepository().setGitDir(mh / archive.id / ".git").setURI(archive.gituri).call()
-          controller.backend.addStore(LocalSystem((mh / archive.id).toURI))
+          Git.cloneRepository().setDirectory(mh / archive.id).setURI(archive.gituri).call()
+          controller.backend.openArchive(mh / archive.id)
           controller.backend.getArchive(archive.id) match {
             case Some(a) =>
 
@@ -87,14 +92,26 @@ trait MathHubServer { this : STeXLSPServer =>
                   files.zipWithIndex.foreach { case ((dim,f),i) =>
                     update(i.toDouble / max,"Downloading " + (i+1) + "/" + max + "... (" + dim + "/" + f + ")")
 
+                    try {
+                      val src = new URL(remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f).openStream()
+                      val file = (a / RedirectableDimension(dim) / f)
+                      if (!file.up.exists()) file.up.mkdirs()
+                      file.createNewFile()
+                      val target = new FileOutputStream(file.toString)
+                      var c = 0
+                      while ({c = src.read(); c!= -1}) {
+                        target.write(c)
+                      }
+                      src.close()
+                      target.close()
+                    } catch {
+                      case t : Throwable =>
+                        println(t.getMessage)
+                        print("")
+                    }
 
-                    val src = remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f
-                    val target = new java.io.FileWriter((a / RedirectableDimension(dim) / f).toString)
-                    target.write(src.mkString)
-                    target.close()
 
-
-                    Thread.sleep(1000)
+                    //Thread.sleep(1000)
                   }
                   ((),"success")
                 case _ =>
@@ -110,8 +127,9 @@ trait MathHubServer { this : STeXLSPServer =>
   }
 
   def getMathHubContentI() : java.util.List[MathHubEntry] = {
+    getAllRemotes
     val archives = controller.backend.getArchives.filter(_.properties.get("format").map(_.toLowerCase).contains("stex")).map(Arch)
-    val all = archives ::: allRemotes
+    val all = archives ::: allRemotes.filterNot(_.id == "MMT/urtheories")
     val ret = all.map(_.id.split('/').head).distinct.map{ s => makeEntries(all,List(s)) }
     ret.asJava
   }

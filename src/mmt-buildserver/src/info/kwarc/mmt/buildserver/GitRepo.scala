@@ -28,9 +28,9 @@ case class GitCommit(previous : Option[RevCommit],latest:RevCommit,diffs: List[G
 
 object GitRepo{
   def apply(url: String,dir : File)(implicit controller: Controller) : Option[GitRepo] = {
-    val git = Git.cloneRepository().setGitDir(dir / ".git").setURI(url).call()
+    val git = Git.cloneRepository().setDirectory(dir).setURI(url).call()
     val b = URI.fromJava(dir.toURI)
-    controller.backend.addStore(LocalSystem(b))
+    controller.backend.openArchive(dir)//.addStore(LocalSystem(b))
     controller.backend.getArchive(dir).map(GitRepo(_))
   }
 }
