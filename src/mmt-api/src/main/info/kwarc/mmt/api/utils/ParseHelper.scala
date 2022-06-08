@@ -64,6 +64,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
          if (!empty && head == '\n') {
             current += 1
          }
+         advancePositionBy(c)
          c = '\n'
       }
       advancePositionBy(c)

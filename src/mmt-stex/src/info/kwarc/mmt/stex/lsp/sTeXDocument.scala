@@ -85,6 +85,7 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
                 ((), "Done")
               } catch {
                 case t: Throwable =>
+                  t.printStackTrace()
                   client.log("Error: " + t.getMessage)
                   ((), "Failed")
               }
