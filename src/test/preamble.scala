@@ -89,6 +89,7 @@ object MagicTest {
   lazy val archiveRoot: File = {
     List(
       home / "work" / "MathHub", // Dennis
+      File("D:\\") / "work" / "MathHub", // Dennis Windows
       home / "Projects" / "gl.mathhub.info", // Tom
       home / "Development" / "KWARC" / "content", // Jonas
       home / "content", // Michael

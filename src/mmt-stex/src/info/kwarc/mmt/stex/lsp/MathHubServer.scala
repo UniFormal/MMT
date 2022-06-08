@@ -5,9 +5,8 @@ import info.kwarc.mmt.api.backend.LocalSystem
 import info.kwarc.mmt.api.utils.JSONArray.toList
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject, JSONString}
 import org.eclipse.jgit.api.Git
-import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, PrintWriter, StringWriter, Writer}
 import java.net.URL
 import java.util.concurrent.CompletableFuture
 import scala.jdk.CollectionConverters._
@@ -74,9 +73,17 @@ trait MathHubServer { this : STeXLSPServer =>
       case (Some(mh),None) =>
         withProgress(archive,"Installing " + archive.id,"Cloning git repository"){update =>
           //Thread.sleep(1000)
-
-          Git.cloneRepository().setDirectory(mh / archive.id).setURI(archive.gituri).call()
-          controller.backend.openArchive(mh / archive.id)
+          try {
+            Git.cloneRepository().setDirectory(mh / archive.id).setURI(archive.gituri).call()
+            controller.backend.openArchive(mh / archive.id)
+          } catch {
+            case t : Throwable =>
+              client.log(t.getMessage)
+              val writer = new StringWriter()
+              t.printStackTrace(new PrintWriter(writer))
+              writer.toString.split('\n').foreach(client.log)
+              ((),"failed")
+          }
           controller.backend.getArchive(archive.id) match {
             case Some(a) =>
 

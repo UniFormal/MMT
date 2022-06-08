@@ -204,7 +204,6 @@ def apiJars(u: Utils) = Seq(
   "scala-xml.jar",
   "xz.jar",
   "scala-parallel-collections.jar",
-  //"jgit.jar"
 ).map(u.lib.toJava / _)
 
 // The kernel upon which everything else depends. Maintainer: Florian
@@ -266,8 +265,9 @@ lazy val buildserver = (project in file("mmt-buildserver")).
   dependsOn(api, lf, stex).
   settings(mmtProjectsSettings("mmt-buildserver"): _*).
   settings(
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "jgit.jar",
-    unmanagedJars in Test += baseDirectory.value / "lib" / "jgit.jar",
+    unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
+    unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
+    unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",
   )
 /*.
   settings(
@@ -471,8 +471,9 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api,odk,lsp).
   settings(
     mmtProjectsSettings("mmt-stex"),
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "jgit.jar",
-    unmanagedJars in Test += baseDirectory.value / "lib" / "jgit.jar",
+    unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
+    unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
+    unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",
     /*libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),*/
