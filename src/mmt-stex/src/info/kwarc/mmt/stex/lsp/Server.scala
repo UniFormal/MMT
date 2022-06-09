@@ -66,10 +66,8 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    lazy val stexserver = controller.extman.get(classOf[STeXServer]) match {
      case Nil =>
        this.synchronized {
-         client.log("starting sTeX server...")
          val ss = new STeXServer
          controller.extman.addExtension(ss)
-         client.log("done.")
          ss
        }
      case a :: _ =>
@@ -78,13 +76,25 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    @JsonNotification("sTeX/setMathHub")
    def setMathHub(msg:MathHubMessage) : Unit = {
+     bootToken.foreach {tk =>
+       updateProgress(tk,0.5,"Setting MathHub")
+     }
      val mh = File(msg.mathhub)
      this.mathhub_top = Some(mh)
      this.remoteServer = msg.remote
      controller.handleLine("mathpath archive " + mh.toString)
      controller.handleLine("lmh root " + mh.toString)
+     bootToken.foreach {tk =>
+       updateProgress(tk,0.5,"Initializing RusTeX")
+     }
      RusTeX.initializeBridge(mh / ".rustex")
+     bootToken.foreach {tk =>
+       updateProgress(tk,0.5,"Loading relational information")
+     }
      stexserver
+     bootToken.foreach {tk =>
+       updateProgress(tk,0.5,"Checking for necessery archives")
+     }
      controller.backend.getArchive("MMT/urtheories") match {
        case None =>
          installArchives("MMT/urtheories")
@@ -97,9 +107,24 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    }
 
+   private var bootToken : Option[Int] = None
+
+   override def initialized(params: InitializedParams): Unit = {
+     super.initialized(params)
+     bootToken = Some(params.hashCode())
+     startProgress(bootToken.get,"Starting sTeX/MMT","Initializing...")
+   }
+
    @JsonRequest("sTeX/getMathHubContent")
    def getMathHubContent() : CompletableFuture[java.util.List[MathHubEntry]] = Completable {
-     getMathHubContentI()
+     bootToken.foreach {tk =>
+       updateProgress(tk,0.5,"Querying remote MathHub")
+     }
+     val ret = getMathHubContentI()
+     bootToken.foreach {tk =>
+       finishProgress(tk,"Finished")
+     }
+     ret
    }
 
    @JsonNotification("sTeX/installArchive")

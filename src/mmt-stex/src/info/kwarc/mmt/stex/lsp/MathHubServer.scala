@@ -68,9 +68,39 @@ trait MathHubServer { this : STeXLSPServer =>
     r :: r.deps.flatMap(getDeps(_,currs))
   }
 
-  private def installArchiveI(archive: Remote) = {
+  private def installArchiveI(archive: Remote): Unit = {
     (mathhub_top,controller.backend.getArchive(archive.id)) match {
       case (Some(mh),None) =>
+        // meta-inf
+        if (archive.id.contains('/') && !archive.id.endsWith("/meta-inf")) {
+          val meta = (mh / archive.id).up / "meta-inf"
+          if (!meta.exists()) {
+            allRemotes.find(r => r.id == archive.id.split('/').init.mkString("/") + "/meta-inf") match {
+              case Some(r) => installArchiveI(r)
+              case None =>
+                val urls = (archive.gituri.split('/').init.mkString("/")) + "/meta-inf.git"
+                val exists = try {
+                  val url = new URL(urls).openStream()
+                  true
+                } catch {
+                  case e: Exception => false
+                }
+                if (exists) withProgress(archive, "Installing " + archive.id, "Cloning git repository") { _ =>
+                  try {
+                    Git.cloneRepository().setDirectory(meta).setURI(urls).call()
+                    ((), "success")
+                  } catch {
+                    case t: Throwable =>
+                      client.log(t.getMessage)
+                      val writer = new StringWriter()
+                      t.printStackTrace(new PrintWriter(writer))
+                      writer.toString.split('\n').foreach(client.log)
+                      ((), "failed")
+                  }
+                }
+            }
+          }
+        }
         withProgress(archive,"Installing " + archive.id,"Cloning git repository"){update =>
           //Thread.sleep(1000)
           try {
@@ -86,10 +116,9 @@ trait MathHubServer { this : STeXLSPServer =>
           }
           controller.backend.getArchive(archive.id) match {
             case Some(a) =>
-
               update(0,"Fetching File Index...")
               val attempt = Try(io.Source.fromURL(remoteServer + "/allarchfiles?" + archive.id)("ISO-8859-1"))
-              if (attempt.isSuccess) JSON.parse(attempt.get.toBuffer.mkString) match {
+              val ret = if (attempt.isSuccess) JSON.parse(attempt.get.toBuffer.mkString) match {
                 case JSONArray(vls @_*) =>
                   val files = vls.flatMap{j =>
                     val dim = j.asInstanceOf[JSONObject].getAsString("dim")
@@ -116,15 +145,14 @@ trait MathHubServer { this : STeXLSPServer =>
                         println(t.getMessage)
                         print("")
                     }
-
-
-                    //Thread.sleep(1000)
                   }
                   ((),"success")
                 case _ =>
                   ((),"failed")
               } else ((),"failed")
-
+              update(1,"Loading relational information")
+              a.readRelational(Nil,controller,"rel")
+              ret
             case _ => ((),"failed")
           }
 

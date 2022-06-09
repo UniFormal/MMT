@@ -211,40 +211,45 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
     def list[T](t : => List[T]) : CompletableFuture[util.List[T]] = apply{ t.asJava }
   }
 
+  def startProgress(token: Int,title:String,msg:String = ""): Unit = {
+    val params = new WorkDoneProgressCreateParams
+    params.setToken(token)
+    client.client.createProgress(params)
+    val nparams = new ProgressParams
+    nparams.setToken(token)
+    val nt = new WorkDoneProgressBegin
+    nt.setMessage(msg)
+    nt.setTitle(title)
+    nt.setPercentage(0)
+    nparams.setValue(JEither.forLeft(nt))
+    client.client.notifyProgress(nparams)
+  }
+  def updateProgress(token:Int,progress:Double,msg:String) = {
+    val np = new ProgressParams
+    np.setToken(token)
+    val nt = new WorkDoneProgressReport
+    nt.setMessage(msg)
+    nt.setPercentage(math.round(progress * 100).toInt)
+    np.setValue(JEither.forLeft(nt))
+    client.client.notifyProgress(np)
+  }
+  def finishProgress(token:Int,msg:String) = {
+    val np = new ProgressParams
+    np.setToken(token)
+    val nt = new WorkDoneProgressEnd
+    nt.setMessage(msg)
+    np.setValue(JEither.forLeft(nt))
+    client.client.notifyProgress(np)
+  }
 
 
   def withProgress[A](payload: Any,title:String,msg:String = "")(f : ((Double,String) => Unit) => (A,String)) : A = {
     val token = payload.hashCode();
-    {
-      val params = new WorkDoneProgressCreateParams
-      params.setToken(token)
-      client.client.createProgress(params)
-      val nparams = new ProgressParams
-      nparams.setToken(token)
-      val nt = new WorkDoneProgressBegin
-      nt.setMessage(msg)
-      nt.setTitle(title)
-      nt.setPercentage(0)
-      nparams.setValue(JEither.forLeft(nt))
-      client.client.notifyProgress(nparams)
-    }
+    startProgress(token,title,msg)
     val (ret,end) = f((i,s) => {
-      val np = new ProgressParams
-      np.setToken(token)
-      val nt = new WorkDoneProgressReport
-      nt.setMessage(s)
-      nt.setPercentage(math.round(i * 100).toInt)
-      np.setValue(JEither.forLeft(nt))
-      client.client.notifyProgress(np)
+      updateProgress(token,i,s)
     });
-    {
-      val np = new ProgressParams
-      np.setToken(token)
-      val nt = new WorkDoneProgressEnd
-      nt.setMessage(end)
-      np.setValue(JEither.forLeft(nt))
-      client.client.notifyProgress(np)
-    }
+    finishProgress(token,end)
     ret
   }
 

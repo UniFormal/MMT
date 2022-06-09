@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
 
-  val params = new Params {
+  def params(progress : String => Unit) = new Params {
     private var files: List[String] = Nil
     private def prefix(pre:Option[String],s:String) : String = pre match {
       case Some(pre) => s.split('\n').map(s => pre + ": " + s).mkString("\n")
@@ -32,12 +32,14 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
     override def write_other(s: String): Unit = {}//client.log(prefix(Some("rustex-other"),s))
     override def message(s: String): Unit = client.log(prefix(Some("rustex-msg"),s))
     def file_open(s: String): Unit = {
-      files ::= s
+      files ::= s.trim.drop(1)
+      progress(s.trim)
       //client.log(prefix(Some("rustex-file-open"),s))
     }
     def file_close(): Unit = {
       //client.log(prefix(Some("rustex-file-close"),files.head))
       files = files.tail
+      files.headOption.foreach(progress)
     }
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
       val (off1,off2,p) = LSPDocument.fullLine(files.head._2-1,doctext)
@@ -63,8 +65,8 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
     this.file match {
       case Some(f) =>
         Future {
-          server.withProgress(uri, "Building " + uri, "Building html... (1/2)") { update =>
-            val html = RusTeX.parse(f, params)
+          server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
+            val html = RusTeX.parse(f, params(update(0,_)))
             update(0, "Parsing HTML... (2/2)")
             this.synchronized {
               val newhtml = HTMLParser(html)(parsingstate)
