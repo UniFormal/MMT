@@ -72,8 +72,14 @@ class TacticsProof(view : View) extends JSplitPane(SwingConstants.HORIZONTAL){
 
   // the bottom text area is used
   val btmtxt = new JTextArea()
-  btmtxt.setLineWrap(true)
-  btmtxt.setPreferredSize(new Dimension(bottom.getWidth, bottom.getHeight))
+//  btmtxt.setLineWrap(true)
+//  btmtxt.setPreferredSize(new Dimension(bottom.getWidth, bottom.getHeight))
+
+
+
+  val scrolltxt = new JScrollPane(btmtxt)
+ // scrolltxt.setPreferredSize(new Dimension(bottom.getWidth, bottom.getHeight))
+  scrolltxt.setVisible(true)
 
   // the bar at the very bottom where one enters the tactics
   val tacticsinput =  new HistoryTextField("tactics input") // new JTextField(30)
@@ -83,7 +89,7 @@ class TacticsProof(view : View) extends JSplitPane(SwingConstants.HORIZONTAL){
   bottom.add(tacticsinput, BorderLayout.SOUTH)
 
   bottom.add(tabs ,BorderLayout.CENTER)
-  tabs.addTab("output" , btmtxt)
+  tabs.addTab("output" , scrolltxt)
 
   val tacticsHistory = new JTextArea()
 
@@ -148,8 +154,8 @@ class TacticsProof(view : View) extends JSplitPane(SwingConstants.HORIZONTAL){
 
   val  testrunbutton : JButton = Swing.Button("Test" , "treats this proof as a test run (less checks, no proof term generation, useful for debugging and using experimental features)"){
     if (ip.isDefined){
-      ip.get.testrun = true
-      btmtxt.append("is testrun:  " + ip.get.testrun.toString)
+      ip.get.testrun = !ip.get.testrun
+      btmtxt.append("is testrun:  " + ip.get.testrun.toString + "\n")
       // proofTermTxt.setText(slvr.presentObj(ip.get.slvr.simplify(ip.get.pr.proofTermAlt)(Stack(ip.get.slvr.checkingUnit.context), ip.get.hist)))
 
     }
