@@ -9,9 +9,11 @@ import info.kwarc.mmt.api.objects.OMPMOD
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState, SimpleHTMLRule}
 import info.kwarc.rustex.Params
 
+import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.sys.process.Process
 import scala.xml.parsing.XhtmlParser
 
@@ -172,6 +174,35 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
       case Nil => BuildSuccess(used,results)
       case o => MissingDependency(o.map(LogicalDependency),results,used)
     }
+  }
+}
+
+class HTMLToLucene extends XHTMLParser {
+  val key = "xhtml-lucene"
+  override val outDim: ArchiveDimension = Dim("export", "lucene")
+  val inDim = info.kwarc.mmt.api.archives.source
+  def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
+
+  /** the main abstract method for building one file
+    *
+    * @param bf information about input/output file etc
+    */
+  override def buildFile(bt: BuildTask): BuildResult = {
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
+    val inFile = bt.archive / RedirectableDimension("xhtml") / bt.inPath.setExtension("xhtml")
+    if (!inFile.exists) return {
+      bt.errorCont(SourceError(bt.inFile.toString,SourceRef.anonymous(""),"xhtml file " + inFile.toString + " does not exist"))
+      BuildFailure(Nil,Nil)
+    }
+
+    val extensions = stexserver.extensions
+    val rules = extensions.flatMap(_.rules)
+    val state = new SearchOnlyState(controller,rules,bt.errorCont,dpath)
+    HTMLParser(inFile)(state)
+    val doc = state.Search.makeDocument(bt.outFile.stripExtension,bt.inFile,bt.archive)
+
+    doc.save
+    BuildResult.empty
   }
 }
 
@@ -369,11 +400,16 @@ class FullsTeX extends Importer with XHTMLParser {
       pdffile.delete()
       PdfLatex.clear(pdffile)
       index(state.doc)
+      log("    -      lucene " + bt.inPath)
+      state.Search.makeDocument(
+        (bt.archive / Dim("export","lucene") / bt.inPath).stripExtension,
+        bt.inFile,bt.archive
+      ).save
       log("Finished: " + bt.inFile)
       val results = PhysicalDependency(npdffile) :: PhysicalDependency(outFile) :: DocumentDependency(state.doc.path) :: state.doc.getDeclarations.collect {
         case mr: MRef =>
           LogicalDependency(mr.target)
-      }
+      } ::: (bt.archive / Dim("export","lucene") / bt.inPath).stripExtension.descendants.map(PhysicalDependency)
       val used = state.doc.getDeclarations.flatMap {
         case m : MRef => controller.getO(m.target).toList.flatMap{
           case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))

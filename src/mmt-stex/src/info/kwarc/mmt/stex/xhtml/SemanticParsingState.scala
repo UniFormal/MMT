@@ -1,21 +1,26 @@
 package info.kwarc.mmt.stex.xhtml
 
-import info.kwarc.mmt.api.{ComplexStep, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
+import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
+import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType}
+import info.kwarc.mmt.stex.search.SearchDocument
 import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STerm}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 
 class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHandler, val dpath : DPath) extends HTMLParser.ParsingState(controller,rules) {
   override def error(s: String): Unit = eh(new STeXError(s,None,None))
   private var maindoc : HTMLDocument = null
+  var title: Option[HTMLDoctitle] = None
   def doc = maindoc.doc
   var missings : List[MPath] = Nil
   var in_term = false
@@ -36,6 +41,10 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
     v.metadata.update(ParseResult.unknown,OMS(ParseResult.unknown))
     v
   }
+  def add(se : StructuralElement) = controller.library.add(se)
+  def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = controller.library.endAdd(ce)
+  def getO(p : Path) = controller.getO(p)
+  def update(se : StructuralElement) = controller.library.update(se)
 
   private val names = mutable.HashMap.empty[String,Int]
 
@@ -474,4 +483,80 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
         }
       }
   }
+
+  // Search Stuff
+  object Search {
+    def makeDocument(outdir:File,source:File,archive:Archive) = {
+      val doc = new SearchDocument(outdir,source,archive,dpath)
+      val body = maindoc.get()()("body").head
+      doc.add("content",makeString(body),body.children.map(_.toString).mkString,title.toList.flatMap{t =>
+        val nt = t.copy
+        nt.attributes.remove((nt.namespace,"style"))
+        List(("title",makeString(nt)),("titlesource",nt.toString))
+      }:_*)
+      definitions.foreach(d => doc.add("definition",makeString(d.copy),d.toString,
+        ("for",d.fors.mkString(",")) ::
+          d.path.map(p => ("path",p.toString)).toList:_*
+      ))
+      assertions.foreach(d => doc.add("assertion",makeString(d.copy),d.toString,
+        ("for",d.fors.mkString(",")) ::
+        d.path.map(p => ("path",p.toString)).toList:_*
+      ))
+      examples.foreach(d => doc.add("example",makeString(d.copy),d.toString,
+        ("for",d.fors.mkString(",")) ::
+          d.path.map(p => ("path",p.toString)).toList:_*
+      ))
+      doc
+    }
+    private def makeString(node: HTMLParser.HTMLNode) : String = {
+      val sb = new mutable.StringBuilder()
+      recurse(node)(sb)
+      sb.mkString.trim
+    }
+    def addDefi(df: HTMLStatement) = definitions ::= df
+    def addAssertion(ass: HTMLStatement) = assertions ::= ass
+    def addExample(ex : HTMLStatement) = examples ::= ex
+    private var definitions : List[HTMLStatement] = Nil
+    private var assertions : List[HTMLStatement] = Nil
+    private var examples : List[HTMLStatement] = Nil
+    @tailrec
+    private def recurse(node: HTMLParser.HTMLNode)(implicit sb : mutable.StringBuilder): Unit = {
+      node match {
+        case txt:HTMLParser.HTMLText =>
+          sb ++= txt.toString().trim + " "
+        case _ =>
+      }
+      (node.attributes.get((node.namespace,"style")) match {
+        case Some(s) if s.replace(" ","").contains("display:none") =>
+          getNext(node,false)
+        case _ => getNext(node)
+      }) match {
+        case Some(s) => recurse(s)
+        case _ =>
+      }
+    }
+    private def getNext(node : HTMLParser.HTMLNode,withchildren : Boolean = true) : Option[HTMLParser.HTMLNode] = node.children match {
+      case h :: _ if withchildren => Some(h)
+      case _ => node.parent match {
+        case Some(p) =>
+          val children = p.children
+          children.indexOf(node) match {
+            case i if i != -1 && children.isDefinedAt(i+1) => Some(children(i+1))
+            case _ => getNext(p,false)
+          }
+        case _ => None
+      }
+    }
+  }
+}
+
+class SearchOnlyState(controller : Controller, rules : List[HTMLRule],eh : ErrorHandler, dpath : DPath) extends SemanticState(controller,rules,eh,dpath) {
+  override def add(se : StructuralElement) = {}
+  override def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = {}
+  override def update(se: StructuralElement): Unit = {}
+  override def applyTerm(tm : Term) = tm
+  override def applyTopLevelTerm(tm: Term): Term = tm
+  override def context = Context.empty
+  override def getRules = new MutableRuleSet
+  override def check(se: StructuralElement): Unit = {}
 }

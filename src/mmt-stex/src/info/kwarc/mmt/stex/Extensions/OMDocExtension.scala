@@ -43,7 +43,7 @@ object OMDocExtension extends DocumentExtension {
         val ret = f(n)
         s match {
           case state:SemanticState if !state.in_term =>
-            Some(HTMLTopLevelTerm(ret))
+            Some(new HTMLTopLevelTerm(ret))
           case _ => Some(ret)
         }
       } else None

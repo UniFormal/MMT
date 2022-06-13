@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.backend.LocalSystem
 import info.kwarc.mmt.api.utils.JSONArray.toList
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject, JSONString}
+import info.kwarc.mmt.stex.search.Searcher
 import org.eclipse.jgit.api.Git
 
 import java.io.{FileOutputStream, PrintWriter, StringWriter, Writer}
@@ -31,6 +32,38 @@ class MathHubRepo extends MathHubEntry {
 trait MathHubServer { this : STeXLSPServer =>
 
   protected var remoteServer = "https://mmt.beta.vollki.kwarc.info/:sTeX" //(controller.server.get.baseURI / ":sTeX").toString
+  private var searchinitialized = false
+  lazy val searcher : Searcher = {
+    searchinitialized = true
+    new Searcher(controller)
+  }
+
+  def searchI(q : String,tps:List[String]) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = {
+    val archs = controller.backend.getArchives.map(_.id)
+    val attempt = Try(io.Source.fromURL(remoteServer + "/search?skiparchs=" + archs.mkString(",") + "&types=" + tps.mkString(",") + "&query=" + q)("ISO-8859-1"))
+    val rems = if (attempt.isSuccess) Try(JSON.parse(attempt.get.toBuffer.mkString) match {
+      case JSONArray(vls@_*) =>
+        vls.map{case jo:JSONObject =>
+          val r = new LSPSearchResult
+          r.local = false
+          r.archive = jo.getAsString("archive")
+          r.sourcefile = jo.getAsString("sourcefile")
+          r.html = jo.getAsString("html")
+          r
+        }
+    }).getOrElse(Nil) else Nil
+    val local = searcher.search(q,10,tps)
+    val localres = local.map {
+      case res =>
+        val r = new LSPSearchResult
+        r.local = true
+        r.archive = res.archive
+        r.sourcefile = res.sourcefile
+        r.html = res.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(res.fragments.head._2)
+        r
+    }
+    (localres.asJava,rems.asJava)
+  }
 
   private sealed abstract class MHE {
     def id : String
@@ -152,6 +185,9 @@ trait MathHubServer { this : STeXLSPServer =>
               } else ((),"failed")
               update(1,"Loading relational information")
               a.readRelational(Nil,controller,"rel")
+              if (searchinitialized) {
+                searcher.addArchive(a)
+              }
               ret
             case _ => ((),"failed")
           }

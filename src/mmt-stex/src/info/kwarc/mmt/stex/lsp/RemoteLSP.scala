@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.archives.{Dim, RedirectableDimension}
 import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
+import info.kwarc.mmt.stex.search.Searcher
 
 class RemoteLSP extends STeXExtension {
 
@@ -24,6 +25,9 @@ class RemoteLSP extends STeXExtension {
     RedirectableDimension("buildresults"),
     RedirectableDimension("export")
   )
+  lazy val searcher : Searcher = {
+    new Searcher(controller)
+  }
 
   override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.lastOption match {
     case Some("allarchives") =>
@@ -57,6 +61,20 @@ class RemoteLSP extends STeXExtension {
       Some(ServerResponse.FileResponse(
         (controller.backend.getArchive(request.parsedQuery("arch").get).get / RedirectableDimension(request.parsedQuery("dim").get)) / request.parsedQuery("file").get
       ))
+    case Some("search") =>
+      val archs = request.parsedQuery("skiparchs").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
+      val types = request.parsedQuery("types").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
+      val query = request.parsedQuery("query").getOrElse {
+        return Some(ServerResponse.JsonResponse(JSONArray()))
+      }
+      val results = searcher.search(query,10,types,archs)
+      Some(ServerResponse.JsonResponse(JSONArray(
+        results.map(sr => JSONObject(
+          ("archive",JSONString(sr.archive)),
+          ("sourcefile",JSONString(sr.sourcefile)),
+          ("html",JSONString(sr.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(sr.fragments.head._2)))
+        ))
+        :_*)))
     case _ => None
   }
 }

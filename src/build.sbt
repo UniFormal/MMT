@@ -104,6 +104,7 @@ def commonSettings(nameStr: String) = Seq(
   fork := true,
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
+    case PathList("META-INF","services", _*) => MergeStrategy.first
     case
       PathList("rootdoc.txt") | // 2 versions from from scala jars
       PathList("META-INF", _*) => // should never be merged anyway
@@ -471,14 +472,29 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api,odk,lsp).
   settings(
     mmtProjectsSettings("mmt-stex"),
-    unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
-    unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
-    unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
+    libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30",
+
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
+
+      /*unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
+      unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
+      unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",*/
     /*libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),*/
     unmanagedJars in Compile += baseDirectory.value / "lib" / "RusTeX.jar"
   )
+
 
 // plugin for writing OpenMath CDs. Maintainer: Florian
 lazy val openmath = (project in file("mmt-openmath")).

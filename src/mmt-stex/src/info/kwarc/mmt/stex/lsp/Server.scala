@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex.lsp
 
+import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.{Controller, Run}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -26,6 +27,25 @@ class MathHubMessage {
 
 class ArchiveMessage {
   var archive : String = null
+}
+
+class LSPSearchResult {
+  var archive : String = null
+  var sourcefile : String = null
+  var local : Boolean = false
+  var html : String = null
+}
+
+class LSPSearchResults {
+  var locals: java.util.List[LSPSearchResult] = java.util.List.of()
+  var remotes: java.util.List[LSPSearchResult] = java.util.List.of()
+}
+
+class SearchParams {
+  var query : String = null
+  var defis = true
+  var asserts = true
+  var exs = true
 }
 
 
@@ -72,6 +92,16 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        }
      case a :: _ =>
        a
+   }
+
+   @JsonRequest("sTeX/search")
+   def search(p : SearchParams) : CompletableFuture[LSPSearchResults] = Completable {
+     val tps = if (p.defis) List("definition") else if (p.exs) List("example") else if (p.asserts) List("assertion") else Nil
+     val (local,remote) = searchI(p.query,tps)
+     val ret = new LSPSearchResults
+     ret.locals = local
+     ret.remotes = remote
+     ret
    }
 
    @JsonNotification("sTeX/setMathHub")
