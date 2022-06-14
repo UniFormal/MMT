@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.lsp
 
-import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.archives.{Archive, BuildManager, TrivialBuildManager}
 import info.kwarc.mmt.api.frontend.{Controller, Run}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -48,6 +48,10 @@ class SearchParams {
   var exs = true
 }
 
+class BuildMessage {
+  var file:String = null
+}
+
 
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
@@ -92,6 +96,12 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        }
      case a :: _ =>
        a
+   }
+
+   @JsonNotification("sTeX/buildFile")
+   def buildFile(a :BuildMessage) : Unit = {
+     val d = documents.synchronized{documents.getOrElseUpdate(a.file,newDocument(a.file))}
+     d.buildFull()
    }
 
    @JsonRequest("sTeX/search")
@@ -175,7 +185,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
 
    override def didSave(docuri: String): Unit = this.documents.get(docuri) match {
-     case Some(document) => document.build()
+     case Some(document) => document.buildHTML()
      case _ =>
    }
 
@@ -225,6 +235,8 @@ object Main {
     }
     controller.handleLine("server on " + port)
     val end = new STeXLSP
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
     controller.extman.addExtension(end)
     controller.backend.openArchive(File(args.head))
     end.runLocal

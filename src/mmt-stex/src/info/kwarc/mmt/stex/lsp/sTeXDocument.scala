@@ -1,22 +1,32 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{DPath, ErrorHandler}
+import info.kwarc.mmt.api.{DPath, ErrorHandler, OpenCloseHandler}
 import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
-import info.kwarc.mmt.stex.{RusTeX, TeXError}
+import info.kwarc.mmt.stex.{FullsTeX, RusTeX, TeXError}
 import info.kwarc.rustex.Params
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 
+case class STeXLSPErrorHandler(eh : api.Error => Unit, cont: (Double,String) => Unit) extends OpenCloseHandler {
+  override protected def addError(e: api.Error): Unit = eh(e)
+  override def open: Unit = {}
+  override def close: Unit = {}
+}
+
 class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
+
+  lazy val archive = file.flatMap(f => server.controller.backend.resolvePhysical(f).map(_._1))
+  lazy val relfile = archive.map(a => (a / info.kwarc.mmt.api.archives.source).relativize(file.get))
 
   def params(progress : String => Unit) = new Params {
     private var files: List[String] = Nil
@@ -41,35 +51,60 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
       files = files.tail
       files.headOption.foreach(progress)
     }
+    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,doctext,uri,e),(_,_) => {})
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
       val (off1,off2,p) = LSPDocument.fullLine(files.head._2-1,doctext)
       val reg = SourceRegion(SourcePosition(off1,files.head._2,0),SourcePosition(off2,files.head._2,p))
-      client.documentErrors(doctext,uri,TeXError(uri,msg,stacktrace,reg))
+      eh(TeXError(uri,msg,stacktrace,reg))
     }
+    eh.open
   }
 
-  lazy val errorCont = new ErrorHandler {
-    override protected def addError(e: api.Error): Unit = client.documentErrors(doctext,uri,e)
-  }
 
-  def parsingstate = {
+  def parsingstate(eh: STeXLSPErrorHandler) = {
     val extensions = server.stexserver.extensions
     val rules = extensions.flatMap(_.rules)
-    new SemanticState(server.controller,rules,errorCont,DPath(URI(uri)))
+    new SemanticState(server.controller,rules,eh,DPath(URI(uri)))
   }
 
   var html:Option[HTMLNode] = None
 
-  def build(): Unit = {
+  def buildFull() = Future {
+    client.resetErrors(uri)
+    server.withProgress(uri + "-fullstex","Building " + uri.split('/').last, "full") { update =>
+      val target = server.controller.extman.getOrAddExtension(classOf[FullsTeX],"fullstex")
+      (target,archive,relfile) match {
+        case (Some(t),Some(a),Some(f)) =>
+          client.log("Building [" + a.id + "] " + f)
+          val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,doctext, uri, e), update)
+          try {
+            eh.open
+            t.build(a, BuildChanged(), f.toFilePath, Some(eh))
+          } catch {
+            case e: Throwable =>
+              client.log(e.getMessage)
+          } finally {
+            eh.close
+          }
+        case _ =>
+          client.log("Building None!")
+      }
+      ((),"Done")
+    }
+  }
+
+  def buildHTML(): Unit = {
     client.resetErrors(uri)
     this.file match {
       case Some(f) =>
         Future {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
-            val html = RusTeX.parse(f, params(update(0,_)))
+            val pars = params(update(0,_))
+            val html = RusTeX.parse(f, pars)
             update(0, "Parsing HTML... (2/2)")
             this.synchronized {
-              val newhtml = HTMLParser(html)(parsingstate)
+              val newhtml = HTMLParser(html)(parsingstate(pars.eh))
+              pars.eh.close
               client.log("html parsed")
               try {
                 server.stexserver.doHeader(newhtml)

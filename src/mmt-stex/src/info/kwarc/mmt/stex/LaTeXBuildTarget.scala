@@ -1,14 +1,15 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.{GeneratedDRef, _}
-import info.kwarc.mmt.api.archives.{DocumentDependency, _}
+import info.kwarc.mmt.api.{MultipleErrorHandler, _}
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
 import info.kwarc.mmt.api.modules.AbstractTheory
 import info.kwarc.mmt.api.objects.OMPMOD
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
+import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState, SimpleHTMLRule}
 import info.kwarc.rustex.Params
 
@@ -372,6 +373,18 @@ class FullsTeX extends Importer with XHTMLParser {
   override val inDim = info.kwarc.mmt.api.archives.source
   val inExts = List("tex")
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+    val ilog = (str : String) => bt.errorCont match {
+      case s:STeXLSPErrorHandler =>
+        s.cont(0,str)
+        log(str)
+      case eh:MultipleErrorHandler => eh.handlers.collectFirst {
+        case s : STeXLSPErrorHandler => s
+      }.foreach {s =>
+        s.cont(0,str)
+        log(str)
+      }
+      case _ => log(str)
+    }
     import PdfLatex._
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
@@ -380,32 +393,32 @@ class FullsTeX extends Importer with XHTMLParser {
     val state = new SemanticState(controller,rules,bt.errorCont,dpath)
     outFile.up.mkdirs()
     try {
-      log("Building pdflatex " +  bt.inPath + " (first run)")
+      ilog("Building pdflatex " +  bt.inPath + " (first run)")
       val pdffile = buildSingle(bt)
       if (pdffile.setExtension(".bcf").exists()) {
-        log("    -       biber " +  bt.inPath)
+        ilog("    -       biber " +  bt.inPath)
         Process(Seq("biber",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       } else {
         log("    -      bibtex " + bt.inPath)
         Process(Seq("bibtex",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       }
-      log("    -    pdflatex " + bt.inPath + " (second run)")
+      ilog("    -    pdflatex " + bt.inPath + " (second run)")
       buildSingle(bt)
-      log("    -    pdflatex " + bt.inPath + " (final run)")
+      ilog("    -    pdflatex " + bt.inPath + " (final run)")
       buildSingle(bt)
-      log("    -       omdoc " + bt.inPath)
+      ilog("    -       omdoc " + bt.inPath)
       val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
       val npdffile = (bt.archive / RedirectableDimension("export") / "pdf") / bt.inPath.setExtension("pdf").toString
       File.copy(pdffile,npdffile,true)
       pdffile.delete()
       PdfLatex.clear(pdffile)
       index(state.doc)
-      log("    -      lucene " + bt.inPath)
+      ilog("    -      lucene " + bt.inPath)
       state.Search.makeDocument(
         (bt.archive / Dim("export","lucene") / bt.inPath).stripExtension,
         bt.inFile,bt.archive
       ).save
-      log("Finished: " + bt.inFile)
+      ilog("Finished: " + bt.inFile)
       val results = PhysicalDependency(npdffile) :: PhysicalDependency(outFile) :: DocumentDependency(state.doc.path) :: state.doc.getDeclarations.collect {
         case mr: MRef =>
           LogicalDependency(mr.target)

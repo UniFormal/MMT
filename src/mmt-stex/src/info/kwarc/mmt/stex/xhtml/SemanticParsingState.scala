@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ErrorHandler, G
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
-import info.kwarc.mmt.api.parser.ParseResult
+import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType}
@@ -92,11 +92,12 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
     override def traverse(t: Term)(implicit con: Context, state: State): Term = {
       val ret = Traverser(this,t)
       val ret2 = applySimple(ret)
+      if (ret2 != t) { SourceRef.copy(t,ret2)}
       ret2
     }
   }
 
-  def applyTerm(tm: Term): Term = traverser(tm, ())
+  def applyTerm(tm: Term): Term = {traverser(tm, ())}
   def applyTopLevelTerm(tm : Term) = {
     val ntm = /* if (reorder.isEmpty) */ applyTerm(tm)
     /* else applyTerm(tm) match {
@@ -424,7 +425,9 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
       STeX.implicit_binder(Context(ln), t)
     })
     val ret = traverser(next,(names,true))
-    if (names.unknowns.nonEmpty) OMBIND(OMS(ParseResult.unknown), names.unknowns.distinct.map(VarDecl(_)), ret) else ret
+    val fin = if (names.unknowns.nonEmpty) OMBIND(OMS(ParseResult.unknown), names.unknowns.distinct.map(VarDecl(_)), ret) else ret
+    SourceRef.copy(tm,fin)
+    fin
   }
 
   private def currentParent = {
@@ -462,7 +465,9 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
           case Some(ct) =>
             return ct
         }}
-        Context(VarDecl(LocalName.empty,tp=tm))
+        val ret = Context(VarDecl(LocalName.empty,tp=tm))
+        SourceRef.copy(tm,ret)
+        ret
     }
   }
 

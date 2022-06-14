@@ -1,6 +1,6 @@
 package info.kwarc.mmt.lsp
 
-import info.kwarc.mmt.api.SourceError
+import info.kwarc.mmt.api.{InvalidUnit, Level, SourceError}
 
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, Diagnostic, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageParams, MessageType, Position, ProgressParams, PublishDiagnosticsParams, ReferenceParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkDoneProgressBegin, WorkDoneProgressCreateParams, WorkDoneProgressEnd, WorkDoneProgressNotification, WorkDoneProgressReport, WorkspaceEdit, WorkspaceSymbolParams}
@@ -13,6 +13,7 @@ import java.util
 import java.util.logging.LogManager
 import java.util.logging.Logger
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
+import info.kwarc.mmt.api.parser.SourceRef
 import org.eclipse.jetty.server.{Server, ServerConnector}
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
@@ -130,35 +131,57 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
   def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
   def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
   def resetErrors(uri:String) = {
+    diags = Nil
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))
     params.setDiagnostics(Nil.asJava)
     client.publishDiagnostics(params)
   }
-  def documentErrors(doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
+  private var diags : List[Diagnostic] = Nil
+  def documentErrors(controller:Controller,doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))
-    val diags = errors.map{e =>
+    val ndiags = errors.map{e =>
       val d = new Diagnostic
-      e match {
+      val (lvl,msg) = e match {
         case SourceError(_,ref,_,_,_) =>
           val start = ref.region.start.offset
           val end = ref.region.end.offset + 1
           val (sl,sc) = LSPDocument.toLC(start,doc)
           val (el,ec) = LSPDocument.toLC(end,doc)
           d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
+          (e.level,e.shortMsg)
+        case iu:InvalidUnit =>
+          val ref = iu.sourceRef.getOrElse{
+            iu.unit.component.map{c =>
+              controller.getO(c).flatMap(SourceRef.get).getOrElse{
+                controller.getO(c.parent).flatMap(SourceRef.get).getOrElse(SourceRef.anonymous(""))
+              }
+            }.getOrElse(SourceRef.anonymous(""))
+          }
+          val start = ref.region.start.offset
+          val end = ref.region.end.offset + 1
+          val (sl,sc) = LSPDocument.toLC(start,doc)
+          val (el,ec) = LSPDocument.toLC(end,doc)
+          d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
+          (Level.Warning,e.shortMsg + "\n" + {
+            iu.history.narrowDownError.present(controller.presenter)
+          })
         case _ =>
+          d.setRange(new lsp4j.Range(new Position(1,1),new Position(1,1)))
+          (e.level,e.shortMsg)
       }
       import info.kwarc.mmt.api.Level
-      d.setSeverity(e.level match {
+      d.setSeverity(lvl match {
         case Level.Info => DiagnosticSeverity.Information
         case Level.Error => DiagnosticSeverity.Error
         case Level.Warning => DiagnosticSeverity.Warning
         case Level.Fatal => DiagnosticSeverity.Error
       })
-      d.setMessage(e.getMessage + "\n\n" + e.extraMessage)
+      d.setMessage(msg)
       d
     }
+    diags = diags ::: ndiags.toList
     params.setDiagnostics(diags.asJava)
     client.publishDiagnostics(params)
   }
