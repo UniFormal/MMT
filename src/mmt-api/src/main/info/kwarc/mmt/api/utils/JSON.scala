@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.ParseError
 
+import scala.collection.mutable
 import scala.util.Try
 
 /**
@@ -217,6 +218,38 @@ object JSON {
       jn
    }
 
+  def parseString(s : Unparsed) = {
+    s.drop("\"")
+    val sb = new mutable.StringBuilder()
+    var instring = true
+    while(instring) {
+      if (s.empty)
+        throw JSONError("unclosed string")
+      s.next() match {
+        case '\\' =>
+          if (s.empty)
+            throw JSONError("unclosed escaped")
+          s.next() match {
+            case n@('"' | '\\' | '/') => sb.addOne(n)
+            case 'b' => sb.addOne('\b')
+            case 'f' => sb.addOne('\f')
+            case 'n' => sb.addOne('\n')
+            case 'r' => sb.addOne('\r')
+            case 't' => sb.addOne('\t')
+            case 'u' =>
+              val hex = s.getnext(4).toString
+              s.drop(4)
+              val char = Integer.parseInt(hex, 16).toChar
+              sb.addOne(char)
+            case c => throw JSONError("Illegal starting character for JSON string escape: " + c)
+          }
+        case '"' => instring = false
+        case o => sb.addOne(o)
+      }
+    }
+    JSONString(sb.toString())
+  }
+/*
    def parseString(s: Unparsed) = {
      s.drop("\"")
      val (p,closed) = s.takeUntilChar('"', '\\')
@@ -251,7 +284,7 @@ object JSON {
       }
      JSONString(unescaped)
    }
-
+*/
    def parseObject(s: Unparsed): JSONObject = {
       s.trim
       s.drop("{")

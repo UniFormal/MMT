@@ -80,9 +80,11 @@ class Searcher(controller:Controller) {
     val directoryReaders = if (dir.exists()) {
       dir.descendants.collect {
         case f if f.isFile => f.up
-      }.distinct.map{d =>
-        val dir = FSDirectory.open(d.toJava.toPath)
-        DirectoryReader.open(dir)
+      }.distinct.flatMap{d =>
+        if (d.children.exists(_.name.startsWith("segments"))) {
+          val dir = FSDirectory.open(d.toJava.toPath)
+          Some(DirectoryReader.open(dir))
+        } else None
       }
     } else Nil
     val reader = new MultiReader(directoryReaders :_*)

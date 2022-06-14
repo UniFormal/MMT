@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.lsp
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.backend.LocalSystem
 import info.kwarc.mmt.api.utils.JSONArray.toList
-import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject, JSONString}
+import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject, JSONString, URLEscaping}
 import info.kwarc.mmt.stex.search.Searcher
 import org.eclipse.jgit.api.Git
 
@@ -11,7 +11,7 @@ import java.io.{FileOutputStream, PrintWriter, StringWriter, Writer}
 import java.net.URL
 import java.util.concurrent.CompletableFuture
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.{Success, Try}
 
 trait MathHubEntry {
   def isLocal : Boolean
@@ -38,20 +38,28 @@ trait MathHubServer { this : STeXLSPServer =>
     new Searcher(controller)
   }
 
-  def searchI(q : String,tps:List[String]) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = {
+  def searchI(q : String,tps:List[String]) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {
     val archs = controller.backend.getArchives.map(_.id)
-    val attempt = Try(io.Source.fromURL(remoteServer + "/search?skiparchs=" + archs.mkString(",") + "&types=" + tps.mkString(",") + "&query=" + q)("ISO-8859-1"))
-    val rems = if (attempt.isSuccess) Try(JSON.parse(attempt.get.toBuffer.mkString) match {
-      case JSONArray(vls@_*) =>
-        vls.map{case jo:JSONObject =>
-          val r = new LSPSearchResult
-          r.local = false
-          r.archive = jo.getAsString("archive")
-          r.sourcefile = jo.getAsString("sourcefile")
-          r.html = jo.getAsString("html")
-          r
-        }
-    }).getOrElse(Nil) else Nil
+    val url = URLEscaping.apply(remoteServer + "/search?skiparchs=" + archs.mkString(",") + "&types=" + tps.mkString(",") + "&query=" + q)
+    val attempt = Try(io.Source.fromURL(url)("ISO-8859-1"))
+     val rems = if (attempt.isSuccess) {
+       val res = attempt.get.toBuffer.mkString
+       val tr = Try({
+         val j = Try(JSON.parse(res))
+         j match {
+           case Success(JSONArray(vls@_*)) =>
+             vls.map { case jo: JSONObject =>
+               val r = new LSPSearchResult
+               r.local = false
+               r.archive = jo.getAsString("archive")
+               r.sourcefile = jo.getAsString("sourcefile")
+               r.html = jo.getAsString("html")
+               r
+             }
+         }
+       })
+       tr.getOrElse(Nil)
+     } else Nil
     val local = searcher.search(q,10,tps)
     val localres = local.map {
       case res =>
@@ -63,7 +71,7 @@ trait MathHubServer { this : STeXLSPServer =>
         r
     }
     (localres.asJava,rems.asJava)
-  }
+  } else (Nil.asJava,Nil.asJava)
 
   private sealed abstract class MHE {
     def id : String

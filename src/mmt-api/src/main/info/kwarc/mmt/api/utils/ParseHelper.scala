@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 
+import scala.collection.mutable
 import scala.util.parsing.combinator.{PackratParsers, Parsers, RegexParsers}
 import scala.util.parsing.input.{Position, Reader}
 
@@ -132,44 +133,48 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
     * @return the found string (excluding the until), and false iff end of input reached
     */
    def takeUntilChar(until: Char, exceptAfter: Char): (String,Boolean) = {
-      var seen = ""
+      val seen = new mutable.StringBuilder()
       while (!empty && head != until) {
          if (head == exceptAfter) {
-            seen += head
+            seen.addOne(head)
                next
          }
-         seen += head
+         seen.addOne(head)
          next
       }
       if (empty) {
-         (seen, false)
+         (seen.mkString, false)
       }
       else {
          next
-         (seen,true)
+         (seen.mkString,true)
       }
    }
 
    /** return all characters until a certain string is encountered outside well-nested brackets */
    def takeUntilString(until: String, brackets: List[BracketPair]): String = {
-      var seen = ""
+      val seen = new mutable.StringBuilder()
       while (true) {
         val r = remainder
         if (empty) {
           error("expected a closing bracket, found of file")
         } else if (r.startsWith(until)) {
           drop(until)
-          return seen
+          return seen.mkString
         } else {brackets.find(bp => r.startsWith(bp.open)) match {
           case Some(bp) =>
             drop(bp.open)
             val s = takeUntilString(bp.close, brackets)
-            if (!bp.ignore) seen += bp.open + s + bp.close
+            if (!bp.ignore) {
+               seen ++= bp.open
+               seen ++= s
+               seen ++= bp.close
+            }
           case None =>
-            seen += next
+            seen.addOne(next)
         }}
       }
-      return seen // impossible
+      seen.mkString // impossible
    }
 
    // Reader Instance
