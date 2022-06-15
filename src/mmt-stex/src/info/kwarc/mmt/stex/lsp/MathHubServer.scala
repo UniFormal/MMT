@@ -4,6 +4,8 @@ import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.backend.LocalSystem
 import info.kwarc.mmt.api.utils.JSONArray.toList
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject, JSONString, URLEscaping}
+import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
+import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.search.Searcher
 import org.eclipse.jgit.api.Git
 
@@ -31,6 +33,24 @@ class MathHubRepo extends MathHubEntry {
 
 trait MathHubServer { this : STeXLSPServer =>
 
+  object SearchResultServer extends STeXExtension {
+    var locals : List[String] = Nil
+    var remotes : List[String] = Nil
+    override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.lastOption match {
+      case Some("searchresult") =>
+        val i = request.parsedQuery("num").get.toInt
+        val (html,body) = server.emptydoc
+        if (request.parsedQuery("type").contains("local")) {
+          body.add(locals(i))
+        }
+        else {
+          body.add(remotes(i))
+        }
+        Some(ServerResponse.apply(html.toString,"application/xhtml+xml"))
+      case _ => None
+    }
+  }
+
   protected var remoteServer = "https://mmt.beta.vollki.kwarc.info/:sTeX" //(controller.server.get.baseURI / ":sTeX").toString
   private var searchinitialized = false
   lazy val searcher : Searcher = {
@@ -41,35 +61,43 @@ trait MathHubServer { this : STeXLSPServer =>
   def searchI(q : String,tps:List[String]) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {
     val archs = controller.backend.getArchives.map(_.id)
     val url = URLEscaping.apply(remoteServer + "/search?skiparchs=" + archs.mkString(",") + "&types=" + tps.mkString(",") + "&query=" + q)
-    val attempt = Try(io.Source.fromURL(url)("ISO-8859-1"))
+    val attempt = Try(io.Source.fromURL(url)("UTF8"))
+    SearchResultServer.remotes = Nil
      val rems = if (attempt.isSuccess) {
        val res = attempt.get.toBuffer.mkString
        val tr = Try({
          val j = Try(JSON.parse(res))
          j match {
            case Success(JSONArray(vls@_*)) =>
-             vls.map { case jo: JSONObject =>
+             val ret = vls.map { case jo: JSONObject =>
                val r = new LSPSearchResult
                r.local = false
                r.archive = jo.getAsString("archive")
                r.sourcefile = jo.getAsString("sourcefile")
-               r.html = jo.getAsString("html")
+               r.html = (controller.server.get.baseURI / ":sTeX" / "searchresult").toString + "?type=remote&num=" + SearchResultServer.remotes.length
+               SearchResultServer.remotes ::= jo.getAsString("html")
                r
              }
+             SearchResultServer.remotes = SearchResultServer.remotes.reverse
+             ret
          }
        })
        tr.getOrElse(Nil)
      } else Nil
     val local = searcher.search(q,10,tps)
+    SearchResultServer.locals = Nil
     val localres = local.map {
       case res =>
         val r = new LSPSearchResult
         r.local = true
         r.archive = res.archive
         r.sourcefile = res.sourcefile
-        r.html = res.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(res.fragments.head._2)
+        r.html = (controller.server.get.baseURI / ":sTeX" / "searchresult").toString + "?type=local&num=" + SearchResultServer.locals.length
+        SearchResultServer.locals ::= res.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(res.fragments.head._2)
+        r.fileuri = (controller.backend.getArchive(res.archive).get / info.kwarc.mmt.api.archives.source / res.sourcefile).toURI.toString
         r
     }
+    SearchResultServer.locals = SearchResultServer.locals.reverse
     (localres.asJava,rems.asJava)
   } else (Nil.asJava,Nil.asJava)
 

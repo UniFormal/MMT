@@ -1,6 +1,7 @@
-package info.kwarc.mmt.stex
+package info.kwarc.mmt.stex.parsing
 
 import info.kwarc.mmt.api.utils.{File, Unparsed}
+import info.kwarc.mmt.stex.STeXError
 
 
 trait TeXTokenLike {
@@ -19,6 +20,10 @@ case class Comment(str : String,startoffset:Int,endoffset:Int) extends TeXTokenL
 case class Math(content:List[TeXTokenLike],startdelim:TeXTokenLike,enddelim:TeXTokenLike) extends TeXTokenLike {
   val startoffset = startdelim.startoffset
   val endoffset = enddelim.endoffset
+}
+class Environment(begin:MacroApplication,end:MacroApplication,children:List[TeXTokenLike],rule:Option[EnvironmentRule]) extends TeXTokenLike {
+  val startoffset = begin.startoffset
+  val endoffset = end.endoffset
 }
 
 trait TeXRule {
@@ -55,6 +60,37 @@ trait TeXRule {
     }
   }
 
+  def readOptArg(implicit in: Unparsed, state:STeXParserState) : (List[List[TeXTokenLike]],List[TeXTokenLike]) = {
+    import SuperficialSTeXParser._
+    in.trim
+    var children : List[TeXTokenLike] = Nil
+    var args : List[List[TeXTokenLike]] = Nil
+    in.first match {
+      case '[' =>
+        var done = false
+        while (!done) {
+          val ret = readTop(c => c == ']' || c == ',')
+          children = children ::: ret
+          args ::= children.filterNot(_.isInstanceOf[Comment]).reverse
+          if (in.empty) done = true
+          else if (in.first == ',') {
+            children = children ::: List(new PlainText(",",in.offset,in.offset+1))
+            in.drop(1)
+          } else if (in.first == ']') {
+            children = children ::: List(new PlainText(",",in.offset,in.offset+1))
+            in.drop(1)
+            done = true
+          }
+        }
+        (args.reverse,children)
+      case _ => (Nil,Nil)
+    }
+  }
+
+}
+abstract class EnvironmentRule(val name:String) extends TeXRule {
+  def parse(begin:MacroApplication)(implicit in: Unparsed, state:STeXParserState): MacroApplication
+  def finalize(env : Environment) : Environment
 }
 abstract class MacroRule(val name:String) extends TeXRule {
   def parse(plain:PlainMacro)(implicit in: Unparsed, state:STeXParserState) : TeXTokenLike
@@ -89,6 +125,40 @@ class SimpleMacroRule(name : String,args:Int=0,maybestarred:Boolean = false) ext
 class SimpleMacroApplication(plain:PlainMacro,children:List[TeXTokenLike],val starred:Boolean,val args:List[TeXTokenLike], rule:TeXRule) extends MacroApplication(plain,children,rule)
 
 object LaTeXRules {
+  val end = new SimpleMacroRule("end",1)
+  val begin = new MacroRule("begin") {
+    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: STeXParserState): TeXTokenLike = {
+      readArg match {
+        case g : Group => g.content match {
+          case List(s : PlainText) =>
+            val name = s.str.trim
+            val (rule,bg) = state.envrules.find(_.name == name) match {
+              case Some(r) =>
+                (Some(r),r.parse(new MacroApplication(plain,List(g),this)))
+              case _ =>
+                (None,new MacroApplication(plain,List(g),this))
+            }
+            var children : List[TeXTokenLike] = Nil
+            var endtk : Option[SimpleMacroApplication] = None
+            import SuperficialSTeXParser._
+            while ({
+              val next = readOne()
+              children ::= next
+              next match {
+                case ma : SimpleMacroApplication if ma.rule == end =>
+                  endtk = Some(ma)
+                  false
+                case _ => true
+              }
+            }) {}
+            val env = new Environment(bg,endtk.getOrElse(bg),children,rule)
+            rule.map(_.finalize(env)).getOrElse(env)
+          case _ => new MacroApplication(plain,List(g),this)
+        }
+        case o => new MacroApplication(plain,List(o),this)
+      }
+    }
+  }
   val makeatletter = new SimpleMacroRule("makeatletter") {
     override def after(ma: SimpleMacroApplication)(implicit in: Unparsed, state: STeXParserState): Unit = state.letters ::= '@'
   }
@@ -133,7 +203,8 @@ object LaTeXRules {
     explsyntaxon,
     explsyntaxoff,
     dmathstart,
-    dmathend
+    dmathend,
+    begin,end
   )
 }
 
@@ -212,8 +283,9 @@ class STeXParserState(initrules : List[TeXRule]) {
   var inmath = false
   var rules : List[TeXRule] = initrules
   def macrorules = rules.collect{case mr : MacroRule => mr}
+  def envrules = rules.collect{case er: EnvironmentRule => er}
   def addRule(rule : TeXRule) = rules ::= rule
-  def removeRule(name:String) = rules.filterNot(_.name == name)
+  def removeRule(name:String*) = rules.filterNot(name.contains)
   var letters : List[Char] = Nil
   var specialchars : List[Char] = List('\\','%','{','$')
   def isLetter(c:Char) = c.isLetter || letters.contains(c)
