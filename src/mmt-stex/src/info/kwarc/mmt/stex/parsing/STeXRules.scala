@@ -586,8 +586,8 @@ object STeXRules {
 
   def allRules(dict:Dictionary) = List(
     ModuleRule(dict),UseModuleRule(dict),NotationRule(dict),mmtrule,
-    SymrefRule(dict),SymnameRule(dict),SymNameRule(dict),
-    DefiniendumRule(dict),DefinameRule(dict),DefiNameRule(dict)
+    SymrefRule(dict),SymnameRule(dict),CapSymnameRule(dict),
+    DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict)
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),MathStructureRule(dict)
@@ -769,7 +769,7 @@ object STeXRules {
       ret
     }
   }
-  case class SymNameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
+  case class CapSymnameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "Symname"
 
     override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
@@ -812,7 +812,7 @@ object STeXRules {
     }
   }
 
-  case class DefiNameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
+  case class CapDefinameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "Definame"
 
     override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
