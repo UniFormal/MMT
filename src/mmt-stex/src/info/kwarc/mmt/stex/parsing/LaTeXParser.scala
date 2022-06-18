@@ -83,7 +83,7 @@ trait TeXRule {
       ge.addError(s,e,l)
       ge
   }
-  val name:String
+  def name:String
   def readChar(c:Char)(implicit in: Unparsed, state: LaTeXParserState): (Boolean,List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
     in.trim
@@ -193,7 +193,7 @@ abstract class EnvironmentRule(val name:String) extends TeXRule {
   def finalize(env : Environment)(implicit state:LaTeXParserState) : Environment
 }
 trait MacroRule extends TeXRule {
-  val name:String
+  def name:String
   def parse(plain:PlainMacro)(implicit in: Unparsed, state:LaTeXParserState) : TeXTokenLike
   //def apply(plain:PlainMacro,ls:List[TeXTokenLike]) : MacroApplication
 }
@@ -447,6 +447,10 @@ object SuperficialLaTeXParser {
     val start = in.offset
     in.drop("%")
     val str = in.takeWhileSafe(_ != '\n')
+    if (!in.empty && in.first == '\n')
+      in.drop("\n")
+    else if (!in.empty)
+      in.drop("\r\n")
     Comment(str,start,in.offset)
   }
 }

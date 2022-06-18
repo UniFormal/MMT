@@ -58,7 +58,12 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:Cl
   def doctext =  _doctext
   val timercount : Int = 0
   lazy val file : Option[File] = {
-    val f = File(uri.drop(7))
+    val f = File({
+      val str = uri.drop(7) // stupid windows fix
+      if (str.length > 2 && str(2) == ':') {
+        str.take(2).toUpperCase + str.drop(2)
+      } else str
+    })
     if (f.exists()) Some(f) else None
   }
 
@@ -251,6 +256,10 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
       _annotations.filter(a =>
         a.offset <= annotation.offset && a.end >= annotation.end
       ).sortBy(_.length).headOption match {
+        case Some(p) if p.offset == annotation.offset && p.end == annotation.end =>
+          annotation._parent = p._parent
+          annotation._children = p._children
+          return ()
         case Some(p) =>
           p._children ::= annotation
           annotation._parent = Some(p)

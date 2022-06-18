@@ -116,7 +116,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   def getAnnotations(doc : TextDocumentIdentifier, range: lsp4j.Range) = {
-    documents.synchronized{documents.get(doc.getUri)} match {
+    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
       case Some(doc:DocumentType) =>
         val start = range.getStart
         val end = range.getEnd
@@ -145,7 +145,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   def getAnnotations(doc : TextDocumentIdentifier, pos: lsp4j.Position) = {
-    documents.synchronized{documents.get(doc.getUri)} match {
+    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
       case Some(doc:DocumentType) =>
         val off = LSPDocument.toOffset(pos.getLine,pos.getCharacter,doc.doctext)
         (Some(doc),doc.synchronized{ doc.Annotations.getAll.collect{
@@ -155,7 +155,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     }
   }
   def getAnnotations(doc : TextDocumentIdentifier) = {
-    documents.synchronized{documents.get(doc.getUri)} match {
+    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
       case Some(doc:DocumentType) =>
         (Some(doc),doc.synchronized{ doc.Annotations.getAll})
       case _ => (None,Nil)

@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.parsing
 
-import info.kwarc.mmt.api.{DPath, GlobalName, LNStep, Level, MPath, NamespaceMap, Path, SimpleStep, SourceError}
+import info.kwarc.mmt.api.{DPath, GlobalName, LNStep, Level, LocalName, MPath, NamespaceMap, Path, SimpleStep, SourceError}
 import info.kwarc.mmt.api.archives.{Archive, source}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
@@ -36,14 +36,14 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
           case Some(d) if d.last == name =>
             d.^ ? name
           case Some(d) =>
-            d ? name
+            d ? LocalName.parse(name)
           case _ => ???
         }
       case Some(m) =>
-        (m.path.parent / m.path.name) ? name
+        m.path.parent ? (m.path.name / LocalName.parse(name))
     }
   }
-  def getGlobalName(name:String):GlobalName = current_modules.head.path ? name
+  def getGlobalName(name:String):GlobalName = current_modules.head.path ? LocalName.parse(name)
   def getLanguage : String = current_language
   def getFile : String = current_file.get.toURI.toString
 
@@ -68,13 +68,13 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
     }
     (archive,rpath) match {
       case (Some(a),Nil) =>
-        getNS(a) ? name
+        getNS(a) ? LocalName.parse(name)
       case (Some(a),p) =>
-        p.foldLeft(getNS(a))((d,s) => d / s) ? name
+        p.foldLeft(getNS(a))((d,s) => d / s) ? LocalName.parse(name)
       case (None,Nil) =>
-        DPath(current_file.head.up.toURI) ? name
+        DPath(current_file.head.up.toURI) ? LocalName.parse(name)
       case (None,p) =>
-        p.foldLeft(DPath(current_file.head.up.toURI))((d,s) => d / s) ? name
+        p.foldLeft(DPath(current_file.head.up.toURI))((d,s) => d / s) ? LocalName.parse(name)
     }
   }
 
@@ -91,7 +91,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
                   sub = sub.stripExtension
                 case _ =>
               }
-              current_namespace = Some(sub.toString.split('/').foldLeft(d)((ns,s) => ns / s))
+              current_namespace = Some(sub.segments.foldLeft(d)((ns,s) => ns / s))
               return
             case _ =>
           }
@@ -272,7 +272,7 @@ case class MathStructureMacro(
                             rl : STeXRules.MathStructureRule,
                             file:String
                             ) extends TeXModuleLike(pm,mpi,ch,rl) with TeXRule with SemanticMacro {
-  override val name = "mathstructure " + mpi.toString
+  override lazy val name = "mathstructure " + mpi.toString
   val syminfo = SymdeclInfo(macroname,symbolpath,"","",false,this.file,this.startoffset,this.endoffset)
 }
 case class MathStructure(bg:MathStructureMacro,en:TeXTokenLike,ch:List[TeXTokenLike],rl:STeXRules.MathStructureRule) extends Environment(bg,en,ch,Some(rl)) with HasAnnotations {
@@ -433,7 +433,7 @@ trait SymRefRuleLike extends MacroRule {
 }
 trait SemanticMacro extends MacroRule with SymRefRuleLike {
   val syminfo:SymdeclInfo
-  val name = syminfo.macroname
+  lazy val name = syminfo.macroname
 
   override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
     var children : List[TeXTokenLike] = Nil
@@ -505,7 +505,7 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
 case class SemanticMacroApp(pl:PlainMacro,rl:SemanticMacro,ch:List[TeXTokenLike],not:Option[NotationInfo]) extends MacroApplication(pl,ch,rl) with HasAnnotations {
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,rl.syminfo.path.toString)
-    val pma = in.Annotations.add(pl,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant)
+    val pma = if (children.isEmpty) a else in.Annotations.add(pl,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant)
     pma.setDeclaration(rl.syminfo.file,rl.syminfo.start,rl.syminfo.end)
     pma.setSemanticHighlightingClass(2)
     pma.setHover(rl.syminfo.path.toString + (not match {

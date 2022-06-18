@@ -88,13 +88,19 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
    }
    def takeWhile(test: Char => Boolean): String = {
       val sb = new StringBuilder
-      while (test(head)) sb += next()
+      while ({
+         val testchar = if (head == '\r' && input.isDefinedAt(current+1) && input(current+1) == '\n') '\n' else head
+         test(testchar)
+      }) sb += next()
       sb.toString()
    }
 
    def takeWhileSafe(test: Char => Boolean): String = {
       val sb = new StringBuilder
-      while (!empty && test(head)) sb += next()
+      while (!empty && {
+         val testchar = if (head == '\r' && input.isDefinedAt(current+1) && input(current+1) == '\n') '\n' else head
+         test(testchar)
+      }) sb += next()
       sb.toString()
    }
 
