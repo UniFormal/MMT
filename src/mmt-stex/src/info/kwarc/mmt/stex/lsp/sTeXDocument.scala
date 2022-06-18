@@ -1,17 +1,18 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{DPath, ErrorHandler, OpenCloseHandler}
+import info.kwarc.mmt.api.{DPath, ErrorHandler, Level, OpenCloseHandler, SourceError}
 import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
-import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion}
-import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
-import info.kwarc.mmt.stex.{FullsTeX, RusTeX, TeXError}
+import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXParseError, TeXError}
 import info.kwarc.rustex.Params
+import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
@@ -22,8 +23,7 @@ case class STeXLSPErrorHandler(eh : api.Error => Unit, cont: (Double,String) => 
   override def close: Unit = {}
 }
 
-class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
-  override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
+class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
 
   lazy val archive = file.flatMap(f => server.controller.backend.resolvePhysical(f).map(_._1))
   lazy val relfile = archive.map(a => (a / info.kwarc.mmt.api.archives.source).relativize(file.get))
@@ -59,6 +59,8 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
     }
     eh.open
   }
+
+
 
 
   def parsingstate(eh: STeXLSPErrorHandler) = {
@@ -140,6 +142,38 @@ class sTeXDocument(uri : String,client:ClientWrapper[STeXClient],server:STeXLSPS
         }
       case _ =>
     }
+  }
+
+  override val timercount: Int = 10
+  override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
+  override def onUpdate(changes: List[Delta]): Unit = try this.synchronized {{
+    Annotations.clear
+    client.resetErrors(uri)
+    import info.kwarc.mmt.stex.parsing._
+    val ret = server.parser(doctext,file.getOrElse(File(uri)),archive)
+    ret.foreach(_.iterate{ elem =>
+      elem.errors.foreach { e =>
+        val start = LSPDocument.toLC(elem.startoffset,doctext)
+        val end = LSPDocument.toLC(elem.endoffset,doctext)
+        client.documentErrors(server.controller,doctext,uri,SourceError(uri,SourceRef(URI(uri),
+          SourceRegion(
+            SourcePosition(elem.startoffset,start._1,start._2),
+            SourcePosition(elem.endoffset,end._1,end._2)
+          )),e.shortMsg,if (e.extraMessage != "") List(e.extraMessage) else Nil,e.level)
+        )
+      }
+      elem match {
+        case t : HasAnnotations =>
+          t.doAnnotations(this)
+        case _ =>
+      }
+    })
+    super.onUpdate(changes)
+    Annotations.notifyOnChange(client.client)
+  }} catch {
+    case e : Throwable =>
+      e.printStackTrace()
+      print("")
   }
 
 }

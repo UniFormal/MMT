@@ -1,6 +1,6 @@
 package info.kwarc.mmt.lsp
 import info.kwarc.mmt.api.utils.File
-import org.eclipse.lsp4j.SymbolKind
+import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
 
 import scala.concurrent.Future
 
@@ -94,9 +94,7 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:Cl
 
   private var _changes : List[(org.eclipse.lsp4j.Range,String)] = Nil
 
-  case class Delta(oldStart : Int, oldEnd : Int, oldText : String, newText : String) {
-
-  }
+  case class Delta(oldStart : Int, oldEnd : Int, oldText : String, newText : String)
 
   protected def updateNow: Unit = {
     Timer.busy = true
@@ -147,10 +145,33 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
     private[AnnotatedDocument] var _children: List[Annotation] = Nil
     def children = _children
 
+
     def remove = {
       _parent.foreach(p => p._children = p._children.filterNot(_ == this))
       _parent = None
     }
+    private[AnnotatedDocument] var _inlays: List[(String,String,Option[InlayHintKind],Int,Boolean,Boolean)] = Nil
+    def addInlay(label:String,tooltip:String="",kind:Option[InlayHintKind] = None,positionOffset:Int = this.__offset + this._length,padleft : Boolean=false,padright:Boolean=false) = {
+      _inlays ::= (label,tooltip,kind,positionOffset,padleft,padright)
+    }
+    def getInlays = _inlays
+
+    private[AnnotatedDocument] var _implementation: Option[(String,Int,Int)] = None
+    def setImplementation(file:String,start:Int,end:Int) = _implementation = Some((file,start,end))
+    def getImplementation = _implementation
+
+    private[AnnotatedDocument] var _declaration: Option[(String,Int,Int)] = None
+    def setDeclaration(file:String,start:Int,end:Int) = _declaration = Some((file,start,end))
+    def getDeclaration = _declaration
+
+    private[AnnotatedDocument] var _definitions: List[(String,Int,Int)] = Nil
+    def addDefinition(file:String,start:Int,end:Int) = _definitions ::= (file,start,end)
+    def getDefinitions = _definitions
+
+    private[AnnotatedDocument] var _codelenses: List[(String,String,List[AnyRef],Int,Int)] = Nil
+    def addCodeLens(title:String,commandname:String,arguments:List[AnyRef]=Nil,start:Int,end:Int) = _codelenses ::= (title,commandname,arguments,start,end)
+    def getCodeLenses = _codelenses
+
 
     private[AnnotatedDocument] def advance(i: Int) = _offset += i
     private[AnnotatedDocument] def stretch(i: Int) = _length += i
@@ -199,6 +220,13 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
   }
 
   object Annotations {
+    def clear = _annotations = Nil
+    def notifyOnChange(client:LSPClient) = {
+      client.refreshSemanticTokens()
+      client.refreshCodeLenses()
+      client.refreshInlineValues()
+      client.refreshInlayHints()
+    }
     private var _annotations : List[Annotation] = Nil
     def getAll = _annotations
     def add(value : Any, offset : Int, length: Int,symbolkind : SymbolKind = null, symbolname : String = "", foldable : Boolean = false) : Annotation = {

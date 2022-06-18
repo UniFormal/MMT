@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.frontend.{Controller, Run}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.stex.parsing.STeXSuperficialParser
 import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams}
@@ -76,11 +77,12 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      new sTeXDocument(uri,this.client,this)
    }
    var mathhub_top : Option[File] = None
+   lazy val parser = new STeXSuperficialParser(controller)
 
    override def completion(doc: String, line: Int, char: Int): List[Completion] = Nil
 
-   override val scopes: List[String] = Nil
-   override val modifiers: List[String] = Nil
+   override val scopes: List[String] = List("stex-module","stex-symdecl","stex-constant","stex-variable")
+   override val modifiers: List[String] = List("deprecated")
 
    override def shutdown: Any = style match {
      case LocalStyle => scala.sys.exit()
@@ -146,6 +148,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          installArchives("sTeX/meta-inf")
        case _ =>
      }
+     parser.init()
    }
 
    private var bootToken : Option[Int] = None

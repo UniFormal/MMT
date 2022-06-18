@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="/stex/htmlfragments/overlay.css"/>
     <link rel="stylesheet" href="/stex/htmlfragments/highlights.css"/>
     <script type="text/javascript" id="overlayjs" src="/stex/htmlfragments/overlay.js">&#8205;</script>
-    <script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">&#8205;</script>
     <script type="text/javascript" id="MathJax-fix" src="/stex/htmlfragments/mathjax-fix.js">&#8205;</script>
+    <script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">&#8205;</script>
     <script type="text/javascript">
         function set_content(){
             var con = document.getElementById('main-table');
@@ -26,7 +26,7 @@
             xhr.onreadystatechange = function(e) {
                 if(xhr.readyState == 4 &amp;&amp; xhr.status == 200) {
                     con.innerHTML = xhr.responseText;
-                    oldmathjax.typeset();
+                    MathJax.typeset();
                 }
             }
             xhr.send();

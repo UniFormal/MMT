@@ -284,6 +284,15 @@ lazy val coq = (project in file("mmt-coq")).
 lazy val lsp = (project in file("mmt-lsp")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lsp"): _*).
+  settings(
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
+    libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
+    libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
+    libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.46.v20220331",
+    libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
+  )
+/*
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
@@ -292,7 +301,7 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j-websocket.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "javax-websocket.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar")
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar") */
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
