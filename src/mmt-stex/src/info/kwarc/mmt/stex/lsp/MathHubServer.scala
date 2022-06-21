@@ -51,7 +51,7 @@ trait MathHubServer { this : STeXLSPServer =>
     }
   }
 
-  protected var remoteServer = "https://mmt.beta.vollki.kwarc.info/:sTeX" //(controller.server.get.baseURI / ":sTeX").toString
+  protected var remoteServer = "https://mmt.beta.vollki.kwarc.info/:sTeX"
   private var searchinitialized = false
   lazy val searcher : Searcher = {
     searchinitialized = true
@@ -74,7 +74,7 @@ trait MathHubServer { this : STeXLSPServer =>
                r.local = false
                r.archive = jo.getAsString("archive")
                r.sourcefile = jo.getAsString("sourcefile")
-               r.html = (controller.server.get.baseURI / ":sTeX" / "searchresult").toString + "?type=remote&num=" + SearchResultServer.remotes.length
+               r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=remote&num=" + SearchResultServer.remotes.length
                SearchResultServer.remotes ::= jo.getAsString("html")
                r
              }
@@ -92,7 +92,7 @@ trait MathHubServer { this : STeXLSPServer =>
         r.local = true
         r.archive = res.archive
         r.sourcefile = res.sourcefile
-        r.html = (controller.server.get.baseURI / ":sTeX" / "searchresult").toString + "?type=local&num=" + SearchResultServer.locals.length
+        r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=local&num=" + SearchResultServer.locals.length
         SearchResultServer.locals ::= res.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(res.fragments.head._2)
         r.fileuri = (controller.backend.getArchive(res.archive).get / info.kwarc.mmt.api.archives.source / res.sourcefile).toURI.toString
         r

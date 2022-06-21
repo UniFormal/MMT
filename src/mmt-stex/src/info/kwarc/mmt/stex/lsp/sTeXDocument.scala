@@ -132,12 +132,12 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
           }
           val msg = new HTMLUpdateMessage
           try {
-            client.log("baseURI: " + server.controller.server.get.baseURI)
+            client.log("baseURI: " + server.localServer.toString)
           } catch {
             case t: Throwable =>
               client.log("Error: Server not running")
           }
-          msg.html = (server.controller.server.get.baseURI / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
+          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
           this.client.client.updateHTML(msg)
         }
       case _ =>

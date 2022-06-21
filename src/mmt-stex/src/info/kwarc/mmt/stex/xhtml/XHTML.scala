@@ -210,6 +210,10 @@ object HTMLParser {
       elem
     }
 
+    private val void_elements = List(
+      "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"
+    )
+
     private[HTMLParser] def present(n : HTMLNode,indent : Int = 0,forcenamespace : Boolean = false) : String = {
       {if (_top.contains(n)) header else ""} +
       {
@@ -236,7 +240,7 @@ object HTMLParser {
           } + {
             if (n.classes.nonEmpty) " class=\"" + n.classes.mkString(" ") + "\"" else ""
           } + {
-            if(n._children.isEmpty) "/>" else {
+            if(n._children.isEmpty && n.namespace == ns_html && void_elements.contains(n.label)) "/>" else {
               ">" + n._children.reverse.map(present(_,indent+1)).mkString + {
                 {if (n.endswithWS) "\n" + {if (indent>0) (0 until indent).map(_ => "  ").mkString else ""} else ""} +
                   "</" + n.label + ">"

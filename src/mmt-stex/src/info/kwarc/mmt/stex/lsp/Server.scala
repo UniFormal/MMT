@@ -2,7 +2,7 @@ package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api.archives.{Archive, BuildManager, TrivialBuildManager}
 import info.kwarc.mmt.api.frontend.{Controller, Run}
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import info.kwarc.mmt.stex.parsing.STeXSuperficialParser
@@ -78,6 +78,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
    var mathhub_top : Option[File] = None
    lazy val parser = new STeXSuperficialParser(controller)
+   var localServer : URI = null
 
    override def completion(doc: String, line: Int, char: Int): List[Completion] = Nil
 
@@ -177,6 +178,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    override def connect: Unit = {
      controller.extman.addExtension(lspdocumentserver)
+     localServer = controller.server.get.baseURI
      client.log("Connected to sTeX!")
    }
 
