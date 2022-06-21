@@ -889,7 +889,7 @@ object STeXRules {
     val dict:Dictionary
     val isusemodule : Boolean
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = {
+    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       var children : List[TeXTokenLike] = Nil
       val (optargs,ch) = readOptArg
       children = ch
@@ -903,10 +903,14 @@ object STeXRules {
         case gr:Group =>
           gr.content match {
             case List(t:PlainText) => t.str
-            case _ => ???
+            case _ => {
+              plain.addError("Malformed Argument")
+              return plain
+            }
           }
         case _ =>
-          ???
+          plain.addError("Missing Argument")
+          return plain
       }
       val mp = dict.resolveMPath(a,path)
       val ret = ImportModuleApp(plain,mp,children,this,a,path,isusemodule,dict.getModuleOpt)

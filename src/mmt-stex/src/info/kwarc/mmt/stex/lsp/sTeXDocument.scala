@@ -144,7 +144,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
     }
   }
 
-  override val timercount: Int = 10
+  override val timercount: Int = 0
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
   override def onUpdate(changes: List[Delta]): Unit = try this.synchronized {{
     Annotations.clear
@@ -169,7 +169,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       }
     })
     super.onUpdate(changes)
-    Annotations.notifyOnChange(client.client)
+    if (timercount > 0) Annotations.notifyOnChange(client.client)
   }} catch {
     case e : Throwable =>
       e.printStackTrace()
