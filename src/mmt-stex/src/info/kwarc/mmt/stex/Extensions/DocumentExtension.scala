@@ -34,13 +34,14 @@ object DocumentExtension extends STeXExtension {
         e.documentRules
     }.flatten
     def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
-    filecontent.get("body")()().head.iterate(doE)
-    filecontent
+    val body = filecontent.get("body")()().head
+    body.iterate(doE)
+    body
   }
 
   override def doHeader(head: HTMLNode,body: HTMLNode): Unit = {
     //head.add(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))
-    body.add(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/overlaymain.xml"))
+    //body.add(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/overlaymain.xml"))
   }
 
   // TODO
@@ -138,8 +139,11 @@ object DocumentExtension extends STeXExtension {
   }
 
   def sidebar(elem : HTMLNode, content: List[Node]) = {
-    val sidenotes = getTop(elem).get()()("sidenote-container").headOption
-    sidenotes.foreach(_.add(<div>{content}</div>))
+    elem.parent.foreach {case p =>
+      p.addBefore(<div class="sidebar">{content}</div>,elem)
+    }
+    //val sidenotes = getTop(elem).get()()("sidenote-container").headOption
+    //sidenotes.foreach(_.add(<div>{content}</div>))
   }/*{
     val id = elem.state.generateId
     val side = <span id={id} class="sidenote-container"><span class="sidenote-container-b"><small class="sidenote">{content}</small></span></span>
@@ -154,15 +158,23 @@ object DocumentExtension extends STeXExtension {
 
   def overlay(elem : HTMLNode, urlshort : String,urllong : String) : Unit = {
     if (elem.classes.contains("hasoverlay")) return
-    elem.classes = "hasoverlay" :: elem.classes
+    val id = elem.hashCode().toString
+    elem.attributes((elem.namespace,"id")) = id
+    elem.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
+    elem.attributes((elem.namespace,"data-overlay-link-click")) = urllong
+    //elem.classes ::= "hasoverlay" //:: elem.classes
     def pickelems(n : HTMLNode,inarg:Boolean = false) : List[HTMLNode] = n match {
       case comp : NotationComponent => List(comp)
       case a : HTMLArg => a.children.flatMap(pickelems(_,true))
       case _ : HasHead if inarg => Nil
       case o => o.children.flatMap(pickelems(_,inarg))
     }
-    val id = elem.state.generateId
     val targets = pickelems(elem)
+    targets.foreach{ e =>
+      e.classes ::= "group-highlight"
+      e.attributes((e.namespace,"data-highlight-parent")) = id
+    }
+    /*
     val onhover = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.add('stexoverlaycontainerhover')").mkString(";")
     val onout = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.remove('stexoverlaycontainerhover')").mkString(";")
     val currp = elem.parent
@@ -199,6 +211,8 @@ object DocumentExtension extends STeXExtension {
       }
       tm.foreach(_.parent.foreach(_.addAfter(overlay, tm.get)))
     }
+
+     */
   }
 
   def makeButton(target : String,elem : Node) : Node =  // makesafe(XHTML(

@@ -61,10 +61,10 @@ object HTMLParser {
       nn
     }
     private var _id = 0
-    def generateId = {
+    /*def generateId = {
       _id += 1
       "stexelem" + (_id-1)
-    }
+    }*/
 
     protected def onTop(n : HTMLNode) : Option[HTMLNode] = None
 

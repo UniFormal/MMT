@@ -66,7 +66,7 @@ object FragmentExtension extends STeXExtension {
     controller.getO(path) match {
       case Some(c : Constant) =>
         val (doc,body) = server.emptydoc
-        val head = doc.get("head")()().head
+        /*val head = doc.get("head")()().head
         head.addBefore(<style>{
           List(
             "/mmt-web/css/bootstrap-jobad/css/bootstrap.less.css",
@@ -93,6 +93,8 @@ object FragmentExtension extends STeXExtension {
                          |<script type="text/javascript" src="script/jobad/modules/hovering.js"></script>
                          |<script type="text/javascript" src="script/jobad/modules/interactive-viewing.js"></script>
                          |<script type="text/javascript" src="script/mmt/browser.js"></script>""".stripMargin,head.children.head)
+
+         */
         body.attributes((HTMLParser.ns_html,"style")) = "background-color:white"
         stripMargins(doc)
         val border = body.add(<div style="font-size:small"/>)
@@ -127,7 +129,7 @@ object FragmentExtension extends STeXExtension {
            */
         )
         getFragment(path,language).foreach(s => border.add(s))
-        Some(ServerResponse(doc.toString,"application/xhtml+xml"))
+        Some(ServerResponse(doc.get("body")()().head.toString,"application/xhtml+xml"))
       case _ =>
         Some(ServerResponse("Declaration not found","txt"))
     }
@@ -175,7 +177,7 @@ object FragmentExtension extends STeXExtension {
         border.add(<code>{path.toString}</code>)
         border.add(<hr/>)
         border.add(htm)
-        Some(ServerResponse(doc.toString,"application/xhtml+xml"))
+        Some(ServerResponse(doc.get("body")()().head.toString,"application/xhtml+xml"))
       case None =>
         Some(ServerResponse("Empty fragment","txt"))
     }
