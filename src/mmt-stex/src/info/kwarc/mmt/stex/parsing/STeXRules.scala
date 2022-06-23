@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, URI, Unparsed}
 import info.kwarc.mmt.lsp.LSPDocument
-import info.kwarc.mmt.stex.STeXError
+import info.kwarc.mmt.stex.{STeX, STeXError}
 import info.kwarc.mmt.stex.lsp.sTeXDocument
 import org.eclipse.lsp4j.SymbolKind
 
@@ -15,6 +15,7 @@ import scala.collection.mutable
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 
+class MutList(var ls : List[DictionaryModule] = Nil)
 class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
   val path = macr.mp
   var archive : Option[Archive] = None
@@ -22,10 +23,17 @@ class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
   var lang:String = ""
   var imports : List[(DictionaryModule,Boolean)] = Nil
   var exportrules : List[TeXRule] = Nil
-  def getRules : List[TeXRule] = exportrules ::: imports.filter(_._2).flatMap(_._1.getRules)
+  def getRules(dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
+    dones.ls ::= this
+    exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(_._1.getRules(dones))
+  }
+
 }
 
 class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
+
+  private var filetracker:List[File] = Nil
+  def previouslyread(f : File) = filetracker.contains(f)
 
   implicit val ec : ExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool(1000))
 
@@ -52,7 +60,8 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
     case Some(p:DPath) => p
     case None => a.properties.get("source-base") match {
       case Some(s) => Path.parseD(s,NamespaceMap.empty)
-      case _ => ???
+      case _ =>
+        DPath(a.root.toURI)
     }
   }
 
@@ -67,6 +76,8 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
       case List(p,n) => (p.split('/').toList,n)
     }
     (archive,rpath) match {
+      case (_,Nil) if current_namespace.exists(dp => all_modules.isDefinedAt(dp ? name)) =>
+        current_namespace.get ? name
       case (Some(a),Nil) =>
         getNS(a) ? LocalName.parse(name)
       case (Some(a),p) =>
@@ -124,6 +135,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
   def getModuleOpt = current_modules.headOption
 
   def inFile[A](file : File,a:Option[Archive] = None)(f: => A) : A = {
+    filetracker ::= file
     val prevarch = current_archive
     val prevfile = current_file
     val prevmod = current_modules
@@ -157,7 +169,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
             all_modules.get(m) match {
               case Some(mt) =>
                 mod.imports ::= (mt,false)
-                mod.rules = mod.getRules ::: mt.rules
+                mod.rules = mod.rules ::: mt.rules
               case _ =>
             }
           case _ =>
@@ -166,11 +178,13 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
     }
     macr
   }
-  def closeModule(implicit state: LaTeXParserState) = {
-    val mod = current_modules.head
-    state.rules = state.rules.filterNot(_ == mod)
-    current_modules = current_modules.tail
-    all_modules(mod.path) = mod
+  def closeModule(implicit state: LaTeXParserState) = current_modules.headOption match {
+    case Some(m) =>
+      val mod = m
+      state.rules = state.rules.filterNot(_ == mod)
+      current_modules = current_modules.tail
+      all_modules(mod.path) = mod
+    case _ =>
   }
 
   def addimport(ima: ImportModuleApp)(implicit state: LaTeXParserState): ImportModuleApp = {
@@ -205,15 +219,17 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
             throw LaTeXParseError("No candidate file for module " + ima.mp + " found")
           }
         }
-        Await.result(Future {
-          try {
-            parser.applyFormally(file, archive)
-          } catch {
-            case e: Throwable =>
-              e.printStackTrace()
-              print("")
-          }
-        }, Duration.Inf)
+        //if (!filetracker.contains(file)) {
+          Await.result(Future {
+            try {
+              parser.applyFormally(file, archive)
+            } catch {
+              case e: Throwable =>
+                e.printStackTrace()
+                print("")
+            }
+          }, Duration.Inf)
+       // }
 
         all_modules.getOrElse(ima.mp, {
           ima.addError("No module " + ima.mp.toString + " found", Some("In file " + file))
@@ -221,11 +237,11 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         })
     }
     if (ima.isusemodule) {
-      state.rules.headOption.foreach(r => r.rules = mod.getRules ::: r.rules)
+      state.rules.headOption.foreach(r => r.rules = mod.getRules() ::: r.rules)
     } else current_modules.headOption match {
       case Some(m) =>
         m.imports ::= (mod, !ima.isusemodule)
-        m.rules = mod.getRules ::: m.rules
+        m.rules = mod.getRules() ::: m.rules
       case None =>
         print("")
         ???
@@ -297,12 +313,12 @@ case class TeXModuleMacro(
                            pm:PlainMacro,
                            mpi:MPath,
                            ch:List[TeXTokenLike],
-                           rl : STeXRules.ModuleRule,
+                           rl : EnvironmentRule,
                            meta:Option[MPath],
                            sig:String = "",
                            lang:String="",
                            title:String="",deprecation:String = "") extends TeXModuleLike(pm,mpi,ch,rl)//MacroApplication(pm,ch,rl)
-case class TeXModule(bg:TeXModuleMacro,en:TeXTokenLike,ch:List[TeXTokenLike],rl:STeXRules.ModuleRule) extends Environment(bg,en,ch,Some(rl)) with HasAnnotations {
+case class TeXModule(bg:TeXModuleMacro,en:TeXTokenLike,ch:List[TeXTokenLike],rl:EnvironmentRule) extends Environment(bg,en,ch,Some(rl)) with HasAnnotations {
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, bg.mp.toString, true)
     val mac = in.Annotations.add(bg, bg.startoffset, bg.endoffset - bg.startoffset, SymbolKind.Constructor, "module")
@@ -409,9 +425,10 @@ trait SymRefRuleLike extends MacroRule {
       } match {
         case Some(s) => (Some(s), "")
         case _ =>
-          rules.collect {
+          val candidates =rules.collect {
             case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
-          } match {
+          }.distinct
+          candidates match {
             case List(a) => (Some(a), "")
             case Nil => (None, "")
             case h :: tail => (Some(h), "Multiple candidates apply\nAlternatives: " + tail.map(_.path.toString).mkString(","))
@@ -421,7 +438,7 @@ trait SymRefRuleLike extends MacroRule {
         rules.collect {
           case sm: SemanticMacro if sm.syminfo.path.module.toString.endsWith(m) &&
             sm.syminfo.path.name.toString == n => sm.syminfo
-        } match {
+        }.distinct match {
           case List(a) => (Some(a), "")
           case Nil => (None, "")
           case h :: tail => (Some(h), "Multiple candidates apply\nAlternatives: " + tail.map(_.path.toString).mkString(","))
@@ -457,7 +474,7 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
       })
     }
     if (custom) {
-      val (a,ch) = readArg
+      val (a,ch) = readSafeArg("\\" + plain.name)
       children = children ::: ch
       SemanticMacroApp(plain,this,children,None)
     } else {
@@ -494,7 +511,7 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
         SemanticMacroApp(plain,this,children,Some(notation.notinfo))
       }{
         syminfo.args.foreach{_ =>
-          val (_,nch) = readArg
+          val (_,nch) = readSafeArg("\\" + plain.name)
           children = children ::: nch
         }
         SemanticMacroApp(plain,this,children,Some(notation.notinfo))
@@ -587,7 +604,7 @@ object STeXRules {
   def allRules(dict:Dictionary) = List(
     ModuleRule(dict),UseModuleRule(dict),NotationRule(dict),mmtrule,
     SymrefRule(dict),SymnameRule(dict),CapSymnameRule(dict),
-    DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict)
+    DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict)
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),MathStructureRule(dict)
@@ -949,12 +966,15 @@ object STeXRules {
       val (optargs,ch2) = readOptArg
       children = children ::: ch2
       var name = maybename
-      optargs.foreach(_.mkString match {
-        case s if s.trim.startsWith("name=") =>
-          name = s.drop(5)
-        case _ =>
-          ???
-      })
+      optargs.foreach{l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s if s.trim.startsWith("name=") =>
+            name = s.drop(5)
+          case _ =>
+            ???
+        }
+      }
       val mp = dict.getMPath(name + "-structure")
       val sympath = dict.getGlobalName(name)
       val macr = MathStructureMacro(begin.plain,mp,maybename,sympath,begin.children ::: children,this,dict.getFile)
@@ -972,7 +992,7 @@ object STeXRules {
   }
 
   case class ModuleRule(dict : Dictionary) extends EnvironmentRule("smodule") {
-    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): TeXModuleMacro = {
+    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
       var children : List[TeXTokenLike] = Nil
       val (optargs,ch) = readOptArg
       children = ch
@@ -982,44 +1002,114 @@ object STeXRules {
         case gr:Group =>
           gr.content match {
             case List(t:PlainText) => t.str
-            case _ => ???
+            case _ =>
+              throw LaTeXParseError("Group expected after \\begin{smodule}")
           }
         case _ =>
-          ???
+          throw LaTeXParseError("{name} expected after \\begin{smodule}")
       }
       var meta : Option[MPath] = Some(defaultMeta)
       var lang = dict.getLanguage
       var sig = ""
       var title:String = ""
       var deprecation:String = ""
-      optargs.foreach(_.mkString match {
-        case s if s.trim.startsWith("meta=") =>
-          val mod = s.trim.drop(5).trim
-          if (mod == "NONE") meta = None
-          else {
+      optargs.foreach { l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s if s.trim.startsWith("meta=") =>
+            val mod = s.trim.drop(5).trim
+            if (mod == "NONE") meta = None
+            else {
+              ???
+            }
+          case s if s.trim.startsWith("title=") =>
+            title = s.trim.drop(6).trim
+          case s if s.trim.startsWith("sig=") =>
+            sig = s.trim.drop(4).trim
+          case s if s.trim.startsWith("lang=") =>
+            lang = s.trim.drop(5).trim
+          case s if s.trim.startsWith("creators=") =>
+          case s if s.trim.startsWith("contributors=") =>
+          case s if s.trim.startsWith("deprecate=") =>
+          case s if s.trim.startsWith("srccite=") =>
+            deprecation = s.trim.drop(10).trim
+          case s =>
             ???
-          }
-        case s if s.trim.startsWith("title=") =>
-          title = s.trim.drop(6).trim
-        case s if s.trim.startsWith("sig=") =>
-          sig = s.trim.drop(4).trim
-        case s if s.trim.startsWith("lang=") =>
-          lang = s.trim.drop(5).trim
-        case s if s.trim.startsWith("creators=") =>
-        case s if s.trim.startsWith("deprecate=") =>
-          deprecation = s.trim.drop(10).trim
-        case s =>
-          ???
-      })
+        }
+      }
       val mp = dict.getMPath(name)
       val macr = TeXModuleMacro(begin.plain,mp,begin.children ::: children,this,meta,sig,lang,title,deprecation)
       //if (deprecation != "") macr.addError("Deprecated: Use " + deprecation + " instead",lvl=Level.Warning)
       safely(macr){dict.openModule(macr)}
     }
 
-    override def finalize(env: Environment)(implicit state:LaTeXParserState): Environment = {
-      dict.closeModule
-      TeXModule(env.begin.asInstanceOf[TeXModuleMacro],env.end,env.children,this)
+    override def finalize(env: Environment)(implicit state:LaTeXParserState): Environment = env.begin match {
+      case tmm: TeXModuleMacro =>
+        dict.closeModule
+        TeXModule(tmm,env.end,env.children,this)
+      case _ => env
+    }
+  }
+
+
+  case class ProblemRule(dict : Dictionary) extends EnvironmentRule("sproblem") {
+    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
+      var children : List[TeXTokenLike] = Nil
+      val (optargs,ch) = readOptArg
+      children = ch
+      var name = ""
+      var meta : Option[MPath] = Some(defaultMeta)
+      var lang = dict.getLanguage
+      var sig = ""
+      var title:String = ""
+      var deprecation:String = ""
+      optargs.foreach { l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s if s.trim.startsWith("meta=") =>
+            val mod = s.trim.drop(5).trim
+            if (mod == "NONE") meta = None
+            else {
+              ???
+            }
+          case s if s.trim.startsWith("title=") =>
+            title = s.trim.drop(6).trim
+          case s if s.trim.startsWith("sig=") =>
+            sig = s.trim.drop(4).trim
+          case s if s.trim.startsWith("lang=") =>
+            lang = s.trim.drop(5).trim
+          case s if s.trim.startsWith("creators=") =>
+          case s if s.trim.startsWith("pts=") =>
+          case s if s.trim.startsWith("min=") =>
+          case s if s.trim.startsWith("id=") =>
+          case s if s.trim.startsWith("name=") =>
+            name = s.drop(5)
+          case s if s.trim.startsWith("contributors=") =>
+          case s if s.trim.startsWith("deprecate=") =>
+          case s if s.trim.startsWith("srccite=") =>
+            deprecation = s.trim.drop(10).trim
+          case s if s.startsWith("uses=") || s.startsWith("imports=") =>
+            // TODO
+          case s =>
+            ???
+        }
+      }
+      if (name == "") {
+        val segs = dict.getFile.split('/').last.split('.').init.toList
+        if (STeX.all_languages.contains(segs.last)) name = segs.init.mkString(".")
+        else name = segs.mkString(".")
+      }
+      val mp = dict.getMPath(name)
+      val macr = TeXModuleMacro(begin.plain,mp,begin.children ::: children,this,meta,sig,lang,title,deprecation)
+      //if (deprecation != "") macr.addError("Deprecated: Use " + deprecation + " instead",lvl=Level.Warning)
+      safely(macr){dict.openModule(macr)}
+    }
+
+    override def finalize(env: Environment)(implicit state:LaTeXParserState): Environment = env.begin match {
+      case tmm: TeXModuleMacro =>
+        dict.closeModule
+        TeXModule(tmm,env.end,env.children,this)
+      case _ => env
     }
   }
 

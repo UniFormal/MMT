@@ -138,10 +138,12 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
     client.publishDiagnostics(params)
   }
   private var diags : List[Diagnostic] = Nil
+  private var all_errors : List[info.kwarc.mmt.api.Error] = Nil
   def documentErrors(controller:Controller,doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))
-    val ndiags = errors.map{e =>
+    val ndiags = errors.collect{case e if !all_errors.contains(e) =>
+      all_errors ::= e
       val d = new Diagnostic
       val (lvl,msg) = e match {
         case SourceError(_,ref,_,ems,_) =>

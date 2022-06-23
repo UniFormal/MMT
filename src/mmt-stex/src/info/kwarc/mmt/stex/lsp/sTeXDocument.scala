@@ -146,7 +146,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
 
   override val timercount: Int = 0
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
-  override def onUpdate(changes: List[Delta]): Unit = try this.synchronized {{
+  override def onUpdate(changes: List[Delta]): Unit = try this.synchronized { server.parser.synchronized {
     Annotations.clear
     client.resetErrors(uri)
     import info.kwarc.mmt.stex.parsing._

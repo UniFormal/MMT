@@ -145,6 +145,8 @@ object OMDocHTML {
 }
 
 object STeX {
+  val all_languages = List("en","de","ar","bg","ru","fi","ro","tr","fr")
+
   val meta_dpath = DPath(URI.http colon "mathhub.info") / "sTeX" / "meta"
   val meta_path = meta_dpath ? "Metatheory"
   val mmtmeta_path = meta_dpath ? "MMTMeta"

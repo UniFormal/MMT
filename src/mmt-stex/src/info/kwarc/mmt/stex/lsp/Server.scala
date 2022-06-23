@@ -1,17 +1,19 @@
 package info.kwarc.mmt.stex.lsp
 
-import info.kwarc.mmt.api.archives.{Archive, BuildManager, TrivialBuildManager}
+import info.kwarc.mmt.api.archives.{Archive, BuildManager, RedirectableDimension, TrivialBuildManager}
 import info.kwarc.mmt.api.frontend.{Controller, Run}
+import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import info.kwarc.mmt.stex.parsing.STeXSuperficialParser
 import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
-import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams}
+import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams, WorkspaceFoldersOptions, WorkspaceServerCapabilities, WorkspaceSymbol, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest, JsonSegment}
 
 import java.util.concurrent.CompletableFuture
+import scala.concurrent.Future
 
 class MainFileMessage {
   var mainFile: String = null
@@ -150,6 +152,67 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        case _ =>
      }
      parser.init()
+     bootToken.foreach {tk =>
+       updateProgress(tk,0,"Indexing tex files")
+     }
+     //Future {
+       var allfiles : List[File] = Nil//List[(Option[Archive],File)] = Nil
+       /*def getFiles(fs : List[(Option[Archive],File)]) : Unit = fs.headOption match {
+         case Some((a,f)) if f.isFile && f.getExtension.contains("tex") =>
+           allfiles ::= ((a,f))
+           getFiles(fs.tail)
+         case Some((Some(a),f)) if f.isDirectory =>
+           getFiles(f.descendants.map(file => (Some(a),file)) ::: fs.tail)
+         case (Some((None,f))) if f.isDirectory =>
+           controller.backend.getArchives.find(_.root == f) match {
+             case Some(a) =>
+               val source = a / info.kwarc.mmt.api.archives.source
+               val lib = a / RedirectableDimension("lib")
+               getFiles((Some(a),source) :: (Some(a),lib) :: fs.tail)
+             case _ =>
+               getFiles(f.children.map((None,_)) ::: fs.tail)
+           }
+         case _ =>
+       }
+       getFiles(workspacefolders.map {f =>
+         val segments = f.segments
+         (controller.backend.getArchives find { a => segments.startsWith(a.root.segments) },f)
+       })*/
+       allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
+     documents.synchronized {
+       allfiles.zipWithIndex.foreach {
+         case (f, i) => //((a, f), i) =>
+           bootToken.foreach(tk => updateProgress(tk, i.toFloat / allfiles.length.toFloat, "Indexing " + (i + 1) + "/" + allfiles.length + ": " + f.toString))
+           //if (!parser.dict.previouslyread(f)) parser.apply(f, Some(a))
+           val uri = if (f.toString.charAt(1) == ':') "file://" + f.toString.head.toLower + f.toString.drop(1) else "file://" + f.toString
+           documents.getOrElseUpdate(uri, {
+             val d = newDocument(uri)
+             d.archive match {
+               case Some(a) =>
+                 val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
+                 def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
+                 if (regfilter(f)) d.init(File.read(f))
+               case _ =>
+                 d.init(File.read(f))
+             }
+             d
+           })
+         //parser(f,a)
+       }
+     }
+     //}(scala.concurrent.ExecutionContext.global)
+     //println(t._1)
+     /*
+     controller.backend.getArchives.foreach{
+       case a if a.properties.get("format").contains("stex") =>
+         (a / info.kwarc.mmt.api.archives.source).descendants.foreach {
+           case f if f.getExtension.contains("tex") && !parser.dict.previouslyread(f) =>
+             parser.applyFormally(f,Some(a))
+           case _ =>
+         }
+       case _ =>
+     }
+      */
    }
 
    private var bootToken : Option[Int] = None
@@ -173,8 +236,35 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      ret
    }
 
+   private var workspacefolders : List[File] = Nil
+
+   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
+     import scala.jdk.CollectionConverters._
+     super.initialize(params, result)
+     val wfo = new WorkspaceFoldersOptions
+     wfo.setSupported(true)
+     wfo.setChangeNotifications(true)
+     val wsc = new WorkspaceServerCapabilities(wfo)
+     result.getCapabilities.setWorkspace(wsc)
+     result.getCapabilities.setWorkspaceSymbolProvider(true)
+     if (params.getWorkspaceFolders != null) params.getWorkspaceFolders.asScala.foreach {f =>
+       val file = File({
+         val str = f.getUri.drop(7)
+         if (str.length > 2 && str(2) == ':') {
+           str.take(2).toUpperCase + str.drop(2)
+         } else str
+       })
+       if (file.exists()) workspacefolders ::= file else None
+     }
+   }
+
    @JsonNotification("sTeX/installArchive")
    def installArchive(arch: ArchiveMessage) : Unit = installArchives(arch.archive)
+
+   override def workspaceSymbol(params: WorkspaceSymbolParams): List[WorkspaceSymbol] = {
+     print("")
+     super.workspaceSymbol(params)
+   }
 
    override def connect: Unit = {
      controller.extman.addExtension(lspdocumentserver)

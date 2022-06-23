@@ -187,8 +187,6 @@ object FullsTeXGraph extends ServerExtension("vollki") {
     override def selectTopo: List[sTeXNode] = _includes.reverse
   }
 
-  val all_languages = List("en","de","ar","bg","ru","fi","ro","tr","fr")
-
   private var allobjects : List[sTeXNode] = Nil
   def getAll() = allobjects
   private val objects = mutable.HashMap.empty[Path,sTeXNode]
@@ -198,7 +196,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       return None
     }
     pathstr = pathstr.dropRight(6)
-    val (id,lang) = if (all_languages.exists(s => pathstr.endsWith("." + s))) {
+    val (id,lang) = if (STeX.all_languages.exists(s => pathstr.endsWith("." + s))) {
       val ls = pathstr.split('.')
       (ls.init.mkString("."),ls.last)
     } else (pathstr,"")
@@ -218,7 +216,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         case _ =>
       }
     } else {
-      all_languages.foreach {l =>
+      STeX.all_languages.foreach {l =>
         controller.getO(Path.parseD(id + "." + l + ".omdoc",NamespaceMap.empty)) match {
           case Some(d : Document) =>
             objects(d.path) = node
@@ -245,7 +243,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       return None
     }
     pathstr = pathstr.dropRight(6)
-    val (id,lang) = if (all_languages.exists(s => pathstr.endsWith("." + s))) {
+    val (id,lang) = if (STeX.all_languages.exists(s => pathstr.endsWith("." + s))) {
       val ls = pathstr.split('.')
       (ls.init.mkString("."),ls.last)
     } else (pathstr,"")
@@ -260,7 +258,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       objects(d.path) = node
       node.keys.add(d.path)
     } else {
-      all_languages.foreach {l =>
+      STeX.all_languages.foreach {l =>
         controller.getO(Path.parseD(id + "." + l + ".omdoc",NamespaceMap.empty)) match {
           case Some(d : Document) =>
             objects(d.path) = node
@@ -276,7 +274,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
   }
 
   private def doTheory(th: Theory,node:sTeXTheory): Unit = {
-    all_languages.foreach { s =>
+    STeX.all_languages.foreach { s =>
       node.getLanguageModule(s) match {
         case Some(t: Theory) =>
           node._languages ::= s
@@ -301,7 +299,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         controller.getO(a.target) match {
           case Some(th : Theory) =>
             th.metadata.get(STeX.meta_language) match {
-              case List(_) if all_languages.contains(th.name.toString) =>
+              case List(_) if STeX.all_languages.contains(th.name.toString) =>
                 controller.getO(th.path.parent.toMPath) match {
                   case Some(th : Theory) =>
                     Some(th)
@@ -315,11 +313,11 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         (controller.getO(a.target),controller.getO(b.target)) match {
           case (Some(tha : Theory),Some(thb : Theory)) =>
             tha.metadata.get(STeX.meta_language) match {
-              case List(_) if all_languages.contains(tha.name.toString) && thb.path == tha.path.parent.toMPath =>
+              case List(_) if STeX.all_languages.contains(tha.name.toString) && thb.path == tha.path.parent.toMPath =>
                 Some(thb)
               case _ =>
                 thb.metadata.get(STeX.meta_language) match {
-                  case List(_) if all_languages.contains(thb.name.toString) && tha.path == thb.path.parent.toMPath =>
+                  case List(_) if STeX.all_languages.contains(thb.name.toString) && tha.path == thb.path.parent.toMPath =>
                     Some(tha)
                   case _ => None
                 }
@@ -362,7 +360,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
                 case _ =>
                   None
               }
-            case List(_) if all_languages.contains(th.name.toString) =>
+            case List(_) if STeX.all_languages.contains(th.name.toString) =>
               getO(th.path.parent.toMPath)
             case _ =>
               ???
