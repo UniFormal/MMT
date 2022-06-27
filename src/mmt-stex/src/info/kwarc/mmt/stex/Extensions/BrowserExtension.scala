@@ -13,8 +13,8 @@ object BrowserExtension extends STeXExtension {
           Some(ServerResponse.JsonResponse(doMenu))
         case "" =>
           Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"html"))
-        case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
-         Some(ServerResponse(DocumentExtension.doDocument(ps).toString.trim,"application/xhtml+xml"))
+        /*case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
+         Some(ServerResponse(DocumentExtension.doDocument(ps).toString.trim,"application/xhtml+xml"))*/
         case _ =>
           ???
       }
@@ -87,7 +87,7 @@ object BrowserExtension extends STeXExtension {
               ("label",JSONString(f.name)),
               ("children",iterate(fp / f.name)),
               ("link",doJs(
-                doLink("/:" + server.pathPrefix + "/browser?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
+                doLink("/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
                 setCurrentArchive(a.id),
                 setCurrentPath({if (fp.isEmpty) "" else "/"} + fp.toString + "/" + f.name),
                 deactivateButtons
@@ -99,11 +99,11 @@ object BrowserExtension extends STeXExtension {
               ("label",JSONString(f.name)),
               ("children",JSONArray()),
               ("link",doJs(
-                doLink(url("browser")),
+                doLink(url("fulldocument")),
                 setCurrentArchive(a.id),
                 setCurrentPath({if (fp.isEmpty) "" else "/"} + fp.toString + "/" + f.name),
                 //setEdit(url("editor"),url("browser")),
-                newtabbutton(url("browser"))
+                newtabbutton(url("fulldocument"))
               ))
             )
         }:_*)

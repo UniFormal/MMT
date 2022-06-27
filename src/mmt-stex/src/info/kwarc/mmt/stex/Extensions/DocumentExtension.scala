@@ -21,7 +21,17 @@ object DocumentExtension extends STeXExtension {
         case "" =>
           Some(ServerResponse("Empty Document path","txt"))
         case s =>
-          Some(ServerResponse(doDocument(s).toString, "application/xhtml+xml"))
+          Some(ServerResponse(doDocument(s).toString, "text/html"))
+      }
+    case Some("fulldocument") =>
+      request.query match {
+        case "" =>
+          Some(ServerResponse("Empty Document path","txt"))
+        case s =>
+          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+          html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/document?" + s)
+          html = html.replace("BASE_URL_PLACEHOLDER","")
+          Some(ServerResponse(html, "text/html"))
       }
     case _ => None
   }

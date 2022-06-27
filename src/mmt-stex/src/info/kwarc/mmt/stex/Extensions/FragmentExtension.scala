@@ -129,7 +129,15 @@ object FragmentExtension extends STeXExtension {
            */
         )
         getFragment(path,language).foreach(s => border.add(s))
-        Some(ServerResponse(doc.get("body")()().head.toString,"application/xhtml+xml"))
+
+        val docrules = server.extensions.collect {
+          case e : DocumentExtension =>
+            e.documentRules
+        }.flatten
+        def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
+        val nbody = doc.get("body")()().head
+        nbody.iterate(doE)
+        Some(ServerResponse(nbody.toString,"text/html"))
       case _ =>
         Some(ServerResponse("Declaration not found","txt"))
     }
@@ -154,6 +162,7 @@ object FragmentExtension extends STeXExtension {
             ret match {
               case Some(s) => Some(s)
               case _ =>
+                val rules = server.extensions.flatMap(_.rules)
                 val state = new ParsingState(controller,rules)
                 Some(HTMLParser.apply(getFragmentDefault(c,language))(state))
             }
@@ -177,7 +186,14 @@ object FragmentExtension extends STeXExtension {
         border.add(<code>{path.toString}</code>)
         border.add(<hr/>)
         border.add(htm)
-        Some(ServerResponse(doc.get("body")()().head.toString,"application/xhtml+xml"))
+        val docrules = server.extensions.collect {
+          case e : DocumentExtension =>
+            e.documentRules
+        }.flatten
+        def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
+        val nbody = doc.get("body")()().head
+        nbody.iterate(doE)
+        Some(ServerResponse(nbody.toString,"text/html"))
       case None =>
         Some(ServerResponse("Empty fragment","txt"))
     }
