@@ -120,6 +120,56 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      ret
    }
 
+   @JsonNotification("sTeX/parseWorkspace")
+   def parseWorkspace() : Unit = withProgress(this,"Quickparsing Workspace"){ update =>
+     //Future {
+     var allfiles : List[File] = Nil//List[(Option[Archive],File)] = Nil
+     /*def getFiles(fs : List[(Option[Archive],File)]) : Unit = fs.headOption match {
+       case Some((a,f)) if f.isFile && f.getExtension.contains("tex") =>
+         allfiles ::= ((a,f))
+         getFiles(fs.tail)
+       case Some((Some(a),f)) if f.isDirectory =>
+         getFiles(f.descendants.map(file => (Some(a),file)) ::: fs.tail)
+       case (Some((None,f))) if f.isDirectory =>
+         controller.backend.getArchives.find(_.root == f) match {
+           case Some(a) =>
+             val source = a / info.kwarc.mmt.api.archives.source
+             val lib = a / RedirectableDimension("lib")
+             getFiles((Some(a),source) :: (Some(a),lib) :: fs.tail)
+           case _ =>
+             getFiles(f.children.map((None,_)) ::: fs.tail)
+         }
+       case _ =>
+     }
+     getFiles(workspacefolders.map {f =>
+       val segments = f.segments
+       (controller.backend.getArchives find { a => segments.startsWith(a.root.segments) },f)
+     })*/
+     allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
+     documents.synchronized {
+       allfiles.zipWithIndex.foreach {
+         case (f, i) => //((a, f), i) =>
+           update(i.toFloat / allfiles.length.toFloat, "Parsing " + (i + 1) + "/" + allfiles.length + ": " + f.toString)
+           //if (!parser.dict.previouslyread(f)) parser.apply(f, Some(a))
+           val uri = if (f.toString.charAt(1) == ':') "file://" + f.toString.head.toLower + f.toString.drop(1) else "file://" + f.toString
+           documents.getOrElseUpdate(uri, {
+             val d = newDocument(uri)
+             d.archive match {
+               case Some(a) =>
+                 val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
+                 def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
+                 if (regfilter(f)) d.init(File.read(f))
+               case _ =>
+                 d.init(File.read(f))
+             }
+             d
+           })
+         //parser(f,a)
+       }
+     }
+     ((),"Done")
+   }
+
    @JsonNotification("sTeX/setMathHub")
    def setMathHub(msg:MathHubMessage) : Unit = {
      bootToken.foreach {tk =>
@@ -154,51 +204,6 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      parser.init()
      bootToken.foreach {tk =>
        updateProgress(tk,0,"Indexing tex files")
-     }
-     //Future {
-       var allfiles : List[File] = Nil//List[(Option[Archive],File)] = Nil
-       /*def getFiles(fs : List[(Option[Archive],File)]) : Unit = fs.headOption match {
-         case Some((a,f)) if f.isFile && f.getExtension.contains("tex") =>
-           allfiles ::= ((a,f))
-           getFiles(fs.tail)
-         case Some((Some(a),f)) if f.isDirectory =>
-           getFiles(f.descendants.map(file => (Some(a),file)) ::: fs.tail)
-         case (Some((None,f))) if f.isDirectory =>
-           controller.backend.getArchives.find(_.root == f) match {
-             case Some(a) =>
-               val source = a / info.kwarc.mmt.api.archives.source
-               val lib = a / RedirectableDimension("lib")
-               getFiles((Some(a),source) :: (Some(a),lib) :: fs.tail)
-             case _ =>
-               getFiles(f.children.map((None,_)) ::: fs.tail)
-           }
-         case _ =>
-       }
-       getFiles(workspacefolders.map {f =>
-         val segments = f.segments
-         (controller.backend.getArchives find { a => segments.startsWith(a.root.segments) },f)
-       })*/
-       allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
-     documents.synchronized {
-       allfiles.zipWithIndex.foreach {
-         case (f, i) => //((a, f), i) =>
-           bootToken.foreach(tk => updateProgress(tk, i.toFloat / allfiles.length.toFloat, "Indexing " + (i + 1) + "/" + allfiles.length + ": " + f.toString))
-           //if (!parser.dict.previouslyread(f)) parser.apply(f, Some(a))
-           val uri = if (f.toString.charAt(1) == ':') "file://" + f.toString.head.toLower + f.toString.drop(1) else "file://" + f.toString
-           documents.getOrElseUpdate(uri, {
-             val d = newDocument(uri)
-             d.archive match {
-               case Some(a) =>
-                 val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
-                 def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
-                 if (regfilter(f)) d.init(File.read(f))
-               case _ =>
-                 d.init(File.read(f))
-             }
-             d
-           })
-         //parser(f,a)
-       }
      }
      //}(scala.concurrent.ExecutionContext.global)
      //println(t._1)
