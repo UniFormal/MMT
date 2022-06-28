@@ -158,8 +158,9 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, defined_rules: It
          // you were unable to execute e.g. OMA(OMV(f),...) but now it's OMA(OMBINDC(..),...) which can be executed
          // this mirrors the basic structure of all rules: execute arguments, then execute term.
          execute(ComplexTerm(p, subs, cont, argsE))
-       case t =>
-         throw ExecutionError("cannot execute: " + t)
+       case _ => prog
+       //case t =>
+       //  throw ExecutionError("cannot execute: " + t)
      }
    }
 }
