@@ -159,7 +159,7 @@ object OMDocExtension extends DocumentExtension {
             case Some((a,ls)) =>
               val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
               iref.parent.foreach(_.addAfter(
-                <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath="  + path}>{
+                <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath="  + path}>{
                   d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
                     case OMFOREIGN(node) => node
                     case _ => <span>{d.path.toString}</span>
