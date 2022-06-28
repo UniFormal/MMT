@@ -54,7 +54,6 @@ object DocumentExtension extends STeXExtension {
     //body.add(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/overlaymain.xml"))
   }
 
-  // TODO
   def getDocument(uri : String) : HTMLNode = {
     val rules = server.extensions.flatMap(_.rules)
     //val state = new ParsingState(,rules)
@@ -167,11 +166,10 @@ object DocumentExtension extends STeXExtension {
   }*/
 
   def overlay(elem : HTMLNode, urlshort : String,urllong : String) : Unit = {
-    if (elem.classes.contains("hasoverlay")) return
+    if (elem.classes.contains("overlay-parent")) return
     val id = elem.hashCode().toString
     elem.attributes((elem.namespace,"id")) = id
-    elem.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
-    elem.attributes((elem.namespace,"data-overlay-link-click")) = urllong
+    elem.classes ::= "hasoverlay-parent"
     //elem.classes ::= "hasoverlay" //:: elem.classes
     def pickelems(n : HTMLNode,inarg:Boolean = false) : List[HTMLNode] = n match {
       case comp : NotationComponent => List(comp)
@@ -183,46 +181,9 @@ object DocumentExtension extends STeXExtension {
     targets.foreach{ e =>
       e.classes ::= "group-highlight"
       e.attributes((e.namespace,"data-highlight-parent")) = id
+      e.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
+      e.attributes((elem.namespace,"data-overlay-link-click")) = urllong
     }
-    /*
-    val onhover = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.add('stexoverlaycontainerhover')").mkString(";")
-    val onout = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.remove('stexoverlaycontainerhover')").mkString(";")
-    val currp = elem.parent
-    targets.zipWithIndex.foreach {
-      case (txt: HTMLText,i) =>
-        val newthis = txt.parent.map(_.addAfter(<span class="stexoverlaycontainer" style="display:inline"
-                                            id={id + "_" + i}
-                                            onmouseover={"stexOverlayOn('" + id + "','" + urlshort + "');" + onhover}
-                                            onmouseout={"stexOverlayOff('" + id + "');" + onout}
-                                            onclick={"stexMainOverlayOn('" + urllong + "')"}
-        ></span>,txt))
-        txt.delete
-        newthis.foreach(_.add({
-          if (txt.endswithWS && txt.startswithWS) new HTMLText(txt.state,"&nbsp;" + txt.text + "&nbsp;")
-          else if (txt.endswithWS) new HTMLText(txt.state,txt.text + "&nbsp;")
-          else if (txt.startswithWS) new HTMLText(txt.state,"&nbsp;" + txt.text)
-          else txt
-        }))
-      case (e,i) =>
-        e.classes ::= "stexoverlaycontainer"
-        e.attributes((e.namespace, "onmouseover")) = "stexOverlayOn('" + id + "','" + urlshort + "');" + onhover
-        e.attributes((e.namespace, "onmouseout")) = "stexOverlayOff('" + id + "');" + onout
-        e.attributes((e.namespace, "onclick")) = "stexMainOverlayOn('" + urllong + "')"
-        e.attributes((e.namespace,"id")) = id + "_" + i
-    }
-    val overlay = <span style="position:relative;display:inline"><iframe src=" " class="stexoverlay" id={id} onLoad='this.style.height=(this.contentWindow.document.body.offsetHeight+5) + "px";'>{HTMLParser.empty}</iframe></span>
-    val after = if (elem.parent == currp) elem else elem.parent.get
-    if (!after.isMath) {
-      val p = after.parent.get
-      p.addAfter(overlay, after)
-    } else {
-      val tm = after.collectAncestor {
-        case n if n.parent.exists(!_.isMath) => n
-      }
-      tm.foreach(_.parent.foreach(_.addAfter(overlay, tm.get)))
-    }
-
-     */
   }
 
   def makeButton(target : String,elem : Node) : Node =  // makesafe(XHTML(

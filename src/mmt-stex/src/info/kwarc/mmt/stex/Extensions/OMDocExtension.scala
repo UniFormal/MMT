@@ -158,12 +158,20 @@ object OMDocExtension extends DocumentExtension {
           controller.backend.resolveLogical(d.path.uri) match {
             case Some((a,ls)) =>
               val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
-              iref.parent.foreach(_.addAfter(<div><a href={"/:" + server.pathPrefix + "/browser?archive=" + a.id + "&filepath="  + path} style="pointer-events:all;color:blue">{
+              iref.parent.foreach(_.addAfter(
+                <div class="symref" data-inputref-url={"/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath="  + path}>{
                   d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
                     case OMFOREIGN(node) => node
                     case _ => <span>{d.path.toString}</span>
                   }).getOrElse(<span>{d.path.toString}</span>)
-                }</a></div>,iref))
+                  }</div>
+                /*<div><a href={"/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath="  + path} style="pointer-events:all;color:blue">{
+                  d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
+                    case OMFOREIGN(node) => node
+                    case _ => <span>{d.path.toString}</span>
+                  }).getOrElse(<span>{d.path.toString}</span>)
+                }</a></div>*/
+                ,iref))
             case _ =>
           }
         case _ =>

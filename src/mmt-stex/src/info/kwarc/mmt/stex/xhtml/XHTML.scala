@@ -238,7 +238,7 @@ object HTMLParser {
           }.mkString + {
             if (n._sourceref.isDefined && !n._parent.exists(_._sourceref == n._sourceref)) " " + "stex:sourceref=\"" + n._sourceref.get.toString + "\"" else ""
           } + {
-            if (n.classes.nonEmpty) " class=\"" + n.classes.mkString(" ") + "\"" else ""
+            if (n.classes.nonEmpty) " class=\"" + n.classes.distinct.mkString(" ") + "\"" else ""
           } + {
             if(n._children.isEmpty && n.namespace == ns_html && void_elements.contains(n.label)) "/>" else {
               ">" + n._children.reverse.map(present(_,indent+1)).mkString + {

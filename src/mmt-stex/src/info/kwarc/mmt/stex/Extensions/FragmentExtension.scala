@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration}
 import info.kwarc.mmt.api.utils.{MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
+import info.kwarc.mmt.stex.Extensions.FragmentExtension.getFragment
 import info.kwarc.mmt.stex.OMDocHTML
 import info.kwarc.mmt.stex.vollki.FullsTeXGraph
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
@@ -51,12 +52,46 @@ object FragmentExtension extends STeXExtension {
             case _ => (ps,None)
           }
           val path = Path.parse(comp)
-          doDeclaration(path,lang)
+          Some(doDeclaration(path,lang))
       }
     case _ => None
   }
 
-  def doDeclaration(path : Path,language : Option[String]) = {
+  def doDeclaration(path : Path,language : Option[String]) : ServerResponse = {
+    controller.getO(path) match {
+      case Some(c: Constant) =>
+        val (doc,body) = server.emptydoc
+        body.add(<div style="font-size:small">
+          <table><tr><td>
+            <font size="+2">{" ☞ "}</font><code>{path.toString}</code><hr/>
+          </td><td>{if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {
+              <a href={"/:vollki?path=" + c.parent.toString} target="_blank" style="pointer-events:all;color:blue">{"> Guided Tour"}</a>
+            } else <span></span>
+            }</td>
+          </tr></table>
+          <table>
+          </table>
+        </div>)
+        getFragment(path,language) match {
+          case Some(htm) =>
+            body.add(htm)
+          case _ =>
+        }
+        val docrules = server.extensions.collect {
+          case e : DocumentExtension =>
+            e.documentRules
+        }.flatten
+        def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
+        body.iterate(doE)
+        ServerResponse("<body>" + body.toString + "</body>","text/html")
+      case Some(d) =>
+        ServerResponse("Not yet implemented: " + d.getClass.toString,"txt")
+      case _ =>
+        ServerResponse("Declaration not found","txt")
+    }
+  }
+
+  def doDeclarationOld(path : Path,language : Option[String]) = {
     path match {
       case mp: MPath =>
         controller.simplifier(mp)
