@@ -190,7 +190,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       log("flattening yields " + d.path)
     }
     mod.dfC.normalize {d =>
-      val dS = objectLevel(d, SimplificationUnit(mod.getInnerContext, false, true), rules)
+      val dS = objectLevel(d, SimplificationUnit(mod.getInnerContext, false,false, true), rules)
       log("normalizing definiens to " + controller.presenter.asString(dS))
       dS
     }
@@ -333,7 +333,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // compose and simplify
         val newMor = OMCOMP(id.asMorphism, ID.asMorphism)
         val newMor1 = Morph.simplify(newMor)(lup)
-        val newMorN = oS(newMor1, SimplificationUnit(innerCont, false, true), rules)
+        val newMorN = oS(newMor1, SimplificationUnit(innerCont, false,false, true), rules)
         // extract the new include data
         // if either include is defined, so is the composition; a realization id can be considered defined from outside the theory 
         val newDf = if (id.df.isDefined || id.isRealization || ID.df.isDefined) {
@@ -369,7 +369,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               case Some(dfMor) =>
                 // if idID has a definiens, we have to check equality with the existing include
                 val existingMor = Morph.simplify(exid.asMorphism)(lup)
-                val existingMorN = oS(existingMor,SimplificationUnit(innerCont,false,true),rules)
+                val existingMorN = oS(existingMor,SimplificationUnit(innerCont,false,false,true),rules)
                 val eq = Morph.equal(existingMorN,dfMor,OMMOD(exid.from),target)(lup)
                 if (!eq) {
                   // otherwise, it is an error

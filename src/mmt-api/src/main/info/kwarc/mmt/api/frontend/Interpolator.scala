@@ -81,14 +81,14 @@ class MMTInterpolator(controller: frontend.Controller) {
       /** uom"s" parses and simplifies s */
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
-         controller.simplifier(t, SimplificationUnit(Context(theory), false, true))
+         controller.simplifier(t, SimplificationUnit(Context(theory), false, false, true))
       }
       /** r"s" parses and type-checks s */
       def r(ts: Term*): Term = parse(ss, ts.toList, None, true)
       /** s"s" parses, type-checks, and simplifies s */
       def rs(ts: Term*): Term = {
          val t = r(ts : _*)
-         controller.simplifier(t, SimplificationUnit(Context(theory), false, true))
+         controller.simplifier(t, SimplificationUnit(Context(theory), false, false, true))
       }
       /** cont"s" parses s into a Context */
       def cont(ts: Term*) : Context = {

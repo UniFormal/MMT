@@ -67,7 +67,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
     val term = cr.term
 
     // simplify it and extract the types
-    val termS = interpreter.simplifier(term, SimplificationUnit(context, true, true))
+    val termS = interpreter.simplifier(term, SimplificationUnit(context, true, true, true))
     val df = Some(termS)
     val tp = cr.solution.flatMap(_.getO(CheckingUnit.unknownType).flatMap(_.df))
 
@@ -94,7 +94,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
   /** simplifies a term in the current context */
   def simplifyTerm(t: Term, scopeOpt: Option[HasParentInfo]): Term = {
     val context = Context(getMPath(scopeOpt))
-    interpreter.simplifier(t, SimplificationUnit(context, true, true))
+    interpreter.simplifier(t, SimplificationUnit(context, true,true, true))
   }
 }
 

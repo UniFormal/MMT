@@ -755,7 +755,7 @@ trait SolverAlgorithms {self: Solver =>
     * this subsumes substituting for solved unknowns before simplifier expands defined variables
     */
   private def simplify(t : Obj, expDef: Boolean, fullRec: Boolean)(implicit stack: Stack, history: History): t.ThisType = {
-      val su = SimplificationUnit(constantContext ++ solution ++ stack.context, expDef, fullRec,Some(this)).diesWith(checkingUnit)
+      val su = SimplificationUnit(constantContext ++ solution ++ stack.context, expDef, expDef, fullRec,Some(this)).diesWith(checkingUnit)
       // TODO even when called with expDef=false, the rule Beta may expand defined function symbols; it's unclear if this is desirable, especially when fullRec=true
       val tS = controller.simplifier(t, su, rules)
       if (tS != t)

@@ -216,7 +216,8 @@ object LinkInverter {
 			globalContext,
 			// Do not expand OMIDs in declarations. But we still rewrite them
 			// using [[AbbrevRule AbbrevRules]].
-			expandDefinitions = false,
+			expandConDefs = false,
+			expandVarDefs =false,
 			fullRecursion = true
 		)
 
