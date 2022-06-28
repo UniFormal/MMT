@@ -79,8 +79,8 @@ object Executiontester extends MagicTest() {
     val stack = new execution.Stack
     val rules = RuleSet.collectRules(controller, context)
     val env = new RuntimeEnvironment(heap, stack, rules)
-    val runtime = new Runtime(controller, env, logPrefix)
-    runtime.execute(term)
+    // val runtime = new Runtime(controller, env, logPrefix)
+    // runtime.execute(term)
   }
 }
 

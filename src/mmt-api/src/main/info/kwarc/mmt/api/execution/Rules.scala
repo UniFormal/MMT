@@ -18,19 +18,9 @@ abstract class ExecutionRule(val head: GlobalName) extends SyntaxDrivenRule with
   def apply(controller: Controller, callback: ExecutionCallback, env: RuntimeEnvironment, prog: Term): Term
 }
 
-abstract class RulePreprocessor(val head: GlobalName) extends SyntaxDrivenRule with checking.ApplicableUnder {
-  protected def headTerm = OMS(head)
-  def apply(const : Constant) : ExecutionRule
+abstract class RulePreprocessor( val head: GlobalName) extends SyntaxDrivenRule with checking.ApplicableUnder{
+  //protected def headTerm = OMS(head)
+  def apply(const : Constant) : Option[ExecutionRule]
+  // def applicable(const : Constant) : Boolean
 }
 
-object DefinedRun extends RulePreprocessor(???){
-  override def under: List[GlobalName]= ???
-  def apply(const : Constant) : ExecutionRule = {
-    const.tp match {
-      case Some(_) => {
-        ???
-      }
-      // case _=> None
-    }
-  }
-}

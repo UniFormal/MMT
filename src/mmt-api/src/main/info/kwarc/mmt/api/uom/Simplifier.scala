@@ -23,7 +23,8 @@ trait ObjectSimplifier extends Extension {self =>
 
 /** applies rules to simplify an object
  *  @param context the context of the object to simplify
- *  @param expandDefinitions if true, expand all definitions of constant (we speak of *deep* simplification) 
+ *  @param expandConDefs if true, expand all definitions of constant (we speak of *deep* simplification)
+ *  @param expandVarDefs if true, expand all variables in the contexts (turn off for stateful computation)
  *  @param fullRecursion if false, only recurse into subexpressions that contribute to head-normalizations 
  */
 case class SimplificationUnit(context: Context, expandConDefs: Boolean, expandVarDefs: Boolean, fullRecursion: Boolean, solverO: Option[Solver] = None) extends MMTTask {

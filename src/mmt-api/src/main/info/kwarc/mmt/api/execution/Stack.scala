@@ -9,7 +9,7 @@ class Stack {
 
    def top = frames.head
 
-   private def setTop(con: Context) {
+   def setTop(con: Context) {
      frames = con :: frames.tail
    }
 

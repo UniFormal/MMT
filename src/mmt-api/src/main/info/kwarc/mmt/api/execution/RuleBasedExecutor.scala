@@ -20,58 +20,86 @@ class RuleBasedExecutor() extends Executor {
   def apply(theory: Theory,context: Context, prog: Term) = {
      val heap = new Heap(0, controller)
      controller.add(heap)
+     // val theory_context = theory.getInnerContext
      val stack = new execution.Stack
+     stack.setTop(context)
      val rules = RuleSet.collectRules(controller, context)
      val env = new RuntimeEnvironment(heap, stack, rules)
-     // val definedas = gather_definitions(theory,context, rules)
+     val defined_rules = gather_definitions(theory,context, rules)
      // print(definedas)
-     val runtime = new Runtime(controller, env, logPrefix)
+     val runtime = new Runtime(controller, env,defined_rules, logPrefix)
      log("executing " + prog + " with rules " + env.execRules.map(_.toString).mkString(", "))
      runtime.execute(prog)
+    // f Zero = Zero
+    // forall [x] f  Suc(x) = f x
+    // f True = ...
+    // f False = ...
+    // f x = ...
+    // ...
+    // k : Bool
   }
-  def traverseTree(th:MPath,includedSet:mutable.Set[MPath],constants: mutable.Map[String,Constant]): Unit = {
-    // TODO: change to tree structure
+  def traverseTree(queue:mutable.ListBuffer[MPath],includedSet:mutable.Set[MPath],constants: mutable.ListBuffer[Theory]): Unit = {
+    /**
+    * breadth first search over theories
+     * breadth first search is necessary to get the right prioritization between overridden definitions
+     */
+    if( queue.isEmpty)
+      return
+    val th: MPath = queue.remove(0)
     if(includedSet.contains(th))
       return
     else
       includedSet.add(th)
     controller.get(th) match {
       case t:Theory =>
-        for (incl <- t.getIncludes) traverseTree(incl,includedSet,constants)
-        for (const <- t.getConstants) constants.put(const.name.toString,const)
+        constants.append(t)
+        val inc: List[MPath] = t.getIncludes
+        queue.addAll(inc)
+        // for (incl <- queue) traverseTree(incl,includedSet, queue,constants)
+        // for (const <- t.getConstants) constants.put(const.name.toString,const)
     }
-
+    traverseTree(queue, includedSet, constants)
   }
   def gather_definitions(theory:Theory,con : Context, rules: MutableRuleSet) = {
     controller.simplifier(theory)
     val paths  = theory.getAllIncludes
     val tmp = paths map {q =>  controller.getTheory(q.from)
     }
-    val constants: mutable.Map[String,Constant] = mutable.Map()
-    traverseTree(theory.toTerm.toMPath,mutable.Set(),constants)
-    val q  = constants map {case (p,x)=>x}
+    val theories: mutable.ListBuffer[Theory] = mutable.ListBuffer()
+    val queue: mutable.ListBuffer[MPath] = mutable.ListBuffer()
+    queue.append(theory.toTerm.toMPath)
+    traverseTree(queue,mutable.Set(),theories)
+    // convert to immutable map, just for safety
+    val q  = theories flatMap {_.getConstants}
     // Todo: gather all Preprocessing Rules from the environment
     val buildRules = rules.get(classOf[RulePreprocessor])
     // here we now match against the _type_ not the term under the type!
     // the idea is to use these rules for the more static type information, rather than the code itsel
     // though MMT kind of blurs the line here
     val definedRules = q flatMap {x=>x match {
-      case term => term.tp match {case Some(tp : Term) => buildRules.filter(_.applicable(tp)) map {r: RulePreprocessor=> r(term)}}
+      //case term => term match {
+        case const : Constant => buildRules.filter(r => const.tp match{
+          case Some(c: Term) => r.applicable(c)
+          case None => false
+        }) flatMap {r: RulePreprocessor=> r(const)}
+        case otherwise => None
+      //}
     }
     }
     print(definedRules)
     print(paths)
+    definedRules
   }
 }
 
 
 
-class Runtime(controller: Controller, env: RuntimeEnvironment, val logPrefix: String) extends ExecutionCallback with Logger {
+class Runtime(controller: Controller, env: RuntimeEnvironment, defined_rules: Iterable[ExecutionRule], val logPrefix: String) extends ExecutionCallback with Logger {
    val report = controller.report
 
    def execute(progOrg: Term): Term = {
       val context = env.stack.top
-      val prog = controller.simplifier(progOrg, SimplificationUnit(context, true,false, true))
+      val prog = controller.simplifier(progOrg, SimplificationUnit(context, true,false, true),rules=env.rules)
       prog match {
         // foundation-independent cases
         case l: OMLITTrait =>
@@ -105,6 +133,12 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, val logPrefix: St
             log("trying to apply rule " + r.toString)
             return r(controller,this, env, t)
           }
+          log("no scala rule, trying defined rules")
+          val defs = defined_rules.filter(_.applicable(t))
+          defs foreach { r=>
+            log("trying to apply rule" + r.toString)
+            return r(controller,this,env,t)
+          }
           log("no applicable rule")
           executeChildren(prog)
       }
@@ -112,9 +146,18 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, val logPrefix: St
 
    private def executeChildren(prog: Term): Term = {
      prog match {
+       case OMBINDC(binder,context,scopes)=>
+         // we can't recurse into the scopes, since those might have mutable variables
+         // that should only be run when the rest of the term is normalized
+         // i.e. a form of "call by reference"
+         prog
        case ComplexTerm(p, subs, cont, args) =>
          val argsE = args map execute
-         ComplexTerm(p, subs, cont, argsE)
+         // we have to execute again, in case we now have more rules available
+         // a prominent example of this is substituting in a function in a mutable reference:
+         // you were unable to execute e.g. OMA(OMV(f),...) but now it's OMA(OMBINDC(..),...) which can be executed
+         // this mirrors the basic structure of all rules: execute arguments, then execute term.
+         execute(ComplexTerm(p, subs, cont, argsE))
        case t =>
          throw ExecutionError("cannot execute: " + t)
      }
