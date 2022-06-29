@@ -33,10 +33,10 @@ object RusTeX {
   def initializeBridge(f : => File): Unit = this.synchronized {
     if (!Bridge.initialized()) {
       val path = f
-      val file = path / Bridge.library_filename()
+      /*val file = path / Bridge.library_filename()
       if (!file.exists()) {
         File.download(URI(github_rustex_prefix + Bridge.library_filename()),file)
-      }
+      }*/
       Bridge.initialize(path.toString)
     }
   }
