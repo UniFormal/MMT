@@ -183,7 +183,10 @@ object OMDocExtension extends DocumentExtension {
     {case s: HTMLSymbol =>
       controller.getO(s.path) match {
         case Some(c : Constant) =>
-          sidebar(s,{<span style="display:inline">Constant {makeButton("/:" + server.pathPrefix + "/declaration?" + c.path,scala.xml.Text(c.name.toString)
+          sidebar(s,{<span style="display:inline">Constant {makeButton(
+            "/:" + server.pathPrefix + "/fragment?" + c.path + "&language=" + getLanguage(s),
+            "/:" + server.pathPrefix + "/declaration?" + c.path + "&language=" + getLanguage(s)
+            ,scala.xml.Text(c.name.toString)
           )}<code>(\{s.macroname})</code></span>} :: Nil)
         case _ =>
       }
@@ -192,8 +195,8 @@ object OMDocExtension extends DocumentExtension {
       if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
         // TODO
       } else {
-        overlay(t, "/:" + server.pathPrefix + "/fragment?" + t.head.toString + "&amp;language=" + getLanguage(t),
-          "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&amp;language=" + getLanguage(t))
+        overlay(t, "/:" + server.pathPrefix + "/fragment?" + t.head.toString + "&language=" + getLanguage(t),
+          "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
       }
     },
   )

@@ -186,8 +186,8 @@ object DocumentExtension extends STeXExtension {
     }
   }
 
-  def makeButton(target : String,elem : Node) : Node =  // makesafe(XHTML(
-      <span class="propbtn" style="display:inline" target="stexoverlayinner" onclick={"stexMainOverlayOn('" + target + "')"}>
+  def makeButton(urlshort : String,urllong:String,elem : Node) : Node =  // makesafe(XHTML(
+      <span class="propbtn" style="display:inline" data-overlay-link-click={urllong} data-overlay-link-hover={urlshort}>
         {elem}
       </span>
   //))

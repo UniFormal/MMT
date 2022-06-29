@@ -23,10 +23,15 @@ class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
   var lang:String = ""
   var imports : List[(DictionaryModule,Boolean)] = Nil
   var exportrules : List[TeXRule] = Nil
-  def getRules(dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
+  def getRules(lang:String,dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
     dones.ls ::= this
-    exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(_._1.getRules(dones))
+    val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(_._1.getRules(lang,dones))
+    langs.get(lang) match {
+      case Some(m) => m.exportrules ::: r
+      case _ => r
+    }
   }
+  val langs = mutable.HashMap.empty[String,DictionaryModule]
 
 }
 
@@ -156,12 +161,37 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
     }
   }
   def openModule[A <:TeXModuleLike](macr:A)(implicit state: LaTeXParserState) = {
-    val mod = new DictionaryModule(macr)
+    val mod = if (macr.sig != "") {
+      val language = getLanguage
+      all_modules.getOrElse(macr.mp,{
+        val sigfile = current_file.get.stripExtension.stripExtension.setExtension(macr.sig + ".tex")
+        Await.result(Future {
+          try {
+            parser.applyFormally(sigfile, current_archive)
+          } catch {
+            case e: Throwable =>
+              e.printStackTrace()
+              print("")
+          }
+        }, Duration.Inf)
+        all_modules.get(macr.mp) match {
+          case None =>
+            macr.addError("No module " + macr.mp.toString + " found", Some("In file " + sigfile))
+            new DictionaryModule(macr)
+          case Some(m) =>
+            val n = new DictionaryModule(macr)
+            n.imports ::= (m,true)
+            m.langs(language) = n
+            n.rules = m.getRules(language)
+            n
+        }
+      })
+    } else new DictionaryModule(macr)
     current_file.foreach(f => mod.file = Some(f))
     current_archive.foreach(a => mod.archive = Some(a))
     current_modules ::= mod
     state.rules ::= mod
-    mod.rules = parser.moduleRules
+    mod.rules = parser.moduleRules ::: mod.rules
     macr match {
       case tmm: TeXModuleMacro =>
         tmm.meta match {
@@ -183,7 +213,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
       val mod = m
       state.rules = state.rules.filterNot(_ == mod)
       current_modules = current_modules.tail
-      all_modules(mod.path) = mod
+      if (mod.macr.sig == "") all_modules(mod.path) = mod
     case _ =>
   }
 
@@ -237,11 +267,11 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         })
     }
     if (ima.isusemodule) {
-      state.rules.headOption.foreach(r => r.rules = mod.getRules() ::: r.rules)
+      state.rules.headOption.foreach(r => r.rules = mod.getRules(getLanguage) ::: r.rules)
     } else current_modules.headOption match {
       case Some(m) =>
         m.imports ::= (mod, !ima.isusemodule)
-        m.rules = mod.getRules() ::: m.rules
+        m.rules = mod.getRules(getLanguage) ::: m.rules
       case None =>
         print("")
         ???
@@ -278,7 +308,9 @@ trait NonFormalRule extends TeXRule
 trait HasAnnotations extends TeXTokenLike {
   def doAnnotations(in:sTeXDocument) : Unit
 }
-class TeXModuleLike(pm:PlainMacro,val mp:MPath,ch:List[TeXTokenLike],rl:EnvironmentRule) extends MacroApplication(pm,ch,rl)
+abstract class TeXModuleLike(pm:PlainMacro,val mp:MPath,ch:List[TeXTokenLike],rl:EnvironmentRule) extends MacroApplication(pm,ch,rl) {
+  val sig : String
+}
 case class MathStructureMacro(
                             pm:PlainMacro,
                             mpi:MPath,
@@ -288,6 +320,7 @@ case class MathStructureMacro(
                             rl : STeXRules.MathStructureRule,
                             file:String
                             ) extends TeXModuleLike(pm,mpi,ch,rl) with TeXRule with SemanticMacro {
+  val sig = ""
   override lazy val name = "mathstructure " + mpi.toString
   val syminfo = SymdeclInfo(macroname,symbolpath,"","",false,this.file,this.startoffset,this.endoffset)
 }

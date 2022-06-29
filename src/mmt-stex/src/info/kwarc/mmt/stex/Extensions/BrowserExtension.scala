@@ -13,8 +13,16 @@ object BrowserExtension extends STeXExtension {
           Some(ServerResponse.JsonResponse(doMenu))
         case "" =>
           Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"html"))
-        /*case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
-         Some(ServerResponse(DocumentExtension.doDocument(ps).toString.trim,"application/xhtml+xml"))*/
+        case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
+          request.query match {
+            case "" =>
+              Some(ServerResponse("Empty Document path","txt"))
+            case s =>
+              var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+              html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/document?" + s)
+              html = html.replace("BASE_URL_PLACEHOLDER","")
+              Some(ServerResponse(html, "text/html"))
+          }
         case _ =>
           ???
       }

@@ -350,6 +350,10 @@ object LaTeXRules {
               case Nil => bg
               case h :: _ => h
             }}
+
+
+
+
             try {
               while ( {
                 val next = readOne()
