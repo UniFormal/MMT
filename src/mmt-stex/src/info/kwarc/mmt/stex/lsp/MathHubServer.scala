@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.lsp
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.backend.LocalSystem
 import info.kwarc.mmt.api.utils.JSONArray.toList
-import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONObject, JSONString, URLEscaping}
+import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, URLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.search.Searcher
@@ -12,6 +12,7 @@ import org.eclipse.jgit.api.Git
 import java.io.{FileOutputStream, PrintWriter, StringWriter, Writer}
 import java.net.URL
 import java.util.concurrent.CompletableFuture
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
@@ -56,6 +57,38 @@ trait MathHubServer { this : STeXLSPServer =>
   lazy val searcher : Searcher = {
     searchinitialized = true
     new Searcher(controller)
+  }
+
+  private val available_updates = mutable.HashMap.empty[Archive,List[(String,List[File])]]
+
+  def checkArchiveUpdates(tk : Option[Int]) = {
+    val archives = controller.backend.getArchives
+    archives.zipWithIndex.foreach { case (a,i) =>
+      tk.foreach{ t => updateProgress(t,archives.length.toFloat / (i+1).toFloat,"Checking for updates: " + a.id) }
+      val src = a / info.kwarc.mmt.api.archives.source
+      if (src.exists()) {
+        val lm = src.descendants.map(_.lastModified()).max
+        val url = URLEscaping.apply(remoteServer + "/getupdates?archive=" + a.id + "&timestamp=" + lm.toString)
+        val attempt = Try(io.Source.fromURL(url)("UTF8"))
+        available_updates.clear()
+        if (attempt.isSuccess) {
+          val res = attempt.get.toBuffer.mkString
+          Try({
+            val j = Try(JSON.parse(res))
+            j match {
+              case Success(o:JSONObject) =>
+                val ret = o.flatMap{ case (JSONString(dim),JSONArray(ls@_*)) =>
+                  Some((dim,ls.collect{case JSONString(f) => File(f)}.toList))
+                case _ => None
+                }
+                if (ret.nonEmpty) available_updates(a) = ret
+              case _ =>
+            }
+          })
+        }
+        // TODO
+      }
+    }
   }
 
   def searchI(q : String,tps:List[String]) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {

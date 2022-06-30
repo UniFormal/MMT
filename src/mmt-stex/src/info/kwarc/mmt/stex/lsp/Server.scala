@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.lsp
 import info.kwarc.mmt.api.archives.{Archive, BuildManager, RedirectableDimension, TrivialBuildManager}
 import info.kwarc.mmt.api.frontend.{Controller, Run}
 import info.kwarc.mmt.api.utils.time.Time
-import info.kwarc.mmt.api.utils.{File, URI}
+import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import info.kwarc.mmt.stex.parsing.STeXSuperficialParser
@@ -305,11 +305,22 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                  ServerResponse("Empty Document path","txt")
                case Some(d) =>
                  /*d.synchronized */ { d.html match {
-                   case Some(html) => ServerResponse(html.toString,"application/xhtml+xml")
+                   case Some(html) =>
+                     ServerResponse(html.get("body")()().head.toString,"text/html")
                    case None =>
                      ServerResponse("Document not yet built","txt")
                  } }
              }
+         }
+       case Some("fulldocument") =>
+         request.query match {
+           case "" =>
+             ServerResponse("Empty Document path","txt")
+           case s =>
+             var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+             html = html.replace("CONTENT_URL_PLACEHOLDER",(localServer / (":" + this.pathPrefix) / "document").toString + "?" + s )
+             html = html.replace("BASE_URL_PLACEHOLDER","")
+             ServerResponse(html, "text/html")
          }
        case _ =>
          ServerResponse("Unknown key","txt")

@@ -102,7 +102,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
         Future {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
             val pars = params(update(0,_))
-            val html = RusTeX.parse(f, pars)
+            val html = RusTeX.parse(f, pars,List("c_stex_module_"))
             update(0, "Parsing HTML... (2/2)")
             this.synchronized {
               val newhtml = HTMLParser(html)(parsingstate(pars.eh))
@@ -137,7 +137,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
             case t: Throwable =>
               client.log("Error: Server not running")
           }
-          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
+          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + uri // uri
           this.client.client.updateHTML(msg)
         }
       case _ =>
