@@ -10,10 +10,12 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
 
 import scala.collection.mutable
 
-class RuntimeEnvironment(val heap: Heap, val stack: execution.Stack, val rules: RuleSet) {
+class RuntimeEnvironment(val stack: execution.Stack, val rules: RuleSet) {
   val stdin = System.in
   val stdout = System.out
   lazy val execRules = rules.get(classOf[ExecutionRule])
+  private var instanceCounter = -1
+  def nextInstance = {instanceCounter += 1; instanceCounter}
 }
 
 class RuleBasedExecutor() extends Executor {

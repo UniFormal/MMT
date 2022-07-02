@@ -335,7 +335,6 @@ trait SolverAlgorithms {self: Solver =>
       }
       // solve an unknown
       val jS = j.copy(tm1 = tm1S, tm2 = tm2S)
-      Solver.breakAfter(139)
       val solved = solveEquality(jS,Nil) || solveEquality(jS.swap,Nil)
       if (solved) return true
 
