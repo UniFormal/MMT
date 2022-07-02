@@ -20,13 +20,11 @@ class RuntimeEnvironment(val stack: execution.Stack, val rules: RuleSet) {
 
 class RuleBasedExecutor() extends Executor {
   def apply(theory: Theory,context: Context, prog: Term) = {
-     val heap = new Heap(0, controller)
-     controller.add(heap)
      // val theory_context = theory.getInnerContext
      val stack = new execution.Stack
      stack.setTop(context)
      val rules = RuleSet.collectRules(controller, context)
-     val env = new RuntimeEnvironment(heap, stack, rules)
+     val env = new RuntimeEnvironment(stack, rules)
      val defined_rules = gather_definitions(theory,context, rules)
      // print(definedas)
      val runtime = new Runtime(controller, env,defined_rules, logPrefix)
