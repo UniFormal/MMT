@@ -15,7 +15,7 @@ class InstanceOfTheory(env: RuntimeEnvironment, theory: Theory) extends
   val id = name.last.toString
   override def toString = s"instance $id of ${theory.path}"
 
-  def get(p: GlobalName) : Term = {
+  def get(p: GlobalName) : Option[Term] = {
     val name = p.toLocalName
     getO(name) match {
       case Some(c: Constant) =>
