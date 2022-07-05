@@ -13,14 +13,6 @@ trait Msg {
   */
 case class HasError(s : String ) extends Msg {
   override def combineMsg(m: Msg): Msg = this
-
-    /*m match {
-    case HasError(st) => HasError(s ++ "\n" ++ st)
-    case WarningMsg(st) => HasError(s ++ "\n" ++ st)
-    case NoMsg() => this
-  }
-
-     */
 }
 
 /**

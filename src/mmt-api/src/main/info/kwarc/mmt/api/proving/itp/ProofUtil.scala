@@ -32,14 +32,33 @@ object ProofUtil {
     bpres.asString(o)
   }
 
-
+  /**
+    * fucntion to infer the type of a term without potentially polluting the main solver
+    * @param t term to infer the type of
+    * @param uks unknowns that occurre within t
+    * @param currctx the surrounding local context (usually the local proof context)
+    * @param hist history needed for the infer function to write to
+    * @param s the solver to copy
+    * @return the potentially inferred type , solved unknowns, errors and remaining/unsolved constraints
+    */
   def standAloneInfer(t : Term , uks : Context , currctx : Context , hist : History, s : Solver) = {
+    //needed to make a new solver, using null as judgment is an awkward but working workaround
     val cu = new CheckingUnit(None , currctx ,uks , null)
     val exslv = new Solver(s.controller , cu , s.rules)
     val res = exslv.inferType(t , false)(Stack(Context.empty) ,hist)
     (res , exslv.getPartialSolution , exslv.getErrors , exslv.getConstraints)
   }
 
+  /**
+    * interface for unifying two terms under a given context
+    * @param ctx local context
+    * @param goal term to match ageinst
+    * @param params the unification variables
+    * @param query the term that contains params und sall be unified with goal
+    * @param hist
+    * @param s
+    * @return
+    */
   def unify(ctx : Context , goal : Term , params : Context , query : Term , hist : History , s : Solver)  = {
 
     val (newparams , subparams) = Context.makeFresh(params , ctx.variables.map(_.name).toList)
@@ -50,21 +69,10 @@ object ProofUtil {
     ures && unifier.getConstraints.isEmpty && unifier.getErrors.isEmpty match {
       case false => None
       case true => {
-        // val res = unifier.dryRun(false, ((p : Unit) => true))(() : Unit)
         Some(Substitution(unifier.getPartialSolution.toPartialSubstitution.map(x => {val tmp = revert.find(p => p._1 == x.name).get ; x.copy(name = tmp._2) }) : _ *))
       }
     }
   }
 
-/*
-  def executeAndReset[A](a: => A, ip : InteractiveProof): A = {
-    val tmps = ip.slvr.state
- //   saveCurrState()
-    val res = a
-  //  undoState()
 
-    res
-  }
-
- */
 }

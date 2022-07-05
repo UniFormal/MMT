@@ -60,16 +60,7 @@ object ProofGenerator {
     }
 
     setupNewProof(s.controller , mp , s.checkingUnit.component , tp)
- /*   val p = new Proof(tp, ctx , tp)
-    p.proofTerm = OMV(LocalName("", "goal"))
-    p.proofTermAlt = OMV(LocalName("", "goal"))
-    // s.addUnknowns(Context(VarDecl(LocalName("", "goal"), tp, null)) , None)
-    val tmp = new InteractiveProof(s, p, mp)
-    tmp.slvr.addUnknowns(Context(VarDecl(LocalName("", "goal"), tp, null)) , None)
-    Some(tmp)
 
-
-  */
 
   }
 }

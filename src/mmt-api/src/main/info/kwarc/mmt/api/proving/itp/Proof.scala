@@ -135,9 +135,7 @@ class Proof(t : Term, globalContext : Context , igoal : Term ) {
     * @return
     */
   def updateUnknowns(s : Solver): Msg = {
-    // get all solved variables. This will get all variables solved so far in this proof
     val sols = s.getSolvedVariables
-    // get all unknowns
     val ps = s.getPartialSolution
     var nrem = 0
     for(i <- currentState.indices){

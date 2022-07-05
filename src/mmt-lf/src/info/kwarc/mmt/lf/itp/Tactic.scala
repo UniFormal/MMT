@@ -16,38 +16,3 @@ trait Tactic {
 
 
 }
-
-
-trait MetaTactic extends Tactic {
-  def execute(p : Proof , ip : InteractiveProof) : Msg
-}
-
-trait ConcreteTactic extends Tactic {
-
-
-}
-
-trait ProofChangingTactic extends ConcreteTactic {
-  abstract class ParamProofStateGeneration
-  abstract class ReturnProofStateGeneration
-
-  var cppsg : Option[ParamProofStateGeneration] = None
-  var crpsg : Option[ParamProofStateGeneration] = None
-
-  def genNewProofState() : Msg
-}
-
-trait TermGeneratingTactic extends ProofChangingTactic {
-  abstract class ParamTermGeneration
-  abstract class ReturnTermGeneration
-
-  var cptg : Option[ParamTermGeneration] = None
-  var crtg : Option[ReturnTermGeneration] = None
-
-  def genTerm() : Msg
-
-}
-
-
-
-

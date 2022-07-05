@@ -14,7 +14,7 @@ import scala.collection.mutable.ListBuffer
   */
 case class Goal(g : Term , ctx : Context , ukname : LocalName) {
 
-  // var gname : LocalName = null
+
 
   /**
     * gives a string representation of all of the (sub)goals
@@ -46,7 +46,6 @@ case class Goal(g : Term , ctx : Context , ukname : LocalName) {
     */
   def copy: Goal = {
     val tmpg = Goal(g: Term, ctx, ukname)
-    //  tmpg.gname = gname.copy()
     tmpg
   }
 

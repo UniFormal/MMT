@@ -1,6 +1,6 @@
 package info.kwarc.mmt.lf.itp
 
-/** this class extends the Exeptions with a custom Exeption signaling an error in the prover
+/** this class extends the Exceptions with a custom Exception signaling an error in the prover
   *
   * @param s the errormessage
   */

@@ -46,21 +46,25 @@ class InteractiveProof(s : Solver , p : Proof , mpath : Option[MPath],  generate
   def executeStep(t : Tactic): Msg ={
     // execute the tactic
     val ret = try {
+      // execute the tactic
       t.applyToProof(pr, this)
     }catch
     {
       case e => HasError(e.getStackTrace.mkString("\n"))
     }
     val dbg1 = ()
+    // check if testrun, if so , ignore the generated proof term (or avoid its generation all together)
     if(testrun) {
       ret match {
-        case HasError(s) => undo ; return ret
+        case HasError(s) => undo ; return ret // if the execution of the tactic did cause an error, return to the last valid solver state
         case _ =>
       }
+      // if the solver encoutered errors then undo the last tactic
       val ret1 = if (slvr.getErrors.nonEmpty) {
         val errs = slvr.getErrors; undo; return ret.combineMsg(HasError(errs.mkString("\n")))
       } else ret
 
+      // a fully executed tactic must not leave unsolved constraints behind (sometimes the solver )
       val ret2 = if (slvr.getConstraints.nonEmpty) {
         val msg = slvr.getConstraints.toString(); undo; return ret1.combineMsg(HasError("could not solve constrains " + msg))
       } else ret1
@@ -92,6 +96,7 @@ class InteractiveProof(s : Solver , p : Proof , mpath : Option[MPath],  generate
         val msg = slvr.getConstraints.toString(); undo; return ret1.combineMsg(HasError("could not solve constrains " + msg))
       } else ret1
       val ukmsg0 = pr.updateUnknowns(slvr).combineMsg(ret2)
+      // is no goals remain , check the validity of the generated proof term
       val ukmsg1 = if (pr.currentState.isEmpty) {
         val bl = slvr.check(Typing(Stack(slvr.checkingUnit.context), pr.proofTermAlt, pr.initGoal))(hist)
         if (bl && slvr.getErrors.isEmpty && slvr.getUnsolvedVariables.isEmpty) {
@@ -100,6 +105,7 @@ class InteractiveProof(s : Solver , p : Proof , mpath : Option[MPath],  generate
           HasError("solution doesn't check out").combineMsg(ukmsg0)
         }
       } else ukmsg0
+      //TODO: remove redundant code
       val ukmsg2 = if (pr.currentState.isEmpty) {
         val bl = slvr.check(Typing(Stack(slvr.checkingUnit.context), pr.proofTerm, pr.initGoal))(hist)
         if (bl && slvr.getErrors.isEmpty && slvr.getUnsolvedVariables.isEmpty) {
@@ -108,8 +114,10 @@ class InteractiveProof(s : Solver , p : Proof , mpath : Option[MPath],  generate
           HasError("solution doesn't check out").combineMsg(ukmsg1)
         }
       } else ukmsg1
+      // due to the way MMT works it is advisable to run slvr.applyMain
       val ukmsg = if (pr.currentState.isEmpty) {
         val bl = slvr.applyMain
+        // if after applyMain no errors or constraints remaind , the solution is valid
         if (bl && slvr.getErrors.isEmpty && slvr.getUnsolvedVariables.isEmpty) {
           ukmsg2
         } else {
@@ -118,6 +126,7 @@ class InteractiveProof(s : Solver , p : Proof , mpath : Option[MPath],  generate
       } else ukmsg2
       ukmsg match {
         case NoMsg() | WarningMsg(_) => ukmsg
+        // in case an error was encountered in applyMain undo the last tactic
         case HasError(_) => undo; ukmsg
       }
     }
@@ -127,9 +136,13 @@ class InteractiveProof(s : Solver , p : Proof , mpath : Option[MPath],  generate
     * perform an undo step
     */
   def undo : Unit ={
+    // if the list of saved proof states is empty it is not possible to do an undo step (i.e. the proof is at the beginning or back at it again)
+    // not to be confused with the MMT history
+    //TODO: rename history
     if (history.isEmpty) return
     val prold = history.remove(0)
     pr = prold
+    // set the solver back to its previous state
     slvr.undoCurrentState()
   }
 

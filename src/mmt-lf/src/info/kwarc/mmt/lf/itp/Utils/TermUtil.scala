@@ -5,6 +5,10 @@ import info.kwarc.mmt.api.objects.Obj.getConstants
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.{Apply, ApplySpine, Arrow, Pi}
 
+
+/**
+  * use the TermUtil in latin2
+  */
 object TermUtil {
   def getTerm(tt: Term, ninit: Int): (Term => Term, Term) = {
     val currprevini =  (x: Term) => x
@@ -150,34 +154,6 @@ object TermUtil {
 
 
 
-/*
-  def genDepsSmartWithExternalBinders(ttt: Term , extbind : List[(LocalName, Term)]): (List[Set[(LocalName, Term, Either[Int, ExternalBinder])]] , List[(LocalName,Term,ExternalBinder)]) = {
-    def loopGenDepsSmartWithExternalBinders(tt: Term, vars: Set[(LocalName, Term, Either[Int,ExternalBinder ])], pos: Int): List[Set[(LocalName, Term, Either[Int,ExternalBinder ])]] = tt match {
-      case Arrow(h, tl) => {
-        val tmp = loopGenDepsSmartWithExternalBinders(tl, vars, pos + 1)
-        vars.filter(x => h.freeVars.contains(x._1)) :: tmp
-      }
-      case Pi(nm, tp, bd) => {
-        val newelm: (LocalName, Term, Either[Int,ExternalBinder ]) = (nm, tp, Left(pos) : Either[Int, ExternalBinder ])
-        val newvars = vars.filter(p => p._1 != nm)
-        val tmp = loopGenDepsSmartWithExternalBinders(bd, newvars + newelm, pos + 1)
-        vars.filter(x => tp.freeVars.contains(x._1)) :: tmp
-      }
-      case trm => List(vars.filter(v => trm.freeVars.contains(v)))
-    }
-    val actualexternalbinders = extbind.foldLeft(List[(LocalName,Term, Either[Int,ExternalBinder])]() , 0)((f ,curr) => ((curr._1 , curr._2 , Right(new ExternalBinder(f._2))) :: f._1 , f._2 + 1))._1.filter(ff => ttt.freeVars.contains(ff._1))
-    val res = loopGenDepsSmartWithExternalBinders(ttt, Set.from(actualexternalbinders.foldLeft(List[(LocalName,Term, Either[Int,ExternalBinder])]() , 0)((f ,curr) => ((curr._1 , curr._2 , Right(new ExternalBinder(f._2))) :: f._1 , f._2 + 1))._1 ), 0)
-    ( res , actualexternalbinders.map(pp => pp.copy(_3 = pp._3.asInstanceOf[Right].value.asInstanceOf[ExternalBinder])) )
-  }
-
- */
-/*
-  def getHyps(t : Term) : List[Term] = {
-
-  }
-
-
- */
   def getConclusion(t : Term) : Term = t match {
     case Arrow(h , tl) => getConclusion(tl)
     case Pi(nm , tp , bd) => getConclusion(bd)

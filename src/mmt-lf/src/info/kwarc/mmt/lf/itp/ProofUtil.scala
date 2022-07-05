@@ -35,7 +35,9 @@ object ProofUtil {
 
 
   /**
-    * get all the `LocalName`s of bound vairables in the term `t0`
+    * get all the `LocalName`s of bound vairables in the term `t0`. this function was made early in development when
+    * the author was not aware of the [[Traverser]] trait and object
+    * TODO: reimplement using the Traverser trait
     * @param t0 the term to be searched
     * @param lss list containing `LocalName`
     * @return
@@ -67,6 +69,7 @@ object ProofUtil {
 
   /**
     * just returns the first element in ls that satisfies p
+    * I don't know why did not use "find"
     * @param ls
     * @param p
     * @tparam A
@@ -81,6 +84,9 @@ object ProofUtil {
 
   /**
     * a substitute function that can replace whole terms `old0` (not just OMVs) by
+    * this function was made early in development when
+    * the author was not aware of the [[Traverser]] trait and object
+    * TODO: reimplement using the Traverser trait or remove this function
     * @param t0 term which contains the to be replaced (sub)term
     * @param old0 term to be replaced
     * @param newt0 term that replaces `old0`
@@ -122,10 +128,10 @@ object ProofUtil {
 
   /**
     * traverser used for substitution
-    * @param old
-    * @param newt
-    * @param rel
-    * @param pos
+    * @param old term to replace
+    * @param newt replacement for "old"
+    * @param rel a function that states whether two terms are equal under a given context (usually used to pass something like (t,t0,lctx) => solver.check(Equality(lctx , t , t0))
+    * @param pos optionally indicates at which position to do the substitution in case there a multiple viable positoins (counts in a depth first manner)
     */
   class SubTraverser(old : Term , newt : Term, rel : (Term , Term, Context) => Boolean , pos : Option[Int]) extends  StatelessTraverser {
     var currpos = pos
@@ -204,7 +210,7 @@ object ProofUtil {
   }
 
   /**
-    * adds dependencies to ln by applying ctx to ln
+    * adds dependencies to ln by applying ctx to ln (i.e. turing it to an OMA)
     * @param ln
     * @param ctx
     */
@@ -222,7 +228,7 @@ object ProofUtil {
   }
 
   /**
-    * removes depdendencies from unknowns
+    * removes dependencies from unknowns
     * @param ctx
     */
   class Appremover(ctx : Context) extends StatelessTraverser {
@@ -234,7 +240,7 @@ object ProofUtil {
 
   /**
     * check if t contains a hole
-    * @param t
+    * @param t term to check for holes
     * @return
     */
   def containsMissing(t : Term): Boolean = t match {
@@ -252,17 +258,41 @@ object ProofUtil {
     case OML(name, tp, df, nt, featureOpt) => ???
   }
 
-
+  /**
+    * apply a list of terms (applicants) to the term "to" under the local context of "ctx"
+    * @param ctx
+    * @param applicants
+    * @param to
+    * @param hist
+    * @param s
+    * @return
+    */
   def simpleApplyTermToTerm(ctx : Context, applicants : List[Term] , to : Term, hist : History , s : Solver): Option[(List[Goal] , Term , Term)] ={
+    /**
+      * helper class used to represent a [[Term]] in a, for proving, more handelable way
+      */
     abstract class Param {
       def getTp : Term
     }
+    /**
+      * represents a Pi
+      * @param nm name of the bound variable
+      * @param tp type of the bound variable
+      */
     case class PPi(nm : LocalName, tp : Term) extends Param {
       override def getTp: Term = tp
     }
+    /**
+      * represents the immediate lhs of an arrow as in  lhs -> rhs. f.ex in  a -> b -> the lhs of the first arrow is a and the lhs of the second one is b not a -> b
+      * @param tp the lhs of the arrow
+      */
     case class PArr(tp : Term) extends Param {
       override def getTp: Term = tp
     }
+    /**
+      * basically represents anything that is not a Pi or an Arrow
+      * @param tp
+      */
     case class Const(tp  : Term) extends Param {
       override def getTp: Term = tp
     }
@@ -271,21 +301,17 @@ object ProofUtil {
     val subs = MMap[Int , Option[Term]]()
 
     val totp0 = s.inferType(to)(Stack(ctx), hist).getOrElse(return None)
-    //   val apptp = inferType(applicant)(Stack(ctx), hist).getOrElse(return None)
     val apptps0 = applicants.map(x => s.inferType(x)(Stack(ctx), hist).getOrElse(return None))
     val apptps = applicants.zip(apptps0)
 
 
     class AlphaRename() extends StatelessTraverser {
-      // val subs = MMap[LocalName , LocalName]()
 
       override def apply(t: Term, con: Context): Term = t match {
         case Arrow(hd , bd) => Arrow(hd , apply(bd , con))
         case Pi(nm , tp , bd) => {
           if (con.variables.exists(p => p.name == nm)){
             val (newnm , sb) = Context.pickFresh(con, nm)
-            // if (! subs.contains(nm)) subs(nm) = newnm
-            //       val sb = Substitution(Sub(nm , OMV(newnm)))
             Pi(newnm , tp , apply(bd ^ sb , con ++ VarDecl(newnm)))
           }else {
             t
@@ -300,7 +326,12 @@ object ProofUtil {
 
     val totp = new AlphaRename()(totp0 , ctx)
 
-
+    /**
+      * returns the  length of the term t (starting with initial value pos)
+      * @param t
+      * @param pos inital value
+      * @return
+      */
     def splitTerm(t  : Term, pos : Int) : Int = t match {
       case Arrow(hd , bd) => {
         terms(pos) = PArr(hd)
@@ -314,7 +345,11 @@ object ProofUtil {
     }
 
 
-
+    /**
+      * turn a list of [[Param]] into a proper term
+      * @param ls
+      * @return
+      */
     def genTerm(ls : List[Param]):Term = ls match {
       case List(Const(tp)) => tp
       case PArr(tp)::xs => Arrow(tp ,genTerm(xs))
@@ -323,7 +358,6 @@ object ProofUtil {
 
 
 
-    //  val maxpos = splitTerm(totp , 0)
     val initlen = splitTerm(totp, 0)
     def maxpos = terms.toList.length - 1
 
@@ -342,12 +376,16 @@ object ProofUtil {
         case _ =>{ terms(pos) = Const(t)}
       }
     }
+
+
     def subfrom(pos : Int , s: Substitution) = {
       val tmp = terms.filter(p => p._1 >= pos).toList
       val tmp0 = tmp.sortBy(x => x._1).map(x => x._2)
       val t = genTerm(tmp0) ^ s
       splitTermA(t , pos)
     }
+
+
 
     def preparesubs(ls : List[(Int,Param)]): Unit  = ls match {
       case Nil =>
@@ -367,7 +405,6 @@ object ProofUtil {
       lazy val res : Option[Substitution] = if (app.isEmpty) None else {
         val tmp = unifyA(ctx  , app.head._2 , Context(vars.toList.map(x => VarDecl(n = x._1, tp = x._2._1)) : _*) , tm.getTp, hist,  s)
         tmp
-        // termMatcher(ctx  , app.head._2 , Context(vars.toList.map(x => VarDecl(n = x._1, tp = x._2._1)) : _*) , tm.getTp)
       }
       (app , tm , res) match {
         case (Nil , PPi(_,_), _) => false
@@ -375,9 +412,6 @@ object ProofUtil {
           val newvars = vars + (nm -> (tp, pos))
           traverse(pos + 1, app, newvars)
         }
-        //     case ((app0)::xs, PPi(nm, tp) , Some((sb, ct , tt , false))) => {
-        //       traverse(pos + 1, app , vars.updated(nm , (tp , pos)))
-        //     }
         case ((applicant,app0)::xs, PPi(nm, tp) , Some((sb))) => {
           sb.foreach(f => {
             var (_ , fpos) = vars(f.name)
@@ -395,9 +429,6 @@ object ProofUtil {
         case (app0::xs , PArr(tp) , None) => {
           traverse(pos + 1 , app , vars)
         }
-        //     case (app0::xs , PArr(tp) , Some((_ , _ , _ , false))) => {
-        //       traverse(pos + 1 , app , vars)
-        //     }
         case ((applicant, app0)::xs , PArr(tp) , Some((sb ))) => {
           sb.foreach(f => {
             var (_ , fpos) = vars(f.name)
@@ -406,7 +437,6 @@ object ProofUtil {
             subs(fpos) = Some(f.target)
           })
           subs(pos) = Some(applicant)
-          //      subs.forall(p => p._2.isDefined)
           traverse(pos + 1 , xs , vars)
         }
         case _ => subs.forall(p => p._2.isDefined)
@@ -511,6 +541,15 @@ object ProofUtil {
     Some(result0)
   }
 
+  /**
+    * does type checking without polluting the original solver
+    * @param t target term
+    * @param tp type to check against
+    * @param uks possible unknowns encountered during type checking
+    * @param currctx the current context
+    * @param s the solver to base the type check upon
+    * @return a boolen which indicates whether t is of type tp and additionally solved unknowns
+    */
   def standAloneTypeCheck(t : Term , tp : Term , uks : Context , currctx : Context, s : Solver) = {
     val cu = new CheckingUnit(None , currctx ,uks , Typing(Stack(currctx), t, tp , Some(OfType.path)))
     val exslv = new Solver(s.controller , cu , s.rules)
@@ -542,6 +581,14 @@ object ProofUtil {
     }
   }
 
+  /**
+    * a dry run that, unlike the one found in [[Solver]] does not throw an exception when encountering an error
+    * this is needed for solving unknowns which have a non unique solution
+    * @param s solve used for saving and restoring the solver state
+    * @param a target computation to execute during the dry run
+    * @tparam A type of the result of the dry run
+    * @return result of the dry run
+    */
   def dryRunAllowErrors[A](s : Solver)(a: => A): A = {
     s.saveCurrentState()
     val res = a

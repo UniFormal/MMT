@@ -12,7 +12,8 @@ import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharArrayReader
 
 /**
-  * almost the same as [[TacticsParser]] but with the slight modification that it can be extended without specifying the proof manager [[InteractiveProof]]
+  * almost the same as [[TacticsParser]] but with the slight modification so that it can be extended without specifying the proof manager [[InteractiveProof]]
+  * this is needed for the loadable tactics since they need to specify a parser whithout independently of a concrete [[InteractiveProof]]
   */
 trait TacticsParserA extends JavaTokenParsers{
   val hypName: Regex = "([a-z]|[A-Z])+([a-z]|[A-Z]|[0-9]|[/_])*".r

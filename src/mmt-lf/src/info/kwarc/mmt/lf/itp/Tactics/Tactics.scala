@@ -20,8 +20,10 @@ case class assume(hs : Option[String]) extends Tactic {
     g match {
       case Arrow(h, t) => {
         val old = p.currentState.remove(0)
+        // generate a new locally unique name for the hypothesis
         val newname = ProofUtil.pickFreshHypName(hs.getOrElse("h") , ctx)
         val newh = VarDecl(LocalName(newname) ,tp = h)
+        // insert the updated goal into the list of (sub-)goals, also generate a new unique name for the unknown that represents the goal in the proof term
         p.currentState.insert(0, Goal(t ,  ctx ++ newh, ip.pr.getNewGoalName()) )
         if (!ip.testrun) genTerm(old , newname , h , t , ip)
         NoMsg()
@@ -40,9 +42,14 @@ case class assume(hs : Option[String]) extends Tactic {
     */
   def genTerm( old : Goal , s : String, tp : Term ,bd : Term  ,ip : InteractiveProof) = {
     val g : Goal = ip.pr.getCurrentGoal
+    // add the new unknown to the solver
+    //its type has to be Free(context, actual type) because the first argument of Free indicates what locally bound names may occure in the solution of the unknown
     ip.slvr.addUnknowns(Context(VarDecl(LocalName(g.ukname) , Free(g.ctx  , bd) , null)) , None)
+    // an assumption is represented as a lambda who binds a variable that has the name of the newly introduced hypothesis
     val newl = Lambda( Context(VarDecl(LocalName(s) , tp ,null ))   , g.makeUnknown(ip.slvr , g.ukname))
+    // solve the old unknown
     ip.slvr.solve(old.ukname , Free( old.ctx ,newl)) (ip.hist)
+    // since the interactive proof tracks its own version of the proof term , it has to be updated as well
     ip.pr.updateGoalProofTerm(old.ukname , Lambda( Context(VarDecl(LocalName(s) , tp ,null ))   , OMV(g.ukname)))
   }
 }
@@ -55,9 +62,12 @@ case class assume(hs : Option[String]) extends Tactic {
 case class use(t : Term, uks : Context) extends Tactic {
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
     val sol = ip.slvr.getSolvedVariables
+    // the proposed solution must not contain unknowns
     if (uks.variables.exists(p => ! sol.contains(p.name))) return HasError("the term" + ip.slvr.presentObj(t) + " must not contain unkowns/holes")
+    // check if the proposed solution is indeed a solution for the current goal
     val res = ip.slvr.check(Typing(Stack(p.getCurrCtx) , t , p.getCurrentConc))(ip.hist)
     if (res) {
+      // remove the currently focused goal (it is solved , therefore it can be removed)
       val old  = p.currentState.remove(0)
       if(!ip.testrun) genTerm(old, t , ip)
       NoMsg()
@@ -67,7 +77,7 @@ case class use(t : Term, uks : Context) extends Tactic {
   }
 
   /**
-    * updates the proof terms
+    * updates the proof terms. Just insert the solution term as solution for the unknown
     * @param old old goal
     * @param t
     * @param ip
@@ -79,7 +89,7 @@ case class use(t : Term, uks : Context) extends Tactic {
 }
 
 /**
-  * adds hypothesis to local goal context
+  * adds hypothesis to local goal context which has the type of tup._1 (not tup._1 itself)
   * @param h hypothesis name
   * @param tup tuple consisting of the term to add to the context and the unknown it introduces
   */
@@ -87,14 +97,14 @@ case class let(h : String , tup : (Term,Context) ) extends Tactic {
   val (t , unk) = tup
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
     val currg@Goal(g , ctx , ukn) = p.currentState.head
-    //  val sub = Substitution(unk.map(v => Sub(v.name, currg.makeUnknown(ip.slvr , (v.name)))) : _*)
-    //  val newt = t.substitute(sub)(PlainSubstitutionApplier)
+    // get type of the proposed addition
     val newhtp0 = ip.slvr.inferType(t , false)(Stack(ctx) , ip.hist)
     if (newhtp0.isEmpty) return HasError("error in let tactic: Could not infer the type of " + t.toString)
     val old = p.currentState.remove(0)
     val newh  = ProofUtil.pickFreshHypName(h , ctx)
     //   val newunk : Substitution = Substitution(unk.map(v => Sub(v.name, old.makeUnknown(ip.slvr , (v.name)))) : _*)
     val newhtp = newhtp0.get // .substitute(newunk)(PlainSubstitutionApplier)
+    // update the curently focused goal so that it's local context contains the newly added hypothessis
     p.currentState.insert(0,Goal(g,  ctx ++ VarDecl(LocalName(newh) ,  newhtp )  , ip.pr.getNewGoalName()))
     genTerm(old, LocalName(newh), newhtp, t , ip)
     ip.pr.addukdeps(unk, ukn, LocalName(newh))
@@ -114,6 +124,7 @@ case class let(h : String , tup : (Term,Context) ) extends Tactic {
     //   val revisedtp = unk.variables.foldLeft(tp)((res ,v) => res.substitute(Sub(v.name, Free(old.ctx , OMV(v.name))))(PlainSubstitutionApplier))
     val g = ip.pr.getCurrentGoal
     val gname = ip.pr.getCurrentGoal.ukname
+    // a let is represented by a lambda that binds a variable with name and type of the let binding
     val newlam = Apply (Lambda(hname , tp ,  g.makeUnknown(ip.slvr , gname) )  , ref)
     ip.slvr.addUnknowns(Context(VarDecl(gname , Free(g.ctx , g.g) , null)) , None)
     ip.slvr.solve(old.ukname , Free(old.ctx , newlam))(ip.hist)
@@ -166,6 +177,7 @@ case class applyT(h : String , lstup : List[(Term, Context)] ) extends Tactic {
     */
   def genTerm(old : Goal , ln : LocalName, tp : Term , ctx : List[Term] , ip : InteractiveProof) = {
     val g = ip.pr.getCurrentGoal
+    // the updated hypothesis is represented by a lambda that shodows tha old hypothesis before the apply
     val newLam = Apply(Lambda( ln , tp , g.makeUnknown(ip.slvr , g.ukname)) , (ApplySpine(OMV(ln) ,  ctx : _*)))
     val newLamA = Apply(Lambda( ln , tp ,  OMV(g.ukname)) , (ApplySpine(OMV(ln) ,  ctx : _*)))
     ip.slvr.addUnknowns(VarDecl(g.ukname , Free(g.ctx, g.g) , null) , None)
@@ -176,7 +188,8 @@ case class applyT(h : String , lstup : List[(Term, Context)] ) extends Tactic {
 
 
 /**
-  * performs a backward step
+  * performs a backward step i.e. applies a term to the conclusion. f.ex. let T a term of type a -> b -> c and c the goal
+  * then the backward tactic, when called with T applies T to the goal an generates the two new goal a and b
   * @param tup
   */
 case class backward(tup : (Term, Context)) extends Tactic {
@@ -210,6 +223,15 @@ case class backward(tup : (Term, Context)) extends Tactic {
     //   HasError("could not unify goal with conclusion")
   }
 
+  /**
+    *
+    * @param old
+    * @param t
+    * @param params
+    * @param newgls
+    * @param ip
+    * @return
+    */
   def genTerm(old : Goal , t : Term, params : List[(VarDecl , Option[Goal])] , newgls : List[Goal] , ip : InteractiveProof )  = {
 
     val newlam = ApplySpine( t , params.map(x => if (x._1.df.isEmpty) {old.makeUnknown(ip.slvr , x._2.get.ukname)} else {x._1.df.get} ) : _* )
@@ -224,8 +246,8 @@ case class backward(tup : (Term, Context)) extends Tactic {
 
 
 /**
-  * introduce a pi to the local context
-  * @param hs
+  * introduce a pi to the local context, basically works like assume but works also for Pis (also for arrows), see assume for more information
+  * @param hs the name of the newly introduced hypothesis
   */
 case class fix(hs : Option[String]) extends Tactic {
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
@@ -246,6 +268,14 @@ case class fix(hs : Option[String]) extends Tactic {
       case _ => HasError("fix has to be applied to a goal of the form `{a} b` or  `a -> b`")
     }
   }
+
+  /**
+    *
+    * @param old
+    * @param s
+    * @param tp
+    * @param ip
+    */
   def genTerm( old : Goal , s : String, tp : Term  ,ip : InteractiveProof) = {
     val g : Goal = ip.pr.getCurrentGoal
     ip.slvr.addUnknowns(Context(VarDecl(LocalName(g.ukname) , Free(g.ctx  , g.g) , null)) , None)
@@ -257,8 +287,8 @@ case class fix(hs : Option[String]) extends Tactic {
 }
 
 /**
-  * introduce multiple PIs to the local context
-  * @param hss0
+  * introduce multiple PIs to the local context, see fix (or assume ) for more information
+  * @param hss0 name(s) of the newly introduced hypothesis
   */
 case class fixs(hss0 : Option[List[String]]) extends Tactic {
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
@@ -291,22 +321,33 @@ case class fixs(hss0 : Option[List[String]]) extends Tactic {
 
 
 /**
-  * start a new subproof
-  * @param h
-  * @param tup
+  * start a new subproof, once proven it is added under the name specified in parameter h to the local context
+  * @param h the name the newly introduced hypothessi
+  * @param tup tup._1 the term to be proven, tup._2 additional unknowns encountered during paring
   */
 case class subproof(h : String , tup : (Term, Context)) extends Tactic{
   val (t, unk) = tup
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
     val Goal(g, ctx, uks) = p.getCurrentGoal
+    // name for the new hypothesis for when the new subproof is proven and added to the local context of the original goal
     val newh = ProofUtil.pickFreshHypName(h ,p.getCurrCtx)
     val old = p.getCurrentGoal
+    // update the original goal with the new hypothesis (the new subgoal does not need to be proven before it is added to the local context but has to be proven eventually)
     p.update(Goal(g, ctx ++ VarDecl(LocalName(newh) , None , Some(t) , None,  None), ip.pr.getNewGoalName()))
+    // add the new subgoal to the list of goals
     p.currentState.insert(0 , Goal(t,  ctx, ip.pr.getNewGoalName()))
     genTerm( old , p.currentState(1)  , LocalName(newh) , t , ip )
     NoMsg()
   }
 
+  /**
+    * a subproof is represented as
+    * @param old
+    * @param updatedgoal
+    * @param ln
+    * @param tp
+    * @param ip
+    */
   def genTerm(old : Goal , updatedgoal : Goal , ln: LocalName ,tp : Term ,  ip :InteractiveProof) = {
     val g  = ip.pr.getCurrentGoal
     val newlamA = Apply(Lambda( ln , tp , OMV(updatedgoal.ukname) )  , OMV(g.ukname))
@@ -335,41 +376,14 @@ case class prefer(i : Int) extends Tactic{
   }
 }
 
-case class repeat(n : Option[Int] , t : Tactic)  extends Tactic {
-  override def applyToProof(p: Proof, ip: InteractiveProof): Msg = ???
-}
-
-
-case class applyto(n : List[Int] , t : Tactic) extends Tactic{
-  override def applyToProof(p: Proof, ip: InteractiveProof): Msg = ???
-}
-
-case class revert(h : List[String]) extends Tactic {
-  override def applyToProof(p: Proof, ip: InteractiveProof): Msg = ???
-}
-
-case class autostep() {
-
-}
-
-/*
-case class undo() extends Tactic {
-  override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
-    if(ip.history.isEmpty) {
-      WarningMsg("no undo possible")
-    }else{
-      ip.undo
-      NoMsg()
-    }
-  }
-}
-*/
 
 /**
   * unfolds a definiition
+  * preferrably use the new implementation of unfold found in latin2
   * @param h
   * @param target
-  * @param pos
+  * @param pos in case there are multiple possible subterms that can be unfolded the pos parameter specifies which one to unfold
+  *            if not specified, all occurences of h will be unfold
   */
 case class unfold(h : String, target : Option[String] , pos : Option[String]) extends  Tactic{
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
@@ -417,7 +431,8 @@ case class unfold(h : String, target : Option[String] , pos : Option[String]) ex
 
 /**
   * delete a hypothesis from the local context
-  * @param h
+  * should checks whether a to be deleted hypothesis is used in other hyothesis (if so, it can not be deleted)
+  * @param h the name of the hypothesis to be deleted
   */
 case class delete(h : String) extends Tactic {
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
@@ -425,6 +440,7 @@ case class delete(h : String) extends Tactic {
     val gtmp = g.freeVars
     if (gtmp.contains(LocalName(h))) return HasError("hypothesis " + h + " is used in conclusion")
     val tmpctx = gctx.filter(p => p.name != LocalName(h))
+    // check if the to be deleted hypothesis is used elsewhere
     tmpctx.foreach(p => {
       val dff = p.df.map(t => t.freeVars).getOrElse(Nil)
       val tpf = p.tp.map(t => t.freeVars).getOrElse(Nil)
@@ -432,64 +448,22 @@ case class delete(h : String) extends Tactic {
       if (tpf.contains(LocalName(h))) return HasError(h + " is used in type of " + p.name)
     })
     val newgname = p.goalcounter
+    // just recycle the old name for the unknownn
     val newg = Goal(g, Context(tmpctx : _*), guks)
     p.update(newg)
     genTerm()
     NoMsg()
   }
 
-
+  // deleting has no lambda representation as far as I know
   def genTerm() = {
 
   }
 }
-/*
-case class Try(t : Tactic) extends Tactic  {
-  override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
-    try {
-      ip.saveCurrState
-      val res = t.applyToProof(p,ip)
-      res match {
-        case NoMsg() => NoMsg()
-        case WarningMsg(_) => res
-        case HasError(s) => {
-          ip.undo
-          WarningMsg(s)
-        }
-      }
-    }
-    catch {
-      case e => {
-        ip.undo
-        WarningMsg(e.toString)
-      }
-    }
-  }
-}
 
- */
-
-/*
-
-case class setunkown(h : String , tup : ( Term, Context)) extends Tactic {
-  val (t, _)  = tup
-  override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
-    val g@Goal(gl , ctx , uks) = p.getCurrentGoal
-    val uk = uks.filter(x => x.ln.name.toString == h)
-    uk match {
-      case Nil => WarningMsg("setunkown: no such unkown " + h)
-      case (x::Nil) => {
-        val tmp = ip.slvr.check(Equality(Stack(ip.pr.getCompleteCtx) ,x.toUnkown  , t, None))(ip.hist)
-        if (tmp) {NoMsg()} else {HasError("setunkown: could not set " + h + " to " + t.toString)}
-      }
-    }
-  }
-}
-
-*/
 
 /**
-  * skip the currently focused proof
+  * skip the currently focused proof (i.e. remove the currently focused goal from the goal list)
   */
 case class ignore() extends Tactic {
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
@@ -498,7 +472,7 @@ case class ignore() extends Tactic {
   }
 }
 
-//TODO: replace with a tactic that only combines two tactics. also due to time constraints it was necessary that [[multiTactic]] does parsing which should not be the case
+//TODO: replace with a tactic that only combines two tactics (and then chain multiple of these together). also due to time constraints it was necessary that [[multiTactic]] does parsing which should not be the case
 /**
   * tactic for chaining multiple tactics as in "fix x; assume h; use h"
   * @param ls
@@ -527,9 +501,9 @@ case class multiTactic(ls : List[String] , tp : TacticParser) extends Tactic {
 
 
 /**
-  * simplifies terms
-  * @param tup
-  * @param h
+  * simplifies the term tup._1 in h
+  * @param tup tup._1 is the (sub)term to simplify, if not specified the target as a whole will be simplified
+  * @param h the target hypothesis to simplify. If not specified it simplifies the goal
   */
 case class simp(tup : Option[(Term,Context)], h : Option[String]) extends Tactic {
   lazy val Some((t,cc)) = tup
@@ -579,10 +553,10 @@ case class simp(tup : Option[(Term,Context)], h : Option[String]) extends Tactic
 }
 
 
-
-case class fold(t : Term) extends Tactic { //fold a term back into a name
-  override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {???}
-}
+/**
+  * manually add an unknown to the solver (usefull for debugging)
+  * @param u the name of the newly added unknown
+  */
 
 case class addunknown(u : String) extends Tactic {
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
@@ -604,8 +578,8 @@ case class void() extends Tactic {
 }
 
 /**
-  * prints a message
-  * @param s
+  * prints a message (useful for debugging)
+  * @param s the message to be printed
   */
 case class message(s : String) extends Tactic {
   override def applyToProof(p: Proof, ip: InteractiveProof): Msg = {
@@ -614,7 +588,8 @@ case class message(s : String) extends Tactic {
 }
 
 /**
-  * progresses by directly building the proof term
+  * progresses by directly building the proof term i.e. one specifies the term that is to be inserted into the whole/unknown which is
+  * currently focused by the current goal. For example:
   * @param t0
   * @param uks
   */
@@ -673,7 +648,7 @@ case class gettype(t : Term  , uks : Context) extends  Tactic {
 }
 
 /**
-  * like [[gettype]] but prints the type fully qualified
+  * like [[gettype]] but prints the type fully qualified (i.e. prints the MMT term in it's long form)
   * @param t
   * @param uks
   */

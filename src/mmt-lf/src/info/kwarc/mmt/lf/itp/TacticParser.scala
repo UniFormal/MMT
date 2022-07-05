@@ -55,15 +55,17 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
 
 
   /**
-    * parses a raw mmt term
+    * parses a raw mmt term naively in the context of the currently focused goal
     * @param t the mmt expression
     * @return the parsed term and the found unknowns
     */
   def simpleTermParser(t : String) : ( Term, Context) = {
 
     val c = ip.slvr.controller
+    // getting an MMT parser that is aware of the notations specified in MMT files
     val nbp = c.extman.get(classOf[NotationBasedParser]).head
     val cxt = ip.pr.currentState.head.ctx  ++ (if (ip.mp.isDefined) Context(ip.mp.get) else Context())
+    //ctx is needed to make the parser aware of certain constants, otherwiese it is going to fail
     val pu = ParsingUnit(SourceRef.anonymous("interactive") , cxt , t ,InterpretationInstructionContext(ip.slvr.controller.getNamespaceMap) )
     val eh : ErrorHandler =  ErrorThrower
     val ParseResult(u,f,tt) = nbp(pu)(eh)
@@ -80,16 +82,21 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
   def currGoalParseTerm(t : String) : ( Term, Context) = {
 
     val c = ip.slvr.controller
-    // needed for parsing of the parameter "t"
+    // needed for parsing of the parameter "t", the notation based parser is, as the name would suggest, aware of notations
     val nbp = c.extman.get(classOf[NotationBasedParser]).head
+    //ctx is needed to make the parser aware of certain constants, otherwiese it is going to fail
     val cxt = ip.pr.currentState.head.ctx  ++ (if (ip.mp.isDefined) Context(ip.mp.get) else Context())
+    // a parsing unit wraps all the elemets needed for parsion up
     val pu = ParsingUnit(SourceRef.anonymous("interactive") , cxt , t ,InterpretationInstructionContext(ip.slvr.controller.getNamespaceMap) )
+    // just take the most basic error handler, should probably be improved
     val eh : ErrorHandler =  ErrorThrower
     // do the actual parsing
     val ParseResult(u,f,tt) = nbp(pu)(eh)
     val Goal(g , gctx  , ukn) = ip.pr.getCurrentGoal
     ip.pr.update(Goal(g , gctx  , ukn )) //TODO: probably useless line since it just replaces the old goal with the new one (i.e. remove it)
+    // add new unknowns to the solver
     ip.slvr.addUnknowns(u, None)
+    // return the parsed term and the newly encountered unknowns (because ErrorThorwer is used, the parser will always fail if new unknwowns are encountered)
     (tt, u )
   }
 
@@ -172,6 +179,8 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
   //TODO: this probably needs rework since these parsers were made during a time where the author did not fully understand how parser combinators work and are therefore potentially redundant
   /**
     * this class adds several additional little helper parers
+    * the initial idea was, that EParser and Parser go well together but in fact it complicates things and
+    * one has to cast EParser to Parser explicitely every now and then
     * @tparam T return type of the parsers
     */
   abstract class EParser[+T] extends Parser[T] {
@@ -190,7 +199,7 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
     }
 
     /**
-      *
+      * parse two terms that can be separated by a whitespace (usefull for caeses where skipWhitespace = false)
       * @param p
       * @tparam A
       * @return
@@ -203,7 +212,7 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
     }
 
     /**
-      *
+      * parse two terms that have to be separated by a whitespace
       * @param p
       * @tparam A
       * @return
@@ -214,7 +223,7 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
     }
 
     /**
-      *
+      * same as "&~>" but removes the whitespace from the parsing result
       * @param p
       * @tparam A
       * @return
@@ -225,7 +234,9 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
     }
 
     /**
-      *
+      * parses two terms that have to be separated by whitespace, the second non-whitespace term is optional
+      * the sucessfull whitespace parse is removed from the result
+      * TODO: check if this one can be removed or implementd in a more straight forward way
       * @param p
       * @tparam A
       * @return
@@ -237,6 +248,14 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
       }
     }
 
+    /**
+      * vairation of "??~"
+      * don't know anymore why I mode this parser , making the condition that the whitespace is > 0 a guard changes
+      * something I think
+      * @param p
+      * @tparam A
+      * @return
+      */
     def ?~[A](p : => Parser[A]) : Parser[~[T,Option[A]]] = {
       this ~ """\s*""".r ~ p.? >> {
         case a ~ ws ~ (r@Some(pr)) if ws.nonEmpty => success(new ~(a,Some(pr)))
@@ -250,6 +269,12 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
       }
     }
 
+    /**
+      * another variation of ??~
+      * @param p
+      * @tparam A
+      * @return
+      */
     def ?~:[A](p : => Parser[A]) : Parser[~[T,Option[A]]] = {
       this ~ """\s*""".r ~ p.? >> {
         case a ~ ws ~ (r@Some(pr)) if ws.nonEmpty => success(new ~(a,Some(pr)))
@@ -311,7 +336,8 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
     * @param initcount this parameter signalizes how many open brackets should be assumed. A value of >0 indicates that
     *                  the parsed term should be treated as if there where already initcount-many opening brackets
     *                  For example when initcount = 2 then the term "a + b)*(c + d))" would be valid
-    * @param removeOuterBrackets if true removes the outer brackets from the parse result
+    * @param removeOuterBrackets if true removes the outer brackets from the parse result. sometimes this is needed
+    *                            because the parse result can't be processed with the surrounding brackets
     * @tparam A
     * @return
     */
@@ -320,31 +346,43 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
       override def apply(i : Input): ParseResult[A] = {
         if(i.atEnd) return Failure("empty expression", i)
         var curr : Char = i.first
+        // because the parser relies on some underlying java-stuff the rest and oldrest variables are instances of Reader
         var rest = i.rest
         var oldrest = rest
+        // remove leading whitespace or similar characters
         while((! i.atEnd) && List(' ' , '\t' , '\n' ).contains(curr)  ){
           curr = rest.first
           oldrest = rest
           rest = rest.rest
         }
+        // get anything between and including the outermost bracket pair
+
         if(curr == '(' || initcount > 0) {
           var bcount = initcount + {if (curr == '(') 1 else 0}
           val newi : ArrayBuffer[Char] = ArrayBuffer[Char](curr)
+          // how this loop works is that it keeps a counter (bcount) and adds +1 for every opening paranthesis
+          // and -1 for every closing paranthesis and adds everything to "newi" until the paranthesis-count
+          // reaches zero (the initial value is >0 since the very first paranthesis is already accounted for (also the initcount is added))
           while ((!rest.atEnd) && bcount != 0){
+            // the "head" of the Reader
             curr = rest.first
             oldrest = rest
+            // the tail of the reader
             rest = rest.rest
             if (curr == '(') {
               bcount += 1
             }else if (curr == ')'){
               bcount -= 1
             }
+            // add the current char to the "in between outermost paranthesis" buffer
             newi.append(curr)
 
           }
+          // remove the outer brackets if so desired
           if(removeOuterBrackets){newi.remove(0) ; newi.remove(newi.length  - 1)}
           val newi0  = new CharArrayReader(newi.toArray,0)
           if (rest.atEnd) oldrest  = rest
+          // apply the content between the outermost paranthesis to the inner parser
           p.apply(newi0) match {
             case Success(result, next) => {
               if (! next.atEnd) return Failure("could not parse argument", next)
@@ -354,6 +392,8 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
             }
             case ns : NoSuccess => ns
           }
+          // basically the same as the if case but removing the initial setup with reagard to the initial opening paranthesis
+          // usurally then initcount >0
         }else {
           val newi : ArrayBuffer[Char] = ArrayBuffer[Char](curr)
           while((! rest.atEnd) && ! List(' ' , '\t' , '\n' ).contains(curr)){
@@ -427,10 +467,10 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
 
   def simpArgsP : Parser[Option[String] ~ Option[String]]  =  (((anyExprBrackNoKeyWord &~ ("in" &~> hypName)) >> {case a ~ b => success(new ~(Some(a) , Some(b))) }) | (failure("").? ~ ("in" &~> hypName) >> {case None ~ b => success(new ~(None.asInstanceOf[Option[String]], Some(b)))}) | (anyExprBrackNoKeyWord >> {m => success(new ~(Some(m) , None))}) )
   def simpP : Parser[Tactic] = "simp" ?~>  simpArgsP ^^ {case Some(Some(e) ~ x) => simp(Some(currGoalParseTermA(e)) , x); case Some(None ~ x) => simp(None , x) ; case None => simp(None, None)}
- // def tryP : Parser[Tactic]  = "try" &~> "(" ~> parseSingleTactic <~ ")" ^^ {t => Try(t)}
-  def repeatP : Parser[Tactic] = ("repeat" | "rep" ) &~> decimalNumber &~ ("(" ~> parseSingleTactic <~ ")") ^^ {case d ~ t => repeat(Some(d.toInt) , t)}
-  def applytoP : Parser[Tactic] = ("applyto" | "apt") &~> repsep(decimalNumber , ":") &~ ("(" ~> parseSingleTactic <~ ")") ^^ {case ls ~ t => applyto(ls.map(_.toInt) ,  t )}
-  def revertP : Parser[Tactic] = ("rev" | "revert") &~> rep1sep(hypName  , whiteSpace) ^^ {ls => revert(ls)}
+  // def tryP : Parser[Tactic]  = "try" &~> "(" ~> parseSingleTactic <~ ")" ^^ {t => Try(t)}
+  // def repeatP : Parser[Tactic] = ("repeat" | "rep" ) &~> decimalNumber &~ ("(" ~> parseSingleTactic <~ ")") ^^ {case d ~ t => repeat(Some(d.toInt) , t)}
+  //  def applytoP : Parser[Tactic] = ("applyto" | "apt") &~> repsep(decimalNumber , ":") &~ ("(" ~> parseSingleTactic <~ ")") ^^ {case ls ~ t => applyto(ls.map(_.toInt) ,  t )}
+  // def revertP : Parser[Tactic] = ("rev" | "revert") &~> rep1sep(hypName  , whiteSpace) ^^ {ls => revert(ls)}
 
   def fixsP : Parser[Tactic] = "fixs" ?~>  rep1sep(hypName , nespaces) ^^ {x => fixs(x)}
   def gettypeP : Parser[Tactic] = "gettype" &~> """.*""".r ^^ {x => val tmp = simpleTermParser(x)  ; gettype(tmp._1 ,tmp._2)}
@@ -440,11 +480,14 @@ class TacticParser(val ip :InteractiveProof) extends JavaTokenParsers {
   def forwardP : Parser[Tactic] = ("fwd" | "forward") &~> hypName &~ inbalbracksOpt(anyExpr) &~ rep(inbalbracksOpt(anyExpr)) ^^ {case h ~ x ~ ls => val tmp = currGoalParseTermA(x); val tmps = ls.map(y => currGoalParseTermA(y)); forward(h , tmp._1 , tmp._2, tmps) }
 
 
-  /**
-    * list containing all available parser
-    */
+  /*
+    list containing all available parser
+  */
+    // load the loadable tactics
   lazy val newTactics : List[Parser[Tactic]] = ip.slvr.rules.getOrdered(classOf[InteractiveTacticParseRule]).map(_.parseTactic(this)).map(x => remws(x))
-  lazy val allTactics0 : List[Parser[Tactic]] = (List(fixP, fixsP, simpP ,assumeP, useP, letP,  applyP, backwardP  , preferP , voidP , messageP , subproofP , unfoldP  , ignoreP, deleteP , repeatP , applytoP, gettypeP,  gettyperawP, printrawP, buildP , forwardP)).map(x => remws(x)) ++ newTactics // ++ newTactis.map(x => x.tacticParserGenerator(ip).asInstanceOf[Parser[Tactic]])).map(x => remws(x))
+  // laod the hardcoded tactics
+  lazy val allTactics0 : List[Parser[Tactic]] = (List(fixP, fixsP, simpP ,assumeP, useP, letP,  applyP, backwardP  , preferP , voidP , messageP , subproofP , unfoldP  , ignoreP, deleteP ,  gettypeP,  gettyperawP, printrawP, buildP , forwardP)).map(x => remws(x)) ++ newTactics // ++ newTactis.map(x => x.tacticParserGenerator(ip).asInstanceOf[Parser[Tactic]])).map(x => remws(x))
+  // modify the parsers so that they can not be paritally applied to an input (a sting entered into the shell has to be parsed fully)
   lazy val allTactics : List[Parser[Tactic]] = allTactics0.map(x =>  x <~ not(".*"))
   /**
     * removes/skips the left/rightmost whitespace from an expression(needed since whitepsace isn't skipped by default)
