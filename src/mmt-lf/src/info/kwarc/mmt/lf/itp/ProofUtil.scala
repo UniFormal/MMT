@@ -260,6 +260,8 @@ object ProofUtil {
 
   /**
     * apply a list of terms (applicants) to the term "to" under the local context of "ctx"
+    * basically tries to find where the terms in the list "applicants" should be applied in a target term. f.ex. applicants = xa , xy , xz , with types a b c, and target term "to" has type a -> v -> b -> c -> d. Then the
+    * term xa ist applied at position 0 , xb at position 2 and xc at position 3
     * @param ctx
     * @param applicants
     * @param to
@@ -296,7 +298,7 @@ object ProofUtil {
     case class Const(tp  : Term) extends Param {
       override def getTp: Term = tp
     }
-
+    // connects a position in a term (when splittet by Pi and Arrow like in a -> b -> c  ==> List(a,b,c)) with a concrete term
     val terms = MMap[Int , Param]()
     val subs = MMap[Int , Option[Term]]()
 
@@ -304,7 +306,7 @@ object ProofUtil {
     val apptps0 = applicants.map(x => s.inferType(x)(Stack(ctx), hist).getOrElse(return None))
     val apptps = applicants.zip(apptps0)
 
-
+    // traverser that does alpha renaming under context con  (see apply method)
     class AlphaRename() extends StatelessTraverser {
 
       override def apply(t: Term, con: Context): Term = t match {
@@ -362,6 +364,11 @@ object ProofUtil {
     def maxpos = terms.toList.length - 1
 
 
+    /**
+      * splits a term (uses the "[[terms]]" mutable map to store the splitted term)
+      * @param t term to be splitted
+      * @param pos
+      */
     def splitTermA(t : Term , pos : Int ) : Unit = {
       if (pos >= initlen) {terms(initlen) = Const(t) ;return }
       t match {
@@ -377,7 +384,11 @@ object ProofUtil {
       }
     }
 
-
+    /**
+      * applies a substitution to a splitted term (i.e. mergest the parts >=pos in terms togehter , applies the substitution and then splits them again)
+      * @param pos
+      * @param s
+      */
     def subfrom(pos : Int , s: Substitution) = {
       val tmp = terms.filter(p => p._1 >= pos).toList
       val tmp0 = tmp.sortBy(x => x._1).map(x => x._2)
@@ -386,7 +397,10 @@ object ProofUtil {
     }
 
 
-
+    /**
+      * wipes the solutions/substitutions in the [[subs]] mutable map
+      * @param ls
+      */
     def preparesubs(ls : List[(Int,Param)]): Unit  = ls match {
       case Nil =>
       case (pos , PPi(nm , tp))::xs => {
@@ -398,8 +412,17 @@ object ProofUtil {
 
     preparesubs(terms.toList)
 
+    /**
+      *
+      * @param pos current position in the splitted term
+      * @param app
+      * @param vars
+      * @return
+      */
     def traverse(pos : Int, app : List[(Term , Term)], vars : Map[LocalName , (Term ,Int)]): Boolean = {
+      //should not happen
       if (pos < 0) return false
+      //went through the whole splitted term
       if (pos >= initlen) return subs.forall(p => p._2.isDefined) && app.isEmpty
       val tm = terms(pos)
       lazy val res : Option[Substitution] = if (app.isEmpty) None else {
@@ -445,6 +468,10 @@ object ProofUtil {
 
     if (! traverse(0 , apptps , Map.empty)) return None
 
+    /**
+      * generates new goals
+      * @return
+      */
     def buildTermAndGoals: (List[Goal],Term) = {
 
       var gnames = ctx ++ s.getPartialSolution
@@ -482,6 +509,15 @@ object ProofUtil {
     Some(gls, resterm , terms(initlen).getTp)
   }
 
+  /**
+    *
+    * @param context
+    * @param uks
+    * @param goal
+    * @param fact
+    * @param s
+    * @return
+    */
   def makeSubgoals(context: Context, uks : Context ,  goal: Term, fact: Term,  s : Solver): Option[Context] = {
     // tp must be of the form Pi bindings.scope
     val (bindings, scope) = FunType.unapply(fact).get
@@ -557,6 +593,16 @@ object ProofUtil {
     (res , exslv.getPartialSolution)
   }
 
+  /**
+    * stand alone unification of term goal with term query under context ctx where query contains unknowns params0
+    * @param ctx
+    * @param goal
+    * @param params0
+    * @param query
+    * @param hist
+    * @param s
+    * @return
+    */
   def unifyA(ctx : Context , goal : Term , params0 : Context , query : Term , hist : History, s : Solver)  = {
     val params = params0.filter(x => query.freeVars.contains(x.name))
     val (unifiableparams0 , unifiablesub) =  params.foldLeft(Nil : List[VarDecl] , Substitution())((res , x) =>  {

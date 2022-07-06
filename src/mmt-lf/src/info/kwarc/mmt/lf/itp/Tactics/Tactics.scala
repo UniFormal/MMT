@@ -209,12 +209,17 @@ case class backward(tup : (Term, Context)) extends Tactic {
 
     val htp = ip.slvr.inferType(t)(Stack(gctx), ip.hist)
     if (htp.isEmpty) return HasError("could not infer the type of " + t.toString)
+    //generate the new subgoals
     val makegs = try {makeSubgoals(gctx , unku , g ,  htp.get , ip.slvr).get} catch {case e => return HasError("could not unify goal") }
+    // filter those that are not solved already
     val hs = makegs.filter(p  => p.df.isEmpty)
+    // the already solved ones
     val solved = makegs.filter(p => p.df.isDefined)
     //   val (hs , c) = ProofUtil.splitConcHyps(htp.get)
     //  if(ip.slvr.check(Equality(Stack(gctx) , c , g, None))(ip.hist)){
+    // remove the currenlty focused goal
     val old = p.currentState.remove(0)
+    // "typecast"  the generated goals from VarDecl to to [[Goal]]
     val newgls = hs.map(x => Goal(x.tp.get, gctx, ip.pr.getNewGoalName() ))
     p.currentState.insertAll(0, newgls)
     genTerm(old, t, mergeVarWithG(makegs.variables.toList , newgls ) , newgls , ip)
@@ -224,7 +229,14 @@ case class backward(tup : (Term, Context)) extends Tactic {
   }
 
   /**
-    *
+    * a backward step is represented by actually a plain term with holes (there is no "backward" in the lambda represenbtation ).
+    * a backward step just replaces the currently focused hole (i.e. he unknown that represents the goal). The
+    * backward step just inserts the to the conclusion applied term into the unknowns position. The inserted term
+    * itself then gets applied by unknowns which in turn form new goals. F.ex. let X have the type a -> b -> c
+    * and let the goal be "c". Let the current proof term be  [h : v] /u  (ignoring the Free variables part) where /u is the unknowns representing
+    * the goal. The backward step then checks whether the conclusion of X (i.e. c) machtes the goal type which is
+    * also c. "backward" then inserts X like this into the proofterm : [h : v] X /u0 /u1 where /u0 and /u1 are
+    * the new unknowns representing the two new goals.
     * @param old
     * @param t
     * @param params
@@ -341,7 +353,9 @@ case class subproof(h : String , tup : (Term, Context)) extends Tactic{
   }
 
   /**
-    * a subproof is represented as
+    * a subproof is represented as a term that gets applied to a lambda which binds a variable with name and type
+    * of the subproof. For example : ([h : v -> x -> y ...] ...) ([h,h0.h1] ...) where the second lambda is the subproof (i.e. the lambda
+    * starting with [h,h0.h1]) which gets applied to the first lambda which binds it under the name "h"
     * @param old
     * @param updatedgoal
     * @param ln
@@ -379,8 +393,8 @@ case class prefer(i : Int) extends Tactic{
 
 /**
   * unfolds a definiition
-  * preferrably use the new implementation of unfold found in latin2
-  * @param h
+  * preferably use the new implementation of unfold found in latin2
+  * @param h term to unfold
   * @param target
   * @param pos in case there are multiple possible subterms that can be unfolded the pos parameter specifies which one to unfold
   *            if not specified, all occurences of h will be unfold
@@ -393,12 +407,15 @@ case class unfold(h : String, target : Option[String] , pos : Option[String]) ex
     val (t ,unk) = prs.currGoalParseTerm(h)
     if (unk.nonEmpty) return HasError("term to unfold contains unknowns , which it should not")
     val res = t match {
+      // only omids and omv can be unfold
       case omid : OMID => {
+        // get the definition of an omid
         ip.slvr.getDef(omid.path.toMPath.toGlobalName)(ip.hist) match {
           case None => return HasError("could not find definition for " + omid.toString)
           case r@Some(_) => r
         }
       }
+      // omv can only be unfolded if they have a definition in the local context (this rarely happens)
       case omv : OMV => {
         gctx.getO(omv.name) match {
           case None => None

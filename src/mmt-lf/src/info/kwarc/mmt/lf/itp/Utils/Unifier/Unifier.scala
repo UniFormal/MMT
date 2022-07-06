@@ -23,7 +23,7 @@ object Unifier {
     * @return
     */
   def apply(t: Term, uks: Context, query: Term, c: Controller, cctx: Context, rls: RuleSet, lctx: Context): Option[(Context , Term)] = {
-    /
+    // sometimes the matcher can find unifications that the MMT-solver can't (usually it, the matcher, not caring whether a solution is unique)
     val mtcher = new Matcher(c, rls )
     val names = TermUtil.getNotLocallyBoundNames(t)
 
@@ -45,7 +45,7 @@ object Unifier {
       }
     }
 
-
+    // the solver-unifier is just an Equality check incorporating unknowns
     val cu = CheckingUnit(None, cctx , alphauks._1 , null )
 
     val solver = new Solver(c, cu, rls)
