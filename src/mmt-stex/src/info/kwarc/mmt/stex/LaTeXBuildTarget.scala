@@ -33,10 +33,10 @@ object RusTeX {
   def initializeBridge(f : => File): Unit = this.synchronized {
     if (!Bridge.initialized()) {
       val path = f
-      val file = path / Bridge.library_filename()
+      /*val file = path / Bridge.library_filename()
       if (!file.exists()) {
         File.download(URI(github_rustex_prefix + Bridge.library_filename()),file)
-      }
+      }*/
       Bridge.initialize(path.toString)
     }
   }
@@ -373,17 +373,18 @@ class FullsTeX extends Importer with XHTMLParser {
   override val inDim = info.kwarc.mmt.api.archives.source
   val inExts = List("tex")
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
-    val ilog = (str : String) => bt.errorCont match {
-      case s:STeXLSPErrorHandler =>
-        s.cont(0,str)
-        log(str)
-      case eh:MultipleErrorHandler => eh.handlers.collectFirst {
-        case s : STeXLSPErrorHandler => s
-      }.foreach {s =>
-        s.cont(0,str)
-        log(str)
+    val ilog = (str : String) => {
+      log(str)
+      bt.errorCont match {
+        case s:STeXLSPErrorHandler =>
+          s.cont(0,str)
+        case eh:MultipleErrorHandler => eh.handlers.collectFirst {
+          case s : STeXLSPErrorHandler => s
+        }.foreach {s =>
+          s.cont(0,str)
+        }
+        case _ =>
       }
-      case _ => log(str)
     }
     import PdfLatex._
     val extensions = stexserver.extensions
@@ -399,7 +400,7 @@ class FullsTeX extends Importer with XHTMLParser {
         ilog("    -       biber " +  bt.inPath)
         Process(Seq("biber",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       } else {
-        log("    -      bibtex " + bt.inPath)
+        ilog("    -      bibtex " + bt.inPath)
         Process(Seq("bibtex",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       }
       ilog("    -    pdflatex " + bt.inPath + " (second run)")

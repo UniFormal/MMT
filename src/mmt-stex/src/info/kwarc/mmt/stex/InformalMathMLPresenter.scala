@@ -23,7 +23,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
   import htmlRh._
   import cssClasses._
 
-  private def doNotation(n:Node) : Node = {
+  def doNotation(n:Node) : Node = {
     implicit val htmlstate = new HTMLParser.ParsingState(controller,Nil)
     val top = HTMLParser(n.toString)
     top.iterate {

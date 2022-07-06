@@ -18,6 +18,7 @@ trait TeXTokenLike {
   def addError(msg : String,extramsg : Option[String] = None,lvl : Level = Level.Error) = {
     errors ::= new STeXError(msg, extramsg, Some(lvl))
   }
+  def =?=(that : TeXTokenLike) : Boolean = false
 
 }
 trait MacroLike extends TeXTokenLike
@@ -32,7 +33,7 @@ class MacroApplication(val plain:PlainMacro,val children:List[TeXTokenLike],val 
   val endoffset = children.lastOption.map(_.endoffset).getOrElse(plain.endoffset)
 
   override def iterate(f: TeXTokenLike => Unit): Unit = {
-    super.iterate(f)
+    f(this)
     children.foreach(_.iterate(f))
   }
 
@@ -40,7 +41,7 @@ class MacroApplication(val plain:PlainMacro,val children:List[TeXTokenLike],val 
 }
 class Group(val content:List[TeXTokenLike],val startoffset:Int,val endoffset:Int) extends TeXTokenLike {
   override def iterate(f: TeXTokenLike => Unit): Unit = {
-    super.iterate(f)
+    f(this)
     content.foreach(_.iterate(f))
   }
   override def toString: String = "{" + content.mkString + "}"
@@ -55,7 +56,7 @@ case class Math(content:List[TeXTokenLike],startdelim:TeXTokenLike,enddelim:TeXT
   override def toString: String = startdelim.toString + content.mkString + enddelim.toString
 
   override def iterate(f: TeXTokenLike => Unit): Unit = {
-    super.iterate(f)
+    f(this)
     startdelim.iterate(f)
     content.foreach(_.iterate(f))
     enddelim.iterate(f)
@@ -69,7 +70,7 @@ class Environment(val begin:MacroApplication,val end:TeXTokenLike,val children:L
 
   override def toString: String = begin.toString + children.mkString + end.toString
   override def iterate(f: TeXTokenLike => Unit): Unit = {
-    super.iterate(f)
+    f(this)
     begin.iterate(f)
     children.foreach(_.iterate(f))
     end.iterate(f)
@@ -77,6 +78,7 @@ class Environment(val begin:MacroApplication,val end:TeXTokenLike,val children:L
 }
 
 trait TeXRule {
+  val noargs = List("}", "\\begin", "\\end", "$", "\\]", "\\[")
   def safely[A <: TeXTokenLike](elem: => A)(f : => A): A = try { f } catch {
     case LaTeXParseError(s,e,l) =>
       val ge = elem
@@ -105,12 +107,16 @@ trait TeXRule {
     (occured,children)
   }
 
-  def readArg(implicit in: Unparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
+  def readSafeArg(top:String)(implicit in: Unparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
     var children : List[TeXTokenLike] = Nil
     var done = false
     in.trim
-    while (!done) {
+    while (!done && !in.empty) {
+      val rest = in.remainder
+      if (noargs.exists(rest.startsWith)) {
+        throw LaTeXParseError(noargs.find(rest.startsWith).get + " should not start an argument for " + top)
+      }
       in.first match {
         case '%' =>
           children ::= readComment
@@ -128,7 +134,33 @@ trait TeXRule {
           return (ret,children.reverse)
       }
     }
-    ???
+    throw LaTeXParseError("File ended unexpectedly")
+  }
+
+  def readArg(implicit in: Unparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
+    import SuperficialLaTeXParser._
+    var children : List[TeXTokenLike] = Nil
+    var done = false
+    in.trim
+    while (!done && !in.empty) {
+      in.first match {
+        case '%' =>
+          children ::= readComment
+          in.trim
+        case '{' =>
+          done = true
+          val ret = readGroup
+          children ::= ret
+          return (ret,children.reverse)
+        case o =>
+          done = true
+          in.drop(1)
+          val ret = new PlainText(o.toString, in.offset-1, in.offset)
+          children ::= ret
+          return (ret,children.reverse)
+      }
+    }
+    throw LaTeXParseError("File ended unexpectedly")
   }
 
   def readOptArg(implicit in: Unparsed, state:LaTeXParserState) : (List[List[TeXTokenLike]],List[TeXTokenLike]) = {
@@ -192,6 +224,47 @@ abstract class EnvironmentRule(val name:String) extends TeXRule {
   def parse(begin:MacroApplication)(implicit in: Unparsed, state:LaTeXParserState): MacroApplication
   def finalize(env : Environment)(implicit state:LaTeXParserState) : Environment
 }
+
+trait VerbatimLikeRule extends TeXRule {
+  def readVerb(finish:String)(implicit in: Unparsed, state:LaTeXParserState) = {
+    val currrules = state.rules
+    state.rules = Nil
+    val start = in.offset
+    val sb = new mutable.StringBuilder()
+    try {
+      while (!in.empty && !in.remainder.startsWith(finish)) {
+        sb += in.next()
+      }
+    } finally {
+      state.rules = currrules
+    }
+    (!in.empty,new PlainText(sb.mkString,start,in.offset))
+  }
+}
+
+trait MathEnvRule extends EnvironmentRule {
+  case class MathMacroAppl(pl:PlainMacro,ch:List[TeXTokenLike],rl:TeXRule,prev:Boolean) extends MacroApplication(pl,ch,rl)
+  override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+    val ret = MathMacroAppl(begin.plain,begin.children,this,state.inmath)
+    state.inmath = true
+    ret
+  }
+
+  override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = {
+    env.begin match {
+      case MathMacroAppl(_, _, _, prev) => state.inmath = prev
+      case _ =>
+    }
+    env
+  }
+}
+trait MathMacroRule extends MacroRule {
+  def inmath[A](f : => A)(implicit state:LaTeXParserState): A = {
+    val prevmath = state.inmath
+    state.inmath = true
+    try { f } finally {state.inmath = prevmath}
+  }
+}
 trait MacroRule extends TeXRule {
   def name:String
   def parse(plain:PlainMacro)(implicit in: Unparsed, state:LaTeXParserState) : TeXTokenLike
@@ -233,11 +306,11 @@ trait DefLikeRule extends MacroRule {
     val currrules = state.rules
     val main = try {
       state.rules = Nil
-      readGroup
+      readArg
     } finally {
       state.rules = currrules
     }
-    new SimpleMacroApplication(plain,pre ::: main :: Nil,false,Nil,this)
+    new SimpleMacroApplication(plain,pre ::: main._2,false,Nil,this)
   }
 }
 
@@ -276,24 +349,40 @@ object LaTeXRules {
             var children : List[TeXTokenLike] = Nil
             def getEnd = endtk.getOrElse{children match {
               case Nil => bg
-              case h :: tail => h
+              case h :: _ => h
             }}
+
+
+
+
             try {
               while ( {
                 val next = readOne()
-                if (next.errors.nonEmpty) {
-                  children ::= next
-                  false
-                } else (next match {
-                    case ma: SimpleMacroApplication if ma.rule == end =>
-                      endtk = Some(ma)
-                      false
-                    case _ =>
-                      children ::= next
-                      true
-                  })
+                next match {
+                  case ma: SimpleMacroApplication if ma.rule == end =>
+                    endtk = Some(ma)
+                    false
+                  case _ =>
+                    children ::= next
+                    true
+                }
               }) {}
               val env = new Environment(bg,getEnd,children.reverse,rule)
+              getEnd match {
+                case ma:SimpleMacroApplication if ma.rule == end =>
+                  ma.children match {
+                    case List(gr : Group) =>
+                      gr.content match {
+                        case List(pt:PlainText) =>
+                          if (pt.str != name) {
+                            throw LaTeXParseError("\\begin{" + name + "} ended by " + pt.str)
+                          }
+                        case _ =>
+                      }
+                    case _ =>
+                  }
+                case _ =>
+              }
               env.beginname = Some(st)
               rule.map(_.finalize(env)).getOrElse(env)
             } catch {
@@ -356,16 +445,92 @@ object LaTeXRules {
       Math(children.tail.reverse,new MacroApplication(plain,Nil,this),children.head)
     }
   }
+  val eqnarray = new EnvironmentRule("eqnarray") with MathEnvRule
+  val eqnarray_star = new EnvironmentRule("eqnarray*") with MathEnvRule
+  val array = new EnvironmentRule("array") with MathEnvRule
+  val array_star = new EnvironmentRule("array*") with MathEnvRule
+  val align = new EnvironmentRule("align") with MathEnvRule
+  val align_star = new EnvironmentRule("align*") with MathEnvRule
+
+  val verbatim = new EnvironmentRule("verbatim") with VerbatimLikeRule {
+    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+      val (terminated,nch) = readVerb("\\end{verbatim}")
+      val ret = new MacroApplication(begin.plain,begin.children ::: nch :: Nil,this)
+      if (!terminated) {
+        ret.addError("verbatim environment closed unexpectedly")
+      }
+      ret
+    }
+
+    override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+  }
+  val lstlisting = new EnvironmentRule("lstlisting") with VerbatimLikeRule {
+    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+      val (terminated,nch) = readVerb("\\end{lstlisting}")
+      val ret = new MacroApplication(begin.plain,begin.children ::: nch :: Nil,this)
+      if (!terminated) {
+        ret.addError("lstlisting environment closed unexpectedly")
+      }
+      ret
+    }
+
+    override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+  }
+  val iffalse = new MacroRule with VerbatimLikeRule {
+    override val name: String = "iffalse"
+
+    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = {
+      val (tm,ch) = readVerb("\\fi")
+      val res = new MacroApplication(plain,List(ch),this)
+      if (!tm) res.addError("\\iffalse not properly terminated")
+      res
+    }
+  }
+  val lstinline = new MacroRule with VerbatimLikeRule {
+    override val name: String = "lstinline"
+
+    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = {
+      import SuperficialLaTeXParser._
+      var done = false
+      var children : List[TeXTokenLike] = readOptArg._2.reverse
+      while(!in.empty && !done) {
+        in.trim
+        in.first match {
+          case '%' => children ::= readComment
+          case c =>
+            done = true
+            children ::= new PlainText(c.toString,in.offset,in.offset + 1)
+            in.drop(c.toString)
+            val (terminated,ch) = readVerb(c.toString)
+            if (terminated) {
+              children ::= new PlainText(c.toString,in.offset,in.offset + 1)
+              in.drop(c.toString)
+            }
+            val res = new MacroApplication(plain,(ch :: children).reverse,this)
+            if (!terminated) res.addError("\\lstinline not properly terminated")
+            return res
+        }
+      }
+      val res = new MacroApplication(plain,children.reverse,this)
+      res.addError("\\lstinline not properly terminated")
+      res
+    }
+  }
+
+  val ensuremath = new SimpleMacroRule("ensuremath",args=1) with MathMacroRule {
+    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = inmath { super.parse(plain) }
+  }
 
   val allrules = List(
     makeatletter,
     makeatother,
     explsyntaxon,
     explsyntaxoff,
-    dmathstart,
-    dmathend,
+    dmathstart, dmathend, ensuremath,
     begin,end,
-    _def,edef
+    _def,edef,
+    array,array_star,eqnarray,eqnarray_star,align,align_star,
+    verbatim,lstlisting,lstinline,iffalse
   )
 }
 
@@ -420,8 +585,11 @@ object SuperficialLaTeXParser {
       state.inmath = false
       state.closegroup
     }
-    in.drop(ends)
-    Math(ret.reverse,new PlainText(starts,start,start + starts.length),new PlainText(ends,in.offset - ends.length,in.offset))
+    val res = Math(ret.reverse,new PlainText(starts,start,start + starts.length),new PlainText(ends,in.offset,in.offset + ends.length))
+    if (in.empty) {
+      res.addError("Math environment ends unexpectedly")
+    } else in.drop(ends)
+    res
   }
   def readGroup(implicit in: Unparsed, state:LaTeXParserState) = {
     val start = in.offset

@@ -27,7 +27,7 @@ class SearchDocument(private[search] val file : File,sourcefile:File,archive:Arc
     d.add(new StringField("type",tp,Field.Store.YES))
     d.add(new TextField("text",text,Field.Store.YES))
     d.add(new TextField("source",source,Field.Store.YES))
-    others.foreach(p => d.add(new StringField(p._1,p._2,Field.Store.YES)))
+    others.foreach(p => d.add(new TextField(p._1,p._2,Field.Store.YES)))
   }
   def save = Lucene.write(this)
 }

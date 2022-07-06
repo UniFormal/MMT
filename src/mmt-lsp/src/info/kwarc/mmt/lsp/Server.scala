@@ -1,6 +1,6 @@
 package info.kwarc.mmt.lsp
 
-import info.kwarc.mmt.api.{Invalid, InvalidObject, InvalidUnit, Level, SourceError}
+import info.kwarc.mmt.api.{Invalid, InvalidElement, InvalidObject, InvalidUnit, Level, SourceError}
 
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.{CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CodeAction, CodeActionParams, CodeLens, CodeLensParams, ColorInformation, ColorPresentation, ColorPresentationParams, Command, CompletionItem, CompletionList, CompletionParams, CreateFilesParams, DeclarationParams, DefinitionParams, DeleteFilesParams, Diagnostic, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentColorParams, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams, DocumentHighlight, DocumentHighlightParams, DocumentLink, DocumentLinkParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, ImplementationParams, InitializeParams, InitializeResult, InitializedParams, InlayHint, InlayHintParams, InlineValue, InlineValueParams, LinkedEditingRangeParams, LinkedEditingRanges, Location, LocationLink, MessageParams, MessageType, Moniker, MonikerParams, Position, PrepareRenameParams, PrepareRenameResult, ProgressParams, PublishDiagnosticsParams, ReferenceParams, RenameFilesParams, RenameParams, SelectionRange, SelectionRangeParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SetTraceParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, TypeDefinitionParams, TypeHierarchyItem, TypeHierarchyPrepareParams, TypeHierarchySubtypesParams, TypeHierarchySupertypesParams, WillSaveTextDocumentParams, WorkDoneProgressBegin, WorkDoneProgressCancelParams, WorkDoneProgressCreateParams, WorkDoneProgressEnd, WorkDoneProgressNotification, WorkDoneProgressReport, WorkspaceDiagnosticParams, WorkspaceDiagnosticReport, WorkspaceEdit, WorkspaceSymbol, WorkspaceSymbolParams}
@@ -23,6 +23,7 @@ import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
+import java.io.{PrintStream, PrintWriter, StringWriter}
 import javax.websocket.server.ServerEndpointConfig
 import scala.jdk.CollectionConverters._
 
@@ -138,10 +139,12 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
     client.publishDiagnostics(params)
   }
   private var diags : List[Diagnostic] = Nil
+  private var all_errors : List[info.kwarc.mmt.api.Error] = Nil
   def documentErrors(controller:Controller,doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))
-    val ndiags = errors.map{e =>
+    val ndiags = errors.collect{case e if !all_errors.contains(e) =>
+      all_errors ::= e
       val d = new Diagnostic
       val (lvl,msg) = e match {
         case SourceError(_,ref,_,ems,_) =>
@@ -173,6 +176,8 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
               iu.history.narrowDownError.present(controller.presenter)
             case io:InvalidObject =>
               io.extraMessage
+            case ie: InvalidElement =>
+              ie.extraMessage
           }))
         case _ =>
           d.setRange(new lsp4j.Range(new Position(1,1),new Position(1,1)))
@@ -225,6 +230,17 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def client = _client.getOrElse({
     ???
   }).asInstanceOf[ClientWrapper[ClientType]]
+
+  def safely[A](f : => A) : A = try {
+    f
+  } catch {
+    case t =>
+      val sw = new StringWriter()
+      t.printStackTrace(new PrintWriter(sw))
+      t.printStackTrace()
+      client.logError(sw.toString)
+      throw t
+  }
 
   private[lsp] def init(__log: (String,Option[String]) => Unit, ctrl : Controller) = {
     _log = __log

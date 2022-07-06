@@ -99,16 +99,16 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
     client.resetErrors(uri)
     this.file match {
       case Some(f) =>
-        Future {
+        Future { server.safely {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
             val pars = params(update(0,_))
-            val html = RusTeX.parse(f, pars)
+            val html = RusTeX.parse(f, pars,List("c_stex_module_"))
             update(0, "Parsing HTML... (2/2)")
             this.synchronized {
               val newhtml = HTMLParser(html)(parsingstate(pars.eh))
               pars.eh.close
               client.log("html parsed")
-              try {
+              //try {
                 server.stexserver.doHeader(newhtml)
 
                 val exts = server.stexserver.extensions
@@ -122,31 +122,25 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
                 newhtml.iterate(doE)
                 this.html = Some(newhtml)
                 ((), "Done")
-              } catch {
+              /*} catch {
                 case t: Throwable =>
                   t.printStackTrace()
                   client.log("Error: " + t.getMessage)
                   ((), "Failed")
-              }
+              }*/
             }
           }
           val msg = new HTMLUpdateMessage
-          try {
-            client.log("baseURI: " + server.localServer.toString)
-          } catch {
-            case t: Throwable =>
-              client.log("Error: Server not running")
-          }
-          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "document").toString + "?" + uri // uri
+          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + uri // uri
           this.client.client.updateHTML(msg)
-        }
+        }}
       case _ =>
     }
   }
 
   override val timercount: Int = 0
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
-  override def onUpdate(changes: List[Delta]): Unit = try this.synchronized {{
+  override def onUpdate(changes: List[Delta]): Unit = try this.synchronized { server.parser.synchronized {
     Annotations.clear
     client.resetErrors(uri)
     import info.kwarc.mmt.stex.parsing._
