@@ -20,7 +20,8 @@ class RuntimeEnvironment(val stack: execution.Stack, val rules: RuleSet) {
 
 class RuleBasedExecutor() extends Executor {
   def apply(theory: Theory,context: Context, prog: Term) = {
-     // val theory_context = theory.getInnerContext
+     // we don't want to deal with an explicit heap anymore
+     // instead we embedd the objects onto the JVM heap
      val stack = new execution.Stack
      stack.setTop(context)
      val rules = RuleSet.collectRules(controller, context)
@@ -30,13 +31,6 @@ class RuleBasedExecutor() extends Executor {
      val runtime = new Runtime(controller, env,defined_rules, logPrefix)
      log("executing " + prog + " with rules " + env.execRules.map(_.toString).mkString(", "))
      runtime.execute(prog)
-    // f Zero = Zero
-    // forall [x] f  Suc(x) = f x
-    // f True = ...
-    // f False = ...
-    // f x = ...
-    // ...
-    // k : Bool
   }
   def traverseTree(queue:mutable.ListBuffer[MPath],includedSet:mutable.Set[MPath],constants: mutable.ListBuffer[Theory]): Unit = {
     /**
@@ -71,7 +65,6 @@ class RuleBasedExecutor() extends Executor {
     traverseTree(queue,mutable.Set(),theories)
     // convert to immutable map, just for safety
     val q  = theories flatMap {_.getConstants}
-    // Todo: gather all Preprocessing Rules from the environment
     val buildRules = rules.get(classOf[RulePreprocessor])
     // here we now match against the _type_ not the term under the type!
     // the idea is to use these rules for the more static type information, rather than the code itsel

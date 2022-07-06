@@ -6,7 +6,7 @@ import symbols._
 import objects._
 import symbols._
 
-class InstanceOfTheory(env: RuntimeEnvironment, theory: Theory) extends
+class InstanceOfTheory(env: RuntimeEnvironment, val theory: Theory) extends
       Theory(theory.parent, theory.name / env.nextInstance.toString, theory.meta, Theory.noParams, Theory.noBase) {
 
   // add a realization of the instantiated theory
