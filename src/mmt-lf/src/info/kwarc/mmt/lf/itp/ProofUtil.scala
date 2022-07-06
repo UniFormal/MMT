@@ -413,11 +413,23 @@ object ProofUtil {
     preparesubs(terms.toList)
 
     /**
-      *
+      * TODO: clumsy, should be replaced
+      * this function goes through the splitted term and "applies" the passed solutions/applicants (app) to
+      * the target term (i.e. the splitted term stored in the mutable map "terms") by finding the viable position for
+      * every passed solution (i.e. what position it takes when applied to the term) while also solving bound variables withing the term
+      * (i.e. when an applicant solves a term which depends on a bound variable).
+      * While going through the splitted term (pos indicating the current positition in the term) named bound variables
+      * are stored in "vars" including their type and position in the splitted term. When a solution
+      * is applied the function then checks whether bound variables are solved. For example
+      * the term X has the type {a: tp} p a -> b then the splitted term is  List(PPi(a,tp) , PArr(p a) , PConst(b))
+      * now the term U with type p aa shall be applied to X. The function now goes through the splitted term.
+      * After checking that U can not be inserted at pos = 0 because "a" has type tp the function adds key "a" with
+      * value (tp , 0) to the vars Map. At pos = 1 U gets inserted and "a" in "p a" gets solved as "aa". Both solutions
+      * (the inserted term being the first) get added to the subs solution map
       * @param pos current position in the splitted term
-      * @param app
-      * @param vars
-      * @return
+      * @param app terms to apply (_1 = actual term to apply , _2 = type of the applicant)
+      * @param vars stores passed
+      * @return true if all pi terms got solved , false otherwise (not a good design but thats how it is right now)
       */
     def traverse(pos : Int, app : List[(Term , Term)], vars : Map[LocalName , (Term ,Int)]): Boolean = {
       //should not happen
@@ -425,16 +437,21 @@ object ProofUtil {
       //went through the whole splitted term
       if (pos >= initlen) return subs.forall(p => p._2.isDefined) && app.isEmpty
       val tm = terms(pos)
+      // if the applicant does not solve bound names this will be nonEmpty = true
       lazy val res : Option[Substitution] = if (app.isEmpty) None else {
         val tmp = unifyA(ctx  , app.head._2 , Context(vars.toList.map(x => VarDecl(n = x._1, tp = x._2._1)) : _*) , tm.getTp, hist,  s)
         tmp
       }
       (app , tm , res) match {
+        // with no applicants left , the pi can't be solved
         case (Nil , PPi(_,_), _) => false
+        // solve a pi , but the solution does not solve other bound variables
         case ((app0)::xs, PPi(nm , tp), None) => {
+          // add new bound variable to the vars Map , potentially replacing (shadowing) the old one
           val newvars = vars + (nm -> (tp, pos))
           traverse(pos + 1, app, newvars)
         }
+        // solve a pi , but the solution does solve other bound variables
         case ((applicant,app0)::xs, PPi(nm, tp) , Some((sb))) => {
           sb.foreach(f => {
             var (_ , fpos) = vars(f.name)
@@ -442,16 +459,21 @@ object ProofUtil {
             if (subs(fpos).isDefined && subs(fpos).get != f.target) {return false}
             subs(fpos) = Some(f.target)
           })
+          // substiture the solution to the splitted term at the current position
           subfrom(pos + 1 , Substitution(Sub(nm , applicant)))
           subs(pos) = Some(applicant)
           //   subs.forall(p => p._2.isDefined)
           traverse(pos + 1 , xs , vars)
 
         }
+        // no applicants left, check if all Pis got solved
         case (Nil , PArr(tp)  , _) => subs.forall(p => p._2.isDefined)
+        // the unification already happend at the begining of the function (this should be rewritten)
+        // since no Pis have been solved (res = None) move on
         case (app0::xs , PArr(tp) , None) => {
           traverse(pos + 1 , app , vars)
         }
+
         case ((applicant, app0)::xs , PArr(tp) , Some((sb ))) => {
           sb.foreach(f => {
             var (_ , fpos) = vars(f.name)
@@ -459,9 +481,11 @@ object ProofUtil {
             if (subs(fpos).isDefined && subs(fpos).get != f.target) {return false}
             subs(fpos) = Some(f.target)
           })
+          // solve current term with applicant
           subs(pos) = Some(applicant)
           traverse(pos + 1 , xs , vars)
         }
+        // reached the end of the splitted terms (i.e. the conclusion which cannot be a Pi) just check is all Pis got solved
         case _ => subs.forall(p => p._2.isDefined)
       }
     }
@@ -469,7 +493,7 @@ object ProofUtil {
     if (! traverse(0 , apptps , Map.empty)) return None
 
     /**
-      * generates new goals
+      * generate new goals from unsolved non Pi terms and generate the final term
       * @return
       */
     def buildTermAndGoals: (List[Goal],Term) = {
@@ -482,14 +506,17 @@ object ProofUtil {
         lazy val sb = subs.get(pos)
         val (gls , tms) = loop(pos + 1)
         (tmp,  sb) match {
+          // solved Pi (there are by design no unsolved Pis)
           case (PPi(nm, tp), Some(Some(sbt))) => {
             (gls, sbt :: tms)
           }
+          // unsolved Arrow, make a new goal and solve this term as an unknown
           case (PArr(tp) , None) => {
             val newgname = Context.pickFresh(gnames , LocalName("", "goal"))
             gnames = gnames ++ VarDecl(newgname._1)
             ( Goal(tp ,  ctx , newgname._1) :: gls , s.Unknown(newgname._1 , ctx.variables.map(x => x.toTerm).toList) :: tms)
           }
+          // solved Arrow, add it to the final term
           case (PArr(tp) , Some(Some(sbt))) => {
             (gls , sbt :: tms)
           }
@@ -522,7 +549,7 @@ object ProofUtil {
     // tp must be of the form Pi bindings.scope
     val (bindings, scope) = FunType.unapply(fact).get
     val (paramList, subgoalList) = bindings.span(_._1.isDefined)
-    // we do not allow named arguments after unnamed ones
+    // we do not allow named arguments after unnamed ones (this is a design flaw)
     if (subgoalList.exists(_._1.isDefined))
       return None
     // we do not allow shadowed parameters
@@ -536,10 +563,12 @@ object ProofUtil {
     val (paramsFresh, rename) = Context.makeFresh(params, context.map(_.name))
     val scopeFresh = scope ^? rename
     // match goal against scope, trying to solve for scope's free variables
-    // TODO using a first-order matcher is too naive in general - for the general case, we need to use the Solver
     // val unifiableparams = Context(paramsFresh.map(x => x.copy(tp = x.tp.map(tpp => Free(context,  tpp)))) : _ *)
+    // first element of the foldLeft accumulator is the modified remanmed  Pi bound names the goals depend on the second
+    // parameter accumulates substitutions
     val (unifiableparams0 , unifiablesub) =  paramsFresh.foldLeft(Nil : List[VarDecl] , Substitution())((res , x) =>  {
       //    val newctx = Context(ctx.map(y => y.copy(df = y.df.map(z => z ^ res._2) , tp = y.tp.map(z => z ^ res._2))   ) : _ *)
+      // needs to modify the type of the new goals because only those local variables that are mentioned via Free(... , ...) can occure in the solution
       val tmp =  x.copy(tp = x.tp.map(tpp => Free(context,  tpp ^ res._2)))
       val tmpsub = Sub(x.name, if (context.isEmpty) OMV(x.name) else OMA(OMV(x.name) , context.map(x => x.toTerm))) +: res._2.subs
       (  res._1 ++ List(tmp) , Substitution( tmpsub : _*))
