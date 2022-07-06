@@ -1360,7 +1360,7 @@ case class HTMLArg(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   }
 }
 
-class HTMLTopLevelTerm(orig : OMDocHTML) extends OMDocHTML(orig) with HTMLConstant {
+class HTMLTopLevelTerm(val orig : OMDocHTML) extends OMDocHTML(orig) with HTMLConstant {
   def init = {
     assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)

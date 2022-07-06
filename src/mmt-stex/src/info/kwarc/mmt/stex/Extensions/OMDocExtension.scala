@@ -191,6 +191,18 @@ object OMDocExtension extends DocumentExtension {
         case _ =>
       }
     },
+    {case t : HTMLTopLevelTerm => t.orig match {
+      case h : HasHead if t.isVisible =>
+        if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
+          // TODO
+        } else {
+          overlay(t, "/:" + server.pathPrefix + "/fragment?" + h.head.toString + "&language=" + getLanguage(t),
+            "/:" + server.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + getLanguage(t))
+        }
+      case _ =>
+    }
+
+    },
     {case t: HasHead if t.isVisible =>
       if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
         // TODO

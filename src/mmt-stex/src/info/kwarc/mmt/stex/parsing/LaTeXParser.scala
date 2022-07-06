@@ -18,6 +18,7 @@ trait TeXTokenLike {
   def addError(msg : String,extramsg : Option[String] = None,lvl : Level = Level.Error) = {
     errors ::= new STeXError(msg, extramsg, Some(lvl))
   }
+  def =?=(that : TeXTokenLike) : Boolean = false
 
 }
 trait MacroLike extends TeXTokenLike
