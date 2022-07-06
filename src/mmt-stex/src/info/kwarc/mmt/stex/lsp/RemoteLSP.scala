@@ -30,6 +30,19 @@ class RemoteLSP extends STeXExtension {
   }
 
   override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.lastOption match {
+    case Some("getupdates") =>
+      request.parsedQuery("archive").flatMap(controller.backend.getArchive(_)) match {
+        case Some(a) =>
+          val ts : Long = request.parsedQuery("timestamp").flatMap(_.toLongOption).getOrElse(0)
+          val ret = dimensions.map(dim =>
+            if ((a / dim).exists()) {
+              val ls = (a/dim).descendants.filter(_.lastModified().toLong > ts)
+              if (ls.isEmpty) None else Some((dim.key,JSONArray(ls.map(f => JSONString((a/dim).relativize(f).toString)) :_*)))
+            } else None
+          )
+          Some(ServerResponse.JsonResponse(JSONObject.apply(ret.collect{case Some((d,ls)) => (d,ls)} :_*)))
+        case _ => Some(ServerResponse.JsonResponse(JSONObject()))
+      }
     case Some("allarchives") =>
       val archs = controller.backend.getArchive("MMT/urtheories").get :: controller.backend.getArchives.filter(_.properties.get("format").contains("stex"))
       Some(ServerResponse.JsonResponse(JSONArray(archs.map(a => JSONObject(

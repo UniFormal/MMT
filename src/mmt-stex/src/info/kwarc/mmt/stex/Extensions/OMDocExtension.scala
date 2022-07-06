@@ -158,12 +158,20 @@ object OMDocExtension extends DocumentExtension {
           controller.backend.resolveLogical(d.path.uri) match {
             case Some((a,ls)) =>
               val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
-              iref.parent.foreach(_.addAfter(<div><a href={"/:" + server.pathPrefix + "/browser?archive=" + a.id + "&filepath="  + path} style="pointer-events:all;color:blue">{
+              iref.parent.foreach(_.addAfter(
+                <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath="  + path}>{
                   d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
                     case OMFOREIGN(node) => node
                     case _ => <span>{d.path.toString}</span>
                   }).getOrElse(<span>{d.path.toString}</span>)
-                }</a></div>,iref))
+                  }</div>
+                /*<div><a href={"/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath="  + path} style="pointer-events:all;color:blue">{
+                  d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
+                    case OMFOREIGN(node) => node
+                    case _ => <span>{d.path.toString}</span>
+                  }).getOrElse(<span>{d.path.toString}</span>)
+                }</a></div>*/
+                ,iref))
             case _ =>
           }
         case _ =>
@@ -175,17 +183,32 @@ object OMDocExtension extends DocumentExtension {
     {case s: HTMLSymbol =>
       controller.getO(s.path) match {
         case Some(c : Constant) =>
-          sidebar(s,{<span style="display:inline">Constant {makeButton("/:" + server.pathPrefix + "/declaration?" + c.path,scala.xml.Text(c.name.toString)
+          sidebar(s,{<span style="display:inline">Constant {makeButton(
+            "/:" + server.pathPrefix + "/fragment?" + c.path + "&language=" + getLanguage(s),
+            "/:" + server.pathPrefix + "/declaration?" + c.path + "&language=" + getLanguage(s)
+            ,scala.xml.Text(c.name.toString)
           )}<code>(\{s.macroname})</code></span>} :: Nil)
         case _ =>
       }
+    },
+    {case t : HTMLTopLevelTerm => t.orig match {
+      case h : HasHead if t.isVisible =>
+        if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
+          // TODO
+        } else {
+          overlay(t, "/:" + server.pathPrefix + "/fragment?" + h.head.toString + "&language=" + getLanguage(t),
+            "/:" + server.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + getLanguage(t))
+        }
+      case _ =>
+    }
+
     },
     {case t: HasHead if t.isVisible =>
       if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
         // TODO
       } else {
-        overlay(t, "/:" + server.pathPrefix + "/fragment?" + t.head.toString + "&amp;language=" + getLanguage(t),
-          "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&amp;language=" + getLanguage(t))
+        overlay(t, "/:" + server.pathPrefix + "/fragment?" + t.head.toString + "&language=" + getLanguage(t),
+          "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
       }
     },
   )
