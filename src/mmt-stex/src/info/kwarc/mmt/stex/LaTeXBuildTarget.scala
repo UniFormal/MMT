@@ -106,9 +106,9 @@ trait XHTMLParser extends TraversingBuildTarget {
     }
     val html = RusTeX.parse(inFile,params,List("c_stex_module_"))
     File.write(outFile.setExtension("shtml"),html)
-    val doc = try {
+    val doc = try { controller.library.synchronized {
       HTMLParser(outFile.setExtension("shtml"))(state)
-    } catch {
+    }} catch {
       case e =>
         e.printStackTrace()
         throw e
@@ -156,7 +156,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
     val state = new SemanticState(controller, rules, bt.errorCont, dpath)
-    HTMLParser(inFile)(state)
+    controller.library.synchronized{HTMLParser(inFile)(state)}
     index(state.doc)
     log("Finished: " + inFile)
     val results = DocumentDependency(state.doc.path) :: state.doc.getDeclarations.collect {
@@ -199,7 +199,7 @@ class HTMLToLucene extends XHTMLParser {
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
     val state = new SearchOnlyState(controller,rules,bt.errorCont,dpath)
-    HTMLParser(inFile)(state)
+    controller.library.synchronized{HTMLParser(inFile)(state)}
     val doc = state.Search.makeDocument(bt.outFile.stripExtension,bt.inFile,bt.archive)
 
     doc.save

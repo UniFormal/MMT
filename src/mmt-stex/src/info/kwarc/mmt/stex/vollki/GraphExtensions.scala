@@ -45,6 +45,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
 
     request.path.lastOption match {
       case Some(":vollki") =>
+        /*
         val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/vollki/guidedtours.html"))(server.getState)
         val entrydoc = doc.get("select")()("entrydoc").head
         val usermodel = doc.get("select")()("usermodel").head
@@ -61,6 +62,15 @@ object FullsTeXGraph extends ServerExtension("vollki") {
             entrydoc.add(<option value={n.id}>{n.getTitle(language)}</option>)
         }
         ServerResponse(doc.toString,"application/xhtml+xml")
+
+         */
+          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+          html = html.replace("TOUR_ID_PLACEHOLDER",path.map(_.id).getOrElse(""))
+          html = html.replace("BASE_URL_PLACEHOLDER","")
+        html = html.replace("CONTENT_URL_PLACEHOLDER","")
+          html = html.replace("USER_MODEL_PLACEHOLDER",user.map(_.f.name).getOrElse(""))
+          html = html.replace("LANGUAGE_PLACEHOLDER",language)
+          ServerResponse(html, "text/html")
       case Some("frag") =>
         path.foreach {node =>
           val doc = node.getDocument(language).getOrElse(node.getDocument("en").getOrElse(node.getDocument("").get))

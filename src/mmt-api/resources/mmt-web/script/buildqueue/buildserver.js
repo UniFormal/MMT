@@ -45,11 +45,11 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
           $scope.refreshCount = 1;
         })
       };
-      $scope.pause = false;
-      $scope.pauseOrContinue = function() {
-        $http.get('/:buildserver/pause').success(function(data) {
-          $scope.pause = data;
-        })
+      $scope.clearfinished = function() {
+          $http.get('/:buildserver/clearfinished').success(function(data) {
+              $scope.refreshRate = 1;
+              $scope.refreshCount = 1;
+          })
       };
       $scope.fileName ='';
       $scope.make = function() {

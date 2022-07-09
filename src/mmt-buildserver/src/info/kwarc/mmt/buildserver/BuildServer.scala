@@ -85,6 +85,12 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         State.failed = Nil
       }
       ServerResponse.JsonResponse(JSONNull)
+    case List("clearfinished") =>
+      //clear()
+      State.synchronized {
+        State.finished = Nil
+      }
+      ServerResponse.JsonResponse(JSONNull)
     case List("pause") =>
       // toggles pausing
       //pauseQueue = !pauseQueue
