@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.archives.{Archive, Build, BuildDependency, BuildFailur
 import info.kwarc.mmt.api.frontend.actions.{ActionCompanion, ActionState, ResponsiveAction}
 import info.kwarc.mmt.api.frontend.{Extension, ExtensionConf, NotFound}
 import info.kwarc.mmt.api.utils
+import info.kwarc.mmt.api.utils.JSON.JSONError
 import info.kwarc.mmt.api.utils.JSONObject.toList
 import info.kwarc.mmt.api.utils.{File, Git, JSON, JSONArray, JSONBoolean, JSONInt, JSONNull, JSONObject, JSONString, MMTSystem, MyList}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -250,7 +251,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           "{" + ret.mkString(",") + "}"
         })
       }
-      if (jsonfile.exists()) {
+      if (jsonfile.exists()) try {
         val obj = JSON.parse(File.read(jsonfile)).asInstanceOf[JSONObject]
         obj.map.foreach {
           case (JSONString(bts),o:JSONObject) =>
@@ -267,6 +268,8 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           case _ =>
             println("???")
         }
+      } catch {
+        case e: JSONError =>
       } else {
         jsonfile.up.mkdirs()
         jsonfile.createNewFile()
