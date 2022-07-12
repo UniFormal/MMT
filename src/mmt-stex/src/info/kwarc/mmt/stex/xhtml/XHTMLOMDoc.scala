@@ -1349,7 +1349,7 @@ case class HTMLDefiniendum(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) w
   this.classes ::= "definiendum"
   def toTerm = OMID(path)
   collectAncestor {
-    case s : HTMLStatement if resource != "" => s
+    case s : HTMLStatement => s
   }.foreach(_.fors ::= path)
 }
 
@@ -1431,9 +1431,8 @@ trait HTMLStatement extends OMDocHTML with HTMLGroupLike with HasLanguage {
   }
 
   override def onAdd: Unit = {
-    if (name.nonEmpty) {
-      print("")
-    }
+    super.onAdd
+    fors = fors.distinct
   }
 }
 
@@ -1581,7 +1580,9 @@ case class HTMLSAssertion(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) wi
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  override def onAdd = {sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
+  override def onAdd = {
+    super.onAdd
+    sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
     case m:HTMLModuleLike => m
   }.foreach { m => m.signature_theory.foreach {_ =>
     val tm = conc match {
@@ -1607,7 +1608,9 @@ case class HTMLSExample(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  override def onAdd = {sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
+  override def onAdd = {
+    super.onAdd
+    sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
     case m:HTMLModuleLike => m
   }.foreach { m => m.signature_theory.foreach {_ =>
     val c = Constant(m.sighome.get,LocalName(name),Nil,None,None,Some("stexsymbol"))
