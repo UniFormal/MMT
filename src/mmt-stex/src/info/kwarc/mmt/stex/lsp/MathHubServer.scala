@@ -148,10 +148,7 @@ trait MathHubServer { this : STeXLSPServer =>
 
   def installArchives(ids : String) = {
     getAllRemotes
-    val start = System.currentTimeMillis()
     getDeps(ids,new {var ls : List[Any] = Nil}).distinct.foreach(installArchiveI)
-    val durMs = System.currentTimeMillis() - start
-    println("took " + durMs + "ms")
     client.client.updateMathHub()
   }
 
@@ -222,41 +219,41 @@ trait MathHubServer { this : STeXLSPServer =>
               update(0,"Fetching File Index...")
               val attempt = Try(io.Source.fromURL(remoteServer + "/allarchfiles?" + archive.id)("ISO-8859-1"))
               val ret = if (attempt.isSuccess) JSON.parse(attempt.get.toBuffer.mkString) match {
-                case JSONArray(vls @_*) =>
-                  val files = vls.flatMap{j =>
+                case JSONArray(vls@_*) =>
+                  val files = vls.flatMap { j =>
                     val dim = j.asInstanceOf[JSONObject].getAsString("dim")
-                    j.asInstanceOf[JSONObject].getAsList(classOf[JSONString],"files").map(js => (dim,js.value))
+                    j.asInstanceOf[JSONObject].getAsList(classOf[JSONString], "files").map(js => (dim, js.value))
                   }
                   val max = files.length
                   files.par.zipWithIndex.foreach((args: ((String, String), Int)) => {
                     val ((dim, f), i) = args
-                    update (i.toDouble / max, "Downloading " + (i + 1) + "/" + max + "... (" + dim + "/" + f + ")")
+                    update(i.toDouble / max, "Downloading " + (i + 1) + "/" + max + "... (" + dim + "/" + f + ")")
 
                     try {
-                      val src = new URL (remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f).openStream ()
-                      val file = (a / RedirectableDimension (dim) / f)
-                      if (! file.up.exists () ) file.up.mkdirs ()
-                      file.createNewFile ()
-                      val target = new FileOutputStream (file.toString)
+                      val src = new URL(remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f).openStream()
+                      val file = (a / RedirectableDimension(dim) / f)
+                      if (!file.up.exists()) file.up.mkdirs()
+                      file.createNewFile()
+                      val target = new FileOutputStream(file.toString)
                       var c = 0
                       while ( {
-                        c = src.read ();
-                        c != - 1
+                        c = src.read();
+                        c != -1
                       }) {
-                        target.write (c)
+                        target.write(c)
                       }
-                      src.close ()
-                      target.close ()
+                      src.close()
+                      target.close()
                     } catch {
                       case t: Throwable =>
-                        println (t.getMessage)
-                        print ("")
+                        println(t.getMessage)
+                        print("")
                     }
                   })
-                  ((),"success")
+                  ((), "success")
                 case _ =>
-                  ((),"failed")
-              } else ((),"failed")
+                  ((), "failed")
+              } else ((), "failed")
               update(1,"Loading relational information")
               a.readRelational(Nil,controller,"rel")
               if (searchinitialized) {
