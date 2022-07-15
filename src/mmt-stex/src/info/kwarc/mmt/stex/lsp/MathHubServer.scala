@@ -1,18 +1,16 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
-import info.kwarc.mmt.api.backend.LocalSystem
-import info.kwarc.mmt.api.utils.JSONArray.toList
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, URLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.search.Searcher
 import org.eclipse.jgit.api.Git
 
-import java.io.{FileOutputStream, PrintWriter, StringWriter, Writer}
+import java.io.{FileOutputStream, PrintWriter, StringWriter}
 import java.net.URL
-import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
@@ -150,7 +148,10 @@ trait MathHubServer { this : STeXLSPServer =>
 
   def installArchives(ids : String) = {
     getAllRemotes
+    val start = System.currentTimeMillis()
     getDeps(ids,new {var ls : List[Any] = Nil}).distinct.foreach(installArchiveI)
+    val durMs = System.currentTimeMillis() - start
+    println("took " + durMs + "ms")
     client.client.updateMathHub()
   }
 
@@ -227,27 +228,31 @@ trait MathHubServer { this : STeXLSPServer =>
                     j.asInstanceOf[JSONObject].getAsList(classOf[JSONString],"files").map(js => (dim,js.value))
                   }
                   val max = files.length
-                  files.zipWithIndex.foreach { case ((dim,f),i) =>
-                    update(i.toDouble / max,"Downloading " + (i+1) + "/" + max + "... (" + dim + "/" + f + ")")
+                  files.par.zipWithIndex.foreach((args: ((String, String), Int)) => {
+                    val ((dim, f), i) = args
+                    update (i.toDouble / max, "Downloading " + (i + 1) + "/" + max + "... (" + dim + "/" + f + ")")
 
                     try {
-                      val src = new URL(remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f).openStream()
-                      val file = (a / RedirectableDimension(dim) / f)
-                      if (!file.up.exists()) file.up.mkdirs()
-                      file.createNewFile()
-                      val target = new FileOutputStream(file.toString)
+                      val src = new URL (remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f).openStream ()
+                      val file = (a / RedirectableDimension (dim) / f)
+                      if (! file.up.exists () ) file.up.mkdirs ()
+                      file.createNewFile ()
+                      val target = new FileOutputStream (file.toString)
                       var c = 0
-                      while ({c = src.read(); c!= -1}) {
-                        target.write(c)
+                      while ( {
+                        c = src.read ();
+                        c != - 1
+                      }) {
+                        target.write (c)
                       }
-                      src.close()
-                      target.close()
+                      src.close ()
+                      target.close ()
                     } catch {
-                      case t : Throwable =>
-                        println(t.getMessage)
-                        print("")
+                      case t: Throwable =>
+                        println (t.getMessage)
+                        print ("")
                     }
-                  }
+                  })
                   ((),"success")
                 case _ =>
                   ((),"failed")
