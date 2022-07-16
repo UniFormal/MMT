@@ -18,6 +18,9 @@ import scala.collection.mutable
 
 class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
 
+  def termReference = attributes.get((namespace,"stex-term-reference"))
+  def setTermReference(p : GlobalName) = attributes((namespace,"stex-term-reference")) = p.toString
+
   override def copy : this.type = try {
     val ret = this.getClass.getConstructor(classOf[HTMLParser.HTMLNode]).newInstance(orig.copy).asInstanceOf[this.type]
     children.foreach(c => ret.add(c.copy))
@@ -75,11 +78,13 @@ class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
     case Nil if n.isInstanceOf[HTMLText] =>
       try {STeX.informal(n.parent.get.node) } catch {
         case e =>
+          e.printStackTrace()
           ???
       }
     case List(_: HTMLText) | Nil =>
       try {STeX.informal(n.node) } catch {
         case e =>
+          e.printStackTrace()
           ???
       }
     case _ =>
@@ -1373,6 +1378,8 @@ class HTMLTopLevelTerm(val orig : OMDocHTML) extends OMDocHTML(orig) with HTMLCo
     ret.asInstanceOf[this.type]
   }
 
+  var constant : Option[Constant] = None
+
   init
 
   override def onAdd: Unit = {
@@ -1397,6 +1404,10 @@ class HTMLTopLevelTerm(val orig : OMDocHTML) extends OMDocHTML(orig) with HTMLCo
                   state.check(c)
                 case _ =>
               }
+              state.getO(c.path).foreach{case c : Constant =>
+                constant = Some(c)
+                setTermReference(c.path)
+              case _ => }
             }
         }
     }}
@@ -1621,12 +1632,75 @@ case class HTMLSExample(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with
     state.Search.addExample(this)
   }}}}}
 }
-case class HTMLSProof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
-case class HTMLSProofstep(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+trait HTMLProofFrame extends OMDocHTML {
+  var expanded = true
+  var forthm : Option[GlobalName] = None
+  var yields : Option[Term] = None
+  var justification : Option[Term] = None
+
+  override def onAdd: Unit = {
+    super.onAdd
+    sstate.foreach{ state =>
+      (forthm,this) match {
+        case (Some(_),_) =>
+        case (_,st:HTMLStatement) => forthm = st.fors.collectFirst{case gn : GlobalName => gn}
+        case _ =>
+      }
+      (yields,forthm) match {
+        case (None,Some(gn)) =>
+          state.getO(gn) match {
+            case Some(c : Constant) if c.df.isDefined => yields = c.df
+            case _ =>
+          }
+        //case (Some(tm),Some(gn)) => // check equality ?
+        case (Some(tm),_) => yields = Some(state.applyTopLevelTerm(tm))
+        case _ =>
+      }
+    }
+  }
+}
+case class HTMLSProof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement {}
+case class HTMLSProofstep(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame {}
+case class HTMLSProofyield(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+  def init = {
+    assert(sstate.forall(!_.in_term))
+    sstate.foreach(_.in_term = true)
+  }
+  init
+  override def copy : this.type = {
+    val ret = new HTMLSProofyield(orig.copy) {
+      override def init = {}
+    }.asInstanceOf[this.type]
+    children.foreach(c => ret.add(c.copy))
+    ret.asInstanceOf[this.type]
+  }
+  override def onAdd: Unit = {
+    sstate.foreach { _.in_term = false}
+    super.onAdd
+    sstate.foreach {_ => collectAncestor { case frame : HTMLProofFrame => frame} match {
+      case Some(frame) =>
+        frame.yields match {
+          case None => frame.yields = getTerm
+          case _ =>
+        }
+      case _ =>
+    }}
+  }
+}
 case class HTMLSProofsketch(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
-case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
-case class HTMLSpfcase(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement {}
+case class HTMLSpfcase(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame {}
 case class HTMLSpfeq(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+
+case class HTMLSProoftitle(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {}
+case class HTMLSProofbody(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+  override def onAdd = {
+    super.onAdd
+    collectAncestor {
+      case m: HTMLProofFrame => m
+    }.foreach { f => if (resource.contains("false")) f.expanded = false }
+  }
+}
 
 case class HTMLFrame(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   this.classes ::= "frame"
