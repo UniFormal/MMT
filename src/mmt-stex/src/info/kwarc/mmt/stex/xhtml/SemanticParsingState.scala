@@ -247,6 +247,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 )
                 ret.copyFrom(tm)
                 ret
+              case _ => tm
             }
         }
       }

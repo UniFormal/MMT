@@ -18,8 +18,8 @@ import scala.collection.mutable
 
 class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
 
-  def termReference = attributes.get((namespace,"stex-term-reference"))
-  def setTermReference(p : GlobalName) = attributes((namespace,"stex-term-reference")) = p.toString
+  def termReference = attributes.get((namespace,"data-stex-term-reference"))
+  def setTermReference(p : GlobalName) = attributes((namespace,"data-stex-term-reference")) = p.toString
 
   override def copy : this.type = try {
     val ret = this.getClass.getConstructor(classOf[HTMLParser.HTMLNode]).newInstance(orig.copy).asInstanceOf[this.type]

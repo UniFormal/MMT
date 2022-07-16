@@ -148,8 +148,13 @@ object DocumentExtension extends STeXExtension {
   }
 
   def sidebar(elem : HTMLNode, content: List[Node]) = {
-    elem.parent.foreach {case p =>
-      p.addBefore(<div class="sidebar">{content}</div>,elem)
+    def parent(e : HTMLNode) : Option[(HTMLNode,HTMLNode)] = e.parent match {
+      case Some(p) if !p.isMath => Some((p,e))
+      case Some(p) => parent(p)
+      case None => None
+    } //if (e.isMath) parent(e.parent.get) else e
+    parent(elem).foreach {case (p,c) =>
+      p.addBefore(<div class="sidebar">{content}</div>,c)
     }
     //val sidenotes = getTop(elem).get()()("sidenote-container").headOption
     //sidenotes.foreach(_.add(<div>{content}</div>))
