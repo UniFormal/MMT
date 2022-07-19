@@ -42,6 +42,16 @@ object FragmentExtension extends STeXExtension {
           val path = Path.parse(comp)
           doFragment(path,lang)
       }
+    case Some("symbol") =>
+      request.query match {
+        case "" =>
+          Some(ServerResponse("Empty Document path", "txt"))
+        case s =>
+          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+          html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + server.pathPrefix + "/declaration?" + s)
+          html = html.replace("BASE_URL_PLACEHOLDER", "")
+          Some(ServerResponse(html, "text/html"))
+      }
     case Some("declaration") =>
       request.query match {
         case "" =>
