@@ -1,15 +1,16 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{DPath, ErrorHandler, Level, OpenCloseHandler, SourceError}
+import info.kwarc.mmt.api.{DPath, DefComponent, ErrorHandler, Level, OpenCloseHandler, Path, SourceError}
 import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
-import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
+import info.kwarc.mmt.stex.xhtml.{HTMLDefiniendum, HTMLParser, HTMLTopLevelTerm, HasHead, SemanticState}
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXParseError, TeXError}
 import info.kwarc.rustex.Params
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
@@ -112,12 +113,52 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
                 server.stexserver.doHeader(newhtml)
 
                 val exts = server.stexserver.extensions
-                val docrules = exts.collect {
+                var docrules = exts.collect {
                   case e: DocumentExtension =>
                     e.documentRules
                 }.flatten
 
-                def doE(e: HTMLNode): Unit = docrules.foreach(r => r.unapply(e))
+              val simplestate = new ParsingState(server.controller,Nil)
+/*
+              docrules = docrules ::: List[PartialFunction[HTMLNode,Unit]]({case t : HTMLTopLevelTerm if !t.orig.isInstanceOf[HTMLDefiniendum] =>
+                t.orig match {
+                  case h : HasHead if t.isVisible =>
+                    if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
+                      // TODO
+                    } else {
+                      DocumentExtension.overlay(t, "/:" + server.stexserver.pathPrefix + "/fragment?" + h.head.toString + "&language=" + DocumentExtension.getLanguage(t),
+                        "/:" + server.stexserver.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + DocumentExtension.getLanguage(t))
+                    }
+                  case _ =>
+                }
+                t.constant.foreach {c =>
+                  DocumentExtension.sidebar(t,{<span style="display:inline">Term {DocumentExtension.makeButton(
+                    "/:" + server.stexserver.pathPrefix + "/fragment?" + c.path + "&language=" + DocumentExtension.getLanguage(t),
+                    "/:" + server.stexserver.pathPrefix + "/declaration?" + c.path + "&language=" + DocumentExtension.getLanguage(t)
+                    ,server.stexserver.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
+                  )}</span>} :: Nil)
+                }
+              },
+                {case t : HasHead if t.termReference.isDefined =>
+                  server.controller.getO(Path.parseS(t.termReference.get)) match {
+                    case Some(c : Constant) =>
+                      DocumentExtension.sidebar(t,{<span style="display:inline">Term {DocumentExtension.makeButton(
+                        "/:" + server.stexserver.pathPrefix + "/fragment?" + c.path + "&language=" + DocumentExtension.getLanguage(t),
+                        "/:" + server.stexserver.pathPrefix + "/declaration?" + c.path + "&language=" + DocumentExtension.getLanguage(t)
+                        ,server.stexserver.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
+                      )}</span>} :: Nil)
+                    case _ =>
+                  }
+                })
+
+ */
+
+              simplestate._top = Some(newhtml)
+              newhtml.iterate(_.state = simplestate)
+
+                def doE(e: HTMLNode): Unit = {
+                  docrules.foreach(r => r.unapply(e))
+                }
 
                 newhtml.iterate(doE)
                 this.html = Some(newhtml)

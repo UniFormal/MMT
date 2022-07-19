@@ -216,36 +216,6 @@ object OMDocExtension extends DocumentExtension {
         overlay(t, "/:" + server.pathPrefix + "/declheader?" + t.head.toString,
           "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
     },
-    {case t : HTMLTopLevelTerm if !t.orig.isInstanceOf[HTMLDefiniendum] =>
-      t.orig match {
-        case h : HasHead if t.isVisible =>
-          if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
-            // TODO
-          } else {
-            overlay(t, "/:" + server.pathPrefix + "/fragment?" + h.head.toString + "&language=" + getLanguage(t),
-              "/:" + server.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + getLanguage(t))
-          }
-        case _ =>
-      }
-      t.constant.foreach {c =>
-        sidebar(t,{<span style="display:inline">Term {makeButton(
-          "/:" + server.pathPrefix + "/fragment?" + c.path + "&language=" + getLanguage(t),
-          "/:" + server.pathPrefix + "/declaration?" + c.path + "&language=" + getLanguage(t)
-          ,server.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
-        )}</span>} :: Nil)
-      }
-    },
-    {case t : HasHead if t.termReference.isDefined =>
-      controller.getO(Path.parseS(t.termReference.get)) match {
-        case Some(c : Constant) =>
-          sidebar(t,{<span style="display:inline">Term {makeButton(
-            "/:" + server.pathPrefix + "/fragment?" + c.path + "&language=" + getLanguage(t),
-            "/:" + server.pathPrefix + "/declaration?" + c.path + "&language=" + getLanguage(t)
-            ,server.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
-          )}</span>} :: Nil)
-        case _ =>
-      }
-    },
     {case t: HasHead if t.isVisible && !t.isInstanceOf[HTMLDefiniendum] =>
       if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
         // TODO

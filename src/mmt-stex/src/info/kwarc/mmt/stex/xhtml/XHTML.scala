@@ -47,7 +47,7 @@ object HTMLParser {
     namespaces("rustex") = ns_rustex
     namespaces("svg") = ns_svg
 
-    private[HTMLParser] var _top : Option[HTMLNode] = None
+    var _top : Option[HTMLNode] = None
     protected var _parent : Option[HTMLNode] = None
     private var _namespace : String = ""
     private val _rules : List[HTMLRule] = rules.sortBy(-_.priority)
