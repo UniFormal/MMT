@@ -398,17 +398,15 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
             case Some(vd) =>
               vd.df.foreach(traverse)
               val ntp = getUnknownTp
-              val tp = Solver.makeUnknown(ntp,names.unknowns.map(OMV(_)))
               names.unknowns = names.unknowns ::: ntp :: Nil
-              //val tp = Solver.makeUnknown(ntp,(names.frees.reverse.map(i => OMV(i.name)) ::: con.map(v => OMV(v.name))).distinct)
+              val tp = Solver.makeUnknown(ntp,(names.frees.reverse.map(i => OMV(i.name))/* ::: con.map(v => OMV(v.name))*/).distinct)
               val v = VarDecl(n,None,Some(tp),vd.df,None)
               v.copyFrom(vd)
               v
             case _ =>
               val ntp = getUnknownTp
-              val tp = Solver.makeUnknown(ntp,names.unknowns.map(OMV(_)))
               names.unknowns = names.unknowns ::: ntp :: Nil
-              //val tp = Solver.makeUnknown(ntp,(names.frees.reverse.map(i => OMV(i.name)) ::: con.map(v => OMV(v.name))).distinct)
+              val tp = Solver.makeUnknown(ntp,(names.frees.reverse.map(i => OMV(i.name))/* ::: con.map(v => OMV(v.name))*/).distinct)
               VarDecl(n,tp)
           }
           names.frees ::= d
