@@ -224,6 +224,25 @@ object OMDocExtension extends DocumentExtension {
           "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
       }
     },
+    {case t : HTMLTopLevelTerm if !t.orig.isInstanceOf[HTMLDefiniendum] =>
+      t.orig match {
+        case h : HasHead if t.isVisible =>
+          if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
+            // TODO
+          } else {
+            overlay(t, "/:" + server.pathPrefix + "/fragment?" + h.head.toString + "&language=" + getLanguage(t),
+              "/:" + server.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + getLanguage(t))
+          }
+        case _ =>
+      }
+      /*t.constant.foreach {c =>
+        DocumentExtension.sidebar(t,{<span style="display:inline">Term {DocumentExtension.makeButton(
+          "/:" + server.stexserver.pathPrefix + "/fragment?" + c.path + "&language=" + DocumentExtension.getLanguage(t),
+          "/:" + server.stexserver.pathPrefix + "/declaration?" + c.path + "&language=" + DocumentExtension.getLanguage(t)
+          ,server.stexserver.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
+        )}</span>} :: Nil)
+      }*/
+    }
   )
 /*
   override lazy val documentRules = List(
