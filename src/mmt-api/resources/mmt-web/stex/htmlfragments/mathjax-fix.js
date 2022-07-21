@@ -1,3 +1,4 @@
+//let oldmathjax = MathJax;
 MathJax = {
     startup: {
         ready() {

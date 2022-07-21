@@ -78,7 +78,7 @@ sealed case class Fact(
       }
 
       val ctx = Context(ref.uri.module)
-      val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
+      val simplicationUnit = SimplificationUnit(ctx, expandVarDefs = true, expandConDefs = true, fullRecursion = true)
 
       ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }

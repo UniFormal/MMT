@@ -102,7 +102,9 @@ object MagicTest {
       // Navid
       home / "Desktop" / "mmt-archives",
       // John
-      home / "Documents" / "mmt_and_archives" / "archives"
+      home / "Documents" / "mmt_and_archives" / "archives",
+      // alexander
+      home / "Dokumente" / "Studium" / "MMTWorkspace"/"MMT"
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 

@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.archives.{Archive, Build, BuildDependency, BuildFailur
 import info.kwarc.mmt.api.frontend.actions.{ActionCompanion, ActionState, ResponsiveAction}
 import info.kwarc.mmt.api.frontend.{Extension, ExtensionConf, NotFound}
 import info.kwarc.mmt.api.utils
+import info.kwarc.mmt.api.utils.JSON.JSONError
 import info.kwarc.mmt.api.utils.JSONObject.toList
 import info.kwarc.mmt.api.utils.{File, Git, JSON, JSONArray, JSONBoolean, JSONInt, JSONNull, JSONObject, JSONString, MMTSystem, MyList}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -83,6 +84,12 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       State.synchronized {
         State.finished = Nil
         State.failed = Nil
+      }
+      ServerResponse.JsonResponse(JSONNull)
+    case List("clearfinished") =>
+      //clear()
+      State.synchronized {
+        State.finished = Nil
       }
       ServerResponse.JsonResponse(JSONNull)
     case List("pause") =>
@@ -244,7 +251,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           "{" + ret.mkString(",") + "}"
         })
       }
-      if (jsonfile.exists()) {
+      if (jsonfile.exists()) try {
         val obj = JSON.parse(File.read(jsonfile)).asInstanceOf[JSONObject]
         obj.map.foreach {
           case (JSONString(bts),o:JSONObject) =>
@@ -261,6 +268,8 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           case _ =>
             println("???")
         }
+      } catch {
+        case e: JSONError =>
       } else {
         jsonfile.up.mkdirs()
         jsonfile.createNewFile()
@@ -278,7 +287,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     }
     private val deps = mutable.HashMap.empty[(Archive,File),FileDeps]
     def getDeps(a : Archive, f: File,tg : TraversingBuildTarget) = this.synchronized(getDepsI(a,f,tg))
-    private def getDep(a : Archive,f : File) =  deps.getOrElse((a,f),{
+    private def getDep(a : Archive,f : File) =  deps.getOrElseUpdate((a,f),{
       val depfile = a / RedirectableDimension("buildresults") / ((a / source).relativize(f).toString + ".json")
       new FileDeps(a,depfile)
     })
@@ -291,18 +300,30 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       val dep = getDep(a,f)
       dep.yields.get(tg)
     }
-    private class MutableList[A](var ls : List[A] = Nil)
-    def getFutureCone(a : Archive, f:File,tg : TraversingBuildTarget) = this.synchronized{
-      implicit val ml : MutableList[(TraversingBuildTarget,Archive, File)] = new MutableList(Nil)
-      getDep(a,f).yields.getOrElse(tg,Nil).foreach(getFutureConeI)
-      ml.ls
+    private class MutableList[A,B] {
+      var ls : List[A] = Nil
+      var nexts : List[B] = Nil
     }
-    private def getFutureConeI(d : Dependency)(implicit ml : MutableList[(TraversingBuildTarget,Archive, File)]) : Unit = {
-      targets.get(d).toList.foreach { case (t, a, f) if !ml.ls.contains((t,a,f)) =>
-        ml.ls ::= (t,a,f)
-        getDep(a, f).yields.getOrElse(t, Nil).foreach(getFutureConeI)
+    def getFutureCone(a : Archive, f:File,tg : TraversingBuildTarget) = this.synchronized{
+      implicit val ml : MutableList[(TraversingBuildTarget,Archive, File),Dependency] = new MutableList
+      ml.ls = getDep(a,f).future.getOrElse(tg,Nil).toList
+      ml.nexts = getDep(a,f).yields.getOrElse(tg,Nil)
+      getFutureConeI(ml)
+      ml.ls.distinct
+    }
+    private def getFutureConeI(implicit ml : MutableList[(TraversingBuildTarget,Archive, File),Dependency]) : Unit = ml.nexts.headOption match {
+      case Some(d) =>
+        ml.nexts = ml.nexts.tail
+        targets.get(d).toList.foreach { case (t, a, f) =>
+          if (!ml.ls.contains((t,a,f))) {
+            val fut = getDep(a,f).future.getOrElse(t,Nil).toList
+            ml.ls = ml.ls ::: ((t, a, f) :: fut)
+            ml.nexts = ml.nexts ::: fut.flatMap{case (t,a,f) => getDep(a,f).yields.getOrElse(t,Nil)}
+          }
+        case _ =>
+        }
+        getFutureConeI
       case _ =>
-      }
     }
     def update(a : Archive, f : File, tg: TraversingBuildTarget,deps : List[Dependency],yields : List[Dependency]) = this.synchronized {
       val dep = getDep(a,f)
@@ -313,13 +334,19 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         val br = a / RedirectableDimension("buildresults")
         if (br.exists()) {
           br.descendants.foreach { f =>
-            deps((a, f)) = new FileDeps(a,f)
+            if (f.getExtension.contains("json")) {
+              val fd = new FileDeps(a, f)
+              deps((a, f)) = fd
+            }
           }
         }
       }
       deps.values.foreach{fd => fd.dependson.toList.foreach { case (tg,ds) =>
         ds.foreach { d =>
-          targets.get(d).foreach{case (ntg,na,src) => getDep(na,src).future.getOrElseUpdate(ntg,mutable.HashSet.empty).add((tg,fd.a,fd.sourcefile))}
+          targets.get(d).foreach{
+            case (ntg,na,src) =>
+              getDep(na,src).future.getOrElseUpdate(ntg,mutable.HashSet.empty).add((tg,fd.a,fd.sourcefile))
+          }
         }
       }}
     }
@@ -331,14 +358,14 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
 
     State.toqueue = State.queue.dequeueAll(_ => true).toList ::: State.toqueue
 
-    State.toqueue.foreach{ qt =>
+    /*State.toqueue.foreach{ qt =>
       FileDeps.getFutureCone(qt.task.archive,qt.task.inFile,qt.target).foreach {
         case (bt, a, f) if State.toqueue.forall(q => q.target != bt || q.task.archive != a || q.task.inFile != f) =>
           val task = bt.makeBuildTask(a, (a / source).relativize(f).toFilePath)
           State.toqueue ::= new QueuedTask(bt, BuildResult.empty, task)
         case _ =>
       }
-    }
+    }*/
 
     var donedeps : List[Dependency] = Nil
     var doneqts : List[QueuedTask] = Nil

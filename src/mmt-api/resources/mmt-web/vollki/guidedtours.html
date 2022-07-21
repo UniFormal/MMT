@@ -26,7 +26,7 @@
             xhr.onreadystatechange = function(e) {
                 if(xhr.readyState == 4 &amp;&amp; xhr.status == 200) {
                     con.innerHTML = xhr.responseText;
-                    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+                    MathJax.typeset();
                 }
             }
             xhr.send();

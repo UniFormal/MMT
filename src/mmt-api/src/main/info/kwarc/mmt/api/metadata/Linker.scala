@@ -22,6 +22,9 @@ abstract class Linker[A](key: GlobalName) {
   def delete(e: HasMetaData) {
      e.metadata.delete(key)
   }
+  def copy(from:HasMetaData,to:HasMetaData) = {
+    get(from).foreach(md => update(to,md))
+  }
 }
 
 /** special case where we link to a plain URI */

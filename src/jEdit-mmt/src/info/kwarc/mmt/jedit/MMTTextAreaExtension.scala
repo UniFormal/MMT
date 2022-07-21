@@ -178,7 +178,7 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
       if (offset == -1) return null
       val (asset,selected) = MMTSideKick.getSelectedAssetAtOffset(view,offset) getOrElse{return null}
       try {
-        asset match {
+        val tt = asset match {
           case da: MMTElemAsset =>
             da.elem match {
               case c: Constant =>
@@ -220,6 +220,7 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
             }
           case _ => null
         }
+        tt + " " // last character often cut off
       } catch {case e: Exception =>
         e.getMessage
       }

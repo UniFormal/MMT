@@ -24,6 +24,7 @@ allpdf     info.kwarc.mmt.stex.AllPdf
 stex-xhtml info.kwarc.mmt.stex.LaTeXToHTML
 xhtml-omdoc info.kwarc.mmt.stex.HTMLToOMDoc
 stex-omdoc info.kwarc.mmt.stex.STeXToOMDoc
+xhtml-lucene info.kwarc.mmt.stex.HTMLToLucene
 
 mmttex     info.kwarc.mmt.latex.MMTTeX
 

@@ -198,7 +198,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
             return traverse(rule.term.from(t))
           }
           // TODO does not work yet; how does definition expansion interact with other steps?
-          if (state.unit.expandDefinitions) {
+          if (state.unit.expandConDefs) {
             val pCons = controller.globalLookup.getO(ComplexTheory(context), p.toLocalName)
             val pDf = pCons.flatMap {
               case c: Constant if c.df.isDefined =>
@@ -242,7 +242,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            vdO match {
              case Some(d) =>
                log("expanding and simplifying definition of variable " + n)
-               traverse(d)(context.before(n), state)
+               if(state.unit.expandVarDefs)
+                traverse(d)(context.before(n), state)
+               else
+                 t
              case None =>
                //special case to avoid marking an unknown as stable
                val isUnknown = state.unit.solverO match {
@@ -280,7 +283,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     c.dfC.normalize {u =>
       val cont = controller.getContext(c)
       val rs = RuleSet.collectRules(controller, cont)
-      self.apply(u, SimplificationUnit(cont, true, fullRec), rs)
+      self.apply(u, SimplificationUnit(cont, true,true, fullRec), rs)
     }
   }
   

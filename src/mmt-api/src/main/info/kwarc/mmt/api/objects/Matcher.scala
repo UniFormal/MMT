@@ -44,7 +44,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     */
   private def solve(name: LocalName, value: Term): Boolean = {
     val (left, solved :: right) = querySolution.span(_.name != name)
-    val valueS = controller.simplifier(value, SimplificationUnit(constantContext ++ left, false, true), rules)
+    val valueS = controller.simplifier(value, SimplificationUnit(constantContext ++ left, false, false, true), rules)
     solved.tp foreach { tp =>
       val valueTp = Solver.infer(controller, constantContext, value, Some(rules)).getOrElse(return false)
       val tpmatch = aux(Nil, valueTp, tp)
@@ -74,7 +74,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     def simplify(t: Obj)(implicit stack: Stack, history: History): t.ThisType =
       controller.simplifier(t, SimplificationUnit(
         stack.context,
-        expandDefinitions = false,
+        expandVarDefs = false,
+        expandConDefs = false,
         fullRecursion = false
       ), rules)
 

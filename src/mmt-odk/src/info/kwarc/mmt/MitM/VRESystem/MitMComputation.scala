@@ -28,7 +28,7 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
     val rs = RuleSet.collectRules(controller,con)
     rs.add(systemRule(con))
     rs.add(queryRule)
-    controller.simplifier(tm,SimplificationUnit(con, true, true), rs)
+    controller.simplifier(tm,SimplificationUnit(con, true,true, true), rs)
   }
 
   /** a rule used to evaluate MMT queries */

@@ -19,8 +19,11 @@ class ExecuteFromShell extends ShellExtension("run") {
      report.groups += exec.logPrefix
      if (args.isEmpty)
        throw LocalError("MMT URI of constant expected")
+
      val nsMap = controller.getNamespaceMap
      val thy = Path.parseM(args.head, nsMap)
+     println("start",thy)
+     val theory = controller.getTheory(thy)
      // TODO this is an inefficient way to fill the mathpath: load everything we know
      controller.getConfig.getEntries(classOf[LMHConf]).foreach { e => controller.addArchive(e.local)}
      val con = Context(thy)
@@ -35,7 +38,7 @@ class ExecuteFromShell extends ShellExtension("run") {
          log("invalid program; trying to execute unchecked program")
          progP
      }
-     val result = exec(Context(thy), progC)
+     val result = exec(theory, Context(thy), progC)
      println("\nprogram terminated with value: " + controller.presenter.asString(result))
      withSuccess
    }

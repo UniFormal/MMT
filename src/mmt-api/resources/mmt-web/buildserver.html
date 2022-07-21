@@ -25,7 +25,7 @@
     <p>
         <button ng-click="clear()">clear queue</button>
         <button ng-click="list()">get current state</button>
-        <button ng-click="pauseOrContinue()"><span>{{pause ? 'continue' : 'pause'}}</span></button>
+        <button ng-click="clearfinished()"><span>Clear finished</span></button>
     </p>
     <p>
         <select ng-model="targets.current" ng-options="tar for tar in targets.list"></select>

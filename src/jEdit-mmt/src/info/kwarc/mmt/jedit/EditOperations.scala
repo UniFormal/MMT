@@ -55,7 +55,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     as match {
       case oa: JObjAsset =>
         val obj = oa.obj
-        val objN = mmtplugin.controller.simplifier(obj, SimplificationUnit(oa.context, true, true))
+        val objN = mmtplugin.controller.simplifier(obj, SimplificationUnit(oa.context, true,true, true))
         val objNS = mmtplugin.asString(objN)
         val textArea = view.getTextArea
         if (selected && replace) {
@@ -69,7 +69,7 @@ class EditActions(mmtplugin: MMTPlugin) {
           val tpO = oa.inferType
           val tpStr = tpO.map {tp =>
             val tpS = mmtplugin.asString(tp)
-            val tpN = mmtplugin.controller.simplifier(tp,SimplificationUnit(oa.context,true,true))
+            val tpN = mmtplugin.controller.simplifier(tp,SimplificationUnit(oa.context,true,true,true))
             val tpNS = mmtplugin.asString(tpN)
             s"\n: $tpS\n= $tpNS"
           }.getOrElse("")

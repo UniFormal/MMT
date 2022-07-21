@@ -2,7 +2,7 @@ package info.kwarc.mmt.lsp
 
 import info.kwarc.mmt.api.parser.SourceRegion
 import org.eclipse.lsp4j
-import org.eclipse.lsp4j.{CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, CompletionOptions, CompletionParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams, DocumentSymbol, DocumentSymbolOptions, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverOptions, HoverParams, InitializeParams, InitializeResult, InsertTextFormat, InsertTextMode, MarkupContent, MarkupKind, Position, SemanticTokens, SemanticTokensLegend, SemanticTokensParams, SemanticTokensWithRegistrationOptions, SymbolInformation, TextDocumentSyncKind, TextEdit, VersionedTextDocumentIdentifier, WorkDoneProgressCreateParams, WorkspaceEdit, WorkspaceSymbolOptions}
+import org.eclipse.lsp4j.{CodeLens, CodeLensOptions, CodeLensParams, Command, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, CompletionOptions, CompletionParams, DeclarationParams, DefinitionParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams, DocumentLinkOptions, DocumentSymbol, DocumentSymbolOptions, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverOptions, HoverParams, ImplementationParams, InitializeParams, InitializeResult, InlayHint, InlayHintParams, InsertTextFormat, InsertTextMode, Location, LocationLink, MarkupContent, MarkupKind, Position, SemanticTokens, SemanticTokensLegend, SemanticTokensParams, SemanticTokensWithRegistrationOptions, SymbolInformation, TextDocumentIdentifier, TextDocumentSyncKind, TextEdit, VersionedTextDocumentIdentifier, WorkDoneProgressCreateParams, WorkspaceEdit, WorkspaceSymbolOptions}
 
 import java.util
 import scala.collection.JavaConverters._
@@ -15,12 +15,12 @@ trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[Cli
 
   override def didOpen(params: DidOpenTextDocumentParams): Unit = {
     val document = params.getTextDocument
-    val d = documents.synchronized{documents.getOrElseUpdate(document.getUri,newDocument(document.getUri))}
+    val d = documents.synchronized{documents.getOrElseUpdate(document.getUri.replace("%3A",":"),newDocument(document.getUri.replace("%3A",":")))}
     d.init(document.getText)
   }
 
   override def didChange(params: DidChangeTextDocumentParams): Unit = {
-    val uri = params.getTextDocument.getUri
+    val uri = params.getTextDocument.getUri.replace("%3A",":")
     val doc = documents.synchronized{documents.getOrElse(uri,{
       log("Document not found: " + uri)
       return
@@ -33,48 +33,6 @@ trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[Cli
   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
     result.getCapabilities.setTextDocumentSync(TextDocumentSyncKind.Incremental)
   }
-
-    protected object a_TD {
-
-
-/*
-
-      override def semanticTokensFull(params: SemanticTokensParams): CompletableFuture[SemanticTokens] = Completable {
-        log("semanticTokensFull",Some("methodcall-textDocument"))
-        log("doc: " + params.getTextDocument,Some("completion"))
-
-
-        val uri = params.getTextDocument.getUri
-        // log("File: " + file,Some("didChange"))
-        val doc = documents.find(_.uri == uri).getOrElse {
-          log("Document not found: " + uri)
-          return Completable(new SemanticTokens(Nil.asJava))
-        }
-        val ls = doc.highlight.asJava.asInstanceOf[util.List[Integer]]
-        //startTimer
-        new SemanticTokens(ls)//(List(1,2,3).asJava)
-      }
-
-      private def startTimer: Unit = Future {
-        Thread.sleep(20000)
-        client.refreshSemanticTokens()
-      }(scala.concurrent.ExecutionContext.global)
-
-      override def semanticTokensFullDelta(params: SemanticTokensDeltaParams): CompletableFuture[JEither[SemanticTokens, SemanticTokensDelta]] = Completable {
-        log("semanticTokensFullDelta",Some("methodcall-textDocument"))
-        log("doc: " + params.getTextDocument,Some("completion"))
-        JEither.forRight(new SemanticTokensDelta(Nil.asJava))
-      }
-
-      override def semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture[SemanticTokens] = Completable {
-        log("semanticTokensRange",Some("methodcall-textDocument"))
-        log("doc: " + params.getTextDocument,Some("completion"))
-        new SemanticTokens(Nil.asJava)
-      }
-
-
- */
-    }
 
 }
 
@@ -118,7 +76,7 @@ trait WithAutocomplete[ClientType <: LSPClient] extends LSPServer[ClientType] {
   def completion(doc : String, line : Int, char : Int) : List[Completion]
 
   override def completion(position: CompletionParams): (Option[List[CompletionItem]], Option[CompletionList]) = {
-    val ls = completion(position.getTextDocument.getUri,position.getPosition.getLine,position.getPosition.getCharacter)
+    val ls = completion(position.getTextDocument.getUri.replace("%3A",":"),position.getPosition.getLine,position.getPosition.getCharacter)
     if (ls.isEmpty) (None,None) else {
       val ret = new CompletionList()
       ret.setItems(ls.map(_.toLSP).asJava)
@@ -149,11 +107,123 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     result.getCapabilities.setDocumentSymbolProvider(true)
     result.getCapabilities.setWorkspaceSymbolProvider(true)
     result.getCapabilities.setFoldingRangeProvider(true)
+    result.getCapabilities.setInlayHintProvider(true)
+    //result.getCapabilities.setDocumentLinkProvider(new DocumentLinkOptions(true))
+    result.getCapabilities.setImplementationProvider(true)
+    result.getCapabilities.setDeclarationProvider(true)
+    result.getCapabilities.setDefinitionProvider(true)
+    result.getCapabilities.setCodeLensProvider(new CodeLensOptions(true))
+  }
+
+  def getAnnotations(doc : TextDocumentIdentifier, range: lsp4j.Range) = {
+    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
+      case Some(doc:DocumentType) =>
+        val start = range.getStart
+        val end = range.getEnd
+        val soff = LSPDocument.toOffset(start.getLine,start.getCharacter,doc.doctext)
+        val eoff = LSPDocument.toOffset(end.getLine,end.getCharacter,doc.doctext)
+        (Some(doc),doc.synchronized{ doc.Annotations.getAll.collect{
+          case a if soff <= a.offset && a.offset + a.length <= eoff => a
+        }})
+      case _ => (None,Nil)
+    }
+  }
+
+  override def inlayHint(params: InlayHintParams): List[InlayHint] = {
+    val (doc,as) = getAnnotations(params.getTextDocument,params.getRange)
+    as.flatMap(_.getInlays).map { case (label,tooltip,kind,offset,pl,pr) =>
+      val ret = new InlayHint
+      ret.setLabel(label)
+      if (tooltip != "") ret.setTooltip(tooltip)
+      kind.foreach(ret.setKind)
+      val pos = LSPDocument.toLC(offset,doc.get.doctext)
+      ret.setPosition(new Position(pos._1,pos._2))
+      ret.setPaddingLeft(pl)
+      ret.setPaddingRight(pr)
+      ret
+    }
+  }
+
+  def getAnnotations(doc : TextDocumentIdentifier, pos: lsp4j.Position) = {
+    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
+      case Some(doc:DocumentType) =>
+        val off = LSPDocument.toOffset(pos.getLine,pos.getCharacter,doc.doctext)
+        (Some(doc),doc.synchronized{ doc.Annotations.getAll.collect{
+          case a if a.offset <= off && off <= a.offset + a.length => a
+        }})
+      case _ => (None,Nil)
+    }
+  }
+  def getAnnotations(doc : TextDocumentIdentifier) = {
+    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
+      case Some(doc:DocumentType) =>
+        (Some(doc),doc.synchronized{ doc.Annotations.getAll})
+      case _ => (None,Nil)
+    }
+  }
+
+  override def codeLens(params: CodeLensParams): List[CodeLens] = {
+    val (doc,as) = getAnnotations(params.getTextDocument)
+    as.flatMap(_.getCodeLenses).map{case (title,commandname,arguments,start,end) =>
+      val range = new lsp4j.Range({
+        val (l,c) = LSPDocument.toLC(start,doc.get.doctext)
+        new Position(l,c)
+      },{
+        val (l,c) = LSPDocument.toLC(end,doc.get.doctext)
+        new Position(l,c)
+      })
+      val cl = new CodeLens(range)
+      cl.setCommand(new Command(title,commandname,arguments match {
+        case Nil => null
+        case ls => ls.asJava
+      }))
+      cl
+    }
   }
 
 
+  override def implementation(params: ImplementationParams): List[Location] = {
+    val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
+    as.flatMap(_.getImplementation).map { case (s,i,j) =>
+      new Location(s,new lsp4j.Range({
+        val (l,p) = LSPDocument.toLC(i,doc.get.doctext)
+        new Position(l,p)
+      },{
+        val (l,p) = LSPDocument.toLC(j,doc.get.doctext)
+        new Position(l,p)
+      }))
+    }
+  }
+
+  override def declaration(params: DeclarationParams): List[Location] = {
+    val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
+    as.flatMap(_.getDeclaration).map { case (s,i,j) =>
+      new Location(s,new lsp4j.Range({
+        val (l,p) = LSPDocument.toLC(i,doc.get.doctext)
+        new Position(l,p)
+      },{
+        val (l,p) = LSPDocument.toLC(j,doc.get.doctext)
+        new Position(l,p)
+      }))
+    }
+  }
+
+  override def definition(params: DefinitionParams): (Option[List[Location]],Option[List[LocationLink]]) = {
+    val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
+    val ls = as.flatMap(_.getDefinitions).map { case (s,i,j) =>
+      new Location(s,new lsp4j.Range({
+        val (l,p) = LSPDocument.toLC(i,doc.get.doctext)
+        new Position(l,p)
+      },{
+        val (l,p) = LSPDocument.toLC(j,doc.get.doctext)
+        new Position(l,p)
+      }))
+    }
+    (Some(ls),None)
+  }
+
   override def semanticTokensFull(params: SemanticTokensParams): SemanticTokens = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
+    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
       case Some(doc : DocumentType) =>
         doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHighlights) match {
           case Nil =>
@@ -168,7 +238,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   override def hover(params: HoverParams): Hover = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
+    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
       case Some(doc : DocumentType) =>
         doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHovers) match {
           case Nil =>
@@ -187,7 +257,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   override def foldingRange(params: FoldingRangeRequestParams): List[FoldingRange] = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
+    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
       case Some(doc: DocumentType) =>
         doc.synchronized {
           val annots = doc.Annotations.getAll
@@ -205,12 +275,13 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     }
   }
 
-  override def documentSymbol(params: DocumentSymbolParams): (Option[List[DocumentSymbol]], Option[List[SymbolInformation]]) = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
+
+  override def documentSymbol(params: DocumentSymbolParams): List[(Option[SymbolInformation],Option[DocumentSymbol])] = {
+    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
       case Some(doc: DocumentType) =>
         doc.synchronized {
           val annots = doc.Annotations.getAll
-          if (annots.isEmpty) (None,None)
+          if (annots.isEmpty) Nil
           else {
             var dones: List[doc.Annotation] = Nil
 
@@ -241,10 +312,10 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
                 List(s)
               case _ => Nil
             }
-            (Some(ret), None)
+            ret.map(e => (None,Some(e)))
           }
         }
-      case _ => (None,None)
+      case _ => Nil
     }
   }
 

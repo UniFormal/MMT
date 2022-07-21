@@ -74,7 +74,7 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
           case None => t
         })
         .map(t => if (query.simplify) controller.simplifier(t,
-          SimplificationUnit(theory.getInnerContext, expandDefinitions = query.deltaExpansion, fullRecursion = true)) else t)
+          SimplificationUnit(theory.getInnerContext, expandVarDefs = query.deltaExpansion, expandConDefs = query.deltaExpansion, fullRecursion = true)) else t)
         .map(t => removeFakeLambdas(t, Set()))
         .distinct
 

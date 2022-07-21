@@ -104,6 +104,7 @@ def commonSettings(nameStr: String) = Seq(
   fork := true,
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
+    case PathList("META-INF","services", _*) => MergeStrategy.first
     case
       PathList("rootdoc.txt") | // 2 versions from from scala jars
       PathList("META-INF", _*) => // should never be merged anyway
@@ -283,6 +284,15 @@ lazy val coq = (project in file("mmt-coq")).
 lazy val lsp = (project in file("mmt-lsp")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lsp"): _*).
+  settings(
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
+    libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
+    libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
+    libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.46.v20220331",
+    libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
+  )
+/*
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
@@ -291,7 +301,7 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j-websocket.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "javax-websocket.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar")
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar") */
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
@@ -471,14 +481,29 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api,odk,lsp).
   settings(
     mmtProjectsSettings("mmt-stex"),
-    unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
-    unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
-    unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",
+    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
+    libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30",
+
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
+    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
+
+      /*unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
+      unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
+      unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",*/
     /*libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),*/
     unmanagedJars in Compile += baseDirectory.value / "lib" / "RusTeX.jar"
   )
+
 
 // plugin for writing OpenMath CDs. Maintainer: Florian
 lazy val openmath = (project in file("mmt-openmath")).

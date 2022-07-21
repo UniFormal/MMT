@@ -165,11 +165,11 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    /** statefully changes g to a simpler goal */
    private def simplifyGoal(g: Goal) {
-      g.setConc(controller.simplifier(g.conc, SimplificationUnit(g.fullContext, false, true), rules))
+      g.setConc(controller.simplifier(g.conc, SimplificationUnit(g.fullContext, false,false, true), rules))
    }
    /** simplify a fact */
    private[proving] def simplifyFact(f: Fact): Fact = {
-      val tpS = controller.simplifier(f.tp, SimplificationUnit(f.goal.fullContext, false, true), rules)
+      val tpS = controller.simplifier(f.tp, SimplificationUnit(f.goal.fullContext, false,false, true), rules)
       f.copy(tp = tpS)
    }
 

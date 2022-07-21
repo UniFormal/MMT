@@ -1,17 +1,20 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.{GeneratedDRef, _}
-import info.kwarc.mmt.api.archives.{DocumentDependency, _}
+import info.kwarc.mmt.api.{MultipleErrorHandler, _}
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
 import info.kwarc.mmt.api.modules.AbstractTheory
 import info.kwarc.mmt.api.objects.OMPMOD
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
+import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState, SimpleHTMLRule}
 import info.kwarc.rustex.Params
 
+import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.sys.process.Process
 import scala.xml.parsing.XhtmlParser
 
@@ -30,10 +33,10 @@ object RusTeX {
   def initializeBridge(f : => File): Unit = this.synchronized {
     if (!Bridge.initialized()) {
       val path = f
-      val file = path / Bridge.library_filename()
+      /*val file = path / Bridge.library_filename()
       if (!file.exists()) {
         File.download(URI(github_rustex_prefix + Bridge.library_filename()),file)
-      }
+      }*/
       Bridge.initialize(path.toString)
     }
   }
@@ -103,9 +106,9 @@ trait XHTMLParser extends TraversingBuildTarget {
     }
     val html = RusTeX.parse(inFile,params,List("c_stex_module_"))
     File.write(outFile.setExtension("shtml"),html)
-    val doc = try {
+    val doc = try { controller.library.synchronized {
       HTMLParser(outFile.setExtension("shtml"))(state)
-    } catch {
+    }} catch {
       case e =>
         e.printStackTrace()
         throw e
@@ -153,7 +156,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
     val state = new SemanticState(controller, rules, bt.errorCont, dpath)
-    HTMLParser(inFile)(state)
+    controller.library.synchronized{HTMLParser(inFile)(state)}
     index(state.doc)
     log("Finished: " + inFile)
     val results = DocumentDependency(state.doc.path) :: state.doc.getDeclarations.collect {
@@ -172,6 +175,35 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
       case Nil => BuildSuccess(used,results)
       case o => MissingDependency(o.map(LogicalDependency),results,used)
     }
+  }
+}
+
+class HTMLToLucene extends XHTMLParser {
+  val key = "xhtml-lucene"
+  override val outDim: ArchiveDimension = Dim("export", "lucene")
+  val inDim = info.kwarc.mmt.api.archives.source
+  def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
+
+  /** the main abstract method for building one file
+    *
+    * @param bf information about input/output file etc
+    */
+  override def buildFile(bt: BuildTask): BuildResult = {
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
+    val inFile = bt.archive / RedirectableDimension("xhtml") / bt.inPath.setExtension("xhtml")
+    if (!inFile.exists) return {
+      bt.errorCont(SourceError(bt.inFile.toString,SourceRef.anonymous(""),"xhtml file " + inFile.toString + " does not exist"))
+      BuildFailure(Nil,Nil)
+    }
+
+    val extensions = stexserver.extensions
+    val rules = extensions.flatMap(_.rules)
+    val state = new SearchOnlyState(controller,rules,bt.errorCont,dpath)
+    controller.library.synchronized{HTMLParser(inFile)(state)}
+    val doc = state.Search.makeDocument(bt.outFile.stripExtension,bt.inFile,bt.archive)
+
+    doc.save
+    BuildResult.empty
   }
 }
 
@@ -341,6 +373,19 @@ class FullsTeX extends Importer with XHTMLParser {
   override val inDim = info.kwarc.mmt.api.archives.source
   val inExts = List("tex")
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+    val ilog = (str : String) => {
+      log(str)
+      bt.errorCont match {
+        case s:STeXLSPErrorHandler =>
+          s.cont(0,str)
+        case eh:MultipleErrorHandler => eh.handlers.collectFirst {
+          case s : STeXLSPErrorHandler => s
+        }.foreach {s =>
+          s.cont(0,str)
+        }
+        case _ =>
+      }
+    }
     import PdfLatex._
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
@@ -349,31 +394,36 @@ class FullsTeX extends Importer with XHTMLParser {
     val state = new SemanticState(controller,rules,bt.errorCont,dpath)
     outFile.up.mkdirs()
     try {
-      log("Building pdflatex " +  bt.inPath + " (first run)")
+      ilog("Building pdflatex " +  bt.inPath + " (first run)")
       val pdffile = buildSingle(bt)
       if (pdffile.setExtension(".bcf").exists()) {
-        log("    -       biber " +  bt.inPath)
+        ilog("    -       biber " +  bt.inPath)
         Process(Seq("biber",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       } else {
-        log("    -      bibtex " + bt.inPath)
+        ilog("    -      bibtex " + bt.inPath)
         Process(Seq("bibtex",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       }
-      log("    -    pdflatex " + bt.inPath + " (second run)")
+      ilog("    -    pdflatex " + bt.inPath + " (second run)")
       buildSingle(bt)
-      log("    -    pdflatex " + bt.inPath + " (final run)")
+      ilog("    -    pdflatex " + bt.inPath + " (final run)")
       buildSingle(bt)
-      log("    -       omdoc " + bt.inPath)
+      ilog("    -       omdoc " + bt.inPath)
       val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
       val npdffile = (bt.archive / RedirectableDimension("export") / "pdf") / bt.inPath.setExtension("pdf").toString
       File.copy(pdffile,npdffile,true)
       pdffile.delete()
       PdfLatex.clear(pdffile)
       index(state.doc)
-      log("Finished: " + bt.inFile)
+      ilog("    -      lucene " + bt.inPath)
+      state.Search.makeDocument(
+        (bt.archive / Dim("export","lucene") / bt.inPath).stripExtension,
+        bt.inFile,bt.archive
+      ).save
+      ilog("Finished: " + bt.inFile)
       val results = PhysicalDependency(npdffile) :: PhysicalDependency(outFile) :: DocumentDependency(state.doc.path) :: state.doc.getDeclarations.collect {
         case mr: MRef =>
           LogicalDependency(mr.target)
-      }
+      } ::: (bt.archive / Dim("export","lucene") / bt.inPath).stripExtension.descendants.map(PhysicalDependency)
       val used = state.doc.getDeclarations.flatMap {
         case m : MRef => controller.getO(m.target).toList.flatMap{
           case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))

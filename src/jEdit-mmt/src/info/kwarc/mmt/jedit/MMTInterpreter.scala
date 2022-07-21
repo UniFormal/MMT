@@ -205,7 +205,7 @@ Non-commands are MMT code.
 
           def simp(k: Term) = {
             val uE = controller.globalLookup.ExpandDefinitions(k, p => p.doc == scratchnspace)
-            controller.simplifier(uE, SimplificationUnit(Context(theory), false, true))
+            controller.simplifier(uE, SimplificationUnit(Context(theory), false,false, true))
           }
           val tRS = simp(tR)
           val tpRS = simp(tpR)
