@@ -389,7 +389,7 @@ trait SolverAlgorithms {self: Solver =>
       }
    }
 
-  private def isDirectlySolvable(j: Equality)(implicit stack: Stack) = {
+  def isDirectlySolvable(j: Equality)(implicit stack: Stack) = {
     j.tm1 match {
       case Unknown(_,args) => isDistinctVarList(args).isDefined
       case _ => false
