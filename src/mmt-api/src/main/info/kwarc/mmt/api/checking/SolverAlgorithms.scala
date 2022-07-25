@@ -707,7 +707,8 @@ trait SolverAlgorithms {self: Solver =>
       val msg = "proving " + presentObj(context) + " |-- _  ::  " + presentObj(conc)
       history += msg
       val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
-      controller.extman.get(classOf[AutomatedProver]) foreach {prover =>
+      val provers = controller.extman.get(classOf[AutomatedProver]) sortWith {(p1, p2) =>p1.priority > p2.priority }
+      provers foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {
             val p = proof.getOrElse(UnknownTerm())

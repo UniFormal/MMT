@@ -20,6 +20,7 @@ case class ProvingUnit(component: Option[CPath], context: Context, tp: Term, log
   * An automated prover searches for proofs without user interaction.
   */
 trait AutomatedProver extends Extension {
+  val priority: Int
   /**
     * tries to prove a proof obligation automatically
     * @param rules the proof rules to use
