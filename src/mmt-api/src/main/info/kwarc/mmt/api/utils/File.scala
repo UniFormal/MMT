@@ -1,11 +1,11 @@
 package info.kwarc.mmt.api.utils
 
 import java.awt.Desktop
-
 import info.kwarc.mmt.api._
-import java.io._
-import java.util.zip._
 
+import java.io._
+import java.util
+import java.util.zip._
 import scala.collection.mutable
 
 /** File wraps around java.io.File to extend it with convenience methods
@@ -406,11 +406,19 @@ object File {
     file.up.mkdirs
     val output = new java.io.FileOutputStream(file)
     try {
-      val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
+      val step = 8192
+      var byteArray = new Array[Byte](step)
+      var pos, n = 0
+      while ({
+        if (pos + step > byteArray.length) byteArray = util.Arrays.copyOf(byteArray, byteArray.length << 1)
+        n = input.read(byteArray, pos, step)
+        n != -1
+      }) pos += n
+      if (pos != byteArray.length) byteArray = util.Arrays.copyOf(byteArray, pos)
       output.write(byteArray)
     } finally {
-      input.close
-      output.close
+      input.close()
+      output.close()
     }
   }
 

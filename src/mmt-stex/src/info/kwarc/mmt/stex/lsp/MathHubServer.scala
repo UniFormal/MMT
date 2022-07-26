@@ -9,6 +9,8 @@ import org.eclipse.jgit.api.Git
 
 import java.io.{FileOutputStream, PrintWriter, StringWriter}
 import java.net.URL
+import java.util
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.jdk.CollectionConverters._
@@ -225,16 +227,35 @@ trait MathHubServer { this : STeXLSPServer =>
                     j.asInstanceOf[JSONObject].getAsList(classOf[JSONString], "files").map(js => (dim, js.value))
                   }
                   val max = files.length
-                  files.par.zipWithIndex.foreach((args: ((String, String), Int)) => {
-                    val ((dim, f), i) = args
-                    update(i.toDouble / max, "Downloading " + (i + 1) + "/" + max + "... (" + dim + "/" + f + ")")
+                  val count = new AtomicInteger(0)
+                  files.par.foreach{ case (dim, f) =>
+                    val nc = count.incrementAndGet()
+                    update(nc.toDouble / max, "Downloading " + (nc + 1) + "/" + max + "... (" + dim + "/" + f + ")")
 
                     try {
                       val src = new URL(remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f).openStream()
+
+                      val step = 8192
+                        var buf = new Array[Byte](step)
+                        var pos, n = 0
+                        while ({
+                          if (pos + step > buf.length) buf = util.Arrays.copyOf(buf, buf.length << 1)
+                          n = src.read(buf, pos, step)
+                          n != -1
+                        }) pos += n
+                        if (pos != buf.length) buf = util.Arrays.copyOf(buf, pos)
+                      src.close()
+
                       val file = (a / RedirectableDimension(dim) / f)
                       if (!file.up.exists()) file.up.mkdirs()
                       file.createNewFile()
                       val target = new FileOutputStream(file.toString)
+                      target.write(buf)
+                      target.close()
+
+
+
+/*
                       var c = 0
                       while ( {
                         c = src.read();
@@ -244,12 +265,14 @@ trait MathHubServer { this : STeXLSPServer =>
                       }
                       src.close()
                       target.close()
+
+ */
                     } catch {
                       case t: Throwable =>
                         println(t.getMessage)
                         print("")
                     }
-                  })
+                  }
                   ((), "success")
                 case _ =>
                   ((), "failed")
