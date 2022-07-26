@@ -1,18 +1,16 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
-import info.kwarc.mmt.api.backend.LocalSystem
-import info.kwarc.mmt.api.utils.JSONArray.toList
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, URLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.search.Searcher
 import org.eclipse.jgit.api.Git
 
-import java.io.{FileOutputStream, PrintWriter, StringWriter, Writer}
+import java.io.{FileOutputStream, PrintWriter, StringWriter}
 import java.net.URL
-import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
@@ -221,14 +219,15 @@ trait MathHubServer { this : STeXLSPServer =>
               update(0,"Fetching File Index...")
               val attempt = Try(io.Source.fromURL(remoteServer + "/allarchfiles?" + archive.id)("ISO-8859-1"))
               val ret = if (attempt.isSuccess) JSON.parse(attempt.get.toBuffer.mkString) match {
-                case JSONArray(vls @_*) =>
-                  val files = vls.flatMap{j =>
+                case JSONArray(vls@_*) =>
+                  val files = vls.flatMap { j =>
                     val dim = j.asInstanceOf[JSONObject].getAsString("dim")
-                    j.asInstanceOf[JSONObject].getAsList(classOf[JSONString],"files").map(js => (dim,js.value))
+                    j.asInstanceOf[JSONObject].getAsList(classOf[JSONString], "files").map(js => (dim, js.value))
                   }
                   val max = files.length
-                  files.zipWithIndex.foreach { case ((dim,f),i) =>
-                    update(i.toDouble / max,"Downloading " + (i+1) + "/" + max + "... (" + dim + "/" + f + ")")
+                  files.par.zipWithIndex.foreach((args: ((String, String), Int)) => {
+                    val ((dim, f), i) = args
+                    update(i.toDouble / max, "Downloading " + (i + 1) + "/" + max + "... (" + dim + "/" + f + ")")
 
                     try {
                       val src = new URL(remoteServer + "/archfile?arch=" + archive.id + "&dim=" + dim + "&file=" + f).openStream()
@@ -237,21 +236,24 @@ trait MathHubServer { this : STeXLSPServer =>
                       file.createNewFile()
                       val target = new FileOutputStream(file.toString)
                       var c = 0
-                      while ({c = src.read(); c!= -1}) {
+                      while ( {
+                        c = src.read();
+                        c != -1
+                      }) {
                         target.write(c)
                       }
                       src.close()
                       target.close()
                     } catch {
-                      case t : Throwable =>
+                      case t: Throwable =>
                         println(t.getMessage)
                         print("")
                     }
-                  }
-                  ((),"success")
+                  })
+                  ((), "success")
                 case _ =>
-                  ((),"failed")
-              } else ((),"failed")
+                  ((), "failed")
+              } else ((), "failed")
               update(1,"Loading relational information")
               a.readRelational(Nil,controller,"rel")
               if (searchinitialized) {
