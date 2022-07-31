@@ -217,6 +217,10 @@ lazy val api = (project in file("mmt-api")).
     scalaSource in Compile := baseDirectory.value / "src" / "main",
     unmanagedJars in Compile ++= apiJars(utils.value),
     unmanagedJars in Test ++= apiJars(utils.value),
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-sparqlbuilder" % "4.1.0-M1",
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-repository-sail" % "4.1.0-M1",
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-sail-memory" % "4.1.0-M1",
+    libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30",
   )
 
 
