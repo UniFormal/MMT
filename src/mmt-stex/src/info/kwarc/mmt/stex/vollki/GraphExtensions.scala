@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
-import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, MMTSystem}
+import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser
@@ -94,22 +94,8 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       case Some("tour") =>
         path match {
           case Some(n) =>
-            var nodes = n.topologicalSort.collect({
-              case n if user.forall(u => u.getValue(n) < 0.9) => n
-            })
-            if (nodes.isEmpty) {
-              nodes = (n.selectTopo.flatMap(_.selectTopo) ::: n.selectTopo ::: n :: Nil).distinct
-            }
-            val (_, body) = server.emptydoc
-            nodes.foreach { node =>
-              body.add(<tr style="width:100%">
-                <td>
-                  <a href={"javascript:collapse(\"" + node.id + "\")"} style="pointer-events: auto;"><b><span>{"> "}</span>{node.getTitle(language)}</b></a>
-                  <div class="collapsible" style="display:none;margin-left:30px;flex-direction:column;white-space:normal;" id={node.id + "-collapse"}></div>
-                </td>
-              </tr>)
-            }
-            ServerResponse(body.children.map(_.toString).mkString("\n"), "application/xhtml+xml")
+            val node = n.topologicalSort.filter(c => user.forall(u => u.getValue(c) < 0.9))
+            ServerResponse.JsonResponse(node.jsonify(language))
           case None =>
             ServerResponse("Unknown query: " + request.query, "text/plain")
         }
@@ -148,12 +134,48 @@ object FullsTeXGraph extends ServerExtension("vollki") {
     println("Done.")
   }
 
+  class MutableList[A] {
+    var dones: List[A] = Nil
+    var count : Int = 0
+  }
+  case class TopoDependencies(parent : sTeXNode,children:List[TopoDependencies]) {
+    def filter(f: sTeXNode => Boolean): TopoDependencies = TopoDependencies(parent,
+      children.filter(c => f(c.parent)).map(_.filter(f))
+    )
+
+    def jsonify(language:String):JSONArray = {
+      val map = mutable.HashMap.empty[sTeXNode,MutableList[sTeXNode]]
+      jsonifyI(map)
+      JSONArray(map.toList.sortBy(_._2.count).map(p => JSONObject(
+        ("id",JSONString(p._1.id)),
+        ("title",JSONString(p._1.getTitle(language).toString())),
+        ("successors",JSONArray(p._2.dones.map(c => JSONString(c.id)):_*))
+      )):_*)
+    }
+    protected def jsonifyI(map : mutable.HashMap[sTeXNode,MutableList[sTeXNode]]): Unit = if (!map.contains(this.parent)) {
+      val ls = new MutableList[sTeXNode]
+      ls.count = children.length
+      map(this.parent) = ls
+      this.children.foreach{c =>
+        c.jsonifyI(map)
+        val cc = map(c.parent)
+        cc.dones ::= this.parent
+        ls.count += cc.count
+      }
+    }
+    def nodes(o : MutableList[sTeXNode] = new MutableList[sTeXNode]) : List[sTeXNode] = if (o.dones.contains(this.parent)) Nil else {
+      o.dones ::= this.parent
+      this.parent :: children.flatMap(_.nodes(o))
+    }
+  }
+
   trait sTeXNode {
     val id : String
     def selectTopo : List[sTeXNode]
-    private var _top : Option[List[sTeXNode]] = None
-    def topologicalSort : List[sTeXNode] = _top.getOrElse {
-      val ret = (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
+    private var _top : Option[TopoDependencies] = None
+    def topologicalSort : TopoDependencies = _top.getOrElse {
+      val ret = TopoDependencies(this,selectTopo.map(_.topologicalSort))
+      //val ret = (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
       _top = Some(ret)
       ret
     }
@@ -459,7 +481,7 @@ object STeXGraph extends JGraphExporter("stexgraph") {
         inds.filter(_.toString.startsWith(s)).flatMap(FullsTeXGraph.getO)
       }
     }
-    if (ret.length == 1) ret.head.topologicalSort else ret
+    if (ret.length == 1) ret.head.topologicalSort.nodes() else ret
   }
 
   def computeSem(f: JSON, sem: String, comp: String = "default"): JSON = {

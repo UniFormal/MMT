@@ -50,15 +50,6 @@ class RemoteLSP extends STeXExtension {
         ("deps",JSONArray(a.dependencies.map(JSONString):_*)),
         ("git",JSONString("https://gl.mathhub.info/" + a.id + ".git"))
       )):_*)))
-    /*  Some(ServerResponse.JsonResponse(testRemote))
-    case Some("allarchfiles") if request.query == "Narf/Foo/Bar" =>
-      Some(ServerResponse.JsonResponse(JSONArray(dimensions.map(d => JSONObject(("dim",JSONString(d.toString)),("files",JSONArray(
-        List("a.txt","a/b.txt","c.txt","d/e/f.txt").map(JSONString):_*
-      )))):_*)))
-    case Some("allarchfiles") if request.query == "Narf/meta-inf" =>
-      Some(ServerResponse.JsonResponse(JSONArray(dimensions.map(d => JSONObject(("dim",JSONString(d.toString)),("files",JSONArray(
-        List("meta.txt","lib/meta.txt","src/meta.txt").map(JSONString):_*
-      )))):_*))) */
     case Some("allarchfiles") if request.query.nonEmpty =>
       controller.backend.getArchive(request.query) match {
         case Some(a) =>
@@ -85,7 +76,7 @@ class RemoteLSP extends STeXExtension {
         results.map(sr => JSONObject(
           ("archive",JSONString(sr.archive)),
           ("sourcefile",JSONString(sr.sourcefile)),
-          ("html",JSONString(sr.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(sr.fragments.head._2)))
+          ("html", JSONString(sr.fragments.head._3))
         ))
         :_*)))
     case _ => None
