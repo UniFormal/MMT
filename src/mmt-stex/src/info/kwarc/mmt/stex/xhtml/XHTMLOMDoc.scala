@@ -71,7 +71,7 @@ class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
   def forceTerm : Term = {
     getTerm match {
       case Some(t) => t
-      case None =>  forceTerm2(this)
+      case None => forceTerm2(this)
     }
   }
   protected def forceTerm2(n : HTMLNode): Term = n.children match {
@@ -87,6 +87,8 @@ class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
           e.printStackTrace()
           ???
       }
+    case List(a : OMDocHTML) if n.isInstanceOf[MathMLNode] && n.label == "mrow" => a.forceTerm
+    case List(a) if n.isInstanceOf[MathMLNode] && n.label == "mrow" =>forceTerm2(a)
     case _ =>
       val args = n.children.flatMap{
         case o : HTMLTerm => Some(o.toTerm)
@@ -1716,7 +1718,7 @@ trait HasHead extends HTMLTerm {
   def head = {
     Path.parseMS(resource.split("#").head,NamespaceMap.empty)
   }
-  def headTerm = {
+  def headTerm : Term = {
     val ret = if (resource.startsWith("var://")) {
       val rest = resource.drop(6).split("#").head
       if (rest.contains('.')) {
@@ -1807,7 +1809,6 @@ trait ComplexTerm extends HTMLTerm with HasHead {
 case class HTMLOMBIND(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with ComplexTerm {
 
   override def toTerm = {
-    import info.kwarc.mmt.stex.SOMBArg._
     val args = sortArgs.map {
       case (b@('b'|'B'),tm) =>
         SCtx(sstate.get.makeBinder(tm,b == 'B'))
