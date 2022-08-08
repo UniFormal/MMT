@@ -512,8 +512,10 @@ case class HTMLTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
 }
 
 case class HTMLDefComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+  var wasinterm = false
   def init {
-    assert(sstate.forall(!_.in_term))
+    if (sstate.exists(_.in_term)) {wasinterm = true}
+    //assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)
   }
   init
@@ -527,7 +529,7 @@ case class HTMLDefComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
 
   override def onAdd: Unit = {
     sstate.foreach { state =>
-      state.in_term = false
+      if (!wasinterm) state.in_term = false
       collectAncestor {
         case hd: HasDefiniens =>
           hd.df = findTerm

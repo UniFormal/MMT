@@ -64,6 +64,7 @@ object Lucene {
   def embedd(s : String) : Array[Float] = ???
   def write(sd : SearchDocument) = {
     sd.file.mkdirs()
+    sd.file.descendants.foreach(_.delete())
     val dir = FSDirectory.open(sd.file.toJava.toPath)
     val config = new IndexWriterConfig(analyzer)
     val writer = new IndexWriter(dir,config)
