@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api.archives.{Archive, BuildManager, RedirectableDimension, TrivialBuildManager}
-import info.kwarc.mmt.api.frontend.{Controller, Run}
+import info.kwarc.mmt.api.frontend.{Controller, Report, Run}
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -327,6 +327,25 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    }
 
+}
+
+object Socket {
+  def main(args : Array[String]) : Unit = {
+    val lsp = new STeXLSP
+    val controller = Run.controller
+    List("lsp"
+      , "lsp-stex"
+      , "lsp-stex-server-methodcall"
+      , "lsp-stex-socket"
+      , "lsp-stex-server"
+      , "fullstex").foreach(s => controller.handleLine("log+ " + s))
+    controller.handleLine("log console")
+    controller.handleLine("server on 8090")
+    controller.extman.addExtension(lsp)
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
+    lsp.runSocketListener
+  }
 }
 
 object Main {
