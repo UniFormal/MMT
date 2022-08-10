@@ -637,11 +637,30 @@ object STeXRules {
   def allRules(dict:Dictionary) = List(
     ModuleRule(dict),UseModuleRule(dict),NotationRule(dict),mmtrule,
     SymrefRule(dict),SymnameRule(dict),CapSymnameRule(dict),
-    DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict)
+    DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
+    patchdefinitionrule,patchassertionrule,stexinline
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),MathStructureRule(dict)
   )
+
+  class PatchRule(name : String) extends SimpleMacroRule(name,2) {
+    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+      val inmath = state.inmath
+      val currrules = state.rules
+       try {
+        state.rules = Nil
+         readOptArg
+        super.parse(plain)
+      } finally {
+        state.rules = currrules
+      }
+    }
+  }
+  val patchdefinitionrule = new PatchRule("stexpatchdefinition")
+  val patchassertionrule = new PatchRule("stexpatchassertion")
+
+  val stexinline = new InlineVerbRule("stexinline")
 
   val mmtrule = new SimpleMacroRule("MMTrule",2) {
     override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {

@@ -241,6 +241,34 @@ trait VerbatimLikeRule extends TeXRule {
     (!in.empty,new PlainText(sb.mkString,start,in.offset))
   }
 }
+class InlineVerbRule(val name: String) extends MacroRule with VerbatimLikeRule {
+  override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = {
+    import SuperficialLaTeXParser._
+    var done = false
+    var children: List[TeXTokenLike] = readOptArg._2.reverse
+    while (!in.empty && !done) {
+      in.trim
+      in.first match {
+        case '%' => children ::= readComment
+        case c =>
+          done = true
+          children ::= new PlainText(c.toString, in.offset, in.offset + 1)
+          in.drop(c.toString)
+          val (terminated, ch) = readVerb(c.toString)
+          if (terminated) {
+            children ::= new PlainText(c.toString, in.offset, in.offset + 1)
+            in.drop(c.toString)
+          }
+          val res = new MacroApplication(plain, (ch :: children).reverse, this)
+          if (!terminated) res.addError("\\" + name + " not properly terminated")
+          return res
+      }
+    }
+    val res = new MacroApplication(plain, children.reverse, this)
+    res.addError("\\" + name + " not properly terminated")
+    res
+  }
+}
 
 trait MathEnvRule extends EnvironmentRule {
   case class MathMacroAppl(pl:PlainMacro,ch:List[TeXTokenLike],rl:TeXRule,prev:Boolean) extends MacroApplication(pl,ch,rl)
@@ -486,36 +514,8 @@ object LaTeXRules {
       res
     }
   }
-  val lstinline = new MacroRule with VerbatimLikeRule {
-    override val name: String = "lstinline"
-
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = {
-      import SuperficialLaTeXParser._
-      var done = false
-      var children : List[TeXTokenLike] = readOptArg._2.reverse
-      while(!in.empty && !done) {
-        in.trim
-        in.first match {
-          case '%' => children ::= readComment
-          case c =>
-            done = true
-            children ::= new PlainText(c.toString,in.offset,in.offset + 1)
-            in.drop(c.toString)
-            val (terminated,ch) = readVerb(c.toString)
-            if (terminated) {
-              children ::= new PlainText(c.toString,in.offset,in.offset + 1)
-              in.drop(c.toString)
-            }
-            val res = new MacroApplication(plain,(ch :: children).reverse,this)
-            if (!terminated) res.addError("\\lstinline not properly terminated")
-            return res
-        }
-      }
-      val res = new MacroApplication(plain,children.reverse,this)
-      res.addError("\\lstinline not properly terminated")
-      res
-    }
-  }
+  val lstinline = new InlineVerbRule("lstinline")
+  val inlineverb = new InlineVerbRule("inlineverb")
 
   val ensuremath = new SimpleMacroRule("ensuremath",args=1) with MathMacroRule {
     override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = inmath { super.parse(plain) }
@@ -530,7 +530,7 @@ object LaTeXRules {
     begin,end,
     _def,edef,
     array,array_star,eqnarray,eqnarray_star,align,align_star,
-    verbatim,lstlisting,lstinline,iffalse
+    verbatim,lstlisting,lstinline,inlineverb,iffalse
   )
 }
 
