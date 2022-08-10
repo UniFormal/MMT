@@ -79,6 +79,10 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
   override def destroy: Unit = GitUpdateActionCompanion.destroy
 
   override def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
+    case ls if ls.headOption.contains(":buildserver") =>
+      apply(ServerRequest(request.method,request.headers,request.session,request.path.tail,request.query,request.body))
+    case ls if ls.headOption.contains("script") || ls.headOption.contains("css") =>
+      ServerResponse.ResourceResponse(ls.mkString("/"))
     case List("clear") =>
       //clear()
       State.synchronized {
