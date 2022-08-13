@@ -31,6 +31,7 @@ object DocumentExtension extends STeXExtension {
           var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
           html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/document?" + s)
           html = html.replace("BASE_URL_PLACEHOLDER","")
+          html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
           Some(ServerResponse(html, "text/html"))
       }
     case _ => None
