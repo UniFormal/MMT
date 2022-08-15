@@ -4,8 +4,8 @@ import info.kwarc.mmt.api.{DPath, GlobalName, LNStep, Level, LocalName, MPath, N
 import info.kwarc.mmt.api.archives.{Archive, source}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.utils.{File, URI, Unparsed}
-import info.kwarc.mmt.lsp.LSPDocument
+import info.kwarc.mmt.api.utils.{File, URI}
+import info.kwarc.mmt.lsp.{LSPDocument, SyncedDocUnparsed, SyncedDocument}
 import info.kwarc.mmt.stex.{STeX, STeXError}
 import info.kwarc.mmt.stex.lsp.sTeXDocument
 import org.eclipse.lsp4j.SymbolKind
@@ -292,8 +292,13 @@ class STeXSuperficialParser(controller:Controller) {
   var moduleRules : List[TeXRule] = STeXRules.moduleRules(dict)
   def apply(file: File,a:Option[Archive] = None) : List[TeXTokenLike] = apply(File.read(file),file,a)
   def apply(string : String,asFile : File,arch:Option[Archive]) : List[TeXTokenLike] = {
-    dict.inFile(asFile,arch) {
-      SuperficialLaTeXParser(string,allsTeXRules)
+    val sd = new SyncedDocument
+    sd.set(string)
+    apply(sd,asFile,arch)
+  }
+  def apply(sd : SyncedDocument, asFile: File, arch: Option[Archive]): List[TeXTokenLike] = {
+    dict.inFile(asFile, arch) {
+      SuperficialLaTeXParser(sd, allsTeXRules)
     }
   }
   def applyFormally(file: File,a:Option[Archive] = None) : List[TeXTokenLike] = applyFormally(File.read(file),file,a)
@@ -395,9 +400,9 @@ case class ImportModuleApp(
             case "" =>
             case dep =>
               pma.setSemanticHighlightingClass(0,List(0))
-              val start = LSPDocument.toLC(startoffset,in.doctext)
-              val end = LSPDocument.toLC(endoffset,in.doctext)
-              in.client.documentErrors(rl.dict.controller,in.doctext,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
+              val start = in._doctext.toLC(startoffset)
+              val end = in._doctext.toLC(endoffset)
+              in.client.documentErrors(rl.dict.controller,in,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
                 SourceRegion(
                   SourcePosition(startoffset,start._1,start._2),
                   SourcePosition(endoffset,end._1,end._2)
@@ -420,22 +425,53 @@ trait SetNotationLike extends MacroApplication with NotationLike {
 }
 trait SymRefLike extends MacroApplication with HasAnnotations {
   val syminfo:SymdeclInfo
+  val alternatives : (TeXTokenLike,List[(GlobalName,String)])
+  def doInit = if (alternatives._2.nonEmpty) {
+    addError("Ambiguous symbol reference",lvl = Level.Warning)
+  }
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,syminfo.path.toString)
     a.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
     val pla = in.Annotations.add(this.plain,this.plain.startoffset,this.plain.endoffset - this.plain.startoffset,SymbolKind.Constant,syminfo.path.toString)
     pla.setSemanticHighlightingClass(2)
+    val start = in._doctext.toLC(alternatives._1.startoffset)
+    val end = in._doctext.toLC(alternatives._1.endoffset)
+    alternatives._2.foreach {alt =>
+      a.addCodeActionEdit(alt._1.toString,"quickfix",List((in.uri,List((start._1,start._2+1,end._1,end._2-1,alt._2)))))
+      /*a.addCodeLens("Disambiguate: " + alt,"stexide.insertCode",List(
+        alt.asInstanceOf[AnyRef],start._1.asInstanceOf[AnyRef],(start._2+1).asInstanceOf[AnyRef],
+        end._1.asInstanceOf[AnyRef],(end._2-1).asInstanceOf[AnyRef]),startoffset,endoffset)*/
+    }
     a.setHover(syminfo.path.toString)
   }
 }
 trait SymRefRuleLike extends MacroRule {
+  def doAlternatives(ls : List[GlobalName]) = if (ls.length > 1) {
+    class mutvar(val path : GlobalName) { var string = path.module.name + "?" + path.name}
+    val retstrings = ls.distinct.map(new mutvar(_))
+    var done = false
+    while (!done) {
+      val todos = retstrings.filter(mv => retstrings.exists(o => o.path != mv.path && o.string == mv.string))
+      if (todos.isEmpty) done = true
+      todos.foreach { td =>
+        var idone = false
+        var i = 1
+        while (!idone) {
+          val np = td.path.doc.uri.path.takeRight(i)
+          if ((np.mkString("/") + td.path.module.name + "?" + td.path.name).length <= td.string.length) i += 1 else idone = true
+        }
+        td.string = td.path.doc.uri.path.takeRight(i).mkString("/") + "?" + td.path.name
+      }
+    }
+    retstrings.map(r => (r.path,r.string))
+  } else Nil
   def getNotations(sym : SymdeclInfo)(implicit state: LaTeXParserState) = {
     val allnots = state.rules.flatMap(_.rules).collect {
       case nl:NotationLike if nl.notinfo.syminfo == sym => nl
     }
     allnots.filter(_.isInstanceOf[SetNotationLike]) ::: allnots.filterNot(_.isInstanceOf[SetNotationLike])
   }
-  def parseSym(implicit in: Unparsed, state: LaTeXParserState) = {
+  def parseSym(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {
     val (nametk,children) = readArg
     val namestr = nametk match {
       case g : Group =>
@@ -446,9 +482,12 @@ trait SymRefRuleLike extends MacroRule {
       case _ => throw LaTeXParseError("Name for \\symdef expected")
     }
     val rn = resolveName(namestr)
-    (rn._1.getOrElse {
-      throw LaTeXParseError("Could not find symbol named " + namestr,lvl = Level.Warning)
-    },rn._2,children)
+    rn match {
+      case (None,_) =>
+        throw LaTeXParseError("Could not find symbol named " + namestr, lvl = Level.Warning)
+      case (Some(r),ls) =>
+        (r,nametk,doAlternatives(r.path :: ls),children)
+    }
   }
   def resolveName(namestr:String)(implicit state: LaTeXParserState) = {
     val rules = state.macrorules
@@ -456,15 +495,15 @@ trait SymRefRuleLike extends MacroRule {
       case Array(s) => rules.collectFirst {
         case m: SemanticMacro if m.name == s => m.syminfo
       } match {
-        case Some(s) => (Some(s), "")
+        case Some(s) => (Some(s), Nil)
         case _ =>
           val candidates =rules.collect {
             case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
           }.distinct
           candidates match {
-            case List(a) => (Some(a), "")
-            case Nil => (None, "")
-            case h :: tail => (Some(h), "Multiple candidates apply\nAlternatives: " + tail.map(_.path.toString).mkString(","))
+            case List(a) => (Some(a), Nil)
+            case Nil => (None, Nil)
+            case h :: tail => (Some(h), tail.map(_.path))
           }
       }
       case Array(m,n) =>
@@ -472,12 +511,12 @@ trait SymRefRuleLike extends MacroRule {
           case sm: SemanticMacro if sm.syminfo.path.module.toString.endsWith(m) &&
             sm.syminfo.path.name.toString == n => sm.syminfo
         }.distinct match {
-          case List(a) => (Some(a), "")
-          case Nil => (None, "")
-          case h :: tail => (Some(h), "Multiple candidates apply\nAlternatives: " + tail.map(_.path.toString).mkString(","))
+          case List(a) => (Some(a), Nil)
+          case Nil => (None, Nil)
+          case h :: tail => (Some(h), tail.map(_.path))
         }
       case _ =>
-        (None,"Too many '?' in symbol identifier")
+        throw LaTeXParseError("Too many '?' in symbol identifier",lvl = Level.Warning)
     }
   }
 }
@@ -485,7 +524,7 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
   val syminfo:SymdeclInfo
   lazy val name = syminfo.macroname
 
-  override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
     var children : List[TeXTokenLike] = Nil
     val (custom,op) = if (state.inmath) {
       val o = readChar('!') match {
@@ -581,9 +620,9 @@ case class SymdeclApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.SymDeclRu
     a.addCodeLens(syminfo.path.toString,"",Nil,startoffset,endoffset)
     if (syminfo.local) {
       pma.setSemanticHighlightingClass(1,List(0))
-      val start = LSPDocument.toLC(startoffset,in.doctext)
-      val end = LSPDocument.toLC(endoffset,in.doctext)
-      in.client.documentErrors(rl.dict.controller,in.doctext,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
+      val start = in._doctext.toLC(startoffset)
+      val end = in._doctext.toLC(endoffset)
+      in.client.documentErrors(rl.dict.controller,in,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
         SourceRegion(
           SourcePosition(startoffset,start._1,start._2),
           SourcePosition(endoffset,end._1,end._2)
@@ -604,9 +643,9 @@ case class SymdefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.SymDefRule
     a.addCodeLens(syminfo.path.toString + "#" + notinfo.id,"",Nil,startoffset,endoffset)
     if (syminfo.local) {
       pma.setSemanticHighlightingClass(1,List(0))
-      val start = LSPDocument.toLC(startoffset,in.doctext)
-      val end = LSPDocument.toLC(endoffset,in.doctext)
-      in.client.documentErrors(rl.dict.controller,in.doctext,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
+      val start = in._doctext.toLC(startoffset)
+      val end = in._doctext.toLC(endoffset)
+      in.client.documentErrors(rl.dict.controller,in,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
         SourceRegion(
           SourcePosition(startoffset,start._1,start._2),
           SourcePosition(endoffset,end._1,end._2)
@@ -645,7 +684,7 @@ object STeXRules {
   )
 
   class PatchRule(name : String) extends SimpleMacroRule(name,2) {
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       val inmath = state.inmath
       val currrules = state.rules
        try {
@@ -663,7 +702,7 @@ object STeXRules {
   val stexinline = new InlineVerbRule("stexinline")
 
   val mmtrule = new SimpleMacroRule("MMTrule",2) {
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       val inmath = state.inmath
       try {
         state.inmath = true
@@ -676,7 +715,7 @@ object STeXRules {
 
   trait SymDeclRuleLike extends MacroRule {
     val dict:Dictionary
-    def parseNameAndOpts(file:String)(implicit in: Unparsed, state: LaTeXParserState) = {
+    def parseNameAndOpts(file:String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {
       var children : List[TeXTokenLike] = Nil
       val makemacro = readChar('*') match {
         case (b,ls) =>
@@ -760,7 +799,7 @@ object STeXRules {
   }
   trait NotationRuleLike extends MacroRule {
     val dict:Dictionary
-    def optsAndNotation(syminfo:SymdeclInfo,ls: List[List[TeXTokenLike]])(implicit in: Unparsed, state: LaTeXParserState) = {
+    def optsAndNotation(syminfo:SymdeclInfo,ls: List[List[TeXTokenLike]])(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {
       val (id,prec,opnot,error,ret) = parseNotOpts(syminfo,ls)
       val (not,nch) = readArg
       var children = nch
@@ -799,7 +838,7 @@ object STeXRules {
   }
   case class SymDeclRule(dict:Dictionary) extends MacroRule with SymDeclRuleLike {
     val name = "symdecl"
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (sdinfo,children,err,nopt) = parseNameAndOpts(dict.getFile)
       val ret = SymdeclApp(plain,children,this,sdinfo)
       if (err != "") ret.addError(err)
@@ -813,70 +852,80 @@ object STeXRules {
   case class SymrefRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "symref"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
-      val (info,err,ch) = parseSym
+      val (info,ntk,alt,ch) = parseSym
       val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch ::: ch2,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
+        override val alternatives = (ntk,alt)
+        doInit
       }
-      if (err != "") ret.addError(err,lvl = Level.Warning)
+      //if (err != "") ret.addError(err,lvl = Level.Warning)
       ret
     }
   }
   case class SymnameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "symname"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
-      val (info,err,ch) = parseSym
+      val (info,ntk,alt,ch) = parseSym
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
+        override val alternatives = (ntk, alt)
+        doInit
       }
-      if (err != "") ret.addError(err,lvl = Level.Warning)
+      //if (err != "") ret.addError(err,lvl = Level.Warning)
       ret
     }
   }
   case class CapSymnameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "Symname"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
-      val (info,err,ch) = parseSym
+      val (info,ntk,alt,ch) = parseSym
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
+        override val alternatives = (ntk, alt)
+        doInit
       }
-      if (err != "") ret.addError(err,lvl = Level.Warning)
+      //if (err != "") ret.addError(err,lvl = Level.Warning)
       ret
     }
   }
   case class DefiniendumRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "definiendum"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
-      val (info,err,ch) = parseSym
+      val (info,ntk,alt,ch) = parseSym
       val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch ::: ch2,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
+        override val alternatives = (ntk, alt)
+        doInit
       }
-      if (err != "") ret.addError(err,lvl = Level.Warning)
+      //if (err != "") ret.addError(err,lvl = Level.Warning)
       ret
     }
   }
   case class DefinameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "definame"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
-      val (info,err,ch) = parseSym
+      val (info,ntk,alt,ch) = parseSym
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
+        override val alternatives = (ntk, alt)
+        doInit
       }
-      if (err != "") ret.addError(err,lvl = Level.Warning)
+      //if (err != "") ret.addError(err,lvl = Level.Warning)
       ret
     }
   }
@@ -884,28 +933,30 @@ object STeXRules {
   case class CapDefinameRule(dict:Dictionary) extends SymRefRuleLike with NonFormalRule {
     override val name: String = "Definame"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
-      val (info,err,ch) = parseSym
+      val (info,ntk,alt,ch) = parseSym
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
+        override val alternatives = (ntk, alt)
+        doInit
       }
-      if (err != "") ret.addError(err,lvl = Level.Warning)
+      //if (err != "") ret.addError(err,lvl = Level.Warning)
       ret
     }
   }
   case class NotationRule(dict:Dictionary) extends MacroRule with NotationRuleLike with SymRefRuleLike {
     val name = "notation"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       var children: List[TeXTokenLike] = Nil
       val setdefault = readChar('*') match {
         case (b, ls) =>
           children = ls.reverse
           b
       }
-      val (info, err, ch) = parseSym
+      val (info, _, _, ch) = parseSym
       children = children ::: ch
       val (opt, nch) = readOptArg
       children = children ::: nch
@@ -918,7 +969,7 @@ object STeXRules {
         case _ => NotationApp(plain, children, this, notinfo)
       }
       if (nopt.nonEmpty) ret.addError("Unknown parameters for \\notations: " + nopt.mkString(", "))
-      if (err != "") ret.addError(err, lvl = Level.Warning)
+      //if (err != "") ret.addError(err, lvl = Level.Warning)
       if (err2 != "") ret.addError(err2)
       dict.getModuleOpt match {
         case Some(mod) =>
@@ -931,7 +982,7 @@ object STeXRules {
   }
   case class SymDefRule(dict:Dictionary) extends MacroRule with SymDeclRuleLike with NotationRuleLike {
     val name = "symdef"
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       var children : List[TeXTokenLike] = Nil
       val (sdinfo,ch,err,nopt) = parseNameAndOpts(dict.getFile)
       children = ch
@@ -958,7 +1009,7 @@ object STeXRules {
     val dict:Dictionary
     val isusemodule : Boolean
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       var children : List[TeXTokenLike] = Nil
       val (optargs,ch) = readOptArg
       children = ch
@@ -1002,7 +1053,7 @@ object STeXRules {
         MathStructure(ms,env.end,env.children,this)
       case _ => env
     }
-    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       var children : List[TeXTokenLike] = Nil
       val (n,ch) = readArg
       children = ch
@@ -1044,7 +1095,7 @@ object STeXRules {
   }
 
   case class ModuleRule(dict : Dictionary) extends EnvironmentRule("smodule") {
-    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
       var children : List[TeXTokenLike] = Nil
       val (optargs,ch) = readOptArg
       children = ch
@@ -1105,7 +1156,7 @@ object STeXRules {
 
 
   case class ProblemRule(dict : Dictionary) extends EnvironmentRule("sproblem") {
-    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
       var children : List[TeXTokenLike] = Nil
       val (optargs,ch) = readOptArg
       children = ch

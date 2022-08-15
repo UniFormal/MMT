@@ -2,11 +2,12 @@ package info.kwarc.mmt.lsp
 
 import info.kwarc.mmt.api.parser.SourceRegion
 import org.eclipse.lsp4j
-import org.eclipse.lsp4j.{CodeLens, CodeLensOptions, CodeLensParams, Command, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, CompletionOptions, CompletionParams, DeclarationParams, DefinitionParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams, DocumentLinkOptions, DocumentSymbol, DocumentSymbolOptions, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverOptions, HoverParams, ImplementationParams, InitializeParams, InitializeResult, InlayHint, InlayHintParams, InsertTextFormat, InsertTextMode, Location, LocationLink, MarkupContent, MarkupKind, Position, SemanticTokens, SemanticTokensLegend, SemanticTokensParams, SemanticTokensWithRegistrationOptions, SymbolInformation, TextDocumentIdentifier, TextDocumentSyncKind, TextEdit, VersionedTextDocumentIdentifier, WorkDoneProgressCreateParams, WorkspaceEdit, WorkspaceSymbolOptions}
+import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensOptions, CodeLensParams, Command, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, CompletionOptions, CompletionParams, DeclarationParams, DefinitionParams, DidChangeTextDocumentParams, DidOpenTextDocumentParams, DocumentLinkOptions, DocumentSymbol, DocumentSymbolOptions, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverOptions, HoverParams, ImplementationParams, InitializeParams, InitializeResult, InlayHint, InlayHintParams, InsertTextFormat, InsertTextMode, Location, LocationLink, MarkupContent, MarkupKind, Position, SemanticTokens, SemanticTokensLegend, SemanticTokensParams, SemanticTokensWithRegistrationOptions, SymbolInformation, TextDocumentEdit, TextDocumentIdentifier, TextDocumentSyncKind, TextEdit, VersionedTextDocumentIdentifier, WorkDoneProgressCreateParams, WorkspaceEdit, WorkspaceSymbolOptions}
 
 import java.util
+import java.util.Map
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[ClientType,LSPServer[ClientType]]] { self : LSPServer[ClientType] =>
 
@@ -92,6 +93,12 @@ trait WithAutocomplete[ClientType <: LSPClient] extends LSPServer[ClientType] {
   }
 }
 
+sealed trait CodeActionTrait {
+  val title:String
+}
+case class CodeActionEdit(title:String,kind:String,edits: List[(String,List[(Int,Int,Int,Int,String)])]) extends CodeActionTrait
+
+
 trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[ClientType,LSPServer[ClientType]]]
   extends LSPServer[ClientType] with TextDocumentServer[ClientType,DocumentType] {
 
@@ -108,6 +115,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     result.getCapabilities.setWorkspaceSymbolProvider(true)
     result.getCapabilities.setFoldingRangeProvider(true)
     result.getCapabilities.setInlayHintProvider(true)
+    result.getCapabilities.setCodeActionProvider(true)
     //result.getCapabilities.setDocumentLinkProvider(new DocumentLinkOptions(true))
     result.getCapabilities.setImplementationProvider(true)
     result.getCapabilities.setDeclarationProvider(true)
@@ -120,8 +128,8 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
       case Some(doc:DocumentType) =>
         val start = range.getStart
         val end = range.getEnd
-        val soff = LSPDocument.toOffset(start.getLine,start.getCharacter,doc.doctext)
-        val eoff = LSPDocument.toOffset(end.getLine,end.getCharacter,doc.doctext)
+        val soff = doc._doctext.toOffset(start.getLine,start.getCharacter)
+        val eoff = doc._doctext.toOffset(end.getLine,end.getCharacter)
         (Some(doc),doc.synchronized{ doc.Annotations.getAll.collect{
           case a if soff <= a.offset && a.offset + a.length <= eoff => a
         }})
@@ -129,6 +137,26 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     }
   }
 
+  override def codeAction(params: CodeActionParams): List[CodeAction] = {
+    //import scala.jdk.CollectionConverters._
+    val (doc, as) = getAnnotations(params.getTextDocument, params.getRange)
+    as.flatMap(_.getCodeActions).map {
+      case CodeActionEdit(title,kind,edits) =>
+        val ret = new CodeAction(title)
+        ret.setKind(kind)
+        val edit = new WorkspaceEdit(immutable.Map.from(edits.map{ p =>
+          (p._1,p._2.map{e =>
+            val edt = new TextEdit()
+            edt.setNewText(e._5)
+            edt.setRange(new lsp4j.Range(new Position(e._1,e._2),new Position(e._3,e._4)))
+            edt
+          }.asJava)
+        }).asJava)
+        ret.setEdit(edit)
+        ret
+    }
+
+  }
   override def inlayHint(params: InlayHintParams): List[InlayHint] = {
     val (doc,as) = getAnnotations(params.getTextDocument,params.getRange)
     as.flatMap(_.getInlays).map { case (label,tooltip,kind,offset,pl,pr) =>
@@ -136,7 +164,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
       ret.setLabel(label)
       if (tooltip != "") ret.setTooltip(tooltip)
       kind.foreach(ret.setKind)
-      val pos = LSPDocument.toLC(offset,doc.get.doctext)
+      val pos = doc.get._doctext.toLC(offset)
       ret.setPosition(new Position(pos._1,pos._2))
       ret.setPaddingLeft(pl)
       ret.setPaddingRight(pr)
@@ -147,7 +175,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   def getAnnotations(doc : TextDocumentIdentifier, pos: lsp4j.Position) = {
     documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
       case Some(doc:DocumentType) =>
-        val off = LSPDocument.toOffset(pos.getLine,pos.getCharacter,doc.doctext)
+        val off = doc._doctext.toOffset(pos.getLine,pos.getCharacter)
         (Some(doc),doc.synchronized{ doc.Annotations.getAll.collect{
           case a if a.offset <= off && off <= a.offset + a.length => a
         }})
@@ -166,10 +194,10 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     val (doc,as) = getAnnotations(params.getTextDocument)
     as.flatMap(_.getCodeLenses).map{case (title,commandname,arguments,start,end) =>
       val range = new lsp4j.Range({
-        val (l,c) = LSPDocument.toLC(start,doc.get.doctext)
+        val (l,c) = doc.get._doctext.toLC(start)
         new Position(l,c)
       },{
-        val (l,c) = LSPDocument.toLC(end,doc.get.doctext)
+        val (l,c) = doc.get._doctext.toLC(end)
         new Position(l,c)
       })
       val cl = new CodeLens(range)
@@ -186,10 +214,10 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
     as.flatMap(_.getImplementation).map { case (s,i,j) =>
       new Location(s,new lsp4j.Range({
-        val (l,p) = LSPDocument.toLC(i,doc.get.doctext)
+        val (l,p) = doc.get._doctext.toLC(i)
         new Position(l,p)
       },{
-        val (l,p) = LSPDocument.toLC(j,doc.get.doctext)
+        val (l,p) = doc.get._doctext.toLC(j)
         new Position(l,p)
       }))
     }
@@ -199,10 +227,10 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
     as.flatMap(_.getDeclaration).map { case (s,i,j) =>
       new Location(s,new lsp4j.Range({
-        val (l,p) = LSPDocument.toLC(i,doc.get.doctext)
+        val (l,p) =doc.get._doctext.toLC(i)
         new Position(l,p)
       },{
-        val (l,p) = LSPDocument.toLC(j,doc.get.doctext)
+        val (l,p) = doc.get._doctext.toLC(j)
         new Position(l,p)
       }))
     }
@@ -212,10 +240,10 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
     val ls = as.flatMap(_.getDefinitions).map { case (s,i,j) =>
       new Location(s,new lsp4j.Range({
-        val (l,p) = LSPDocument.toLC(i,doc.get.doctext)
+        val (l,p) = doc.get._doctext.toLC(i)
         new Position(l,p)
       },{
-        val (l,p) = LSPDocument.toLC(j,doc.get.doctext)
+        val (l,p) = doc.get._doctext.toLC(j)
         new Position(l,p)
       }))
     }
@@ -244,7 +272,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
           case Nil =>
             null
           case ls =>
-            val pos = LSPDocument.toOffset(params.getPosition.getLine,params.getPosition.getCharacter,doc.doctext)
+            val pos = doc._doctext.toOffset(params.getPosition.getLine,params.getPosition.getCharacter)
             val fOs = ls.collect{case (s,e,f) if s <= pos && pos <= e => (e-s,f)}
             fOs.sortBy(_._1).headOption.map { case (_,f) =>
               val h = new Hover()
@@ -265,8 +293,8 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
           else {
             annots.collect{
               case a if a.foldable =>
-                val (start,_) = LSPDocument.toLC(a.offset,doc.doctext)
-                val (end,_) = LSPDocument.toLC(a.end,doc.doctext)
+                val (start,_) = doc._doctext.toLC(a.offset)
+                val (end,_) = doc._doctext.toLC(a.end)
                 new FoldingRange(start,end)
             }
           }
@@ -286,8 +314,8 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
             var dones: List[doc.Annotation] = Nil
 
             def toSymbol(a: doc.Annotation) = {
-              val (sl, sc) = LSPDocument.toLC(a.offset, doc.doctext)
-              val (el, ec) = LSPDocument.toLC(a.end, doc.doctext)
+              val (sl, sc) = doc._doctext.toLC(a.offset)
+              val (el, ec) = doc._doctext.toLC(a.end)
               val range = new lsp4j.Range(new Position(sl, sc), new Position(el, ec))
               new DocumentSymbol(a.symbolname, a.symbolkind, range, range, "")
             }

@@ -2,7 +2,8 @@ package info.kwarc.mmt.stex.parsing
 
 import info.kwarc.mmt.api.Level
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.utils.{File, Unparsed}
+import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.lsp.{SyncedDocUnparsed, SyncedDocument}
 import info.kwarc.mmt.stex.STeXError
 
 import scala.collection.mutable
@@ -86,7 +87,7 @@ trait TeXRule {
       ge
   }
   def name:String
-  def readChar(c:Char)(implicit in: Unparsed, state: LaTeXParserState): (Boolean,List[TeXTokenLike]) = {
+  def readChar(c:Char)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): (Boolean,List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
     in.trim
     var occured = false
@@ -107,15 +108,14 @@ trait TeXRule {
     (occured,children)
   }
 
-  def readSafeArg(top:String)(implicit in: Unparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
+  def readSafeArg(top:String)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
     var children : List[TeXTokenLike] = Nil
     var done = false
     in.trim
     while (!done && !in.empty) {
-      val rest = in.remainder
-      if (noargs.exists(rest.startsWith)) {
-        throw LaTeXParseError(noargs.find(rest.startsWith).get + " should not start an argument for " + top)
+      if (noargs.exists(in.startsWith)) {
+        throw LaTeXParseError(noargs.find(in.startsWith).get + " should not start an argument for " + top)
       }
       in.first match {
         case '%' =>
@@ -137,7 +137,7 @@ trait TeXRule {
     throw LaTeXParseError("File ended unexpectedly")
   }
 
-  def readArg(implicit in: Unparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
+  def readArg(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
     var children : List[TeXTokenLike] = Nil
     var done = false
@@ -163,7 +163,7 @@ trait TeXRule {
     throw LaTeXParseError("File ended unexpectedly")
   }
 
-  def readOptArg(implicit in: Unparsed, state:LaTeXParserState) : (List[List[TeXTokenLike]],List[TeXTokenLike]) = {
+  def readOptArg(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (List[List[TeXTokenLike]],List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
     in.trim
     var children : List[TeXTokenLike] = Nil
@@ -221,18 +221,18 @@ trait TeXRule {
 
 }
 abstract class EnvironmentRule(val name:String) extends TeXRule {
-  def parse(begin:MacroApplication)(implicit in: Unparsed, state:LaTeXParserState): MacroApplication
+  def parse(begin:MacroApplication)(implicit in: SyncedDocUnparsed, state:LaTeXParserState): MacroApplication
   def finalize(env : Environment)(implicit state:LaTeXParserState) : Environment
 }
 
 trait VerbatimLikeRule extends TeXRule {
-  def readVerb(finish:String)(implicit in: Unparsed, state:LaTeXParserState) = {
+  def readVerb(finish:String)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
     val currrules = state.rules
     state.rules = Nil
     val start = in.offset
     val sb = new mutable.StringBuilder()
     try {
-      while (!in.empty && !in.remainder.startsWith(finish)) {
+      while (!in.empty && !in.startsWith(finish)) {
         sb += in.next()
       }
     } finally {
@@ -242,7 +242,7 @@ trait VerbatimLikeRule extends TeXRule {
   }
 }
 class InlineVerbRule(val name: String) extends MacroRule with VerbatimLikeRule {
-  override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = {
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
     import SuperficialLaTeXParser._
     var done = false
     var children: List[TeXTokenLike] = readOptArg._2.reverse
@@ -272,7 +272,7 @@ class InlineVerbRule(val name: String) extends MacroRule with VerbatimLikeRule {
 
 trait MathEnvRule extends EnvironmentRule {
   case class MathMacroAppl(pl:PlainMacro,ch:List[TeXTokenLike],rl:TeXRule,prev:Boolean) extends MacroApplication(pl,ch,rl)
-  override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+  override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
     val ret = MathMacroAppl(begin.plain,begin.children,this,state.inmath)
     state.inmath = true
     ret
@@ -295,12 +295,12 @@ trait MathMacroRule extends MacroRule {
 }
 trait MacroRule extends TeXRule {
   def name:String
-  def parse(plain:PlainMacro)(implicit in: Unparsed, state:LaTeXParserState) : TeXTokenLike
+  def parse(plain:PlainMacro)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : TeXTokenLike
   //def apply(plain:PlainMacro,ls:List[TeXTokenLike]) : MacroApplication
 }
 class SimpleMacroRule(val name : String,args:Int=0,maybestarred:Boolean = false) extends MacroRule {
-  def after(ma:SimpleMacroApplication)(implicit in: Unparsed, state: LaTeXParserState) = {}
-  override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+  def after(ma:SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {}
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
     import SuperficialLaTeXParser._
     var children : List[TeXTokenLike] = Nil
     val starred = if (maybestarred) {
@@ -328,7 +328,7 @@ class SimpleMacroRule(val name : String,args:Int=0,maybestarred:Boolean = false)
 class SimpleMacroApplication(plain:PlainMacro,children:List[TeXTokenLike],val starred:Boolean,val args:List[TeXTokenLike], rule:TeXRule) extends MacroApplication(plain,children,rule)
 
 trait DefLikeRule extends MacroRule {
-  override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
     import SuperficialLaTeXParser._
     val pre = readTop(c => c == '{')
     val currrules = state.rules
@@ -352,14 +352,14 @@ object LaTeXRules {
   }
 
   val end = new SimpleMacroRule("end",1) {
-    override def after(ma: SimpleMacroApplication)(implicit in: Unparsed, state: LaTeXParserState): Unit = {
+    override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
       state.closegroup
       super.after(ma)
     }
   }
   val begin = new MacroRule {
     val name = "begin"
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       state.opengroup
       val (r,mchildren) = readArg
       r match {
@@ -430,29 +430,29 @@ object LaTeXRules {
     }
   }
   val makeatletter = new SimpleMacroRule("makeatletter") {
-    override def after(ma: SimpleMacroApplication)(implicit in: Unparsed, state: LaTeXParserState): Unit = state.letters ::= '@'
+    override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = state.letters ::= '@'
   }
   val makeatother = new SimpleMacroRule("makeatother") {
-    override def after(ma: SimpleMacroApplication)(implicit in: Unparsed, state: LaTeXParserState): Unit = state.letters = state.letters.filterNot(_ == '@')
+    override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = state.letters = state.letters.filterNot(_ == '@')
   }
   val explsyntaxon = new SimpleMacroRule("ExplSyntaxOn") {
-    override def after(ma: SimpleMacroApplication)(implicit in: Unparsed, state: LaTeXParserState): Unit = {
+    override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
       state.letters ::= '_'
       state.letters ::= ':'
     }
   }
   val explsyntaxoff = new SimpleMacroRule("ExplSyntaxOff") {
-    override def after(ma: SimpleMacroApplication)(implicit in: Unparsed, state: LaTeXParserState): Unit = state.letters = state.letters.filterNot(c => c == '_' || c == ':')
+    override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = state.letters = state.letters.filterNot(c => c == '_' || c == ':')
   }
   val dmathend = new SimpleMacroRule("]") {
-    override def after(ma: SimpleMacroApplication)(implicit in: Unparsed, state: LaTeXParserState): Unit = {
+    override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
       state.closegroup
       super.after(ma)
     }
   }
   val dmathstart = new MacroRule {
     val name = "["
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): Math = {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Math = {
       import SuperficialLaTeXParser._
       state.opengroup
       state.inmath = true
@@ -481,7 +481,7 @@ object LaTeXRules {
   val align_star = new EnvironmentRule("align*") with MathEnvRule
 
   val verbatim = new EnvironmentRule("verbatim") with VerbatimLikeRule {
-    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       val (terminated,nch) = readVerb("\\end{verbatim}")
       val ret = new MacroApplication(begin.plain,begin.children ::: nch :: Nil,this)
       if (!terminated) {
@@ -493,7 +493,7 @@ object LaTeXRules {
     override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
   }
   val lstlisting = new EnvironmentRule("lstlisting") with VerbatimLikeRule {
-    override def parse(begin: MacroApplication)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = {
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       val (terminated,nch) = readVerb("\\end{lstlisting}")
       val ret = new MacroApplication(begin.plain,begin.children ::: nch :: Nil,this)
       if (!terminated) {
@@ -507,7 +507,7 @@ object LaTeXRules {
   val iffalse = new MacroRule with VerbatimLikeRule {
     override val name: String = "iffalse"
 
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): TeXTokenLike = {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
       val (tm,ch) = readVerb("\\fi")
       val res = new MacroApplication(plain,List(ch),this)
       if (!tm) res.addError("\\iffalse not properly terminated")
@@ -518,7 +518,7 @@ object LaTeXRules {
   val inlineverb = new InlineVerbRule("inlineverb")
 
   val ensuremath = new SimpleMacroRule("ensuremath",args=1) with MathMacroRule {
-    override def parse(plain: PlainMacro)(implicit in: Unparsed, state: LaTeXParserState): MacroApplication = inmath { super.parse(plain) }
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = inmath { super.parse(plain) }
   }
 
   val allrules = List(
@@ -537,11 +537,16 @@ object LaTeXRules {
 object SuperficialLaTeXParser {
   def apply(file: File,rules : List[TeXRule] = LaTeXRules.allrules) : List[TeXTokenLike] = apply(File.read(file),rules)
   def apply(string : String,rules : List[TeXRule]) : List[TeXTokenLike] = {
-    implicit val in = new Unparsed(string,s => throw new STeXError(s,None,None))
+    val nd = new SyncedDocument
+    nd.set(string)
+    apply(nd,rules)
+  }
+  def apply(sd : SyncedDocument,rules:List[TeXRule]): List[TeXTokenLike] = {
+    implicit val in = sd.unparsed
     implicit val state = new LaTeXParserState(rules)
     readTop()
   }
-  def readMacro(implicit in: Unparsed, state:LaTeXParserState) : TeXTokenLike = {
+  def readMacro(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : TeXTokenLike = {
     val start = in.offset
     in.drop("\\")
     val first = in.first
@@ -556,12 +561,12 @@ object SuperficialLaTeXParser {
     in.trim
     ret
   }
-  def readTop(break:Char => Boolean = _ => false)(implicit in: Unparsed, state:LaTeXParserState) : List[TeXTokenLike] = {
+  def readTop(break:Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : List[TeXTokenLike] = {
     var ret : List[TeXTokenLike] = Nil
     while(!in.empty && !break(in.first)) ret ::= readOne(break)
     ret.reverse
   }
-  def readOne(break:Char => Boolean = _ => false)(implicit in: Unparsed, state:LaTeXParserState): TeXTokenLike = {
+  def readOne(break:Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state:LaTeXParserState): TeXTokenLike = {
     if (in.empty) throw LaTeXParseError("Unexpected end of file")
     in.first match {
       case '\\' => readMacro
@@ -573,7 +578,7 @@ object SuperficialLaTeXParser {
       case _ => readText(break)
     }
   }
-  def readMath(starts : String,ends:String)(implicit in: Unparsed, state:LaTeXParserState) = {
+  def readMath(starts : String,ends:String)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
     val start = in.offset
     var ret : List[TeXTokenLike] = Nil
     in.drop(starts)
@@ -591,7 +596,7 @@ object SuperficialLaTeXParser {
     } else in.drop(ends)
     res
   }
-  def readGroup(implicit in: Unparsed, state:LaTeXParserState) = {
+  def readGroup(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
     val start = in.offset
     in.drop("{")
     val ct = readTop(_ == '}')
@@ -606,12 +611,12 @@ object SuperficialLaTeXParser {
     }
     gr
   }
-  def readText(break:Char => Boolean = _ => false)(implicit in: Unparsed, state:LaTeXParserState) = {
+  def readText(break:Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
     val start = in.offset
     val str = in.takeWhileSafe(c => !break(c) && !state.specialchars.contains(c))
     new PlainText(str,start,in.offset)
   }
-  def readComment(implicit in: Unparsed, state:LaTeXParserState) = {
+  def readComment(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
     val start = in.offset
     in.drop("%")
     val str = in.takeWhileSafe(_ != '\n')
