@@ -4,8 +4,7 @@ import info.kwarc.mmt.api.ContentPath
 import java.net.URI
 
 
-object Ontology
-{
+object Ontology {
   /* relational triples */
 
   def unary(subject: ContentPath, predicate: String): isabelle.RDF.Triple =
@@ -32,8 +31,7 @@ object Ontology
     isabelle.RDF.document(isabelle.RDF.triples(triples),
       namespaces = isabelle.RDF.default_namespaces ::: List(ulo))
 
-  object ULO
-  {
+  object ULO {
     /* unaries */
 
     val `type` = ulo("type") // type constructors
