@@ -94,7 +94,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
         case _ =>
           client.log("Building None!")
       }
-      onUpdate(Nil)
+      quickparse
       ((),"Done")
     }
   }
@@ -159,7 +159,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
           val msg = new HTMLUpdateMessage
           msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + uri // uri
           this.client.client.updateHTML(msg)
-          onUpdate(Nil)
+          quickparse
         }}
       case _ =>
     }
@@ -169,33 +169,38 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
     Annotations.notifyOnChange(client.client)
   }
-  override def onUpdate(changes: List[Delta]): Unit = try this.synchronized { server.parser.synchronized {
-    Annotations.clear
-    client.resetErrors(uri)
-    import info.kwarc.mmt.stex.parsing._
-    val ret = server.parser(_doctext,file.getOrElse(File(uri)),archive)
-    ret.foreach(_.iterate{ elem =>
-      elem.errors.foreach { e =>
-        val start = _doctext.toLC(elem.startoffset)
-        val end = _doctext.toLC(elem.endoffset)
-        client.documentErrors(server.controller,this,uri,SourceError(uri,SourceRef(URI(uri),
-          SourceRegion(
-            SourcePosition(elem.startoffset,start._1,start._2),
-            SourcePosition(elem.endoffset,end._1,end._2)
-          )),e.shortMsg,if (e.extraMessage != "") List(e.extraMessage) else Nil,e.level)
-        )
-      }
-      elem match {
-        case t : HasAnnotations =>
-          t.doAnnotations(this)
-        case _ =>
-      }
-    })
-    super.onUpdate(Nil)
-  }} catch {
-    case e : Throwable =>
+  def quickparse = try this.synchronized {
+    server.parser.synchronized {
+      Annotations.clear
+      import info.kwarc.mmt.stex.parsing._
+      val ret = server.parser(_doctext, file.getOrElse(File(uri)), archive)
+      ret.foreach(_.iterate { elem =>
+        elem.errors.foreach { e =>
+          val start = _doctext.toLC(elem.startoffset)
+          val end = _doctext.toLC(elem.endoffset)
+          client.documentErrors(server.controller, this, uri, SourceError(uri, SourceRef(URI(uri),
+            SourceRegion(
+              SourcePosition(elem.startoffset, start._1, start._2),
+              SourcePosition(elem.endoffset, end._1, end._2)
+            )), e.shortMsg, if (e.extraMessage != "") List(e.extraMessage) else Nil, e.level)
+          )
+        }
+        elem match {
+          case t: HasAnnotations =>
+            t.doAnnotations(this)
+          case _ =>
+        }
+      })
+      super.onUpdate(Nil)
+    }
+  } catch {
+    case e: Throwable =>
       e.printStackTrace()
       print("")
+  }
+  override def onUpdate(changes: List[Delta]): Unit = {
+    client.resetErrors(uri)
+    quickparse
   }
 
 }
