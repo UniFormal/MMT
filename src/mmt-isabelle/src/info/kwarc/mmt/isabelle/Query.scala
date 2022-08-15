@@ -26,16 +26,17 @@ object Query {
       content + Importer.Item.Name(theory_path, kind.toString, name)
     }
 
-    val content =
-      (((Importer.Content.empty
-        /: classes)(add_content(isabelle.Export_Theory.Kind.CLASS))
-        /: types)(add_content(isabelle.Export_Theory.Kind.TYPE))
-        /: consts)(add_content(isabelle.Export_Theory.Kind.CONST))
+    val content1 =
+      classes.foldLeft(Importer.Content.empty)(add_content(isabelle.Export_Theory.Kind.CLASS))
+    val content2 =
+      types.foldLeft(content1)(add_content(isabelle.Export_Theory.Kind.TYPE))
+    val content3 =
+      consts.foldLeft(content2)(add_content(isabelle.Export_Theory.Kind.CONST))
 
-    val terms = query.map(content.import_term(_))
+    val terms = query.map(content3.import_term(_))
 
     val result: List[String] = // FIXME proper query result
-      content.all_names.map(name => name.global.toString)
+      content3.all_names.map(name => name.global.toString)
 
     {
       import isabelle.XML.Encode._

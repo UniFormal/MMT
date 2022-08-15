@@ -444,8 +444,8 @@ object Importer {
 
   object Triples_Stats {
     def empty: Triples_Stats = Triples_Stats(SortedMap.empty)
-    def make(triples: List[isabelle.RDF.Triple]): Triples_Stats = (empty /: triples)(_ + _)
-    def merge(args: TraversableOnce[Triples_Stats]): Triples_Stats = (empty /: args)(_ + _)
+    def make(triples: List[isabelle.RDF.Triple]): Triples_Stats = triples.foldLeft(empty)(_ + _)
+    def merge(args: TraversableOnce[Triples_Stats]): Triples_Stats = args.foldLeft(empty)(_ + _)
   }
 
   sealed case class Triples_Stats(stats: SortedMap[String, Int]) {
@@ -455,7 +455,7 @@ object Importer {
     def + (t: isabelle.RDF.Triple): Triples_Stats = this + (t.predicate, 1)
 
     def + (other: Triples_Stats): Triples_Stats =
-      (this /: other.stats)({ case (a, (b, n)) => a + (b, n) })
+      other.stats.foldLeft(this)({ case (a, (b, n)) => a + (b, n) })
 
     def total: Int = stats.iterator.map(_._2).sum
 
@@ -469,7 +469,7 @@ object Importer {
       new Content(
         SortedMap.empty[Item.Key, Item.Name](Item.Key.Ordering),
         SortedMap.empty[String, Triples_Stats])
-    def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
+    def merge(args: TraversableOnce[Content]): Content = args.foldLeft(empty)(_ ++ _)
   }
 
   final class Content private(
@@ -535,8 +535,8 @@ object Importer {
       if (content eq other) content
       else if (is_empty) other
       else {
-        val items1 = (content /: other.item_names)({ case (map, (_, name)) => map + name }).item_names
-        val triples1 = (content /: other.triples)({ case (map, entry) => map + entry }).triples
+        val items1 = other.item_names.foldLeft(content)({ case (map, (_, name)) => map + name }).item_names
+        val triples1 = other.triples.foldLeft(content)({ case (map, entry) => map + entry }).triples
         new Content(items1, triples1)
       }
 
@@ -646,7 +646,7 @@ object Importer {
     /* nested declarations */
 
     def declare_import_types(thy: Theory, typargs: List[(String, isabelle.Term.Sort)]): Importer.Env = {
-      (Env.empty /: typargs) {
+      typargs.foldLeft(Env.empty) {
         case (env, (a, _)) =>
           val c = Constant(thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
           thy.add(c)
@@ -969,7 +969,7 @@ object Importer {
 
             // term parameters
             val term_env =
-              (type_env /: locale.args) {
+              locale.args.foldLeft(type_env) {
                 case (env, ((x, ty), syntax)) =>
                   val notC = notation(None, 0, syntax)
                   val tp = content.import_type(ty, type_env)
@@ -1020,7 +1020,7 @@ object Importer {
 
             // type variables
             val env =
-              (Env.empty /: datatype.typargs) {
+              datatype.typargs.foldLeft(Env.empty) {
                 case (env, (a, _)) =>
                   val c = Constant(datatype_thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
                   datatype_thy.add(c)
@@ -1072,7 +1072,7 @@ object Importer {
 
             // term variables
             val term_env =
-              (type_env /: spec_rule.args) {
+              spec_rule.args.foldLeft(type_env) {
                 case (env, (x, ty)) =>
                   val tp = content.import_type(ty, type_env)
                   val c = Constant(spec_thy.toTerm, LocalName(x), Nil, Some(tp), None, None)
