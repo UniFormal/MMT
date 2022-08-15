@@ -5,7 +5,7 @@ import scala.util.matching.Regex
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend.{Controller, ReportHandler}
-import archives.{Archive, NonTraversingImporter, Update}
+import archives.{Archive, Build, NonTraversingImporter}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion, SourceRef}
 import notations._
 import symbols._
@@ -93,7 +93,6 @@ object Importer
     val errs =
       for {
         solver_error <- solver.getErrors
-        if solver_error.level >= Level.Error
         history_entry <- solver_error.history.steps
       } yield history_entry.present(solver.presentObj)
 
@@ -754,7 +753,7 @@ object Importer
       val key = "isabelle-omdoc"
 
       //these methods are called by MMT if the importer is called from MMT
-      def build(a: Archive, up: Update, in: FilePath) : Unit = {
+      def build(a: Archive, which: Build, in: FilePath, errorCont: Option[ErrorHandler]) : Unit = {
         throw LocalError("not implemented")
       }
       def clean(a: Archive, in: FilePath): Unit = {
