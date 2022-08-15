@@ -146,14 +146,18 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        (controller.backend.getArchives find { a => segments.startsWith(a.root.segments) },f)
      })*/
      allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
-     documents.synchronized {
+     //documents.synchronized {
        allfiles.zipWithIndex.foreach {
          case (f, i) => //((a, f), i) =>
            update(i.toFloat / allfiles.length.toFloat, "Parsing " + (i + 1) + "/" + allfiles.length + ": " + f.toString)
            //if (!parser.dict.previouslyread(f)) parser.apply(f, Some(a))
            val uri = if (f.toString.charAt(1) == ':') "file://" + f.toString.head.toLower + f.toString.drop(1) else "file://" + f.toString
-           documents.getOrElseUpdate(uri, {
-             val d = newDocument(uri)
+           var needsdoing = false
+           val d = documents.getOrElseUpdate(uri, {
+             needsdoing = true
+             newDocument(uri)
+           })
+           if (needsdoing) d.synchronized {
              d.archive match {
                case Some(a) =>
                  val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
@@ -162,11 +166,10 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                case _ =>
                  d.init(File.read(f))
              }
-             d
-           })
+           }
          //parser(f,a)
        }
-     }
+     //}
      ((),"Done")
    }
 
