@@ -479,6 +479,14 @@ object LaTeXRules {
   val array_star = new EnvironmentRule("array*") with MathEnvRule
   val align = new EnvironmentRule("align") with MathEnvRule
   val align_star = new EnvironmentRule("align*") with MathEnvRule
+  val displaynd = new EnvironmentRule("displaynd") with MathEnvRule
+  val capital_displaynd = new EnvironmentRule("Displaynd") with MathEnvRule
+  val displaytableau = new EnvironmentRule("displaytableau") with MathEnvRule
+  val displaytableau_star = new EnvironmentRule("displaytableau*") with MathEnvRule
+  val tableau = new EnvironmentRule("tableau") with MathEnvRule
+  val textnd = new EnvironmentRule("textnd") with MathEnvRule
+  val cboxnd = new EnvironmentRule("cboxnd") with MathEnvRule
+  val fignd = new EnvironmentRule("fignd") with MathEnvRule
 
   val verbatim = new EnvironmentRule("verbatim") with VerbatimLikeRule {
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
@@ -529,7 +537,8 @@ object LaTeXRules {
     dmathstart, dmathend, ensuremath,
     begin,end,
     _def,edef,
-    array,array_star,eqnarray,eqnarray_star,align,align_star,
+    array,array_star,eqnarray,eqnarray_star,align,align_star,displaynd,displaytableau,displaytableau_star,textnd,cboxnd,tableau,
+      capital_displaynd,fignd,
     verbatim,lstlisting,lstinline,inlineverb,iffalse
   )
 }
