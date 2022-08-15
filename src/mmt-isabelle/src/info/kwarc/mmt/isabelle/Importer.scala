@@ -1,6 +1,6 @@
 package info.kwarc.mmt.isabelle
 
-import scala.collection.SortedMap
+import scala.collection.immutable.SortedMap
 import scala.util.matching.Regex
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
