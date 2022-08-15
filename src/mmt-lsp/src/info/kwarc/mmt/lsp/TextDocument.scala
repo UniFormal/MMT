@@ -16,8 +16,11 @@ trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[Cli
 
   override def didOpen(params: DidOpenTextDocumentParams): Unit = {
     val document = params.getTextDocument
-    val d = documents.synchronized{documents.getOrElseUpdate(document.getUri.replace("%3A",":"),newDocument(document.getUri.replace("%3A",":")))}
-    d.init(document.getText)
+    documents.synchronized{documents.getOrElseUpdate(document.getUri.replace("%3A",":"),{
+      val d = newDocument(document.getUri.replace("%3A",":"))
+      d.init(document.getText)
+      d
+    })}
   }
 
   override def didChange(params: DidChangeTextDocumentParams): Unit = {
