@@ -289,10 +289,10 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    }
 
-   override def didSave(docuri: String): Unit = this.documents.get(docuri) match {
+   override def didSave(docuri: String): Unit = safely {this.documents.get(docuri) match {
      case Some(document) => document.buildHTML()
      case _ =>
-   }
+   }}
 
    val self = this
 
