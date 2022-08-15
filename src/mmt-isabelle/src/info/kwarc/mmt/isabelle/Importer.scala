@@ -297,7 +297,7 @@ object Importer {
     implicit_args: Int,
     syntax: isabelle.Export_Theory.Syntax
   ): NotationContainer = {
-    val notation = NotationContainer()
+    val notation = NotationContainer.empty()
 
     def prefix_notation(delim: String, impl: Int): TextNotation =
       new TextNotation(Prefix(Delim(isabelle.Symbol.decode(delim)), impl, 0), Precedence.infinite, None, false)
@@ -445,7 +445,7 @@ object Importer {
   object Triples_Stats {
     def empty: Triples_Stats = Triples_Stats(SortedMap.empty)
     def make(triples: List[isabelle.RDF.Triple]): Triples_Stats = triples.foldLeft(empty)(_ + _)
-    def merge(args: TraversableOnce[Triples_Stats]): Triples_Stats = args.foldLeft(empty)(_ + _)
+    def merge(args: IterableOnce[Triples_Stats]): Triples_Stats = args.iterator.foldLeft(empty)(_ + _)
   }
 
   sealed case class Triples_Stats(stats: SortedMap[String, Int]) {
@@ -469,7 +469,7 @@ object Importer {
       new Content(
         SortedMap.empty[Item.Key, Item.Name](Item.Key.Ordering),
         SortedMap.empty[String, Triples_Stats])
-    def merge(args: TraversableOnce[Content]): Content = args.foldLeft(empty)(_ ++ _)
+    def merge(args: IterableOnce[Content]): Content = args.iterator.foldLeft(empty)(_ ++ _)
   }
 
   final class Content private(
