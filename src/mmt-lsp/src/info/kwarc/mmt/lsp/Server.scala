@@ -294,10 +294,14 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def withProgress[A](payload: Any,title:String,msg:String = "")(f : ((Double,String) => Unit) => (A,String)) : A = {
     val token = payload.hashCode();
     startProgress(token,title,msg)
-    val (ret,end) = f((i,s) => {
+    val (ret,end) = try { f((i,s) => {
       updateProgress(token,i,s)
-    });
-    finishProgress(token,end)
+    }) } catch {
+      case t =>
+        finishProgress(token, "")
+        throw t
+    }
+    finishProgress(token, end)
     ret
   }
 
