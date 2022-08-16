@@ -508,10 +508,10 @@ object Importer {
     def report_kind(kind: String): String =
       print_int(item_names.count({ case (_, name) => name.entity_kind == kind }), len = 12) + " " + kind
 
-    def report: String = {
-      val kinds = (Main.Kind.list ::: Datatypes.Kind.list ::: Spec_Rules.Kind.list).map(_.toString)
-      isabelle.Library.cat_lines(kinds.map(report_kind))
-    }
+    def report: String =
+      isabelle.Library.cat_lines(
+        (Main.Kind.list ::: Datatypes.Kind.list ::: Spec_Rules.Kind.list).map(_.toString)
+          .map(report_kind))
 
     def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
     def get_class(name: String): Item.Name = get(Item.Key(Main.Kind.CLASS.toString, name))
