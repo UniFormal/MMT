@@ -168,6 +168,8 @@ object Importer {
 
   /** Isabelle export structures **/
 
+  import isabelle.Export_Theory.Entity
+
   sealed case class Proof_Text(
     index: Int,
     range: isabelle.Text.Range,
@@ -803,7 +805,7 @@ object Importer {
             isabelle.RDF.int(isabelle.UTF8.bytes(text_encoded).length)))
       }
 
-      def decl_error[A](entity: isabelle.Export_Theory.Entity)(body: => A): Option[A] = {
+      def decl_error[A](entity: Entity)(body: => A): Option[A] = {
         try { Some(body) }
         catch {
           case isabelle.ERROR(msg) =>
@@ -1428,7 +1430,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         constdefs = pure_theory.constdefs, typedefs = pure_theory.typedefs)
     }
 
-    private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
+    private def pure_entity(entities: List[Entity], name: String): GlobalName =
       entities.collectFirst(
         { case entity if entity.name == name =>
             Item.Name(
@@ -1617,8 +1619,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               }
             element.outline_iterator.exists(cmd => cmd.id == entity_command.id)
           }
-          def defined(entity: isabelle.Export_Theory.Entity): Boolean =
-            defined_id(entity.toString, entity.id)
+          def defined(entity: Entity): Boolean = defined_id(entity.toString, entity.id)
 
           Theory_Segment(
             element = element,
@@ -1708,7 +1709,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           })
       }
 
-      def make_item(entity: isabelle.Export_Theory.Entity,
+      def make_item(entity: Entity,
         syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme
       ): Item = {
@@ -1724,11 +1725,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           node_source = node_source)
       }
 
-      def declare_entity(
-        entity: isabelle.Export_Theory.Entity,
-        tags: List[String],
-        props: isabelle.Properties.T
-      ): Item = {
+      def declare_entity(entity: Entity, tags: List[String], props: isabelle.Properties.T): Item = {
         val item = make_item(entity)
         declare_item(item, tags, props)
         item
