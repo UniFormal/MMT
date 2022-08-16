@@ -195,13 +195,13 @@ object Importer {
     heading: Option[Int] = None,
     proof: Option[Proof_Text] = None,
     messages: List[String] = Nil,
-    classes: List[isabelle.Export_Theory.Class] = Nil,
-    types: List[isabelle.Export_Theory.Type] = Nil,
-    consts: List[isabelle.Export_Theory.Const] = Nil,
-    axioms: List[isabelle.Export_Theory.Axiom] = Nil,
-    thms: List[isabelle.Export_Theory.Thm] = Nil,
-    locales: List[isabelle.Export_Theory.Locale] = Nil,
-    locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil,
+    classes: List[Entity[isabelle.Export_Theory.Class]] = Nil,
+    types: List[Entity[isabelle.Export_Theory.Type]] = Nil,
+    consts: List[Entity[isabelle.Export_Theory.Const]] = Nil,
+    axioms: List[Entity[isabelle.Export_Theory.Axiom]] = Nil,
+    thms: List[Entity[isabelle.Export_Theory.Thm]] = Nil,
+    locales: List[Entity[isabelle.Export_Theory.Locale]] = Nil,
+    locale_dependencies: List[Entity[isabelle.Export_Theory.Locale_Dependency]] = Nil,
     datatypes: List[isabelle.Export_Theory.Datatype] = Nil,
     spec_rules: List[isabelle.Export_Theory.Spec_Rule] = Nil
   ) {
@@ -412,18 +412,18 @@ object Importer {
   }
 
   object Main {
+    def export_kind(k: String): String = isabelle.Export_Theory.export_kind(k)
     object Kind {
-      type Value = isabelle.Export_Theory.Kind.Value
-      val LOCALE = isabelle.Export_Theory.Kind.LOCALE
+      val LOCALE = export_kind(isabelle.Markup.LOCALE)
       val LOCALE_DEPENDENCY = isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY
-      val CLASS = isabelle.Export_Theory.Kind.CLASS
+      val CLASS = export_kind(isabelle.Markup.CLASS)
       val TYPE = isabelle.Export_Theory.Kind.TYPE
       val CONST = isabelle.Export_Theory.Kind.CONST
-      val AXIOM = isabelle.Export_Theory.Kind.AXIOM
+      val AXIOM = export_kind(isabelle.Markup.AXIOM)
       val THM = isabelle.Export_Theory.Kind.THM
       val DOCUMENT_HEADING = isabelle.Export_Theory.Kind.DOCUMENT_HEADING
       val PROOF_TEXT = isabelle.Export_Theory.Kind.PROOF_TEXT
-      val list: List[Value] =
+      val list: List[String] =
         List(LOCALE, LOCALE_DEPENDENCY, CLASS, TYPE, CONST, AXIOM, THM, DOCUMENT_HEADING, PROOF_TEXT)
     }
   }
@@ -435,23 +435,23 @@ object Importer {
   }
 
   object Datatypes {
-    object Kind extends Enumeration {
-      val DATATYPE = Value("datatype")
-      val CODATATYPE = Value("codatatype")
-      val list: List[Value] = List(DATATYPE, CODATATYPE)
+    object Kind {
+      val DATATYPE = "datatype"
+      val CODATATYPE = "codatatype"
+      val list: List[String] = List(DATATYPE, CODATATYPE)
     }
     val HEAD = "head"
     object Constructors extends Indexed_Name("constructors")
   }
 
   object Spec_Rules {
-    object Kind extends Enumeration {
-      val DEFINITION = Value("definition")
-      val RECURSIVE_DEFINITION = Value("recursive_definition")
-      val INDUCTIVE_DEFINITION = Value("inductive_definition")
-      val COINDUCTIVE_DEFINITION = Value("coinductive_definition")
-      val SPECIFICATION = Value("specification")
-      val list: List[Value] =
+    object Kind {
+      val DEFINITION = "definition"
+      val RECURSIVE_DEFINITION = "recursive_definition"
+      val INDUCTIVE_DEFINITION = "inductive_definition"
+      val COINDUCTIVE_DEFINITION = "coinductive_definition"
+      val SPECIFICATION = "specification"
+      val list: List[String] =
         List(DEFINITION, RECURSIVE_DEFINITION, INDUCTIVE_DEFINITION,
           COINDUCTIVE_DEFINITION, SPECIFICATION)
     }
@@ -510,18 +510,17 @@ object Importer {
 
     def report: String =
       isabelle.Library.cat_lines(
-        (Main.Kind.list ::: Datatypes.Kind.list ::: Spec_Rules.Kind.list).map(_.toString)
-          .map(report_kind))
+        (Main.Kind.list ::: Datatypes.Kind.list ::: Spec_Rules.Kind.list).map(report_kind))
 
     def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
-    def get_class(name: String): Item.Name = get(Item.Key(Main.Kind.CLASS.toString, name))
-    def get_type(name: String): Item.Name = get(Item.Key(Main.Kind.TYPE.toString, name))
-    def get_const(name: String): Item.Name = get(Item.Key(Main.Kind.CONST.toString, name))
-    def get_axiom(name: String): Item.Name = get(Item.Key(Main.Kind.AXIOM.toString, name))
-    def get_thm(name: String): Item.Name = get(Item.Key(Main.Kind.THM.toString, name))
-    def get_locale(name: String): Item.Name = get(Item.Key(Main.Kind.LOCALE.toString, name))
+    def get_class(name: String): Item.Name = get(Item.Key(Main.Kind.CLASS, name))
+    def get_type(name: String): Item.Name = get(Item.Key(Main.Kind.TYPE, name))
+    def get_const(name: String): Item.Name = get(Item.Key(Main.Kind.CONST, name))
+    def get_axiom(name: String): Item.Name = get(Item.Key(Main.Kind.AXIOM, name))
+    def get_thm(name: String): Item.Name = get(Item.Key(Main.Kind.THM, name))
+    def get_locale(name: String): Item.Name = get(Item.Key(Main.Kind.LOCALE, name))
     def get_locale_dependency(name: String): Item.Name =
-      get(Item.Key(Main.Kind.LOCALE_DEPENDENCY.toString, name))
+      get(Item.Key(Main.Kind.LOCALE_DEPENDENCY, name))
 
     def is_empty: Boolean = item_names.isEmpty
     def defined(key: Item.Key): Boolean = item_names.isDefinedAt(key)
@@ -816,8 +815,11 @@ object Importer {
             isabelle.RDF.int(isabelle.UTF8.bytes(text_encoded).length)))
       }
 
-      def decl_error[A](entity: Entity)(body: => A): Option[A] = {
-        try { Some(body) }
+      def decl_error[A <: isabelle.Export_Theory.Content[A], B](entity: Entity[A])(body: => B): Option[B] = {
+        try {
+          if (entity.content.isDefined) Some(body)
+          else isabelle.error("Undefined entity content")
+        }
         catch {
           case isabelle.ERROR(msg) =>
             isabelle.error(msg + "\nin declaration of " + entity + isabelle.Position.here(entity.pos))
@@ -826,10 +828,10 @@ object Importer {
       }
 
       for (segment <- thy_export.segments) {
-        def make_dummy(kind: Main.Kind.Value, i: Int): Item = {
+        def make_dummy(kind: String, i: Int): Item = {
           val name = isabelle.Long_Name.implode(List(thy_name.theory_base_name, i.toString))
           val pos = segment.element.head.span.position
-          Item(thy.path, kind.toString, name, entity_pos = pos)
+          Item(thy.path, kind, name, entity_pos = pos)
         }
 
         // input text
@@ -849,9 +851,9 @@ object Importer {
         }
 
         // classes
-        for (decl <- segment.classes) {
-          decl_error(decl.entity) {
-            val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
+        for (entity <- segment.classes) {
+          decl_error(entity) {
+            val item = thy_draft.declare_entity(entity, segment.document_tags, segment.meta_data)
             thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.universe))
             val tp = Isabelle.Class()
             add_constant(item, tp, None)
@@ -859,9 +861,10 @@ object Importer {
         }
 
         // types
-        for (decl <- segment.types) {
-          decl_error(decl.entity) {
-            val item = thy_draft.make_item(decl.entity, decl.syntax)
+        for (entity <- segment.types) {
+          decl_error(entity) {
+            val decl = entity.content.get
+            val item = thy_draft.make_item(entity, decl.syntax)
             thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
 
             thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.`type`))
@@ -876,9 +879,10 @@ object Importer {
         }
 
         // consts
-        for (decl <- segment.consts) {
-          decl_error(decl.entity) {
-            val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
+        for (entity <- segment.consts) {
+          decl_error(entity) {
+            val decl = entity.content.get
+            val item = thy_draft.make_item(entity, decl.syntax, (decl.typargs, decl.typ))
             thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
 
             if (segment.is_axiomatization) {
@@ -899,17 +903,21 @@ object Importer {
         }
 
         // axioms
-        for (decl <-segment.axioms) {
-          val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
-          val tp = thy_draft.content.import_prop(decl.prop)
-          add_constant(item, tp, None)
+        for (entity <-segment.axioms) {
+          decl_error(entity) {
+            val decl = entity.content.get
+            val item = thy_draft.declare_entity(entity, segment.document_tags, segment.meta_data)
+            val tp = thy_draft.content.import_prop(decl.prop)
+            add_constant(item, tp, None)
+          }
         }
 
         // theorems
         val thms: List[Item] =
-          segment.thms.flatMap({ decl =>
-            decl_error(decl.entity) {
-              val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
+          segment.thms.flatMap({ entity =>
+            decl_error(entity) {
+              val decl = entity.content.get
+              val item = thy_draft.declare_entity(entity, segment.document_tags, segment.meta_data)
               thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.statement))
 
               if (segment.is_definition) {
@@ -963,10 +971,11 @@ object Importer {
         }
 
         // locales
-        for (locale <- segment.locales) {
-          decl_error(locale.entity) {
+        for (entity <- segment.locales) {
+          decl_error(entity) {
+            val locale = entity.content.get
             val content = thy_draft.content
-            val item = thy_draft.declare_entity(locale.entity, segment.document_tags, segment.meta_data)
+            val item = thy_draft.declare_entity(entity, segment.document_tags, segment.meta_data)
             thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.theory))
             val loc_name = item.name.local
             val loc_thy = Theory.empty(thy.path.doc, thy.name / loc_name, None)
@@ -1005,9 +1014,13 @@ object Importer {
         }
 
         // locale dependencies (inclusions)
-        for (dep <- segment.locale_dependencies if dep.is_inclusion) {
-          decl_error(dep.entity) {
-            val item = thy_draft.declare_entity(dep.entity, segment.document_tags, segment.meta_data)
+        for {
+          entity <- segment.locale_dependencies
+          if entity.content.isEmpty || entity.content.get.is_inclusion
+        } {
+          decl_error(entity) {
+            val dep = entity.content.get
+            val item = thy_draft.declare_entity(entity, segment.document_tags, segment.meta_data)
             val content = thy_draft.content
 
             val from = OMMOD(content.get_locale(dep.source).global.toMPath)
@@ -1426,12 +1439,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         Theory_Segment(
           classes = pure_theory.classes,
           types =
-            for {
-              decl <- pure_theory.types
-              if decl.entity.name != isabelle.Pure_Thy.DUMMY &&
-                decl.entity.name != isabelle.Pure_Thy.FUN &&
-                decl.entity.name != isabelle.Pure_Thy.PROP
-            } yield decl,
+            pure_theory.types.filterNot(entity =>
+              entity.name == isabelle.Pure_Thy.DUMMY ||
+              entity.name == isabelle.Pure_Thy.FUN ||
+              entity.name == isabelle.Pure_Thy.PROP),
           consts = pure_theory.consts,
           axioms = pure_theory.axioms,
           thms = pure_theory.thms,
@@ -1441,17 +1452,17 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         constdefs = pure_theory.constdefs, typedefs = pure_theory.typedefs)
     }
 
-    private def pure_entity(entities: List[Entity], name: String): GlobalName =
+    private def pure_entity[A <: isabelle.Export_Theory.Content[A]](entities: List[Entity[A]], name: String): GlobalName =
       entities.collectFirst(
         { case entity if entity.name == name =>
             Item.Name(
               theory_path = pure_path,
-              entity_kind = entity.kind.toString,
+              entity_kind = Main.export_kind(entity.kind),
               entity_name = entity.name).global
         }).getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
 
-    def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
-    def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts.map(_.entity), name)
+    def pure_type(name: String): GlobalName = pure_entity(pure_theory.types, name)
+    def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts, name)
 
     object Class {
       def apply(): Term = lf.Arrow(Bootstrap.Type(), Bootstrap.Prop())
@@ -1630,7 +1641,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               }
             element.outline_iterator.exists(cmd => cmd.id == entity_command.id)
           }
-          def defined(entity: Entity): Boolean = defined_id(entity.toString, entity.id)
+          def defined[A <: isabelle.Export_Theory.Content[A]](entity: Entity[A]): Boolean =
+            defined_id(entity.toString, entity.id)
 
           Theory_Segment(
             element = element,
@@ -1642,14 +1654,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             heading = heading,
             proof = proof,
             messages = messages,
-            classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
-            types = for (decl <- theory.types if defined(decl.entity)) yield decl,
-            consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
-            axioms = for (decl <- theory.axioms if defined(decl.entity)) yield decl,
-            thms = for (decl <- theory.thms if defined(decl.entity)) yield decl,
-            locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
-            locale_dependencies =
-              for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl,
+            classes = theory.classes.filter(defined),
+            types = theory.types.filter(defined),
+            consts = theory.consts.filter(defined),
+            axioms = theory.axioms.filter(defined),
+            thms = theory.thms.filter(defined),
+            locales = theory.locales.filter(defined),
+            locale_dependencies = theory.locale_dependencies.filter(defined),
             datatypes = theory.datatypes.filter(datatype => defined_id(datatype.name, datatype.id)),
             spec_rules =
               theory.spec_rules.filter(spec_rule =>
@@ -1720,13 +1731,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           })
       }
 
-      def make_item(entity: Entity,
+      def make_item[A <: isabelle.Export_Theory.Content[A]](entity: Entity[A],
         syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme
       ): Item = {
         Item(
           thy.path,
-          entity.kind.toString,
+          Main.export_kind(entity.kind),
           entity.name,
           entity_xname = entity.xname,
           entity_pos = entity.pos,
@@ -1736,7 +1747,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           node_source = node_source)
       }
 
-      def declare_entity(entity: Entity, tags: List[String], props: isabelle.Properties.T): Item = {
+      def declare_entity[A <: isabelle.Export_Theory.Content[A]](
+        entity: Entity[A],
+        tags: List[String],
+        props: isabelle.Properties.T
+      ): Item = {
         val item = make_item(entity)
         declare_item(item, tags, props)
         item

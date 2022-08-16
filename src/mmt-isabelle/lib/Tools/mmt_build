@@ -5,7 +5,7 @@
 set -e
 
 # Isabelle Scala/Java components
-isabelle_admin_build jars
+isabelle scala_build
 
 # MMT build
 cd "$ISABELLE_MMT_ROOT/src"

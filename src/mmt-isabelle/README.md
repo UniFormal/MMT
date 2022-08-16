@@ -4,7 +4,7 @@ Isabelle/MMT
 ## Requirements
 
 Isabelle/MMT requires a version of Isabelle that fits precisely to
-it. The latest stable release is for Isabelle2021 (February 2021). For
+it. The latest stable release is for Isabelle2021-1 (December 2021). For
 intermediate development versions see file `README_REPOSITORY` section
 **Quick start in 30min** in https://isabelle.sketis.net/repos/isabelle
 

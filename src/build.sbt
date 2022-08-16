@@ -454,7 +454,7 @@ lazy val metamath = (project in file("mmt-metamath")).
 lazy val isabelle_root =
 System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
 lazy val isabelle_jars =
-  if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "Pure.jar")
+  if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "isabelle.jar")
 lazy val isabelle =
   (project in file(if (isabelle_root == "") "mmt-isabelle/dummy" else "mmt-isabelle")).
     dependsOn(api, lf).
