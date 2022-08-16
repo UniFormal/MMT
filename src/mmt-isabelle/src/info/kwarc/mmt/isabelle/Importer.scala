@@ -1364,16 +1364,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val subdir = if (archive.root.getName == chapter) None else Some(chapter)
 
       val source_path =
-          isabelle.Path.basic("source") +
-          isabelle.Path.explode(subdir.getOrElse("")) +
-          isabelle.Path.basic(session_name) +
-          isabelle.Path.basic(name.theory).ext("theory")
+        isabelle.Path.basic("source") +
+        isabelle.Path.explode(subdir.getOrElse("")) +
+        isabelle.Path.basic(session_name) +
+        isabelle.Path.basic(name.theory).ext("theory")
 
       val rdf_path =
         isabelle.Path.basic("rdf") +
-          isabelle.Path.explode(subdir.getOrElse("")) +
-          isabelle.Path.basic(session_name) +
-          isabelle.Path.basic(name.theory).ext("rdf")
+        isabelle.Path.explode(subdir.getOrElse("")) +
+        isabelle.Path.basic(session_name) +
+        isabelle.Path.basic(name.theory).ext("rdf")
 
       val doc_path =
         DPath(archive.narrationBase / subdir.toList / session_name / name.theory_base_name)
