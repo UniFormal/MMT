@@ -411,6 +411,22 @@ object Importer {
     result
   }
 
+  object Main {
+    object Kind {
+      type Value = isabelle.Export_Theory.Kind.Value
+      val LOCALE = isabelle.Export_Theory.Kind.LOCALE
+      val LOCALE_DEPENDENCY = isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY
+      val CLASS = isabelle.Export_Theory.Kind.CLASS
+      val TYPE = isabelle.Export_Theory.Kind.TYPE
+      val CONST = isabelle.Export_Theory.Kind.CONST
+      val AXIOM = isabelle.Export_Theory.Kind.AXIOM
+      val THM = isabelle.Export_Theory.Kind.THM
+      val DOCUMENT_HEADING = isabelle.Export_Theory.Kind.DOCUMENT_HEADING
+      val PROOF_TEXT = isabelle.Export_Theory.Kind.PROOF_TEXT
+      val list: List[Value] = List(LOCALE, LOCALE_DEPENDENCY, CLASS, TYPE, CONST, AXIOM, THM)
+    }
+  }
+
   object Sorts extends Indexed_Name("sorts")
 
   object Locale {
@@ -421,6 +437,7 @@ object Importer {
     object Kind extends Enumeration {
       val DATATYPE = Value("datatype")
       val CODATATYPE = Value("codatatype")
+      val list: List[Value] = List(DATATYPE, CODATATYPE)
     }
     val HEAD = "head"
     object Constructors extends Indexed_Name("constructors")
@@ -433,6 +450,9 @@ object Importer {
       val INDUCTIVE_DEFINITION = Value("inductive_definition")
       val COINDUCTIVE_DEFINITION = Value("coinductive_definition")
       val SPECIFICATION = Value("specification")
+      val list: List[Value] =
+        List(DEFINITION, RECURSIVE_DEFINITION, INDUCTIVE_DEFINITION,
+          COINDUCTIVE_DEFINITION, SPECIFICATION)
     }
     object Terms extends Indexed_Name("terms")
     object Rules extends Indexed_Name("rules")
@@ -488,29 +508,19 @@ object Importer {
       print_int(item_names.count({ case (_, name) => name.entity_kind == kind }), len = 12) + " " + kind
 
     def report: String = {
-      val kinds =
-        List(
-          isabelle.Export_Theory.Kind.LOCALE,
-          isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY,
-          isabelle.Export_Theory.Kind.CLASS,
-          isabelle.Export_Theory.Kind.TYPE,
-          isabelle.Export_Theory.Kind.CONST,
-          isabelle.Export_Theory.Kind.AXIOM,
-          isabelle.Export_Theory.Kind.THM).map(_.toString) :::
-        Datatypes.Kind.values.toList.map(_.toString) :::
-        Spec_Rules.Kind.values.toList.map(_.toString)
+      val kinds = (Main.Kind.list ::: Datatypes.Kind.list ::: Spec_Rules.Kind.list).map(_.toString)
       isabelle.Library.cat_lines(kinds.map(report_kind))
     }
 
     def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
-    def get_class(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
-    def get_type(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
-    def get_const(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
-    def get_axiom(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.AXIOM.toString, name))
-    def get_thm(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
-    def get_locale(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
+    def get_class(name: String): Item.Name = get(Item.Key(Main.Kind.CLASS.toString, name))
+    def get_type(name: String): Item.Name = get(Item.Key(Main.Kind.TYPE.toString, name))
+    def get_const(name: String): Item.Name = get(Item.Key(Main.Kind.CONST.toString, name))
+    def get_axiom(name: String): Item.Name = get(Item.Key(Main.Kind.AXIOM.toString, name))
+    def get_thm(name: String): Item.Name = get(Item.Key(Main.Kind.THM.toString, name))
+    def get_locale(name: String): Item.Name = get(Item.Key(Main.Kind.LOCALE.toString, name))
     def get_locale_dependency(name: String): Item.Name =
-      get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))
+      get(Item.Key(Main.Kind.LOCALE_DEPENDENCY.toString, name))
 
     def is_empty: Boolean = item_names.isEmpty
     def defined(key: Item.Key): Boolean = item_names.isDefinedAt(key)
@@ -815,7 +825,7 @@ object Importer {
       }
 
       for (segment <- thy_export.segments) {
-        def make_dummy(kind: isabelle.Export_Theory.Kind.Value, i: Int): Item = {
+        def make_dummy(kind: Main.Kind.Value, i: Int): Item = {
           val name = isabelle.Long_Name.implode(List(thy_name.theory_base_name, i.toString))
           val pos = segment.element.head.span.position
           Item(thy.path, kind.toString, name, entity_pos = pos)
