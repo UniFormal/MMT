@@ -423,7 +423,8 @@ object Importer {
       val THM = isabelle.Export_Theory.Kind.THM
       val DOCUMENT_HEADING = isabelle.Export_Theory.Kind.DOCUMENT_HEADING
       val PROOF_TEXT = isabelle.Export_Theory.Kind.PROOF_TEXT
-      val list: List[Value] = List(LOCALE, LOCALE_DEPENDENCY, CLASS, TYPE, CONST, AXIOM, THM)
+      val list: List[Value] =
+        List(LOCALE, LOCALE_DEPENDENCY, CLASS, TYPE, CONST, AXIOM, THM, DOCUMENT_HEADING, PROOF_TEXT)
     }
   }
 
@@ -842,7 +843,7 @@ object Importer {
 
         // document headings
         for (i <- segment.heading) {
-          val item = make_dummy(isabelle.Export_Theory.Kind.DOCUMENT_HEADING, i)
+          val item = make_dummy(Main.Kind.DOCUMENT_HEADING, i)
           thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
           thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.section))
         }
@@ -949,7 +950,7 @@ object Importer {
 
         // optional proof text
         for (proof <- segment.proof) yield {
-          val item = make_dummy(isabelle.Export_Theory.Kind.PROOF_TEXT, proof.index)
+          val item = make_dummy(Main.Kind.PROOF_TEXT, proof.index)
           val c = item.constant(Some(Bootstrap.Proof_Text()), None)
           for (sref <- item.source_ref_range(proof.range)) SourceRef.update(c, sref)
           controller.add(c)
