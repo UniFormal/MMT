@@ -14,13 +14,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
 package tiscaf
 
 object HTree {
   implicit def string2lay(aDir: String) = new HTree { override def dir = aDir }
 
   def stub(text: String): HLet = new HSimpleLet {
-    def act(tk: HTalk) {
+    def act(tk: HTalk): Unit = {
       val out = tk.bytes(text)
       tk.setContentLength(out.length) // if not buffered
         .setContentType("text/plain; charset=UTF-8")

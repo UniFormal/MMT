@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove deprecated procedure syntax
 package tiscaf
 
 import javax.net.ssl._
@@ -118,7 +119,7 @@ private[tiscaf] object HSsl {
   // do the SSL stuffs
 
   /* Performs the handshake and returns */
-  def handshake(channel: SocketChannel, engine: SSLEngine) {
+  def handshake(channel: SocketChannel, engine: SSLEngine): Unit = {
 
     // get the ssl session
     val session = engine.getSession

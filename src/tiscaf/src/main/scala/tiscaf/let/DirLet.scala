@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
+
 package tiscaf
 package let
 
@@ -61,7 +63,7 @@ import ExecutionContext.Implicits.global
 
 protected class DirLet(dirRoot: String, uriRoot: String, pathRest: String) extends HSimpleLet {
 
-  def act(tk: HTalk) {
+  def act(tk: HTalk): Unit = {
     val uriExt = if (tk.req.uriExt.isDefined) { ";" + tk.req.uriExt.get } else ""
     val f = new java.io.File(dirRoot + pathRest)
     if (f.exists && f.isDirectory) {
