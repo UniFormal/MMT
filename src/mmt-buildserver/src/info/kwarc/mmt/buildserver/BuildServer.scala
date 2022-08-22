@@ -165,15 +165,15 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           commit.diffs.foreach {
             case Delete(p) =>
               log("Delete [" + a.archive.id + "] " + p)
-              FileDeps.delete(a.archive,(a.archive / source) / p)
+              FileDeps.delete(a.archive,a.archive.root / p)
               None
             case c@(Change(_)|Add(_)) =>
               log("Update [" + a.archive.id + "] " + c.path)
               configs.collectFirst{
-                case cf if cf.applies(a.archive,(a.archive / source) / c.path).isDefined =>
-                  val bt = cf.applies(a.archive,(a.archive / source) / c.path).get
+                case cf if c.path.headOption.contains((a.archive / source).toFilePath.last) && cf.applies(a.archive,a.archive.root / c.path).isDefined =>
+                  val bt = cf.applies(a.archive,a.archive.root / c.path).get
                   log("Using " + bt.key)
-                  controller.handleLine("build " + a.archive.id + " " + bt.key + " " + c.path)
+                  controller.handleLine("build " + a.archive.id + " " + bt.key + " " + c.path.tail.mkString("/"))
               }
           }
         case _ =>
