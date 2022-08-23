@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 
 /** a mutable wrapper around a value together with status information */
@@ -220,7 +221,7 @@ object TermContainer {
    /** factory for an optionally given Term
     *  @param tOpt the term; treated as parsed or analyzed depending on AbstractObjectParser.isOnlyParsed
     */
-   @deprecated("remove this - force users to decide whether a term is analyzed/parsed", "18.0.0") def apply(tOpt: Option[Term]): TermContainer = {
+   @MMT_TODO("remove this - force users to decide whether a term is analyzed/parsed") def apply(tOpt: Option[Term]): TermContainer = {
       val tc = new TermContainer
       tOpt foreach {t => if (parser.ObjectParser.isOnlyParsed(t))
          tc.parsed = t

@@ -1,12 +1,14 @@
 package info.kwarc.mmt.api.informal
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 import symbols._
 import metadata._
+
 import scala.xml._
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Informal {
    val base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
 
@@ -15,43 +17,43 @@ object Informal {
 //   lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 class InformalSym(name: String) {
    val path = Informal.path ? name
    val term = OMS(path)
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Opaque extends InformalSym("opaque") {
   def apply(child : List[Term]) = OMA(term, child)
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Narration extends InformalSym("narration")
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object MathMLNarration extends InformalSym("mathml-narration")
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object FlexiformalXML {
   def apply(node : Node) : Term = {
     OMATTR(Opaque.term,Narration.term,OMFOREIGN(node))
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object FlexiformalTerm {
   def apply(term : Term) : Term = term
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object FlexiformalRef {
   def apply(term : Term, node : Node) : Term = {
     OMATTR(term, Narration.term, OMFOREIGN(node))
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object FlexiformalNode {
   def apply(node : Node, child : List[(Term, List[Int])]) : Term = {
     val terms = child.map(_._1)
@@ -74,7 +76,7 @@ object FlexiformalNode {
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Definition {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -84,7 +86,7 @@ object Definition {
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Assertion {
   def apply(home : Term, name : LocalName, df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -94,7 +96,7 @@ object Assertion {
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Exercise {
   def apply(home : Term, name : LocalName, prob : Term, sol : Option[Term], localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, Some(prob), sol, None)
@@ -104,7 +106,7 @@ object Exercise {
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Example {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -114,7 +116,7 @@ object Example {
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object Proof {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -124,7 +126,7 @@ object Proof {
   }
 }
 
-@deprecated("needs full revision, should be deleted")
+@MMT_TODO("needs full revision, should be deleted")
 object PlainNarration {
   def apply(home : Term, name : LocalName, df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)

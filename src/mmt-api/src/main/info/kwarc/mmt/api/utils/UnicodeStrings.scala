@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.utils
 /**
   * Utilities to produce nice-looking Unicode strings, e.g. sub- or superscripted integers.
   */
-@deprecated("only used in diagrams, should probably be moved/deleted")
+@MMT_TODO("only used in diagrams, should probably be moved/deleted")
 object UnicodeStrings {
   private val digitSubscripts = List("₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉")
   private val digitSuperscripts = List("⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹")
