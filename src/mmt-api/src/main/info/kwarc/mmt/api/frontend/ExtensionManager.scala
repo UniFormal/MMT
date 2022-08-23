@@ -311,7 +311,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     // pragmatic-strict converter
     addExtension(new notations.Pragmatics)
     //targets, opaque formats, and presenters
-    val mp = new MathMLPresenter
+    val mp = new PresentationMathMLPresenter
     val hp = new HTMLPresenter(mp) {
       val key = "html"
     }

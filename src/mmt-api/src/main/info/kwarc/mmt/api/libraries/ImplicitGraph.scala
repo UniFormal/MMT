@@ -290,10 +290,10 @@ class ImplicitGraph {
 
   /** clears all data */
   def clear: Unit = {
-    incoming.clear
-    outgoing.clear
-    primaryPath.clear
-    dependants.clear
+    incoming.clear()
+    outgoing.clear()
+    primaryPath.clear()
+    dependants.clear()
     includes.clear
   }
 }

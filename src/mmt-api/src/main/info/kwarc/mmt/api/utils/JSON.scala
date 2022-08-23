@@ -306,7 +306,7 @@ object JSON {
          val first = (key,value)
          val c = s.head
          if (c == ',') {
-            s.next
+            s.next()
          }
          if (c != ',' && c != '}')
             throw JSONError("expected ',' or '}', found " + c + " ")
@@ -329,7 +329,7 @@ object JSON {
          s.trim
          val c = s.head
          if (c == ',') {
-          s.next
+          s.next()
         }
          if (c != ',' && c != ']')
           throw JSONError("expected ',' or ']', found " + c)

@@ -120,7 +120,7 @@ class STeXServer extends ServerExtension("sTeX") {
     //ServerResponse(ret.toString, "application/xhtml+xml")
   } catch {
     case ret:ErrorReturn => ret.toResponse
-    case t : NonLocalReturnControl[Any] =>
+    case t : NonLocalReturnControl[Any@unchecked] =>
       throw t
     case t : Throwable =>
       throw t

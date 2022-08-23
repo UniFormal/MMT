@@ -174,7 +174,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     ret
   }
   private def doAssoc(n : HTMLNode,arg : SOMBArg, args:List[(Char,SOMBArg)],owner:String)(implicit pc: PresentationContext,htmlstate : HTMLParser.ParsingState) : Unit = {
-    def doPair(arg1: Unit => Unit,arg2:Unit => Unit) : Unit => Unit = {
+    def doPair(arg1: Unit => Unit, arg2: Unit => Unit) : Unit => Unit = {
       def rec(n : HTMLNode) : Unit = {
         val property = n.attributes.getOrElse((n.namespace,"property"),"")
         val resource = n.attributes.getOrElse((n.namespace,"resource"),"")

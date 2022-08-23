@@ -30,7 +30,7 @@ abstract class MMTUnitTest extends BaseTester {
     })
 
   /** sets up the controller for tests */
-  override def init: Unit = {
+  override def init(): Unit = {
     controller.report.addHandler(ConsoleHandler)
 
     // add all the log groups that we are only using during tests

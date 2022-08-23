@@ -29,12 +29,12 @@ class AddAlignments extends Extension {
         errors::=e.getMessage + " (in File: " + f.toString + ")"
         Nil
     }
-    AlignmentsServer.findAlignmentsFolder(controller, args.headOption).foreach(filebase ⇒ {
+    AlignmentsServer.findAlignmentsFolder(controller, args.headOption).foreach(filebase => {
       val fs = FilePath.getall(filebase)
       val afiles = fs.filter(f => f.getExtension.contains("align"))
       log("Files: " + afiles)
       val als = afiles flatMap wrap
-      log(als.filterNot(_._1.isGenerated).length + " Alignments read")
+      log(s"${als.filterNot(_._1.isGenerated).length} Alignments read")
       log(if (errors.nonEmpty) "Errors:\n" + errors.mkString("\n") else "No errors :)")
       log("Checking for missing symbols...")
       val syms = als.collect{
@@ -154,18 +154,18 @@ class AlignmentsServer extends ServerExtension("align") {
   private var filebase : File = null
   override def start(args: List[String]): Unit = {
     controller.extman.addExtension(new AlignQuery)
-    AlignmentsServer.findAlignmentsFolder(controller, args.headOption).foreach(filebase ⇒ try {
+    AlignmentsServer.findAlignmentsFolder(controller, args.headOption).foreach(filebase => try {
       val fs = FilePath.getall(filebase)
       val afiles = fs.filter(f => f.getExtension.contains("align"))
       log("Files: " + afiles)
       afiles foreach readFile
-      log(alignments.toList.filterNot(_.isGenerated).length + " Alignments read")
+      log(s"${alignments.toList.filterNot(_.isGenerated).length} Alignments read")
     } catch {
-      case e: Exception ⇒ throw e // println(e.getMessage)
+      case e: Exception => throw e // println(e.getMessage)
     })
   }
   override def destroy: Unit = {
-    controller.extman.get(classOf[AlignQuery]) foreach { a ⇒
+    controller.extman.get(classOf[AlignQuery]) foreach { a =>
       a.destroy
       controller.extman.removeExtension(a)
     }
@@ -202,14 +202,14 @@ class AlignmentsServer extends ServerExtension("align") {
 
   def apply(request: ServerRequest): ServerResponse = {
     request.pathForExtension match {
-      case "from" :: _ ⇒
+      case "from" :: _ =>
         val path = Path.parseS(request.query, nsMap)
         val toS = if (request.query.contains("transitive=\"true\"")) alignments.get(LogicalReference(path), Some(_ => true)).map(_.to.toString)
         else alignments.get(LogicalReference(path)).map(_.to.toString)
         log("Alignment query: " + request.query)
         log("Alignments from " + path + ":\n" + toS.map(" - " + _).mkString("\n"))
         ServerResponse.TextResponse(toS.mkString("\n"))
-      case "add" :: _ ⇒
+      case "add" :: _ =>
         val str = Try(request.body.asString).getOrElse("")
         val formData : JSONObject = Try(JSON.parse(str).asInstanceOf[JSONObject]).getOrElse(JSONObject(List()))
         log(formData.toString)
@@ -225,7 +225,7 @@ class AlignmentsServer extends ServerExtension("align") {
           0
         }
         ServerResponse.TextResponse("Added " + addedAlignments + " alignments")
-      case _ ⇒
+      case _ =>
         log(request.pathForExtension.toString) // List(from)
         log(request.query) // an actual symbol path
         log(request.body.toString) //whatever
@@ -258,7 +258,7 @@ class AlignmentsServer extends ServerExtension("align") {
 
   def makeAlignment(p1: String, p2: String, allpars: List[(String, String)]): Alignment = {
     val argls = """\((\d+),(\d+)\)(.*)""".r
-    val direction = allpars.find(p ⇒ p._1 == "direction")
+    val direction = allpars.find(p => p._1 == "direction")
     val pars = allpars.filterNot(p => p._1 == "direction" || p._1 == "arguments")
     lazy val p1P = Path.parseMS(p1, nsMap)
     lazy val p2P = Path.parseMS(p2, nsMap)
@@ -268,10 +268,10 @@ class AlignmentsServer extends ServerExtension("align") {
         val item = allpars.find(_._1 == "arguments").get
         var read = item._2.trim
         while (read != "") read match {
-          case argls(i, j, r) ⇒
+          case argls(i, j, r) =>
             args ::= (i.toInt, j.toInt)
             read = r.trim
-          case _ ⇒ throw new Exception("Malformed argument pair list: " + item._2)
+          case _ => throw new Exception("Malformed argument pair list: " + item._2)
         }
         val ret = if (direction.get._2 == "forward")
           ArgumentAlignment(p1P, p2P, false, args, pars)
@@ -346,10 +346,10 @@ class AlignmentsServer extends ServerExtension("align") {
       }
       var pars: List[(String, String)] = Nil
       while (rest != "") rest match {
-        case param(key, value, r) ⇒
+        case param(key, value, r) =>
           pars ::= (key, value)
           rest = r.trim
-        case _ ⇒ throw new Exception("Malformed alignment: " + s)
+        case _ => throw new Exception("Malformed alignment: " + s)
       }
       dones ::= makeAlignment(p1, p2, pars)
     }
@@ -361,7 +361,7 @@ class AlignmentsServer extends ServerExtension("align") {
     val cmds = File.read(file).split("\n").map(_.trim).filter(_.nonEmpty)
     val tmp = cmds flatMap processString
     val alignmentsCount = tmp.length
-    log(alignmentsCount + " alignments read from " + file.toString)
+    log(s"${alignmentsCount} alignments read from ${file.toString}")
     tmp.toList
   }
 
@@ -382,7 +382,7 @@ class AlignmentsServer extends ServerExtension("align") {
       params.foreach(p => log(p.toString))
       val o = argument match {
         case p : ContentPath => p
-        case _       ⇒ throw ImplementationError("evaluation of ill-typed query")
+        case _       => throw ImplementationError("evaluation of ill-typed query")
       }
       // controller.extman.get(classOf[AlignmentsServer])
       ???

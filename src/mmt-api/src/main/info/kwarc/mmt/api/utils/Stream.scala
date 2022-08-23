@@ -18,7 +18,7 @@ object StreamReading {
   def read(f: InputStream): String = {
     val s = new StringBuilder
     ReadLineWise(f) {l => s.append(l + "\n")}
-    s.result
+    s.result()
   }
 
   /** read a stream line by line

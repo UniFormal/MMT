@@ -712,7 +712,7 @@ class GraphOptimizationTool extends BuildTarget {
 
   /** clean this target in a given archive */
   override def clean(a: Archive, in: FilePath): Unit = {
-    val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")
+    val file = new java.io.File(a.root.toString + "/export/got/"+a.id+".xml")
     file.delete()
   }
 
@@ -721,7 +721,7 @@ class GraphOptimizationTool extends BuildTarget {
     val theories = a.allContent.flatMap({p:MPath => controller.get(p) match { case dt : Theory => Some(p) case _ => None}})
     val replacements = findReplacements(theories, interactive = false)
     val output = toXML(replacements)
-    val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")
+    val file = new java.io.File(a.root.toString + "/export/got/"+a.id+".xml")
     file.getParentFile.mkdirs
     val pw = new PrintWriter(file)
     pw.write(output)

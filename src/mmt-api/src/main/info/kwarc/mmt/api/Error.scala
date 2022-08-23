@@ -102,7 +102,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
             }
             case e: Throwable => div {
               text {
-                e.getClass + " : " + e.getMessage
+                e.getClass.toString + " : " + e.getMessage
               }
               trace(e)
             }
@@ -404,7 +404,7 @@ class ErrorContainer extends ErrorHandler {
     }
   }
   def isEmpty: Boolean = errors.isEmpty
-  override def reset(): Unit = {
+  override def reset: Unit = {
     errors = Nil
     super.reset
   }

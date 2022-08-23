@@ -345,7 +345,7 @@ trait SolverAlgorithms {self: Solver =>
          val contOpt = rule(this)(tm1S,tm2S,tpOpt)
          contOpt match {
            case Some(cont) =>
-             return cont.apply
+             return cont.apply()
            case None =>
              history += "rule not applicable"
          }

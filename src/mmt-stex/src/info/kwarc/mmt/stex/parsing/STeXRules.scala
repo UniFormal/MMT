@@ -447,7 +447,7 @@ trait SymRefLike extends MacroApplication with HasAnnotations {
 }
 trait SymRefRuleLike extends MacroRule {
   def doAlternatives(ls : List[GlobalName]) = if (ls.length > 1) {
-    class mutvar(val path : GlobalName) { var string = path.module.name + "?" + path.name}
+    class mutvar(val path : GlobalName) { var string = path.module.name.toString + "?" + path.name}
     val retstrings = ls.distinct.map(new mutvar(_))
     var done = false
     while (!done) {

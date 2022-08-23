@@ -24,7 +24,7 @@ trait Validate {self: Archive =>
     val checker = new MMTStructureChecker(new NullChecker.Objects)
     checker.init(controller)
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(_, inPath) =>
-      rels.clear
+      rels.clear()
       val mpath = Archive.ContentPathToMMTPath(inPath)
       checker(mpath)(new CheckingEnvironment(controller.simplifier, new ErrorLogger(report), relHandler, new ValidationTask))
       val relFile = (this / relational / inPath).setExtension("occ")

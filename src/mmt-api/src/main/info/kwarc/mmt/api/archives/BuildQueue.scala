@@ -8,7 +8,7 @@ import utils._
 import web._
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.Queue
 import scala.collection.mutable
 
@@ -179,7 +179,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
   private var stopOnEmpty: Boolean = false
 
   // clears the queue
-  override def clear(): Unit = {
+  override def clear: Unit = {
     queued.clear()
     alreadyBuilt.clear()
     alreadyQueued.clear()
@@ -297,7 +297,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
                 if (currentQueueTask.isEmpty) {
                   //TODO check if this is needed
                   cycleCheck = Set.empty
-                  alreadyBuilt.clear
+                  alreadyBuilt.clear()
                   processingBlockedTasks = false
                 }
                 Thread.sleep(pauseTime)
@@ -439,7 +439,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     blocked = stillBlocked
     unblocked.foreach(u => log("Unblocked: " + u.task.inFile))
     if (unblocked.nonEmpty) recentlyBuilt ::= ((qt.task.asDependency,BuildEmpty("unblocked: " + unblocked.map(_.task.inFile).mkString(", "))))
-    unblocked.reverseMap(queued.addFirst)
+    unblocked.reverseIterator.foreach(queued.addFirst)
   }
 
   // ******************* dependency handling
@@ -515,7 +515,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
 
     def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
       case List("clear") =>
-        clear()
+        clear
         ServerResponse.JsonResponse(JSONNull)
       case List("pause") =>
         // toggles pausing

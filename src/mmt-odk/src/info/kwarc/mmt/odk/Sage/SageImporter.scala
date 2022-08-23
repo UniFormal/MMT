@@ -201,11 +201,11 @@ class SageImporter extends Importer {
 
     val trans = new SageTranslator(controller,bf,index,toplog)
     trans(categories ::: classes ::: functions)
-    log(categories.length + " Categories")
-    // log(allaxioms.length + " Axioms")
-    // log(allmethods.length + " Methods")
-    log(classes.length + " Classes")
-    log(functions.length + " Functions")
+    log(s"${categories.length} Categories")
+    // log(s"${allaxioms.length} Axioms")
+    // log(s"${allmethods.length} Methods")
+    log(s"${classes.length} Classes")
+    log(s"${functions.length} Functions")
     BuildResult.empty
   }
 }

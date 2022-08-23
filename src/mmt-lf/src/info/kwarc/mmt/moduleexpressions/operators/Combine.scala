@@ -100,7 +100,7 @@ object ComputeCombine extends ComputationRule(Combine.path) {
     /* Calculate the pushout as distinct union
      * TODO: Find a better way to choose the meta-theory
      * */
-    val new_decls: List[OML] = (renThry1.decls union renThry2.decls).distinct
+    val new_decls: List[OML] = (renThry1.decls concat renThry2.decls).distinct
     val new_theory: AnonymousTheory = new AnonymousTheory(ad1.getDistNode.get.theory.mt, new_decls)
 
     /** **************** Build the new diagram *******************/

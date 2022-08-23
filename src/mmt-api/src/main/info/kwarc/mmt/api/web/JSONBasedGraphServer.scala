@@ -369,7 +369,7 @@ private class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
         case Some(v: View) => views ::= v
         case _ =>
       }
-      log(theories.length + " selected")
+      log(s"${theories.length} selected")
       (theories, views, Nil)
     }
   }
@@ -455,7 +455,7 @@ private class JMPDGraph extends SimpleJGraphExporter("mpd") {
             case Some(th: Theory) => theories ::= th
             case _ =>
           }
-          log(theories.length + " selected")
+          log(s"${theories.length} selected")
           theories
       }
       var (theories, views): (List[Theory], List[View]) = (Nil, Nil)
@@ -531,9 +531,9 @@ abstract class StandardBuilder extends JGraphBuilder {
         edges = edges ::: es
     })
     theories.indices foreach (th => {
-      log({
+      log(s"${
         th + 1
-      } + "/" + theories.length)
+      }/${theories.length}")
       doTheory(theories(th))
     } match {
       case (ns, es) =>
@@ -541,9 +541,9 @@ abstract class StandardBuilder extends JGraphBuilder {
         edges = edges ::: es
     })
     documents.indices foreach (doc => {
-      log({
+      log(s"${
         doc + 1
-      } + "/" + documents.length)
+      }/${documents.length}")
       doDocument(documents(doc))
     } match {
       case (ns, es) =>
@@ -566,7 +566,7 @@ object GraphBuilder {
       val uri = Some(th.path.toString)
     })
     val metaedge = if (th.meta.isDefined) List(new JGraphEdge {
-      val id = th.path + "?Meta"
+      val id = th.path.toString + "?Meta"
       val style = "meta"
       val from = th.meta.get.toString
       val to = th.path.toString

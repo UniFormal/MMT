@@ -129,7 +129,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
         val results = if (parallel) children.par flatMap recurse else children flatMap recurse
-        val result = onDir(Current(inFile, in), results.toList)
+        val result = onDir(Current(inFile, in), results.iterator.to(List))
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None

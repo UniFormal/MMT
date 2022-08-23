@@ -181,7 +181,7 @@ class HTMLBuilder extends HTML {
    private var _result = new StringBuilder
    def out(s: String): Unit = {_result append s}
    def result = _result.toString
-   def reset: Unit = {_result.clear}
+   def reset: Unit = {_result.clear()}
 }
 
 /** collects HTML in a file */

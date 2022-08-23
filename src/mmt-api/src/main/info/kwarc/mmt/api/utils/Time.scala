@@ -11,19 +11,19 @@ object Time {
 
 case class Duration(num : Long) {
   private var inum = num
-  private var s = (inum - ((inum / 1000000) * 1000000)) + "ns"
+  private var s = s"${(inum - ((inum / 1000000) * 1000000))}ns"
   if (inum > 1000000) {
     inum /= 1000000
-    s = (inum - ((inum / 1000) * 1000)) + "ms " + s
+    s = s"${(inum - ((inum / 1000) * 1000))}ms " + s
     if (inum > 1000) {
       inum /= 1000
-      s = (inum - ((inum / 60) * 60)) + "s " + s
+      s = s"${(inum - ((inum / 60) * 60))}s " + s
       if (inum > 60) {
         inum /= 60
-        s = (inum - ((inum / 60) * 60)) + "min " + s
+        s = s"${(inum - ((inum / 60) * 60))}min " + s
         if (inum > 60) {
           inum /= 60
-          s = inum + "h " + s
+          s = s"${inum}h " + s
         }
       }
     }

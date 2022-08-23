@@ -6,7 +6,7 @@ import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensOption
 
 import java.util
 import java.util.Map
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.{immutable, mutable}
 
 trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[ClientType,LSPServer[ClientType]]] { self : LSPServer[ClientType] =>
@@ -128,7 +128,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
   def getAnnotations(doc : TextDocumentIdentifier, range: lsp4j.Range) = {
     documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
-      case Some(doc:DocumentType) =>
+      case Some(doc:DocumentType@unchecked) =>
         val start = range.getStart
         val end = range.getEnd
         val soff = doc._doctext.toOffset(start.getLine,start.getCharacter)
@@ -177,7 +177,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
   def getAnnotations(doc : TextDocumentIdentifier, pos: lsp4j.Position) = {
     documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
-      case Some(doc:DocumentType) =>
+      case Some(doc:DocumentType@unchecked) =>
         val off = doc._doctext.toOffset(pos.getLine,pos.getCharacter)
         (Some(doc),doc.synchronized{ doc.Annotations.getAll.collect{
           case a if a.offset <= off && off <= a.offset + a.length => a
@@ -187,7 +187,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
   def getAnnotations(doc : TextDocumentIdentifier) = {
     documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
-      case Some(doc:DocumentType) =>
+      case Some(doc:DocumentType@unchecked) =>
         (Some(doc),doc.synchronized{ doc.Annotations.getAll})
       case _ => (None,Nil)
     }
@@ -255,7 +255,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
   override def semanticTokensFull(params: SemanticTokensParams): SemanticTokens = {
     documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
-      case Some(doc : DocumentType) =>
+      case Some(doc : DocumentType@unchecked) =>
         doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHighlights) match {
           case Nil =>
             null
@@ -270,7 +270,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
   override def hover(params: HoverParams): Hover = {
     documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
-      case Some(doc : DocumentType) =>
+      case Some(doc : DocumentType@unchecked) =>
         doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHovers) match {
           case Nil =>
             null
@@ -289,7 +289,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
   override def foldingRange(params: FoldingRangeRequestParams): List[FoldingRange] = {
     documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
-      case Some(doc: DocumentType) =>
+      case Some(doc: DocumentType@unchecked) =>
         doc.synchronized {
           val annots = doc.Annotations.getAll
           if (annots.isEmpty) null
@@ -309,7 +309,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
   override def documentSymbol(params: DocumentSymbolParams): List[(Option[SymbolInformation],Option[DocumentSymbol])] = {
     documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
-      case Some(doc: DocumentType) =>
+      case Some(doc: DocumentType@unchecked) =>
         doc.synchronized {
           val annots = doc.Annotations.getAll
           if (annots.isEmpty) Nil

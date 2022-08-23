@@ -45,7 +45,7 @@ class GAPDocImporter extends Importer {
         succCount += 1
     } catch {
       case e : AddError =>
-        errorCont(new GAPDocError(s.name + " already exists", None, Some(Level.Error)))
+        errorCont(new GAPDocError(s.name.toString + " already exists", None, Some(Level.Error)))
         groups(s.path) ::= desc
         errCount += 1
     }
@@ -95,7 +95,7 @@ class GAPDocImporter extends Importer {
     } catch {
       case e : Exception =>
         println(e.getMessage)
-        println(e.getStackTrace().mkString("", EOL, EOL))
+        println(e.getStackTrace().mkString("", System.lineSeparator(), System.lineSeparator()))
         bt.errorCont(GAPDocError.from(e, "Unknown error in importDocument"))
         BuildFailure(Nil, Nil)
     }
@@ -148,13 +148,13 @@ class GAPDocImporter extends Importer {
 
         }
         val arg = (c \ "@Arg").text // seems to be unnecessary
-        val const = Constant(OMMOD(mpath), name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
+        val const = Constant(OMMOD(mpath), name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer.empty())
         add(const, c.toString.substring(0, c.toString.indexOf(">") + 1))
         lastDecl = Some(const, c)
       case "Returns" =>
         lastDecl match {
           case Some(d) =>
-            val const = Constant(OMMOD(mpath), d._1.name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer())
+            val const = Constant(OMMOD(mpath), d._1.name, Nil, TermContainer(None), TermContainer(None), None, NotationContainer.empty())
             //add(const) // should update
           case _ => errorCont(new GAPDocError("Found Returns tag without preceeding concept entry", None, Some(Level.Warning)))
         }

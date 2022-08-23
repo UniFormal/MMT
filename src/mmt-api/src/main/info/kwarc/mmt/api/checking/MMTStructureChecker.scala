@@ -883,7 +883,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             //TODO wrap in implicit morphism?
             OMS(pathR).from(s)
           case Some(_) =>
-            env.errorCont(InvalidObject(s, path + " does not refer to constant"))
+            env.errorCont(InvalidObject(s, path.toString + " does not refer to constant"))
             s
           case None =>
             // error was thrown above already 

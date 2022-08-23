@@ -77,13 +77,13 @@ class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
   protected def forceTerm2(n : HTMLNode): Term = n.children match {
     case Nil if n.isInstanceOf[HTMLText] =>
       try {STeX.informal(n.parent.get.node) } catch {
-        case e =>
+        case e: Throwable =>
           e.printStackTrace()
           ???
       }
     case List(_: HTMLText) | Nil =>
       try {STeX.informal(n.node) } catch {
-        case e =>
+        case e: Throwable =>
           e.printStackTrace()
           ???
       }

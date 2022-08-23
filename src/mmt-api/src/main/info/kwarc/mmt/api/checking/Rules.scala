@@ -534,7 +534,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
       val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
       val ruleConst = RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
       ruleConst.setOrigin(GeneratedFrom(c.path, this))
-      log(c.name + " ~~> " + present(c.df.get))
+      log(c.name.toString + " ~~> " + present(c.df.get))
       controller add ruleConst
     case _ =>
   }

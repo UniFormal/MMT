@@ -172,11 +172,11 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
    /** deletes all declarations */
    def clear: Unit = {
       this.synchronized {
-         dependencies.clear
-         subjects.clear
-         objects.clear
-         individuals.clear
-         types.clear
+         dependencies.clear()
+         subjects.clear()
+         objects.clear()
+         individuals.clear()
+         types.clear()
       }
    }
 }

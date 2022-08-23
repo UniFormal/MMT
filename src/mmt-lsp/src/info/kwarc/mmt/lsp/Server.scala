@@ -235,7 +235,7 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def safely[A](f : => A) : A = try {
     f
   } catch {
-    case t =>
+    case t: Throwable =>
       val sw = new StringWriter()
       t.printStackTrace(new PrintWriter(sw))
       t.printStackTrace()
@@ -297,7 +297,7 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
     val (ret,end) = try { f((i,s) => {
       updateProgress(token,i,s)
     }) } catch {
-      case t =>
+      case t: Throwable =>
         finishProgress(token, "")
         throw t
     }

@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.ontology.{AlignmentsServer, ConceptReference, LogicalR
 import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.presentation.HTMLAttributes.toggleTarget
 import info.kwarc.mmt.api.{AbstractObjectContainer, CPath, ComponentKey, ContentPath, DPath, DeclarationComponent, GlobalName, MPath, NotationComponentKey, StructuralElement, metadata, ontology, presentation}
-import info.kwarc.mmt.api.presentation.{HTMLAttributes, HTMLPresenter, PresentationContext, RenderingHandler}
+import info.kwarc.mmt.api.presentation.{ContentMathMLPresenter, HTMLAttributes, HTMLPresenter, PresentationContext, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, Structure}
 import info.kwarc.mmt.api.utils.{HTML, mmt, xml}
 import info.kwarc.mmt.api.utils.xml.{closeTag, namespace, openTag}
@@ -94,7 +94,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
           toggle("tags", "tags")
         if (d.metadata.getAll.nonEmpty)
           toggle("metadata", "metadata")
-        d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
+        d.getComponents.reverseIterator.foreach {case DeclarationComponent(comp, tc) =>
           if (tc.isDefined)
             toggleComp(comp)
         }
@@ -316,7 +316,7 @@ class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
       body
       pc.out(closeTag("mrow"))
       pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-      pc.out(o.toCML.toString)
+      pc.out(ContentMathMLPresenter(o).toString)
       pc.out(closeTag("annotation-xml"))
       pc.out(closeTag("semantics"))
       pc.out(closeTag("math"))

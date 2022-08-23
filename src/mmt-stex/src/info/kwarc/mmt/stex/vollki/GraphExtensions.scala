@@ -458,7 +458,7 @@ object STeXGraph extends JGraphExporter("stexgraph") {
         }
     }
     JSONObject(
-      ("nodes",JSONArray(jnodes.map(_.toJSON) :_*)),
+      ("nodes",JSONArray(jnodes.map(_.toJSON).toIndexedSeq :_*)),
       ("edges",JSONArray(edges.map(_.toJSON) :_*))
     )
   }

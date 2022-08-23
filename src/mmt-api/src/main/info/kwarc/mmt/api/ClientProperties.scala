@@ -78,7 +78,7 @@ class BooleanTermProperty(p: URI) extends BooleanClientProperty[Obj](p)
 object TermProperty {
    /** removes all term properties recursively (not a Traverser to avoid copying the Term) */
    def eraseAll(t: Term): Unit = {
-      t.clientProperty.clear
+      t.clientProperty.clear()
       t match {
         case OMA(f,as) => (f::as) foreach eraseAll
         case OMBINDC(b,cont,as) =>

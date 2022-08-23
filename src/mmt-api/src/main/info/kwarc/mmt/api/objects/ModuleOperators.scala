@@ -81,7 +81,7 @@ object Morph {
           case _ => mor
         }
       case OMIDENT(t) => if (preserveType) mor else OMCOMP()
-      case OMINST(_) => mor
+      case OMINST(_,_,_) => mor
       case OMStructuralInclude(f,t) => mor
       case OMCOMP(ms) =>
         val parts = associateComposition(ms)

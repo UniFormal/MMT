@@ -70,7 +70,7 @@ object Hasher {
 
   trait Targetable // todo symbols, free variables, ...
   case class Symbol(gn : GlobalName) extends Targetable {
-    override def toString: String = gn.module.name + "?" + gn.name.toString
+    override def toString: String = gn.module.name.toString + "?" + gn.name.toString
   }
   val complexpath = utils.mmt.mmtcd ? "unknown"
   class Complex(val tm : Term) extends Targetable {

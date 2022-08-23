@@ -69,7 +69,7 @@ abstract class WebExtractor {
       tr {
         td {
           if (!dontpull) {
-            println (this.getClass + "...")
+            println (this.getClass.toString + "...")
             Try(content(pull(uri),uri,h)).getOrElse({text {"Error: " };a(scheme + "://" + uri) { text { scheme + "://" + uri } } })
             println("Done.")
           }

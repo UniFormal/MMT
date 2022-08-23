@@ -28,7 +28,7 @@ case class ToFile(pres: MakeConcrete, file: java.io.File) extends Output {
     rb.done
   }
 
-  override def toString: String = pres + " write " + file
+  override def toString: String = pres.toString + " write " + file
 }
 
 /** displays content in a window */
@@ -40,7 +40,7 @@ case class ToWindow(pres: MakeConcrete, window: String) extends Output {
     controller.winman.getWindow(window).set(res)
   }
 
-  override def toString: String = pres + " window " + window
+  override def toString: String = pres.toString + " window " + window
 }
 
 /** produces the result and throws it away
@@ -90,7 +90,7 @@ case class Component(p: Path, comp: ComponentKey) extends MakeAbstract {
       throw ParseError("component name " + comp + " illegal for element " + o)
     }
   }
-  override def toString: String = p + " component " + comp
+  override def toString: String = p.toString + " component " + comp
 }
 
 /** retrieves the closure of a knowledge item */
@@ -103,7 +103,7 @@ case class Closure(p: Path) extends MakeAbstract {
       new Document(doc, FolderLevel, inititems = clp)
   }
 
-  override def toString = p + " closure"
+  override def toString = p.toString + " closure"
 }
 
 /** retrieves the elaboration of an instance */
@@ -115,7 +115,7 @@ case class Elaboration(p: Path) extends MakeAbstract {
     }
   }
 
-  override def toString: String = p + " elaboration"
+  override def toString: String = p.toString + " elaboration"
 }
 
 
@@ -132,7 +132,7 @@ case class Present(c: MakeAbstract, param: String) extends MakeConcrete {
     }
   }
 
-  override def toString: String = c + " present " + param
+  override def toString: String = c.toString + " present " + param
 }
 
 /** represents the first post-processing phase

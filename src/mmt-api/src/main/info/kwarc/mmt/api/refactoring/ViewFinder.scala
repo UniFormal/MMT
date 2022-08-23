@@ -366,7 +366,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     val (t2,tops2) = if (to.nonEmpty) (Duration(0.toLong),to) else Time.measure(select(hash.to))
     log("Done after " + (t1 + t2))
 
-    log(tops1.length + " and " + tops2.length + " selected elements")
+    log(s"${tops1.length} and ${tops2.length} selected elements")
     log("Finding Views...")
     val (t,alls : Set[List[Map]]) = Time.measure(if (hash.cfg.isMultithreaded) {
       // One thread for each pair, should speed things up
@@ -398,7 +398,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     log("Postprocessing...")
     val (tlast,res) = Time.measure(postProcess(alls))
     log("Done after " + tlast)
-    log(res.length + " maps found.")
+    log(s"${res.length} maps found.")
     res.toList
   }
 
@@ -625,7 +625,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
         }
       }
     }
-    views.indices.map(i => views(i).toView(path.parent ? (path.name + i.toString))).toList.sortBy(_.getDeclarations.length).reverse
+    views.indices.map(i => views(i).toView(path.parent ? (path.name.toString + i.toString))).toList.sortBy(_.getDeclarations.length).reverse
   }
 }
 
@@ -634,7 +634,7 @@ case class Map(from : Targetable, to : Targetable, irequires : List[Map], value 
   val isSimple = from.isInstanceOf[Hasher.Symbol] && to.isInstanceOf[Hasher.Symbol]
   def asString() = "(" + value + ") " + from + " --> " + to + " requires: " + requires.mkString("["," , ","]")
   def allRequires : List[Map] = (requires.flatMap(_.requires) ::: requires).distinct
-  override def toString: String = from + " -> " + to
+  override def toString: String = from.toString + " -> " + to
   def simple : Map = Map(from,to,requires.filter(_.isSimple).map(_.simple),value)
 
   private[refactoring] def sfrom = from match {

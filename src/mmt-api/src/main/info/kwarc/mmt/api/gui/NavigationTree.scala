@@ -215,13 +215,13 @@ abstract class NavigationTreeBuilder(controller:Controller) {
     val tP = controller.pragmatic.mostPragmatic(t)
     val label = tP match {
       case OMV(n) => n.toString + " (Var)"
-      case OMS(p) => p.name + " (?" + p.module.name + ")"
+      case OMS(p) => p.name.toString + " (?" + p.module.name + ")"
       case OMID(p) => p.name.toString
       case l: OMLITTrait => l.toString
       case OML(nm,_,_,_,_) => nm.toString
       case OMSemiFormal(_) => "unparsed: " + tP.toString
-      case OMA(OMS(p),_) => p.name + " (?" + p.module.name + ")"
-      case OMBINDC(OMS(p),_,_) => p.name + " (?" + p.module.name + ")"
+      case OMA(OMS(p),_) => p.name.toString + " (?" + p.module.name + ")"
+      case OMBINDC(OMS(p),_,_) => p.name.toString + " (?" + p.module.name + ")"
       case ComplexTerm(op, _,_,_) => op.name.last.toStr(true)
       case OMA(OMID(p),_) => p.name.last.toStr(true)
       case OMBINDC(OMID(p),_,_) => p.name.last.toStr(true)

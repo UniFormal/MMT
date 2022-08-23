@@ -38,15 +38,15 @@ class MMTInterpolator(controller: frontend.Controller) {
    def parse(ss: Iterable[String], ts: Iterable[Term], top: Option[ParsingRule], check: Boolean) = {
          val strings = ss.iterator
          val args = ts.iterator
-         val buf = new StringBuffer(strings.next)
+         val buf = new StringBuffer(strings.next())
          var cont = Context.empty
          var i = 0
          while(strings.hasNext) {
             val name = LocalName("$_" + i.toString)
-            val arg = args.next
+            val arg = args.next()
             cont = cont ++ VarDecl(name, None, None, Some(arg), None)
             buf.append(name)
-            buf.append(strings.next)
+            buf.append(strings.next())
             i += 1
         }
         val str = buf.toString

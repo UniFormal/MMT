@@ -110,7 +110,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     //override def buffered = true
     def resolve(req : HReqData) : Option[HLet] = {
       if (req.uriPath != "favicon.ico")
-        catalog.log(Time + "Query: " + req.uriPath + "?" + req.query + " ")
+        catalog.log(Time.toString + "Query: " + req.uriPath + "?" + req.query + " ")
 
       val response : Option[HLet] = req.uriPath match {
       case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
@@ -125,7 +125,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.addStringLocation(java.net.URLDecoder.decode(req.query.substring("addLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => catalog.log(Time + msg)
+            case InexistentLocation(msg) => catalog.log(Time.toString + msg)
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
@@ -133,7 +133,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.deleteStringLocation(java.net.URLDecoder.decode(req.query.substring("deleteLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => catalog.log(Time + msg)
+            case InexistentLocation(msg) => catalog.log(Time.toString + msg)
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}

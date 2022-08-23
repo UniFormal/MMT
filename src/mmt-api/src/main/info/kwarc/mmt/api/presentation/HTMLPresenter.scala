@@ -165,7 +165,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
               toggle("tags", "tags")
            if (d.metadata.getAll.nonEmpty)
               toggle("metadata", "metadata")
-           d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
+           d.getComponents.reverseIterator.foreach {case DeclarationComponent(comp, tc) =>
               if (tc.isDefined)
                 toggleComp(comp)
            }
@@ -416,7 +416,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
 }
 
 /** like HTMLPresenter but without SVG graphs */
-class MMTDocExporter extends HTMLPresenter(new MathMLPresenter) {
+class MMTDocExporter extends HTMLPresenter(new PresentationMathMLPresenter) {
   val key = "mmtdoc"
   import htmlRh._
 

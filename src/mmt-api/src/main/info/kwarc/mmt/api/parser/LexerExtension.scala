@@ -65,7 +65,7 @@ abstract class PrefixedTokenLexer(delim: Char, includeDelim: Boolean = true) ext
      }
      val start = if (includeDelim) index else index + 1
      val word = s.substring(start, i)
-     val text = if (includeDelim) None else Some(delim + word)
+     val text = if (includeDelim) None else Some("$delim$word")
      Some(Token(word, firstPosition, true, text))
   }
   /** true for the characters to be included before ending the token */
@@ -214,7 +214,7 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean, floatR
     val previousOK = if (i == 0)
       true
     else {
-      val previous = s(i-1)
+      val previous = s(i-1); // NOTE@twiesing: The ; is needed here
       ! previous.isLetter && ! (previous.getType == java.lang.Character.CONNECTOR_PUNCTUATION)
     }
     val isnumber = s(i).isDigit && previousOK

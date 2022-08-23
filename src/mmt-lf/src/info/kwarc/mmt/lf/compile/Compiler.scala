@@ -261,7 +261,7 @@ class Compiler(log: LogicSyntax) extends Program {
    */
    addTag("funs")
 
-   private def upc(string : String) : String = string.head.toUpper + string.substring(1)
+   private def upc(string : String) : String = s"${string.head.toUpper}${string.substring(1)}"
 
    private def getCons(ex : EXP) : EXP = {
      ID("")

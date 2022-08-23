@@ -1,7 +1,7 @@
 // Helpful: debug, object-checker
 
 object IMPSTest extends MagicTest(prefixes = "debug"){//}, "object-checker") {
-  override def doFirst: Unit = {
+  override def doFirst(): Unit = {
     hl("extension info.kwarc.mmt.imps.IMPSImporter") // Register extension
 
     // Comment out, depending on your desired level of information.
@@ -16,5 +16,5 @@ object IMPSTest extends MagicTest(prefixes = "debug"){//}, "object-checker") {
     hl("build imps imps-omdoc")                      // Build Archive
   }
 
-  override def run : Unit = {}
+  override def run() : Unit = {}
 }

@@ -543,7 +543,7 @@ class IMPSImportTask(val controller  : Controller,
           tState.theories_decl = tState.theories_decl ::: List(u)
 
           val vname = if (ntn.isDefined) { doName(ntn.get.nm.s.toLowerCase()) } else {
-            doName(t1.name + "-to-" + u.name)
+            doName(t1.name.toString + "-to-" + u.name)
           }
 
           log("Adding new translation " + vname, log_specifics)
@@ -640,7 +640,7 @@ class IMPSImportTask(val controller  : Controller,
       for (ax <- t.axioms.get.cps)
       {
         val mth : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(ax.frm.get, nu_theory, Nil)))
-        val name : String = if (ax.name.isDefined) { ax.name.get } else { axiom_count += 1 ; t.name + "_unnamed_axiom" + axiom_count.toString }
+        val name : String = if (ax.name.isDefined) { ax.name.get } else { axiom_count += 1 ; t.name.toString + "_unnamed_axiom" + axiom_count.toString }
 
         val assumption : Declaration = symbols.Constant(nu_theory.toTerm,doName(name),Nil,Some(mth),None,Some("Assumption"))
 
@@ -673,7 +673,7 @@ class IMPSImportTask(val controller  : Controller,
 
             val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSMathSymbol(c1.s), IMPSMathSymbol(c2.s)))
             val mth          : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(dist_formula, nu_theory, Nil)))
-            val name         : String = t.name + "_distinction_axiom_" + dist_count.toString
+            val name         : String = t.name.toString + "_distinction_axiom_" + dist_count.toString
 
             dist_count += 1
 
@@ -1073,7 +1073,7 @@ class IMPSImportTask(val controller  : Controller,
 
           val exp : IMPSMathExp = IMPSApply(frm,List(IMPSMathSymbol(witness.get.w.s)))
           val wit : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(exp, parent, Nil)))
-          val fin = symbols.Constant(parent.toTerm, LocalName(name + "_witness"),Nil,Some(wit),None,Some("Atomic sort witness theorem"))
+          val fin = symbols.Constant(parent.toTerm, LocalName(name.toString + "_witness"),Nil,Some(wit),None,Some("Atomic sort witness theorem"))
 
           controller add fin
         }
@@ -1221,7 +1221,7 @@ class IMPSImportTask(val controller  : Controller,
           val proof_name: StringFragment = StringFragment("Opaque proof of theorem " + name)
           val proof_text: StringFragment = StringFragment(proof.get.prf.toString)
 
-          val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(proof_name + "\n" + proof_text))
+          val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(proof_name.toString + "\n" + proof_text))
           controller add opaque
         }
 

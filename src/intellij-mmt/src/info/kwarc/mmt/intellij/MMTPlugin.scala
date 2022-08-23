@@ -426,8 +426,8 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     val T = controller.getTheory(Path.parseM(TPath, nsMap))
     val RToS = controller.getAs(classOf[View], Path.parseM(RToSPath, nsMap))
 
-    val newModulePath = T.path.parent ? (T.path.name + "Generalized")
-    val generatedMorphismPath = T.path.parent ? (T.path.name + "GeneralizedMorphism")
+    val newModulePath = T.path.parent ? (T.path.name.toString + "Generalized")
+    val generatedMorphismPath = T.path.parent ? (T.path.name.toString + "GeneralizedMorphism")
 
     val (invertedTheory, generatedMorphism) = LFLinkInverter.invertLink(
       R,

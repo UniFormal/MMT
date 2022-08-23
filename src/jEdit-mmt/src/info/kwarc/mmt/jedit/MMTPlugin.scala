@@ -266,7 +266,7 @@ abstract class MMTTextAreaExtension(editPane: EditPane) extends TextAreaExtensio
     val horiMargin = (gutterWidth-painter.getStringWidth(char.toString))/2
     val fm = painter.getFontMetrics
     val baseLine = y + painter.getFontHeight - (fm.getLeading()) - fm.getDescent()  // taken from TextAreaPainter#PaintText
-    gfx.drawString(char.toString, horiMargin, baseLine)
+    gfx.drawString(char.toString, horiMargin, baseLine.toFloat)
   }
 
 }

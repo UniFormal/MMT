@@ -142,7 +142,7 @@ class Reader(val jr: java.io.BufferedReader) {
           }
        }
        lastDelimiter = c
-      var res = buffer.result
+      var res = buffer.result()
 
        val end = { // there's some weird error here
           val diff = (sourcePosition.offset-start.offset)- res.length

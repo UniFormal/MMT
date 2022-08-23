@@ -381,7 +381,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
   /** retrieves a set of urls from a set of databases subject to a given set of conditions */
   private def getSubjectToJoin(primary: DB, queries: List[(DB, String, JSON)], from: Option[Int], until: Option[Int])(implicit controller: Controller): List[GlobalName] = {
     // group the passed in queries by database
-    val dbQueryMap = queries.groupBy(_._1).mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
+    val dbQueryMap = queries.groupBy(_._1).view.mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
 
     // generate all the queries we need
     val groupedQueries = findExtensions(primary).map(db => (dbQueryMap.getOrElse(db, JSONObject()), db))

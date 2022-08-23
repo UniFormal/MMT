@@ -41,7 +41,7 @@ class OpaqueText(val parent: DPath, val format: String, val text: TextFragment) 
 
 object OpaqueText {
   case class Bracket(begin: Char, end: Char) {
-    def wrapAround(s: String) = begin + s + end
+    def wrapAround(s: String) = s"${begin}${s}${end}"
   }
   case class Escapes(scope: Bracket, decl: Bracket, obj: Bracket, unparsed: Bracket) {
     def nonTextBegin = List(scope,decl,obj).map(_.begin)
@@ -81,7 +81,7 @@ object OpaqueText {
         while (!u.empty && u.head != escapes.scope.end) {
           val c = u.head
           val f = if (escapes.nonTextBegin.contains(c)) {
-            u.next
+            u.next()
             if (c == escapes.obj.begin) {
               parseObj(false)
             } else if (c == escapes.decl.begin) {
@@ -92,12 +92,12 @@ object OpaqueText {
               null // impossible
             }
           } else if (escapes.unparsed.begin == c) {
-            u.next
+            u.next()
             var seen = ""
             while (!u.empty && u.head != escapes.unparsed.end) {
-              seen += u.next
+              seen += u.next()
             }
-            if (!u.empty) u.next
+            if (!u.empty) u.next()
             StringFragment(seen)
           } else {
             parseText
@@ -152,7 +152,7 @@ object OpaqueText {
         var seen = ""
         while (true) {
           if (!u.empty && !(escapes.scope.end::escapes.unparsed.begin::escapes.nonTextBegin).contains(u.head)) {
-            seen += u.next
+            seen += u.next()
           } else {
             return StringFragment(seen)
           }

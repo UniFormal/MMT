@@ -115,7 +115,7 @@ trait XHTMLParser extends TraversingBuildTarget {
     val doc = try { controller.library.synchronized {
       HTMLParser(outFile.setExtension("shtml"))(state)
     }} catch {
-      case e =>
+      case e: Throwable =>
         e.printStackTrace()
         throw e
     }

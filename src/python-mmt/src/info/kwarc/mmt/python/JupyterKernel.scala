@@ -7,7 +7,7 @@ import web._
 import frontend._
 import presentation._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 case class PythonParamDict (map: List[(String,Any)]){
@@ -63,7 +63,7 @@ object  Widget {
 
 class JupyterKernel extends Extension {
   private var repl: REPLServer = null
-  private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
+  private lazy val presenter = new InNotebookHTMLPresenter(new PresentationMathMLPresenter)
   private val logFile = utils.File("mmt-jupyter-kernel").addExtension("log")
   logFile.createNewFile()
   private val errorCont = new MultipleErrorHandler(List(new ErrorWriter(logFile), ErrorThrower))
@@ -182,7 +182,7 @@ class JupyterKernel extends Extension {
 
       val result = try {
         // parse the user context
-        val ctx = userInput.mapValues(session.parseTerm(_))
+        val ctx = userInput.view.mapValues(session.parseTerm(_))
         // build a substiution
         val subst = Substitution(ctx.toList.map(lt => Sub(lt._1, lt._2)):_*)
 

@@ -136,14 +136,14 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    /** stores the set of components that analysis depended on */
    lazy val dependsOn = new scala.collection.mutable.HashSet[CPath]
    /** delete this component */
-   def delete: Unit = {
+   def delete(): Unit = {
       _read = None
       List(_parsed,_analyzed,_normalized).foreach {_.delete}
-      dependsOn.clear
+      dependsOn.clear()
    }
    /** clears the contents of this component and sets it to a new value */
    def set(t: T): Unit = {
-     delete
+     delete()
      analyzed = Some(t)
    }
 

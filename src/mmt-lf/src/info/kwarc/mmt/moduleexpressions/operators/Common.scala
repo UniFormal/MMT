@@ -123,7 +123,7 @@ object Common {
             case _: Theory =>
               val (cT, wasDuplicate) = omsTranslator(c, unqualifyLater = true)
               if (wasDuplicate) {
-                solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
+                solver.error(namedModuleOrLink.path.toString + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
               }
               cT
             case _: Link =>

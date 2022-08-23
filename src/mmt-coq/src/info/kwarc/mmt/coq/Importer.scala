@@ -183,7 +183,7 @@ class Importer extends archives.Importer {
         }
         catch {
           case e: ExtensionError =>
-          case e =>
+          case e: Throwable =>
             println(e.getClass)
             ???
         }
@@ -227,7 +227,7 @@ class Importer extends archives.Importer {
             (LocalName(m.uri.path.last + "_impl"),m.componentsImpl)
         } // parent.name / m.uri.path.last
 
-        val nt = new DerivedDeclaration(parent.toTerm,name,m.as,TermContainer(Some(tp)),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        val nt = new DerivedDeclaration(parent.toTerm,name,m.as,TermContainer(Some(tp)),NotationContainer.empty()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
         used_uris += m.uri
         controller add nt
         log("Module " + nt.modulePath.toString)
@@ -358,7 +358,7 @@ class Importer extends archives.Importer {
       case coqxml.SECTION(uri,statements) =>
         val name = parent.name / uri.path.last
         //val th = Theory(parent.parent,name,Some(Coq.foundation))
-        val nt = new DerivedDeclaration(parent.toTerm,LocalName(uri.path.last),"Section",TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        val nt = new DerivedDeclaration(parent.toTerm,LocalName(uri.path.last),"Section",TermContainer(None),NotationContainer.empty()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
         nt.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? "Section")))
         log("Section " + nt.path.toString)
         controller add nt
@@ -394,7 +394,7 @@ class Importer extends archives.Importer {
         val dname = LocalName(tps.map {
           case coqxml.InductiveType(namei,_,_,_,_) => namei
         }.mkString + "_DEF")
-        val dd = new DerivedDeclaration(parent.toTerm,dname,as,TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        val dd = new DerivedDeclaration(parent.toTerm,dname,as,TermContainer(None),NotationContainer.empty()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
         controller add dd
 
         tps foreach {

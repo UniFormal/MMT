@@ -120,7 +120,7 @@ class SimplificationRuleGenerator extends ChangeListener {
        }
   }
   private def error(e: StructuralElement, msg: String): Unit = {
-     logError(e.path + ": " + msg)
+     logError(e.path.toString + ": " + msg)
   }
   private def present(t: Term) = controller.presenter.asString(t)
 

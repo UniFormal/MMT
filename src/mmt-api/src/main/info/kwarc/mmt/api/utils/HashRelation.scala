@@ -31,7 +31,7 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
             hs foreach {b => sb.append("  " + b.toString + "\n")}
          }
       }
-      sb.result
+      sb.result()
    }
 }
 
@@ -76,8 +76,8 @@ class HashRelation[A,B] {
    def preimage(b : B) : HashSet[A] = pred(b)
    def apply(a : A) = image(a)
    def clear: Unit = {
-      succ.clear
-      pred.clear
+      succ.clear()
+      pred.clear()
    }
 }
 
@@ -323,9 +323,9 @@ class IncrementalTransitiveClosure[T] {
   }
   /** empty the underlying relation */
   def clear: Unit = {
-    edges.clear
-    pathsFrom.clear
-    pathsTo.clear
-    numPaths.clear
+    edges.clear()
+    pathsFrom.clear()
+    pathsTo.clear()
+    numPaths.clear()
   }
 }

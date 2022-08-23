@@ -21,12 +21,12 @@ class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
       super.createInterpreter(settings)
       init
    }
-   override def printWelcome: Unit = {
-      out.println
+   override def printWelcome(): Unit = {
+      out.println()
       out.println("This is a Scala interpreter running within MMT; ':help' lists commands.")
       out.println("Use 'controller' to access the current MMT Controller.")
-      out.println
-      out.flush
+      out.println()
+      out.flush()
    }
    override lazy val prompt = "scala-mmt> "
    private def init: Unit = {
@@ -56,7 +56,7 @@ class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
             // code copied from process(settings) but without going into the loop
             createInterpreter()
             intp.interpret(c)
-            closeInterpreter
+            closeInterpreter()
       }
    }
 }

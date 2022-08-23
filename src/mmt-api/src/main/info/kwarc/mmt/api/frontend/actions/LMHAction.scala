@@ -141,7 +141,7 @@ sealed trait LocalAction extends LMHAction {
 
 
 case class LMHPull(spec: List[String]) extends LMHAction {
-  def apply: Unit = {
+  def apply(): Unit = {
     val updates = mathHub.entries(spec: _*).map({a => (a.id, None)})
     mathHub.installEntries(updates, recursive = true)
   }

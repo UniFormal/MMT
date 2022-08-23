@@ -30,7 +30,7 @@ class ModuleHashMap {
   def keys = underlying.keys
   def values = underlying.values.flatMap(_.get)
   def clear: Unit = {
-    underlying.clear
+    underlying.clear()
   }
   override def toString = {
     underlying.toList.sortBy(_._1.name.toPath).map { case (mp, r) =>
@@ -671,7 +671,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val newDef = a.df orElse c.df.map(mapTerm)
             val newRole = a.rl orElse c.rl
             // translating notations is the trickiest part, especially verbalization notations are experimental
-            val newNotC = a.notC.copy
+            val newNotC = a.notC.copy()
             // most important special case: copy over notation of c if a does not have one and it is unambiguous
             (a.notC.parsing, c.notC.parsing) match {
               case (None, Some(cn)) =>
@@ -1069,7 +1069,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
        }
      }
      def component(cp: CPath, cont: ComponentContainer) = {
-        cont.delete
+        cont.delete()
         notifyUpdated(cp)
      }
   }
@@ -1172,7 +1172,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   def clear: Unit = {
     modules.clear
     implicitGraph.clear
-    documents.clear
+    documents.clear()
     previous.map(_.clear)
   }
 }

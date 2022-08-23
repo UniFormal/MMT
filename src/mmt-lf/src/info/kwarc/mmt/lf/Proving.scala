@@ -111,7 +111,7 @@ object BackwardPiElimination extends BackwardSearch {
               sgs ::= sg
               args ::= {() => sg.proof}
         }
-        Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseMap(a => a())))
+        Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseIterator.map(a => a()).toList))
    }
    def apply(prover: Searcher, g: Goal): List[ApplicableTactic] = {
       log("backward Pi elimination on goal " + prover.presentObj(g.conc))

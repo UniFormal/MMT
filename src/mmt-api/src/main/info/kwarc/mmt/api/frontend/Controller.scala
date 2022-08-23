@@ -582,7 +582,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
                 deletedKeys foreach {comp =>
                   old.getComponent(comp).foreach {
                     log(comp.toString + " deleted")
-                    _.delete
+                    _.delete()
                   }
                 }
                 // activate the old one

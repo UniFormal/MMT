@@ -8,7 +8,7 @@ import org.semanticweb.owlapi.model._
 
 //
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 //
 

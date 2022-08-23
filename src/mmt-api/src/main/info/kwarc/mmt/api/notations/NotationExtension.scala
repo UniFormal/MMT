@@ -124,7 +124,7 @@ object Circumfix extends Fixity {
     case mix: Mixfix if (mix.markers.length >= 3) => mix.markers match {
       case Nil => None
       case Delim(lDelim)::tl => (tl.init, tl.last) match {
-        case (args: List[SimpArg], Delim(rDelim)) => Some((lDelim, rDelim, args.length))
+        case (args: List[SimpArg@unchecked], Delim(rDelim)) => Some((lDelim, rDelim, args.length))
         case _ => None
       }
       case _ => None
@@ -178,7 +178,7 @@ object PrePostfix extends Fixity {
         suffixesP
       }
       ((delim, suffixes) match {
-        case (Delim(del), sufs: List[SimpArg]) => Some((delim, prefixes.length, prefixes.length + sufs.length, rightArgsBracketed, impls.length))
+        case (Delim(del), sufs: List[SimpArg@unchecked]) => Some((delim, prefixes.length, prefixes.length + sufs.length, rightArgsBracketed, impls.length))
         case _ => None
       })
     case _ => None

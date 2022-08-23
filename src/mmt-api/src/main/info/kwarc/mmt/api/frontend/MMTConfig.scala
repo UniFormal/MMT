@@ -95,7 +95,7 @@ class MMTConfig {
     private var entries: List[ConfEntry] = Nil
 
     override def toString = {
-       entries.reverseMap {e => e.toString}.mkString("\n")
+       entries.reverseIterator.map{e => e.toString}.mkString("\n")
     }
 
     def addEntry(e: ConfEntry): Unit = {entries = entries ::: List(e)}

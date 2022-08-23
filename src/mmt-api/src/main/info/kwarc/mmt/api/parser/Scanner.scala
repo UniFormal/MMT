@@ -26,7 +26,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   private def logState(): Unit = {
     log("token list: " + tl)
     log("shifted " + numCurrentTokens)
-    active.reverseMap { an =>
+    active.reverseIterator.foreach { an =>
       log(an.toString + ", shifted: " + an.numCurrentTokens)
     }
   }

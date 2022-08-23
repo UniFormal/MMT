@@ -312,7 +312,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
 
     def hasNext = !todo.isEmpty
 
-    def next = {
+    def next() = {
       val hd :: tl = todo.toList
       val ret = (sofar, hd)
       sofar = sofar ++ hd
@@ -422,7 +422,7 @@ case class Sub(name: LocalName, target: Term) extends Obj {
     {mdNode}{target.toNode}
   </om:OMV>
 
-  def toStr(implicit shortURIs: Boolean) = name + ":=" + target.toStr
+  def toStr(implicit shortURIs: Boolean) = name.toString + ":=" + target.toStr
 
   def head = None
 }
