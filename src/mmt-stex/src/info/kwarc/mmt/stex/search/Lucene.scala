@@ -15,6 +15,7 @@ import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.util.BytesRef
 
 import scala.collection.mutable
+import scala.util.Try
 
 class SearchDocument(private[search] val file : File,sourcefile:File,archive:Archive,uri:Path) {
 
@@ -85,7 +86,7 @@ class Searcher(controller:Controller) {
       }.distinct.flatMap{d =>
         if (d.children.exists(_.name.startsWith("segments"))) {
           val dir = FSDirectory.open(d.toJava.toPath)
-          Some(DirectoryReader.open(dir))
+          Try(Some(DirectoryReader.open(dir))).toOption.flatten
         } else None
       }
     } else Nil

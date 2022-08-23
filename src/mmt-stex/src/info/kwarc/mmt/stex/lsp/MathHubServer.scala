@@ -47,12 +47,12 @@ trait MathHubServer { this : STeXLSPServer =>
         else {
           body.add(remotes(i))
         }
-        Some(ServerResponse.apply(html.toString,"application/xhtml+xml"))
+        Some(ServerResponse.apply(html.toString,"text/html"))
       case _ => None
     }
   }
 
-  protected var remoteServer = "https://mmt.beta.vollki.kwarc.info/:sTeX"
+  protected var remoteServer = "https://stexmmt.mathhub.info/:sTeX"
   private var searchinitialized = false
   lazy val searcher : Searcher = {
     searchinitialized = true
@@ -126,7 +126,7 @@ trait MathHubServer { this : STeXLSPServer =>
         r.archive = res.archive
         r.sourcefile = res.sourcefile
         r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=local&num=" + SearchResultServer.locals.length
-        SearchResultServer.locals ::= res.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(res.fragments.head._2)
+        SearchResultServer.locals ::= res.fragments.collectFirst{case p if p._1 != "title" => p._3}.getOrElse(res.fragments.head._3)
         r.fileuri = (controller.backend.getArchive(res.archive).get / info.kwarc.mmt.api.archives.source / res.sourcefile).toURI.toString
         r
     }
