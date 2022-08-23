@@ -180,6 +180,12 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           None
       }
     }
+    State.synchronized {
+      for (elem <- State.failed) {
+        State.toqueue ::= new QueuedTask(elem._1.originalTarget,elem._2,elem._1.task)
+      }
+      State.failed = Nil
+    }
   }
 
   def ready : Boolean = State.synchronized {
