@@ -76,7 +76,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
   val narrationBackend = new ArchiveNarrationStorage(this, "desc")
 
-  def load(p: Path)(implicit controller: Controller) {
+  def load(p: Path)(implicit controller: Controller): Unit = {
     p match {
       case doc: DPath =>
          narrationBackend.load(doc)
@@ -98,7 +98,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     }
   }
 
-  protected def deleteFile(f: File) {
+  protected def deleteFile(f: File): Unit = {
     log("deleting " + f)
     f.delete
   }
@@ -221,7 +221,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     handles.toList
   }
 
-  def readRelational(in: FilePath, controller: Controller, kd: String) {
+  def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
     log("Reading archive " + id)
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>

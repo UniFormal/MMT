@@ -174,7 +174,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     var j = Equality(Stack(boundOrg), goalOrg, queryOrg, None)
 
     // applies all the rules found by findSolvableVariable
-    def applyRules(rs: List[ValueSolutionRule]) {
+    def applyRules(rs: List[ValueSolutionRule]): Unit = {
       rs.foreach { r =>
         j = r(j).getOrElse(return)._1
       }

@@ -18,6 +18,9 @@ import scala.collection.mutable
 
 class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
 
+  def termReference = attributes.get((namespace,"data-stex-term-reference"))
+  def setTermReference(p : GlobalName) = attributes((namespace,"data-stex-term-reference")) = p.toString
+
   override def copy : this.type = try {
     val ret = this.getClass.getConstructor(classOf[HTMLParser.HTMLNode]).newInstance(orig.copy).asInstanceOf[this.type]
     children.foreach(c => ret.add(c.copy))
@@ -68,20 +71,24 @@ class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
   def forceTerm : Term = {
     getTerm match {
       case Some(t) => t
-      case None =>  forceTerm2(this)
+      case None => forceTerm2(this)
     }
   }
   protected def forceTerm2(n : HTMLNode): Term = n.children match {
     case Nil if n.isInstanceOf[HTMLText] =>
       try {STeX.informal(n.parent.get.node) } catch {
         case e =>
+          e.printStackTrace()
           ???
       }
     case List(_: HTMLText) | Nil =>
       try {STeX.informal(n.node) } catch {
         case e =>
+          e.printStackTrace()
           ???
       }
+    case List(a : OMDocHTML) if n.isInstanceOf[MathMLNode] && n.label == "mrow" => a.forceTerm
+    case List(a) if n.isInstanceOf[MathMLNode] && n.label == "mrow" =>forceTerm2(a)
     case _ =>
       val args = n.children.flatMap{
         case o : HTMLTerm => Some(o.toTerm)
@@ -131,7 +138,7 @@ class HTMLDocument(val path : DPath,orig : HTMLParser.HTMLNode) extends OMDocHTM
 
 
 case class HTMLInputref(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     sstate.foreach { state =>
       collectAncestor {
         case t: HTMLDocument => t
@@ -275,7 +282,7 @@ case class HTMLComplexAssignment(orig : HTMLParser.HTMLNode) extends OMDocHTML(o
 }
 
 case class HTMLAliasComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ass : HTMLComplexAssignment => ass
     }.foreach(_.alias = resource)
@@ -298,7 +305,7 @@ case class HTMLSimpleAssignment(orig : HTMLParser.HTMLNode) extends OMDocHTML(or
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  def init {
+  def init: Unit = {
     collectAncestor {
       case hl: HasSimpleAssignments =>
         hl
@@ -331,7 +338,7 @@ case class HTMLSimpleAssignment(orig : HTMLParser.HTMLNode) extends OMDocHTML(or
 }
 
 case class HTMLLanguageComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case hl: HasLanguage =>
         hl
@@ -348,7 +355,7 @@ case class HTMLLanguageComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(o
 }
 
 case class HTMLSignatureComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case th: HTMLTheory => th
     }.foreach(_.signature = resource)
@@ -364,7 +371,7 @@ case class HTMLSignatureComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(
 }
 
 case class HTMLArityComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasArity => ha
     }.foreach(_.arity = resource)
@@ -380,7 +387,7 @@ case class HTMLArityComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig
 }
 
 case class HTMLMacroNameComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasMacroName => ha
     }.foreach(_.macroname = resource)
@@ -396,7 +403,7 @@ case class HTMLMacroNameComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(
 }
 
 case class HTMLMetatheoryComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     if (resource.nonEmpty) {
       collectAncestor {
         case ha: HTMLModuleLike => ha
@@ -421,7 +428,7 @@ case class HTMLBindTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(ori
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  def init {
+  def init: Unit = {
     collectAncestor {
       case g: HTMLGroupLike => g
     }.foreach { g =>
@@ -446,7 +453,7 @@ case class HTMLBindTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(ori
 }
 
 case class HTMLAssoctypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasAssocType => ha
     }.foreach(_.assoctype = resource)
@@ -462,7 +469,7 @@ case class HTMLAssoctypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(or
 }
 
 case class HTMLReorderComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasReorderArgs => ha
     }.foreach(_.reorders = resource)
@@ -478,7 +485,7 @@ case class HTMLReorderComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig
 }
 
 case class HTMLTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     if (sstate.exists(_.in_term)) {
       ???
     }
@@ -505,8 +512,10 @@ case class HTMLTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
 }
 
 case class HTMLDefComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
-    assert(sstate.forall(!_.in_term))
+  var wasinterm = false
+  def init: Unit = {
+    if (sstate.exists(_.in_term)) {wasinterm = true}
+    //assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)
   }
   init
@@ -520,7 +529,7 @@ case class HTMLDefComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
 
   override def onAdd: Unit = {
     sstate.foreach { state =>
-      state.in_term = false
+      if (!wasinterm) state.in_term = false
       collectAncestor {
         case hd: HasDefiniens =>
           hd.df = findTerm
@@ -553,7 +562,7 @@ case class HTMLNotationPrec(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) 
 }
 
 case class HTMLNotationComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)
   }
@@ -582,7 +591,7 @@ case class HTMLNotationComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(o
 }
 
 case class HTMLNotationOpComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)
   }
@@ -1349,7 +1358,7 @@ case class HTMLDefiniendum(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) w
   this.classes ::= "definiendum"
   def toTerm = OMID(path)
   collectAncestor {
-    case s : HTMLStatement if resource != "" => s
+    case s : HTMLStatement => s
   }.foreach(_.fors ::= path)
 }
 
@@ -1372,6 +1381,8 @@ class HTMLTopLevelTerm(val orig : OMDocHTML) extends OMDocHTML(orig) with HTMLCo
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
+
+  var constant : Option[Constant] = None
 
   init
 
@@ -1397,6 +1408,10 @@ class HTMLTopLevelTerm(val orig : OMDocHTML) extends OMDocHTML(orig) with HTMLCo
                   state.check(c)
                 case _ =>
               }
+              state.getO(c.path).foreach{case c : Constant =>
+                constant = Some(c)
+                setTermReference(c.path)
+              case _ => }
             }
         }
     }}
@@ -1431,9 +1446,8 @@ trait HTMLStatement extends OMDocHTML with HTMLGroupLike with HasLanguage {
   }
 
   override def onAdd: Unit = {
-    if (name.nonEmpty) {
-      print("")
-    }
+    super.onAdd
+    fors = fors.distinct
   }
 }
 
@@ -1581,7 +1595,9 @@ case class HTMLSAssertion(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) wi
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  override def onAdd = {sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
+  override def onAdd = {
+    super.onAdd
+    sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
     case m:HTMLModuleLike => m
   }.foreach { m => m.signature_theory.foreach {_ =>
     val tm = conc match {
@@ -1607,7 +1623,9 @@ case class HTMLSExample(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  override def onAdd = {sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
+  override def onAdd = {
+    super.onAdd
+    sstate.foreach{ state => if (name.nonEmpty) { collectAncestor {
     case m:HTMLModuleLike => m
   }.foreach { m => m.signature_theory.foreach {_ =>
     val c = Constant(m.sighome.get,LocalName(name),Nil,None,None,Some("stexsymbol"))
@@ -1618,12 +1636,75 @@ case class HTMLSExample(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with
     state.Search.addExample(this)
   }}}}}
 }
-case class HTMLSProof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
-case class HTMLSProofstep(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+trait HTMLProofFrame extends OMDocHTML {
+  var expanded = true
+  var forthm : Option[GlobalName] = None
+  var yields : Option[Term] = None
+  var justification : Option[Term] = None
+
+  override def onAdd: Unit = {
+    super.onAdd
+    sstate.foreach{ state =>
+      (forthm,this) match {
+        case (Some(_),_) =>
+        case (_,st:HTMLStatement) => forthm = st.fors.collectFirst{case gn : GlobalName => gn}
+        case _ =>
+      }
+      (yields,forthm) match {
+        case (None,Some(gn)) =>
+          state.getO(gn) match {
+            case Some(c : Constant) if c.df.isDefined => yields = c.df
+            case _ =>
+          }
+        //case (Some(tm),Some(gn)) => // check equality ?
+        case (Some(tm),_) => yields = Some(state.applyTopLevelTerm(tm))
+        case _ =>
+      }
+    }
+  }
+}
+case class HTMLSProof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement {}
+case class HTMLSProofstep(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame {}
+case class HTMLSProofyield(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+  def init = {
+    assert(sstate.forall(!_.in_term))
+    sstate.foreach(_.in_term = true)
+  }
+  init
+  override def copy : this.type = {
+    val ret = new HTMLSProofyield(orig.copy) {
+      override def init = {}
+    }.asInstanceOf[this.type]
+    children.foreach(c => ret.add(c.copy))
+    ret.asInstanceOf[this.type]
+  }
+  override def onAdd: Unit = {
+    sstate.foreach { _.in_term = false}
+    super.onAdd
+    sstate.foreach {_ => collectAncestor { case frame : HTMLProofFrame => frame} match {
+      case Some(frame) =>
+        frame.yields match {
+          case None => frame.yields = getTerm
+          case _ =>
+        }
+      case _ =>
+    }}
+  }
+}
 case class HTMLSProofsketch(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
-case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
-case class HTMLSpfcase(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement {}
+case class HTMLSpfcase(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame {}
 case class HTMLSpfeq(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
+
+case class HTMLSProoftitle(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {}
+case class HTMLSProofbody(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+  override def onAdd = {
+    super.onAdd
+    collectAncestor {
+      case m: HTMLProofFrame => m
+    }.foreach { f => if (resource.contains("false")) f.expanded = false }
+  }
+}
 
 case class HTMLFrame(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   this.classes ::= "frame"
@@ -1639,7 +1720,7 @@ trait HasHead extends HTMLTerm {
   def head = {
     Path.parseMS(resource.split("#").head,NamespaceMap.empty)
   }
-  def headTerm = {
+  def headTerm : Term = {
     val ret = if (resource.startsWith("var://")) {
       val rest = resource.drop(6).split("#").head
       if (rest.contains('.')) {
@@ -1730,7 +1811,6 @@ trait ComplexTerm extends HTMLTerm with HasHead {
 case class HTMLOMBIND(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with ComplexTerm {
 
   override def toTerm = {
-    import info.kwarc.mmt.stex.SOMBArg._
     val args = sortArgs.map {
       case (b@('b'|'B'),tm) =>
         SCtx(sstate.get.makeBinder(tm,b == 'B'))

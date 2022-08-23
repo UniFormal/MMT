@@ -38,7 +38,7 @@ class Importer extends archives.Importer {
     } catch {
       case e: utils.ExtractError =>
         log(e.getMessage)
-        sys.exit
+        sys.exit()
     }
 
     val ns = bf.inPath.init.tail.foldLeft(Path.parseD("cic://" + bf.inPath.head,NamespaceMap.empty))((b,s) => b / s)

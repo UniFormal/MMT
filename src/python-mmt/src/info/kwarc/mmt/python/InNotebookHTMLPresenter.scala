@@ -9,7 +9,7 @@ import presentation._
 
 class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
   val key = "notebook-presenter"
-  def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
+  def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler): Unit = {
      val htmlRh = utils.HTML(s => rh(s))
      val ps = new PresentationScope(htmlRh)
      ps(e)
@@ -26,7 +26,7 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
   /** local class so that we can import htmlRh and build HTML programmatically */
   private class PresentationScope(htmlRh: utils.HTML)(implicit rh : RenderingHandler) {
      import htmlRh._
-     def apply(e: StructuralElement) {
+     def apply(e: StructuralElement): Unit = {
         e match {
           case mr: MRef =>
             apply(controller.get(mr.target))
@@ -81,37 +81,37 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
         }
      }
      /* definiens */
-     def doDefComponent(m: ModuleOrLink) {
+     def doDefComponent(m: ModuleOrLink): Unit = {
        m.dfC.get foreach {df =>
          doOperator("=")
          doTerm(df)
        }
      }
      /** names of new declarations */
-     def doName(l: LocalName) {
+     def doName(l: LocalName): Unit = {
         span("name") {
           text(l.toString)
         }
      }
      /** references to previous declarations */
-     def doPath(p: Path) {
+     def doPath(p: Path): Unit = {
        span("uri", attributes = List(HTMLAttributes.href -> p.toPath)) {
          text(p.toString)
        }
      }
      /** terms */
-     def doTerm(t: Term) {
+     def doTerm(t: Term): Unit = {
        // handled via the provided object presenter
        oP(t, None)(rh)
      }
      /** concrete syntax: alphanumeric keywords */
-     def doKeyword(k: String) {
+     def doKeyword(k: String): Unit = {
        span("keyword") {
          text(k)
        }
      }
      /** concrete syntax: symbolic operators */
-     def doOperator(s: String) {
+     def doOperator(s: String): Unit = {
         span("operator") {
           text(s)
         }

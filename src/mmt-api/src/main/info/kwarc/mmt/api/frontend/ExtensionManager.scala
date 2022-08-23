@@ -31,7 +31,7 @@ trait Extension extends Logger {
   /** a custom error class for this extension */
   case class LocalError(s: String) extends ExtensionError(logPrefix, s)
   /** convenience method for wrapping code in error handler that throws [[LocalError]] */
-  protected def catchErrors(msg: String)(code: => Unit) {
+  protected def catchErrors(msg: String)(code: => Unit): Unit = {
      try {code}
      catch {case e: Error =>
        log(LocalError(msg).setCausedBy(e))
@@ -47,20 +47,20 @@ trait Extension extends Logger {
   }
   /** an [[ErrorHandler]] that wraps an error in a [[LocalError]] and throws it */
   protected def makeErrorThrower(msg: String) = new ErrorHandler {
-    protected def addError(e: Error) {
+    protected def addError(e: Error): Unit = {
       throw LocalError(msg).setCausedBy(e)
     }
   }
 
 
   /** MMT initialization (idempotent) */
-  private[api] def init(controller: Controller) {
+  private[api] def init(controller: Controller): Unit = {
     this.controller = controller
     report = controller.report
   }
 
   /** any extension can initialize other extensions if those are not meant to be added to the ExtensionManager */
-  protected def initOther(e: Extension) {
+  protected def initOther(e: Extension): Unit = {
      e.init(controller)
   }
 
@@ -80,23 +80,23 @@ trait Extension extends Logger {
   }
 
   /** extension-specific initialization (override as needed, empty by default) */
-  def start(args: List[String]) {}
+  def start(args: List[String]): Unit = {}
 
   /** called when the controller is cleared; extensions must still be operational after processing this call */
-  def clear {}
+  def clear: Unit = {}
 
   /** extension-specific cleanup (override as needed, empty by default)
     *
     * Extensions may create persistent data structures and threads,
     * but they must clean up after themselves in this method
     */
-  def destroy {}
+  def destroy: Unit = {}
 
   /** extensions that process tasks in separate threads should override this and wait until those threads are done */
-  def waitUntilRemainingTasksFinished {}
+  def waitUntilRemainingTasksFinished: Unit = {}
 
   /** convenience for calling waitUntilRemainingTasksFinished and then destroy */
-  def destroyWhenRemainingTasksFinished {
+  def destroyWhenRemainingTasksFinished: Unit = {
     waitUntilRemainingTasksFinished
     destroy
   }
@@ -120,12 +120,12 @@ trait FormatBasedExtension extends Extension {
 trait LeveledExtension extends Extension {
   def objectLevel: Extension
 
-  override def init(controller: Controller) {
+  override def init(controller: Controller): Unit = {
     objectLevel.init(controller)
     super.init(controller)
   }
 
-  override def destroy {
+  override def destroy: Unit = {
     objectLevel.destroy
     super.destroy
   }
@@ -231,7 +231,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** initializes and adds an extension */
-  def addExtension(ext: Extension, args: List[String] = Nil) {
+  def addExtension(ext: Extension, args: List[String] = Nil): Unit = {
     log("adding extension " + ext.getClass.toString)
     ext.init(controller)
     extensions ::= ext
@@ -260,7 +260,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** remove an extension (must have been stopped already) */
-  def removeExtension(ext: Extension) {
+  def removeExtension(ext: Extension): Unit = {
     extensions = extensions diff List(ext)
   }
 
@@ -277,7 +277,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }.mkString("")
   }
 
-  def addDefaultExtensions {
+  def addDefaultExtensions: Unit = {
     // MMT's defaults for the main algorithms
     val nbp = new NotationBasedParser
     val kwp = new KeywordBasedParser(nbp)
@@ -353,11 +353,11 @@ class ExtensionManager(controller: Controller) extends Logger {
     addExtension(GetActionCompanion)
   }
 
-  def clear {
+  def clear: Unit = {
     extensions.foreach(_.clear)
   }
 
-  def cleanup {
+  def cleanup: Unit = {
     extensions.foreach(_.destroy)
     extensions = Nil
   }

@@ -131,8 +131,9 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
   private def normalizeUri(s : String) : String = s.take(5) + s.drop(5).replace(":","%3A")
   def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
   def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
-  def resetErrors(uri:String) = {
+  def resetErrors(uri:String) = this.synchronized {
     diags = Nil
+    all_errors = Nil
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))
     params.setDiagnostics(Nil.asJava)
@@ -140,7 +141,7 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
   }
   private var diags : List[Diagnostic] = Nil
   private var all_errors : List[info.kwarc.mmt.api.Error] = Nil
-  def documentErrors(controller:Controller,doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
+  def documentErrors(controller:Controller,doc : LSPDocument[LSPClient,LSPServer[LSPClient]],uri : String,errors : info.kwarc.mmt.api.Error*) = this.synchronized {if (errors.nonEmpty) {
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))
     val ndiags = errors.collect{case e if !all_errors.contains(e) =>
@@ -150,8 +151,8 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
         case SourceError(_,ref,_,ems,_) =>
           val start = ref.region.start.offset
           val end = ref.region.end.offset + 1
-          val (sl,sc) = LSPDocument.toLC(start,doc)
-          val (el,ec) = LSPDocument.toLC(end,doc)
+          val (sl,sc) = doc._doctext.toLC(start)
+          val (el,ec) = doc._doctext.toLC(end)
           d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
           (e.level,e.shortMsg + ems.mkString("\n","\n",""))
         case iu:Invalid =>
@@ -168,8 +169,8 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
           }}
           val start = ref.region.start.offset
           val end = ref.region.end.offset + 1
-          val (sl,sc) = LSPDocument.toLC(start,doc)
-          val (el,ec) = LSPDocument.toLC(end,doc)
+          val (sl,sc) = doc._doctext.toLC(start)
+          val (el,ec) = doc._doctext.toLC(end)
           d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
           (Level.Warning,e.shortMsg + "\n" + (iu match{
             case iu:InvalidUnit =>
@@ -196,7 +197,7 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
     diags = diags ::: ndiags.toList
     params.setDiagnostics(diags.asJava)
     client.publishDiagnostics(params)
-  }
+  }}
 }
 
 trait LSPClient extends LanguageClient {}
@@ -293,10 +294,14 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def withProgress[A](payload: Any,title:String,msg:String = "")(f : ((Double,String) => Unit) => (A,String)) : A = {
     val token = payload.hashCode();
     startProgress(token,title,msg)
-    val (ret,end) = f((i,s) => {
+    val (ret,end) = try { f((i,s) => {
       updateProgress(token,i,s)
-    });
-    finishProgress(token,end)
+    }) } catch {
+      case t =>
+        finishProgress(token, "")
+        throw t
+    }
+    finishProgress(token, end)
     ret
   }
 
@@ -607,8 +612,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
                   params: CodeActionParams
                 ): CompletableFuture[util.List[JEither[Command,CodeAction]]] = Completable {
     log("textDocument/codeAction: " + params.toString,Some("methodcall"))
-    server.codeAction(params).asJava
-    ???
+    server.codeAction(params).map(e => toEither(None.asInstanceOf[Option[Command]],Some(e)).asInstanceOf[JEither[Command,CodeAction]]).asJava
   }
 
   //@JsonRequest("textDocument/codeLens")

@@ -26,11 +26,11 @@ case class STeXStructure(smslines: List[String], deps: List[Dependency])
 trait STeXAnalysis {
   self: TraversingBuildTarget =>
 
-  protected def logSuccess(f: FilePath) {
+  protected def logSuccess(f: FilePath): Unit = {
     logResult("success " + f)
   }
 
-  protected def logFailure(f: FilePath) {
+  protected def logFailure(f: FilePath): Unit = {
     logResult("failure " + f)
   }
 
@@ -229,7 +229,7 @@ trait STeXAnalysis {
 
   /** Collect sms content and write to outFile. */
   def createSms(a: Archive, inFile: File, outFile: File) : Unit = {
-    val smsContent = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines, Set.empty).smslines
+    val smsContent = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines(), Set.empty).smslines
     if (smsContent.isEmpty) {log("no sms content")}
     else { File.write(outFile, smsContent.reverse.mkString("", "\n", "\n")) }
   }
@@ -238,7 +238,7 @@ trait STeXAnalysis {
   def getDeps(a: Archive, in: File, parents: Set[File], amble: Option[File] = None): List[Dependency] = {
     val f = amble.getOrElse(in)
     if (f.exists) {
-      val struct = mkSTeXStructure(a, in, readSourceRebust(f).getLines, parents)
+      val struct = mkSTeXStructure(a, in, readSourceRebust(f).getLines(), parents)
       struct.deps
     } else { Nil }
   }

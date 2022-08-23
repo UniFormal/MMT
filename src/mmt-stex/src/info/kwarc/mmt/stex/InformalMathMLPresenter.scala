@@ -46,7 +46,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
     case o => o
   }
 
-  override def doDeclaration(d: Declaration) {
+  override def doDeclaration(d: Declaration): Unit = {
     d match {
       case c: Constant if c.rl.contains("notation") || c.rl.contains("symboldoc") => return
       case _ =>
@@ -77,10 +77,10 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
           case _ => d.feature
         }} + " ")}
         doName(d)
-        def toggleComp(comp: ComponentKey) {
+        def toggleComp(comp: ComponentKey): Unit = {
           toggle(compRow(comp), comp.toString.replace("-", " "))
         }
-        def toggle(key: String, label: String) {
+        def toggle(key: String, label: String): Unit = {
           button(compToggle, attributes = List(toggleTarget -> key)) {text(label)}
         }
         if (aliases.nonEmpty)
@@ -209,7 +209,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
               k => div("tag") {text(k.toPath)}
             }}}
         }
-        def doKey(k: GlobalName) {
+        def doKey(k: GlobalName): Unit = {
           td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
         }
         d.metadata.getAll.foreach {
@@ -274,7 +274,7 @@ class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
     case _ => super.doDefault(o)
   }
 
-  override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+  override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler): Unit = {
     implicit val pc = preparePresentation(o, origin)
     doInfToplevel(o) {
       recurse(o)

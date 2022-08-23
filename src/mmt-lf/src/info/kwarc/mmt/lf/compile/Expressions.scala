@@ -287,7 +287,7 @@ object EXP {
          //TODO
          null
    }
-   def checkType(tp: EXP)(implicit context: Context) {tp match {
+   def checkType(tp: EXP)(implicit context: Context): Unit = {tp match {
       case INTS =>
       case BOOLS =>
       case STRINGS =>
@@ -299,7 +299,7 @@ object EXP {
       }
       case _ => throw SyntaxError("ill-formed type: " + tp)
    }}
-   def check(e: EXP, tp: EXP)(implicit context: Context) {
+   def check(e: EXP, tp: EXP)(implicit context: Context): Unit = {
       //the type of the empty list cannot be inferred, so special treatment needed
       if (e == ALIST(Nil)) {tp match {
         case LIST(_) => return

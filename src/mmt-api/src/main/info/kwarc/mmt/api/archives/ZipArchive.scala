@@ -13,7 +13,7 @@ trait ZipArchive {self: Archive =>
     /**
      * add a file to a MAR file
      */
-    private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
+    private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]): Unit = {
         var bytesRead = 0
         val in = new FileInputStream(f)
         out.putNextEntry(new ZipEntry(f.segments.drop(base.segments.length).mkString("/")))
@@ -30,7 +30,7 @@ trait ZipArchive {self: Archive =>
     /**
      * recursively add all files in a folder to a mar file
      */
-    private def addFolderToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
+    private def addFolderToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]): Unit = {
         f.listFiles foreach {child =>
             if (child.isDirectory) {
                 if (includeDir(child.getName)) addFolderToMar(child, base, out, buffer)
@@ -43,7 +43,7 @@ trait ZipArchive {self: Archive =>
      * pack everything in a mar zip archive.
      * @param target the target mar file. Default is <name>.mar in the root folder, where <name> is the name of the root
      */
-    def toMar(target: File = root / (root.getName + ".mar")) {
+    def toMar(target: File = root / (root.getName + ".mar")): Unit = {
         log("building math archive at " + target.getPath)
         val out = new ZipOutputStream(new FileOutputStream(target))
         val buffer = new Array[Byte](100000)   // 100KB buffer size

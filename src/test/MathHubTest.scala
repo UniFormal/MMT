@@ -8,7 +8,7 @@ object MathHubTest extends MagicTest("mathhub") {
   override val gotoshell = true
 
   override def doFirst: Unit = {
-    super.doFirst
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")

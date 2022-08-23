@@ -24,11 +24,11 @@ case class MBGenAction(args: List[String]) extends Action {
     schemaLangIsMetaTheory && isInSchemaGroup
   }
 
-  def apply() {
+  def apply(): Unit = {
     val outputDir = args.head
     val handle = scala.io.Source.fromFile(outputDir + "/settings.txt")
     val settings = try {
-      val lines = handle.getLines.toSeq
+      val lines = handle.getLines().toSeq
       val schemaGroup = if (lines(1).nonEmpty) Some(lines(1)) else None
       val jdbc = JDBCInfo(lines(2), lines(3), lines(4))
       val prefix = if (lines.length < 6 || lines(5).nonEmpty) lines(5) else "MBGEN"

@@ -101,7 +101,7 @@ class GAPDocImporter extends Importer {
     }
   }
 
-  def parseBook(n : Node)(implicit dpath : DPath, errorCont : ErrorHandler) {
+  def parseBook(n : Node)(implicit dpath : DPath, errorCont : ErrorHandler): Unit = {
     n.label match {
       case "Book" =>
         val doc = new Document(dpath, FileLevel)
@@ -118,7 +118,7 @@ class GAPDocImporter extends Importer {
     }
   }
 
-  def parseInDoc(n: Node)(implicit mpath: MPath, errorCont: ErrorHandler) {
+  def parseInDoc(n: Node)(implicit mpath: MPath, errorCont: ErrorHandler): Unit = {
     n.label match {
       case "Body" =>
         n.child.foreach(parseInBody)
@@ -126,7 +126,7 @@ class GAPDocImporter extends Importer {
     }
   }
 
-  def parseInBody(n : Node)(implicit mpath: MPath, errorCont : ErrorHandler) {
+  def parseInBody(n : Node)(implicit mpath: MPath, errorCont : ErrorHandler): Unit = {
     n.label match {
       case "Chapter" | "Section" | "Subsection" => //recursing & ignoring, treating as if flattened
         n.child.foreach(parseInBody)
@@ -137,7 +137,7 @@ class GAPDocImporter extends Importer {
 
   val declTypes = List("Filt",  "Func",  "Oper","Attr","Prop") //  "Meth")  ignoring Methods for now
 
-  def parseManSection(n : Node)(implicit mpath: MPath, errorCont : ErrorHandler) {
+  def parseManSection(n : Node)(implicit mpath: MPath, errorCont : ErrorHandler): Unit = {
     var lastDecl : Option[(Declaration, Node)] = None
     n.child foreach {c => c.label match {
       case dtype if (declTypes.contains(dtype)) =>

@@ -5,10 +5,10 @@ import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
-import info.kwarc.mmt.api.{NamespaceMap, Path, StructuralElement}
+import info.kwarc.mmt.api.{DefComponent, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDoctitle, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationOpComponent, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofsketch, HTMLSProofstep, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSolution, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarSeqEnd, HTMLVarSeqStart, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
+import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDoctitle, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationOpComponent, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLProofFrame, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofbody, HTMLSProofsketch, HTMLSProofstep, HTMLSProoftitle, HTMLSProofyield, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSolution, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarSeqEnd, HTMLVarSeqStart, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
 
 object OMDocExtension extends DocumentExtension {
 
@@ -128,6 +128,9 @@ object OMDocExtension extends DocumentExtension {
     SimpleHTMLRule("assertion",HTMLSAssertion),
     SimpleHTMLRule("sproof",HTMLSProof),
     SimpleHTMLRule("spfstep",HTMLSProofstep),
+    SimpleHTMLRule("spfyield",HTMLSProofyield),
+    SimpleHTMLRule("spftitle",HTMLSProoftitle),
+    SimpleHTMLRule("spfbody",HTMLSProofbody),
     SimpleHTMLRule("proofsketch",HTMLSProofsketch),
     SimpleHTMLRule("subproof",HTMLSubproof),
     SimpleHTMLRule("spfcase",HTMLSpfcase),
@@ -151,6 +154,18 @@ object OMDocExtension extends DocumentExtension {
 
   import DocumentExtension._
   override lazy val documentRules = List(
+    {case spf : HTMLProofFrame =>
+      spf.children.collectFirst {case t:HTMLSProoftitle => t} match {
+        case Some(ttl) =>
+          spf.children.collectFirst {case t : HTMLSProofbody => t} match {
+            case Some(bd) =>
+              ttl.attributes((ttl.namespace,"data-collapse-title")) = "true"
+              bd.attributes((bd.namespace,"data-collapse-body")) = "true"
+              spf.attributes((spf.namespace,"data-collapsible")) = if (spf.expanded) "true" else "false"
+          }
+        case _ =>
+      }
+    },
     {case iref : HTMLInputref =>
       val dp = Path.parseD(iref.resource + ".omdoc",NamespaceMap.empty)
       controller.getO(dp) match {
@@ -162,15 +177,9 @@ object OMDocExtension extends DocumentExtension {
                 <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath="  + path}>{
                   d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
                     case OMFOREIGN(node) => node
-                    case _ => <span>{d.path.toString}</span>
-                  }).getOrElse(<span>{d.path.toString}</span>)
+                    case _ => ""
+                  }).getOrElse("")
                   }</div>
-                /*<div><a href={"/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath="  + path} style="pointer-events:all;color:blue">{
-                  d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
-                    case OMFOREIGN(node) => node
-                    case _ => <span>{d.path.toString}</span>
-                  }).getOrElse(<span>{d.path.toString}</span>)
-                }</a></div>*/
                 ,iref))
             case _ =>
           }
@@ -191,19 +200,17 @@ object OMDocExtension extends DocumentExtension {
         case _ =>
       }
     },
-    {case t : HTMLTopLevelTerm => t.orig match {
-      case h : HasHead if t.isVisible =>
-        if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
-          // TODO
-        } else {
-          overlay(t, "/:" + server.pathPrefix + "/fragment?" + h.head.toString + "&language=" + getLanguage(t),
-            "/:" + server.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + getLanguage(t))
-        }
-      case _ =>
-    }
-
+    {
+      case t : HTMLTopLevelTerm if t.orig.isInstanceOf[HTMLDefiniendum] =>
+        overlay(t, "/:" + server.pathPrefix + "/declheader?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString,
+          "/:" + server.pathPrefix + "/declaration?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString  + "&language=" + getLanguage(t))
     },
-    {case t: HasHead if t.isVisible =>
+    {
+      case t : HTMLDefiniendum =>
+        overlay(t, "/:" + server.pathPrefix + "/declheader?" + t.head.toString,
+          "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
+    },
+    {case t: HasHead if t.isVisible && !t.isInstanceOf[HTMLDefiniendum] =>
       if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
         // TODO
       } else {
@@ -211,6 +218,25 @@ object OMDocExtension extends DocumentExtension {
           "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
       }
     },
+    {case t : HTMLTopLevelTerm if !t.orig.isInstanceOf[HTMLDefiniendum] =>
+      t.orig match {
+        case h : HasHead if t.isVisible =>
+          if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
+            // TODO
+          } else {
+            overlay(t, "/:" + server.pathPrefix + "/fragment?" + h.head.toString + "&language=" + getLanguage(t),
+              "/:" + server.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + getLanguage(t))
+          }
+        case _ =>
+      }
+      /*t.constant.foreach {c =>
+        DocumentExtension.sidebar(t,{<span style="display:inline">Term {DocumentExtension.makeButton(
+          "/:" + server.stexserver.pathPrefix + "/fragment?" + c.path + "&language=" + DocumentExtension.getLanguage(t),
+          "/:" + server.stexserver.pathPrefix + "/declaration?" + c.path + "&language=" + DocumentExtension.getLanguage(t)
+          ,server.stexserver.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
+        )}</span>} :: Nil)
+      }*/
+    }
   )
 /*
   override lazy val documentRules = List(

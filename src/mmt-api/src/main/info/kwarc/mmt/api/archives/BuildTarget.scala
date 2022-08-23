@@ -36,7 +36,7 @@ abstract class BuildTarget extends FormatBasedExtension {
     * @param in       the folder inside the archive's inDim folder to which building is restricted
     * @param errorCont continuation for reporting errors that this target recovered from (fatal errors should be thrown instead)
     */
-  def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath, errorCont: Option[ErrorHandler]) {
+  def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
     modifier match {
       case w:Build => build(arch, w, in, errorCont)
       case Clean => clean(arch, in)
@@ -44,7 +44,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   }
 
   /** auxiliary method for deleting a file */
-  protected def delete(f: File) {
+  protected def delete(f: File): Unit = {
     if (f.exists) {
       log("deleting " + f)
       f.deleteDir
@@ -243,14 +243,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
   protected def getOutPath(a: Archive,outFile: File): FilePath = outFile.toFilePath
 
   /** auxiliary method for logging results */
-  protected def logResult(s: String) {
+  protected def logResult(s: String): Unit = {
     log(s,Some("result"))
   }
 
   // ***************** building (i.e., create build tasks and add them to build manager
 
   /** entry point for recursive building */
-  def build(a: Archive,w: Build,in: FilePath,errorCont: Option[ErrorHandler]) {
+  def build(a: Archive,w: Build,in: FilePath,errorCont: Option[ErrorHandler]): Unit = {
     val qts = makeBuildTasks(a,in,errorCont)
     controller.buildManager.addTasks(w,qts)
   }
@@ -266,7 +266,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** recursive creation of [[BuildTask]]s */
-  private def makeBuildTasksAux(in: FilePath,a: Archive,eCOpt: Option[ErrorHandler])(cont: QueuedTask => Unit) {
+  private def makeBuildTasksAux(in: FilePath,a: Archive,eCOpt: Option[ErrorHandler])(cont: QueuedTask => Unit): Unit = {
     //build every file
     a.traverse[BuildTask](inDim,in,TraverseMode(includeFile,includeDir,parallel))({
       case Current(inFile,inPath) =>
@@ -393,7 +393,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param a    the containing archive
     * @param curr the inDim whose output is to be deleted
     */
-  def cleanFile(a: Archive,curr: Current) {
+  def cleanFile(a: Archive,curr: Current): Unit = {
     val inPath = curr.path
     val outFile = getOutFile(a,inPath)
     delete(outFile)
@@ -408,7 +408,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param a    the containing archive
     * @param curr the outDim directory to be deleted
     */
-  def cleanDir(a: Archive,curr: Current) {
+  def cleanDir(a: Archive,curr: Current): Unit = {
     val inPath = curr.path
     val errFile = getFolderErrorFile(a,inPath)
     delete(errFile)
@@ -418,7 +418,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** recursively delete output files in parallel (!) */
-  def clean(a: Archive,in: FilePath = EmptyPath) {
+  def clean(a: Archive,in: FilePath = EmptyPath): Unit = {
     a.traverse[Unit](inDim,in,TraverseMode(includeFile,includeDir,parallel = true),sendLog = true,forClean = true)(
       {c => cleanFile(a,c)}, {case (c,_) => cleanDir(a,c)})
   }

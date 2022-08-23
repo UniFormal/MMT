@@ -9,7 +9,7 @@ class PVSImporter extends Importer {
    val key = "pvs-omdoc"
 
 
-   override def start(args: List[String]) {
+   override def start(args: List[String]): Unit = {
       val em = controller.extman
       // content enhancers
       super.start(args)
@@ -35,7 +35,7 @@ class PVSImporter extends Importer {
       } catch {
          case e: utils.ExtractError =>
             log(e.getMessage)
-            sys.exit
+            sys.exit()
       }
 
       val conv = new PVSImportTask(controller, bf, index)

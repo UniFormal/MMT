@@ -28,7 +28,7 @@ class ScalaExporter extends GenericScalaExporter {
    override val key = "lf-scala"
    override val packageSep = List("lf")
 
-   override def outputHeader(dp: DPath) {
+   override def outputHeader(dp: DPath): Unit = {
      super.outputHeader(dp)
      rh.writeln("import info.kwarc.mmt.lf._")
    }
@@ -55,7 +55,7 @@ class ScalaExporter extends GenericScalaExporter {
       case _ => throw IllFormed
    }
 
-   override def outputTrait(t: Theory) {
+   override def outputTrait(t: Theory): Unit = {
       return // switched off for now - causes more trouble than it's worth
       val includes = t.getIncludesWithoutMeta.filter {i =>
          controller.globalLookup.getO(i) match {
@@ -166,7 +166,7 @@ import checking._
 /** this can be used for Scala-native MMT theories to simplify adding additional rules */
 abstract class LFRealizationInScala extends RealizationInScala {
   val under = List(Apply.path)
-  def solve_unary(op:GlobalName, argTypeN: GlobalName, rTypeN: GlobalName)(invert: Any => Option[Any]) {
+  def solve_unary(op:GlobalName, argTypeN: GlobalName, rTypeN: GlobalName)(invert: Any => Option[Any]): Unit = {
       val List(argType, rType) = List(argTypeN, rTypeN) map getRealizedType
       val sr = new ValueSolutionRule(op / "invert") {
          def applicable(tm1: Term): Option[Int] = tm1 match {
@@ -183,7 +183,7 @@ abstract class LFRealizationInScala extends RealizationInScala {
       rule(sr)
    }
    def solve_binary_right(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
-            (invert: (Any,Any) => Option[Any]) {
+            (invert: (Any,Any) => Option[Any]): Unit = {
       val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new ValueSolutionRule(op / "right-invert") {
          def applicable(tm1: Term): Option[Int] = tm1 match {
@@ -200,7 +200,7 @@ abstract class LFRealizationInScala extends RealizationInScala {
       rule(sr)
    }
    def solve_binary_left(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
-            (invert: (Any,Any) => Option[Any]) {
+            (invert: (Any,Any) => Option[Any]): Unit = {
       val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new ValueSolutionRule(op / "left-invert") {
          def applicable(tm1: Term): Option[Int] = tm1 match {

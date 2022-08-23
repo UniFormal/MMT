@@ -13,7 +13,7 @@ class ObjDimension[T] {
    /** the time of the last change */
    var time : Long = System.currentTimeMillis
    /** delete all data */
-   def delete {
+   def delete: Unit = {
       obj = None
       dirty = false
       time = System.currentTimeMillis
@@ -54,7 +54,7 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    def normalized = _normalized.termIfNotDirty
    /** sets the normalized representation (if not already set) using a normalization function
     *  Because normalization is need-based, this should be called, if possible, before accessing the normalized representation. */ 
-   def normalize(normFun: T => T) {
+   def normalize(normFun: T => T): Unit = {
      normalized match {
        case Some(_) =>
        case None => normalized = analyzed map normFun
@@ -71,7 +71,7 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
       }
       changed
    }
-   def read_=(s: String) {read_=(Some(s))}
+   def read_=(s: String): Unit = {read_=(Some(s))}
    /** setter for the parsed representation without further analysis */
    def parsed_=(t: Option[T]): Boolean = {
       val changed = t != _parsed.obj
@@ -91,7 +91,7 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
       _parsed.dirty = false
       changed
    }
-   def parsed_=(t: T) {parsed_=(Some(t))}
+   def parsed_=(t: T): Unit = {parsed_=(Some(t))}
    /** setter for the analyzed representation */
    def analyzed_=(t: Option[T]): Boolean = {
       val changed = t != _analyzed.obj
@@ -124,7 +124,7 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    /** true if the term must be (re)analyzed */
    def isAnalyzedDirty =  _analyzed.dirty
    /** marks this term for re-analysis */
-   def setAnalyzedDirty {_analyzed.dirty = true}
+   def setAnalyzedDirty: Unit = {_analyzed.dirty = true}
    /** time of the last change */
    def lastChangeAnalyzed = _analyzed.time
 
@@ -135,13 +135,13 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    /** stores the set of components that analysis depended on */
    lazy val dependsOn = new scala.collection.mutable.HashSet[CPath]
    /** delete this component */
-   def delete {
+   def delete: Unit = {
       _read = None
       List(_parsed,_analyzed,_normalized).foreach {_.delete}
       dependsOn.clear
    }
    /** clears the contents of this component and sets it to a new value */
-   def set(t: T) {
+   def set(t: T): Unit = {
      delete
      analyzed = Some(t)
    }

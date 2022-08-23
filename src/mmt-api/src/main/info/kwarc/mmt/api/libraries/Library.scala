@@ -20,16 +20,16 @@ class ModuleHashMap {
   def get(p: MPath): Option[Module] = {
     underlying.get(p).flatMap(_.get)
   }
-  def update(p: MPath, m: Module) {
+  def update(p: MPath, m: Module): Unit = {
     val r = new SoftReference(m)
     underlying.update(p, r)
   }
-  def -=(p: MPath) {
+  def -=(p: MPath): Unit = {
     underlying -= p
   }
   def keys = underlying.keys
   def values = underlying.values.flatMap(_.get)
-  def clear {
+  def clear: Unit = {
     underlying.clear
   }
   override def toString = {
@@ -734,7 +734,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
   }*/
 
-  def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) {
+  def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit): Unit = {
     val impls = visibleVia(mod).toList
     impls.foreach {
       case (p, m) =>
@@ -806,7 +806,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      def otherContentElement(parent: ModuleOrLink, ln: LocalName): Unit
      def component(cp: CPath, cont: ComponentContainer): Unit
      /** This does the relevant case distinction and then delegates to one of the abstract methods. */
-     def apply(path: Path) {path match {
+     def apply(path: Path): Unit = {path match {
         case dp: DPath =>
            if (documents.isDefinedAt(dp))
              primitiveDocument(dp)
@@ -844,7 +844,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     * you *must* call [[endAdd()]] sometime after calling this [[add()]] method.
     * Otherwise, you risk an inconsistent state of MMT.
     */
-  def add(e: StructuralElement, at: AddPosition = AtEnd) {
+  def add(e: StructuralElement, at: AddPosition = AtEnd): Unit = {
     log("adding " + e.path + " (which is a " + e.feature + ")")
     val adder = new Adder(e, at)
     e match {
@@ -865,7 +865,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** add-related work that has to be done at the end of an element
    *  in particular: implicit morphisms are registered only when the inducing element has been checked 
    */
-  def endAdd(c: ContainerElement[_]) {
+  def endAdd(c: ContainerElement[_]): Unit = {
     addImplicits(c, false)
   }
 
@@ -873,12 +873,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private class Adder(se: StructuralElement, at: AddPosition) extends ChangeProcessor {
      def errorFun(msg: String): LibraryError = AddError(se, msg)
      def topError = errorFun("unknown cause")
-     def wrongType(exp: String) {errorFun("expected a " + exp + ", found " + se.feature)}
-     def checkNoAfter {
+     def wrongType(exp: String): Unit = {errorFun("expected a " + exp + ", found " + se.feature)}
+     def checkNoAfter: Unit = {
        if (at != AtEnd)
          errorFun("adding after a declaration only allowed in containers")
      }
-     def run {
+     def run: Unit = {
         apply(se.path)
      }
      def primitiveDocument(dp: DPath) = {
@@ -927,7 +927,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
 
-  private def addImplicits(se: StructuralElement, before: Boolean) {
+  private def addImplicits(se: StructuralElement, before: Boolean): Unit = {
     se match {
       // before == true
       case t: AbstractTheory if before =>
@@ -987,7 +987,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
   }
 
-  private def deleteImplicits(p: Path) {
+  private def deleteImplicits(p: Path): Unit = {
     p match {
       case p: MPath => implicitGraph.delete(p)
       case _ =>
@@ -1002,7 +1002,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   // shared code for adding an include
-  private def addIncludeToImplicit(id: IncludeData) {
+  private def addIncludeToImplicit(id: IncludeData): Unit = {
     val mor = if (!id.isRealization && id.args.isEmpty && !id.df.isDefined) None else Some(id.asMorphism)
     implicitGraph.add(id.from, id.home.toMPath, mor)
   }
@@ -1022,17 +1022,17 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     *
     * @param path the path to the element to be deleted
     */
-  def delete(path: Path) {
+  def delete(path: Path): Unit = {
     deleteImplicits(path)
     new Deleter(path).apply(path)
   }
   
-  def deactivate(se: StructuralElement) {
+  def deactivate(se: StructuralElement): Unit = {
     InactiveElement.set(se)
     deleteImplicits(se.path)
   }
   
-  def reactivate(se: StructuralElement) {
+  def reactivate(se: StructuralElement): Unit = {
     InactiveElement.erase(se)
     addImplicits(se, true)
     addImplicits(se, false)
@@ -1077,7 +1077,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
  // ******************* updating elements
 
   /** updates a StructuralElement */
-  def update(e: StructuralElement) {
+  def update(e: StructuralElement): Unit = {
     log("updating " + e.path)
     deleteImplicits(e.path)
     new Updater(e).run
@@ -1109,20 +1109,20 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** moves an element with a given path to the end of its parent document */
-  def reorder(p: Path) {
+  def reorder(p: Path): Unit = {
     (new Reorderer(p)).apply(p)
   }
   private class Reorderer(path: Path) extends ChangeProcessor {
      def topError = GetError(path, "error while reordering")
-     def primitiveDocument(dp: DPath) {}
-     def otherNarrativeElement(doc: Document, ln: LocalName) {
+     def primitiveDocument(dp: DPath): Unit = {}
+     def otherNarrativeElement(doc: Document, ln: LocalName): Unit = {
         doc.reorder(ln)
      }
-     def primitiveModule(mp: MPath) {}
-     def otherContentElement(body: ModuleOrLink, ln: LocalName) {
+     def primitiveModule(mp: MPath): Unit = {}
+     def otherContentElement(body: ModuleOrLink, ln: LocalName): Unit = {
         body.reorder(ln)
      }
-     def component(cp: CPath, cont: ComponentContainer) {}
+     def component(cp: CPath, cont: ComponentContainer): Unit = {}
   }
 
   // change management
@@ -1136,7 +1136,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     *
     * @param p path to the component that was changed/deleted
     */
-  def notifyUpdated(p: CPath) {
+  def notifyUpdated(p: CPath): Unit = {
     log("updated: " + p)
     logGroup {
       // notify the definiens (if any) if a type changed
@@ -1169,7 +1169,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   // delete everything
 
   /** forgets everything */
-  def clear {
+  def clear: Unit = {
     modules.clear
     implicitGraph.clear
     documents.clear

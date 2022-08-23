@@ -46,7 +46,7 @@ class Twelf extends ExternalImporter with frontend.ChangeListener {
     * creates and initializes a Catalog
     * first argument is the location of the twelf-server script; alternatively set variable Twelf
     */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     val p = getFromFirstArgOrEnvvar(args, "Twelf", "twelf-server")
     path = File(p)
     catalog = new Catalog(port = port, searchPort = true, log = report("lfcatalog", _))
@@ -54,7 +54,7 @@ class Twelf extends ExternalImporter with frontend.ChangeListener {
     controller.backend.getArchives foreach onArchiveOpen
   }
 
-  override def onArchiveOpen(arch: Archive) {
+  override def onArchiveOpen(arch: Archive): Unit = {
     val stringLocs = arch.properties.get("lfcatalog-locations") match {
       case None =>
         List(arch / inDim)
@@ -64,16 +64,16 @@ class Twelf extends ExternalImporter with frontend.ChangeListener {
     stringLocs.foreach { l => if (l.exists) catalog.addStringLocation(l.getPath) }
   }
 
-  override def onArchiveClose(arch: Archive) {
+  override def onArchiveClose(arch: Archive): Unit = {
     val stringLoc = (arch / inDim).getPath
     catalog.deleteStringLocation(stringLoc)
   }
 
-  override def destroy {
+  override def destroy: Unit = {
     catalog.destroy
   }
 
-  def runExternalTool(bf: BuildTask, outFile: File) {
+  def runExternalTool(bf: BuildTask, outFile: File): Unit = {
     val procBuilder = new java.lang.ProcessBuilder(path.toString)
     procBuilder.redirectErrorStream
     val proc = procBuilder.start
@@ -83,7 +83,7 @@ class Twelf extends ExternalImporter with frontend.ChangeListener {
     if (inFile.length > 100000000) {
       bf.errorCont(LocalError("skipped big elf file: " + inFile))
     } else {
-      def sendToTwelf(s: String) {
+      def sendToTwelf(s: String): Unit = {
         //log(s)
         input.println(s)
       }

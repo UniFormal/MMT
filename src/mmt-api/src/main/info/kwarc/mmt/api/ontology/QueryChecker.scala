@@ -18,7 +18,7 @@ object QueryChecker {
     * @param p       Proposition to check
     * @param context Context to check proposition in
     */
-  private def check(p: Prop)(implicit context: Context) {
+  private def check(p: Prop)(implicit context: Context): Unit = {
     p match {
 
       /** the query has to be a single element */
@@ -132,7 +132,7 @@ object QueryChecker {
     * @param rel     Relational expression to check
     * @param context Context to check it in
     */
-  private def check(rel: RelationExp)(implicit context: Context) {
+  private def check(rel: RelationExp)(implicit context: Context): Unit = {
     rel match {
       case ToObject(_) =>
       case ToSubject(_) =>

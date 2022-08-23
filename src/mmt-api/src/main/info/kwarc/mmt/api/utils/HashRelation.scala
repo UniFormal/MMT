@@ -13,13 +13,13 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
    override def apply(a : A) : HashSet[B] = getOrElseUpdate(a, HashSet.empty)
    def getOrEmpty(a : A) : HashSet[B] = getOrElse(a, HashSet.empty)
    /** add a pair to the relation */
-   def +=(a: A, b: B) {apply(a) += b}
+   def +=(a: A, b: B): Unit = {apply(a) += b}
    /** remove a pair from the relation */
-   def -=(a: A, b: B) {apply(a) -= b}
+   def -=(a: A, b: B): Unit = {apply(a) -= b}
    /** get an iterator over all pairs */
    def pairs : Iterator[(A,B)] = flatMap({case (a, s) => s.map(b => (a,b))}).iterator
    /** remove the entry for a if there are no b such (a,b) is in the relation */
-   def cleanup(a : A) {
+   def cleanup(a : A): Unit = {
       get(a).foreach {b => if (b.isEmpty) this -= a}
    }
 
@@ -39,7 +39,7 @@ import scala.collection.mutable.ListBuffer
 abstract class HashMapToOrderedSet[A,B] extends HashMap[A,ListBuffer[B]] {
   def value(b: B): Int
   override def apply(a: A) = getOrElseUpdate(a, new ListBuffer[B])
-  def insert(a: A, b: B) {
+  def insert(a: A, b: B): Unit = {
     val bs = apply(a)
     val v = value(b)
     val i = bs.indexWhere(x => value(x) > v)
@@ -54,14 +54,14 @@ abstract class HashMapToOrderedSet[A,B] extends HashMap[A,ListBuffer[B]] {
 class HashRelation[A,B] {
    private val succ = new HashMapToSet[A,B]
    private val pred = new HashMapToSet[B,A]
-   def +=(pairs : (A,B)*) {
+   def +=(pairs : (A,B)*): Unit = {
       for ((a,b) <- pairs) {
          succ(a) += b
          pred(b) += a
       }
    }
-   def +=(a : A, b : B) {this += ((a,b))}
-   def -=(pairs : (A,B)*) {
+   def +=(a : A, b : B): Unit = {this += ((a,b))}
+   def -=(pairs : (A,B)*): Unit = {
       for ((a,b) <- pairs) {
          succ(a) -= b
          succ.cleanup(a)
@@ -69,13 +69,13 @@ class HashRelation[A,B] {
          pred.cleanup(b)
       }
    }
-   def -=(a : A, b : B) {this -= ((a,b))}
+   def -=(a : A, b : B): Unit = {this -= ((a,b))}
    def contains(a : A, b : B) : Boolean =
       succ(a).contains(b)
    def image(a : A) : HashSet[B] = succ(a)
    def preimage(b : B) : HashSet[A] = pred(b)
    def apply(a : A) = image(a)
-   def clear {
+   def clear: Unit = {
       succ.clear
       pred.clear
    }
@@ -97,7 +97,7 @@ class ReflTransHashRelation[A] extends HashRelation[A,A] {
       //invariant: If result.contains(a) then result.contains(b) for all indirect successors s of a.
       val result = HashSet.empty[A]
       //adds s to the result maintaining the invariant
-      def addReachable(s : A) {
+      def addReachable(s : A): Unit = {
          if (! result.contains(s)) {
             result += s
             super.image(s).foreach(addReachable(_))
@@ -111,7 +111,7 @@ class ReflTransHashRelation[A] extends HashRelation[A,A] {
       //invariant: If result.contains(a) then result.contains(b) for all indirect predecessors s of a.
       val result = HashSet.empty[A]
       //adds s to the result maintaining the invariant
-      def addReachedFrom(s : A) {
+      def addReachedFrom(s : A): Unit = {
          if (! result.contains(s)) {
             result += s
             super.preimage(s).foreach(addReachedFrom(_))
@@ -124,7 +124,7 @@ class ReflTransHashRelation[A] extends HashRelation[A,A] {
    /** as preimage, but DFO is guaranteed */
    def preimageDFO(a : A) : List[A] = {
       var result : List[A] = Nil
-      def addReachedFrom(s : A) {
+      def addReachedFrom(s : A): Unit = {
          if (! result.contains(s)) {
             result = s :: result
             super.preimage(s).foreach(addReachedFrom(_))
@@ -157,7 +157,7 @@ class IncrementalTransitiveClosure[T] {
     if (f == t) 1 else numPaths.getOrElse((f,t), 0)
   }
 
-  private def checkInvariant(s: String) {
+  private def checkInvariant(s: String): Unit = {
     //println(s)
     numPaths.keys foreach {case (a,b) =>
       if (! (pathsFrom(a) contains b)) {
@@ -210,14 +210,14 @@ class IncrementalTransitiveClosure[T] {
   }
 
   /** add a number of paths from f to t */
-  @inline private def addPaths(f:T, t: T, num: Int) {
+  @inline private def addPaths(f:T, t: T, num: Int): Unit = {
     if (f == t) println(s"invariant violated: self-edge $f -> $t")
     numPaths((f,t)) = getNumPaths(f,t) + num
     pathsFrom(f) += t
     pathsTo(t) += f
   }
   /** remove a number of paths from f to t */
-  @inline private def deletePaths(f:T, t: T, num: Int) {
+  @inline private def deletePaths(f:T, t: T, num: Int): Unit = {
     if (f == t && num == 1) {
       // reflexive paths are not stored
       return
@@ -234,12 +234,12 @@ class IncrementalTransitiveClosure[T] {
     }
   }
   /** iterate over nodes y such y < x; y <= x if refl == true */
-  @inline private def iterateBelow(x: T, refl: Boolean)(f: T => Unit) {
+  @inline private def iterateBelow(x: T, refl: Boolean)(f: T => Unit): Unit = {
     if (refl) f(x)
     pathsTo.getOrEmpty(x) foreach f
   }
   /** iterate over nodes y such x < y; x <= y if refl == true */
-  @inline private def iterateAbove(x: T, refl: Boolean)(f: T => Unit) {
+  @inline private def iterateAbove(x: T, refl: Boolean)(f: T => Unit): Unit = {
     if (refl) f(x)
     pathsFrom.getOrEmpty(x) foreach f
   }
@@ -257,7 +257,7 @@ class IncrementalTransitiveClosure[T] {
   }
 
   /** add an edge to the underlying relation */
-  def add(from: T, to: T) {
+  def add(from: T, to: T): Unit = {
     if (edges contains (from,to)) {
       return
     } else {
@@ -272,7 +272,7 @@ class IncrementalTransitiveClosure[T] {
     //checkInvariant(s"adding $from -> $to")
   }
   /** delete an edge from the underlying relation */
-  def delete(from: T, to: T) {
+  def delete(from: T, to: T): Unit = {
     if (!(edges contains (from,to))) {
       if (apply(from,to))
         throw GeneralError("cannot remove edge induced by transitive closure")
@@ -293,7 +293,7 @@ class IncrementalTransitiveClosure[T] {
     * @param outOf delete paths out of x
     * @param through delete paths strictly through x
     */
-  def delete(x: T, into: Boolean, outOf: Boolean, through: Boolean) {
+  def delete(x: T, into: Boolean, outOf: Boolean, through: Boolean): Unit = {
     if (through) {
       iterateBelow(x,false) {b =>
         iterateAbove(x,false) {a =>
@@ -322,7 +322,7 @@ class IncrementalTransitiveClosure[T] {
     //checkInvariant(s"deleting $x")
   }
   /** empty the underlying relation */
-  def clear {
+  def clear: Unit = {
     edges.clear
     pathsFrom.clear
     pathsTo.clear

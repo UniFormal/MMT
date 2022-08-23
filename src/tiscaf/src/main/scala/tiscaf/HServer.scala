@@ -16,6 +16,7 @@
  *  ****************************************************************************
  */
 // twiesing 18-09-2018: Remove call to deprecated methods
+// twiesing 22-08-2022: Remove syntax deprecations
 package tiscaf
 
 import javax.net.ssl.SSLEngine
@@ -152,7 +153,7 @@ trait HServer extends HLoggable {
         ssl.port
       }
       startStopListener
-      onStart
+      onStart()
       isStopped.set(false)
       info(name + " server was started on port(s) " + (ports.toList ++ sslPorts).sortBy(x => x).mkString(", "))
     } else sys.error("the server is already started")
@@ -162,7 +163,7 @@ trait HServer extends HLoggable {
   def stop: Unit = synchronized {
     if (!isStopped.get) {
       isStopped.set(true)
-      onStop
+      onStop()
       talksExe.stopAccepting
       Thread.sleep(interruptTimeoutMillis)
       talksExe.shutdown

@@ -225,7 +225,7 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
       }
       getElems(d)
     }
-    client.documentErrors(controller,doctext,uri,errorCont.getErrors:_*)
+    client.documentErrors(controller,this,uri,errorCont.getErrors:_*)
     errorCont.reset
   }
 

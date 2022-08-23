@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.utils.URI
 object APITest extends MMTIntegrationTest(
   "MMT/urtheories"
 )(){
-  def main {
+  def main: Unit = {
     test("get a Constant", {
       lazy val brackets = (DPath(URI.http colon "cds.omdoc.org") / "mmt") ? "mmt" ? "brackets"
       controller.getConstant(brackets)

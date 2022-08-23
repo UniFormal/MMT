@@ -44,7 +44,7 @@ object MMTError {
 class MMTErrorSource extends DefaultErrorSource("MMT", null) {
 
    /** like superclass but allows only [[MMTError]]s */
-   override def addError(e: DefaultErrorSource.DefaultError) {
+   override def addError(e: DefaultErrorSource.DefaultError): Unit = {
       e match {
         case e: MMTError => super.addError(e)
         case _ => throw ImplementationError("illegal error")
@@ -52,7 +52,7 @@ class MMTErrorSource extends DefaultErrorSource("MMT", null) {
    }
 
    /** remove errors produced when checking this file */
-   def removeMMTFileErrors(file: File) {
+   def removeMMTFileErrors(file: File): Unit = {
      // ErrorList 2.4.0 causes a bug where errors are not removed from the ErrorListPanel even though this method sends the right message
      //val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
      //mmt.report("debug", "removing errors: " + file)

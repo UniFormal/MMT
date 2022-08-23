@@ -63,7 +63,7 @@ class ArchiveStore extends Extension {
       logGroup {f}
     }
 
-    private def readfounds {
+    private def readfounds: Unit = {
       val fnd = Try(controller.get(archive.foundation.get).asInstanceOf[Theory]).map(Some(_)).getOrElse(None)
       log("Foundation: " + fnd.map(_.path.toString).getOrElse("None"))
 

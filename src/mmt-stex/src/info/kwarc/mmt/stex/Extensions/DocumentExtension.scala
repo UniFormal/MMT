@@ -31,6 +31,7 @@ object DocumentExtension extends STeXExtension {
           var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
           html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/document?" + s)
           html = html.replace("BASE_URL_PLACEHOLDER","")
+          html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
           Some(ServerResponse(html, "text/html"))
       }
     case _ => None
@@ -148,8 +149,13 @@ object DocumentExtension extends STeXExtension {
   }
 
   def sidebar(elem : HTMLNode, content: List[Node]) = {
-    elem.parent.foreach {case p =>
-      p.addBefore(<div class="sidebar">{content}</div>,elem)
+    def parent(e : HTMLNode) : Option[(HTMLNode,HTMLNode)] = e.parent match {
+      case Some(p) if !p.isMath => Some((p,e))
+      case Some(p) => parent(p)
+      case None => None
+    } //if (e.isMath) parent(e.parent.get) else e
+    parent(elem).foreach {case (p,c) =>
+      p.addBefore(<div class="sidebar">{content}</div>,c)
     }
     //val sidenotes = getTop(elem).get()()("sidenote-container").headOption
     //sidenotes.foreach(_.add(<div>{content}</div>))
@@ -186,8 +192,8 @@ object DocumentExtension extends STeXExtension {
     }
   }
 
-  def makeButton(urlshort : String,urllong:String,elem : Node) : Node =  // makesafe(XHTML(
-      <span class="propbtn" style="display:inline" data-overlay-link-click={urllong} data-overlay-link-hover={urlshort}>
+  def makeButton(urlshort : String,urllong:String,elem : Node, withclass : Boolean = true) : Node =  // makesafe(XHTML(
+      <span class={if (withclass) "propbtn" else ""} style="display:inline" data-overlay-link-click={urllong} data-overlay-link-hover={urlshort}>
         {elem}
       </span>
   //))

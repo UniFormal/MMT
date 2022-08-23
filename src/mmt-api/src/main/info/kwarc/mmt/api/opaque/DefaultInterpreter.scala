@@ -24,13 +24,13 @@ class DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with Opaq
       new UnknownOpaqueElement(parent, format, elem)
    }
 
-   def toString(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh: RenderingHandler) {
+   def toString(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh: RenderingHandler): Unit = {
      rh(oe.raw.text)
    }
    
-   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {}
+   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment): Unit = {}
 
-   def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler) {
+   def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler): Unit = {
       rh(<pre>{oe.raw.text}</pre>)
    }
 }

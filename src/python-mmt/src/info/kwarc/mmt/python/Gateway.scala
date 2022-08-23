@@ -17,7 +17,7 @@ import scala.collection.convert.ImplicitConversionsToJava._
 class Py4JGateway extends Extension {
   private var gatewayServer: GatewayServer = null
   
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     val portS = args.headOption.getOrElse("25333")
     val port = utils.stringToInt(portS).getOrElse {
       throw LocalError("expected numeric argument")
@@ -26,7 +26,7 @@ class Py4JGateway extends Extension {
     gatewayServer.start()
   }
   
-  override def destroy {
+  override def destroy: Unit = {
     gatewayServer.shutdown()
   }
 }

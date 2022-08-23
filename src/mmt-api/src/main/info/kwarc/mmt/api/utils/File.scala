@@ -1,11 +1,11 @@
 package info.kwarc.mmt.api.utils
 
 import java.awt.Desktop
-
 import info.kwarc.mmt.api._
-import java.io._
-import java.util.zip._
 
+import java.io._
+import java.util
+import java.util.zip._
 import scala.collection.mutable
 
 /** File wraps around java.io.File to extend it with convenience methods
@@ -31,7 +31,7 @@ case class File(toJava: java.io.File) {
   }
 
   /** opens this file using the associated (native) application */
-  def openInOS() {
+  def openInOS(): Unit = {
     Desktop.getDesktop.open(toJava)
   }
 
@@ -133,7 +133,7 @@ case class File(toJava: java.io.File) {
   def -(that: File) = if (that <= this) Some(FilePath(this.segments.drop(that.segments.length))) else None
 
   /** delete this, recursively if directory */
-  def deleteDir {
+  def deleteDir: Unit = {
    children foreach {c =>
       if (c.isDirectory) c.deleteDir
       else c.toJava.delete
@@ -210,7 +210,7 @@ object Compress {
 /** MMT's default way to write to files; uses buffering, UTF-8, and \n */
 class StandardPrintWriter(f: File, compress: Boolean) extends
       OutputStreamWriter(Compress.out(new FileOutputStream(f.toJava), compress), java.nio.charset.Charset.forName("UTF-8")) {
-  def println(s: String) {
+  def println(s: String): Unit = {
     write(s + "\n")
   }
 }
@@ -234,13 +234,13 @@ object File {
    * @param f the target file
    * @param strings the content to write
    */
-  def write(f: File, strings: String*) {
+  def write(f: File, strings: String*): Unit = {
     val fw = Writer(f)
     strings.foreach { s => fw.write(s) }
     fw.close
   }
 
-  def append(f : File, strings: String*) {
+  def append(f : File, strings: String*): Unit = {
     scala.tools.nsc.io.File(f.toString).appendAll(strings:_*)
   }
 
@@ -257,7 +257,7 @@ object File {
      val fw = Writer(f)
      fw.write(begin)
      var writeSep = false
-     def out(s: String) {
+     def out(s: String): Unit = {
        if (writeSep)
          fw.write(sep)
        else
@@ -279,7 +279,7 @@ object File {
    * @param f the target file
    * @param lines the lines (without line terminator - will be chosen by Java and appended)
    */
-  def WriteLineWise(f: File, lines: List[String]) {
+  def WriteLineWise(f: File, lines: List[String]): Unit = {
     val fw = Writer(f)
     lines.foreach {l =>
       fw.println(l)
@@ -315,7 +315,7 @@ object File {
     * @param f the file
     * @param proc a function applied to every line (without line terminator)
     */
-  def ReadLineWise(f: File)(proc: String => Unit) {
+  def ReadLineWise(f: File)(proc: String => Unit): Unit = {
     val r = Reader(f)
     var line: Option[String] = None
     try {
@@ -367,7 +367,7 @@ object File {
   }
 
   /** unzips a file */
-  def unzip(from: File, toDir: File, skipRootDir: Boolean = false) {
+  def unzip(from: File, toDir: File, skipRootDir: Boolean = false): Unit = {
     val mar = new ZipFile(from)
     try {
       var bytes = new Array[Byte](100000)
@@ -401,16 +401,24 @@ object File {
     }
   }
   /** dereference a URL and save as a file */
-  def download(uri: URI, file: File) {
+  def download(uri: URI, file: File): Unit = {
     val input = URI.get(uri)
     file.up.mkdirs
     val output = new java.io.FileOutputStream(file)
     try {
-      val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
+      val step = 8192
+      var byteArray = new Array[Byte](step)
+      var pos, n = 0
+      while ({
+        if (pos + step > byteArray.length) byteArray = util.Arrays.copyOf(byteArray, byteArray.length << 1)
+        n = input.read(byteArray, pos, step)
+        n != -1
+      }) pos += n
+      if (pos != byteArray.length) byteArray = util.Arrays.copyOf(byteArray, pos)
       output.write(byteArray)
     } finally {
-      input.close
-      output.close
+      input.close()
+      output.close()
     }
   }
 

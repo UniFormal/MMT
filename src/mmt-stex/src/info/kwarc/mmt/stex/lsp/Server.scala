@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api.archives.{Archive, BuildManager, RedirectableDimension, TrivialBuildManager}
-import info.kwarc.mmt.api.frontend.{Controller, Run}
+import info.kwarc.mmt.api.frontend.{Controller, Report, Run}
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
@@ -146,14 +146,18 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        (controller.backend.getArchives find { a => segments.startsWith(a.root.segments) },f)
      })*/
      allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
-     documents.synchronized {
+     //documents.synchronized {
        allfiles.zipWithIndex.foreach {
          case (f, i) => //((a, f), i) =>
            update(i.toFloat / allfiles.length.toFloat, "Parsing " + (i + 1) + "/" + allfiles.length + ": " + f.toString)
            //if (!parser.dict.previouslyread(f)) parser.apply(f, Some(a))
            val uri = if (f.toString.charAt(1) == ':') "file://" + f.toString.head.toLower + f.toString.drop(1) else "file://" + f.toString
-           documents.getOrElseUpdate(uri, {
-             val d = newDocument(uri)
+           var needsdoing = false
+           val d = documents.getOrElseUpdate(uri, {
+             needsdoing = true
+             newDocument(uri)
+           })
+           if (needsdoing) d.synchronized {
              d.archive match {
                case Some(a) =>
                  val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
@@ -162,11 +166,10 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                case _ =>
                  d.init(File.read(f))
              }
-             d
-           })
+           }
          //parser(f,a)
        }
-     }
+     //}
      ((),"Done")
    }
 
@@ -286,10 +289,10 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    }
 
-   override def didSave(docuri: String): Unit = this.documents.get(docuri) match {
+   override def didSave(docuri: String): Unit = safely {this.documents.get(docuri) match {
      case Some(document) => document.buildHTML()
      case _ =>
-   }
+   }}
 
    val self = this
 
@@ -327,6 +330,25 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    }
 
+}
+
+object Socket {
+  def main(args : Array[String]) : Unit = {
+    val lsp = new STeXLSP
+    val controller = Run.controller
+    List("lsp"
+      , "lsp-stex"
+      , "lsp-stex-server-methodcall"
+      , "lsp-stex-socket"
+      , "lsp-stex-server"
+      , "fullstex").foreach(s => controller.handleLine("log+ " + s))
+    controller.handleLine("log console")
+    controller.handleLine("server on 8090")
+    controller.extman.addExtension(lsp)
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
+    lsp.runSocketListener
+  }
 }
 
 object Main {

@@ -25,7 +25,7 @@ case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Positi
 case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)],
       source: Option[SourceRef], pos : Position, globalContext: Context, context : List[VarData], style: Option[PresentationContext => String]) {
    /** the output stream to print into */
-   def out(s: String) {rh(s)}
+   def out(s: String): Unit = {rh(s)}
    /** convenience method to change the position field */
    def child(i: Int) = copy(pos = pos / i)
    /** convenience method to change the position field */
@@ -83,7 +83,7 @@ class NotationBasedPresenter extends ObjectPresenter {
    /**
     * called once at the toplevel of every object to be rendered
     */
-   def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+   def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext): Unit = {
       body
    }
 
@@ -92,7 +92,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     *
     * names are given in human-oriented form and not parsable if there are name clashes
     */
-   def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
+   def doIdentifier(p: ContentPath)(implicit pc: PresentationContext): Unit = {
      def getThO(m: MPath): Option[Theory] = controller.getO(m) match {case Some(m: Theory) => Some(m) case _ => None}
      def getProperIncludes(m: MPath) = getThO(m).map {th => th.getAllIncludes.map(_.from).filter(Some(_) != th.meta)} getOrElse Nil
      def declaresTwice(ms: List[MPath], name: LocalName) = (ms.filter(getThO(_).map(_.declares(name)) getOrElse false).length > 1)
@@ -112,13 +112,13 @@ class NotationBasedPresenter extends ObjectPresenter {
    /**
     * called by doDefaultTerm to render variables
     */
-   def doVariable(n: LocalName)(implicit pc: PresentationContext) {
+   def doVariable(n: LocalName)(implicit pc: PresentationContext): Unit = {
       pc.out(n.toPath)
    }
    /**
     * called by doDefaultTerm to render literals
     */
-   def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
+   def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext): Unit = {
       lazy val default = l.toString
       val lS = l match {
         case l: OMLIT => l.rt.lexerExtension match {
@@ -132,7 +132,7 @@ class NotationBasedPresenter extends ObjectPresenter {
    /**
     * called by various methods to render MMT-level operators, such as ,:=()
     */
-   def doOperator(s: String)(implicit pc: PresentationContext) {
+   def doOperator(s: String)(implicit pc: PresentationContext): Unit = {
       pc.out(s)
    }
    /**
@@ -141,7 +141,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     * @param d the delimiter
     * @param implicits implicit arguments of the rendered term that are not explicitly placed by the notation (added to first delimiter)
     */
-   def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc: PresentationContext) {
+   def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc: PresentationContext): Unit = {
       pc.out(d.text)
    }
    /**
@@ -149,19 +149,19 @@ class NotationBasedPresenter extends ObjectPresenter {
     * @param n the variable name
     * @param d the delimiter
     */
-   def doDelimiter(n: LocalName, d: Delimiter)(implicit pc: PresentationContext) {
+   def doDelimiter(n: LocalName, d: Delimiter)(implicit pc: PresentationContext): Unit = {
       pc.out(d.text)
    }
    /**
     * called by various methods to render whitespace
     * @param level how big a space to produce, 0 for no space, higher levels also indicate line-breaking points
     */
-   def doSpace(level: Int)(implicit pc: PresentationContext) {
+   def doSpace(level: Int)(implicit pc: PresentationContext): Unit = {
       Range(0,level).foreach {_ => pc.out(" ")}
    }
 
    /** default treatment of complex terms */
-   def doComplex(op: GlobalName, subs: Substitution, con: Context, args: List[Term])(implicit pc: PresentationContext) {
+   def doComplex(op: GlobalName, subs: Substitution, con: Context, args: List[Term])(implicit pc: PresentationContext): Unit = {
        val vardata = con.map {v => VarData(v, Some(op), pc.pos)}
        doBracketedGroup {
           doIdentifier(op)
@@ -191,7 +191,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     * called to wrap around subexpressions that must be bracketed
     * @param body the part between the brackets
     */
-   def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+   def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext): Unit = {
       doOperator("(")
       body
       doOperator(")")
@@ -200,26 +200,26 @@ class NotationBasedPresenter extends ObjectPresenter {
     * called to wrap around subexpressions that are not bracketed
     * @param body the part between the brackets
     */
-   def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+   def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext): Unit = {
       body
    }
    /**
     * called to wrap around subexpressions that could but do not have to be bracketed
     * @param body the part between the brackets
     */
-   def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+   def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext): Unit = {
       doUnbracketedGroup(body)
    }
    /**
     * called to wrap around subexpressions that are implicit arguments
     * @param body the argument
     */
-   def doImplicit(body: => Unit)(implicit pc: PresentationContext) {}
+   def doImplicit(body: => Unit)(implicit pc: PresentationContext): Unit = {}
    /**
     * called to wrap around inferred types of bound variables
     * @param body the argument
     */
-   def doInferredType(body: => Unit)(implicit pc: PresentationContext) {}
+   def doInferredType(body: => Unit)(implicit pc: PresentationContext): Unit = {}
 
    //TODO imlement this better
    def doAttributedTerm(t : Term, k : OMID, v : Term)(implicit pc : PresentationContext) = recurse(t)
@@ -233,8 +233,8 @@ class NotationBasedPresenter extends ObjectPresenter {
     *
     * See [[notations.ScriptMarker]] for the meaning of the scripts
     */
-   def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
-      def aux(sOpt: Option[Cont], oper: String) {sOpt match {
+   def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext): Unit = {
+      def aux(sOpt: Option[Cont], oper: String): Unit = {sOpt match {
             case Some(script) => doOperator(oper); script()
             case None =>
       }}
@@ -247,7 +247,7 @@ class NotationBasedPresenter extends ObjectPresenter {
    }
 
    /** auxiliary function for inserting a separator (such as whitespace) into a list */
-   def doListWithSeparator(l: List[Cont], sep: Cont) {
+   def doListWithSeparator(l: List[Cont], sep: Cont): Unit = {
       if (l.isEmpty) return
       l.head()
       l.tail.foreach {e =>
@@ -258,7 +258,7 @@ class NotationBasedPresenter extends ObjectPresenter {
    def doListWithSpace(l: List[Cont], n: Int = 1)(implicit pc: PresentationContext) =
       doListWithSeparator(l, () => doSpace(n))
 
-   def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
+   def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext): Unit = {
       doBracketedGroup {
          doListWithSpace(above)
       }
@@ -268,7 +268,7 @@ class NotationBasedPresenter extends ObjectPresenter {
       }
    }
 
-   def doTd(ms : List[Cont])(implicit pc : PresentationContext) {
+   def doTd(ms : List[Cont])(implicit pc : PresentationContext): Unit = {
      doOperator("[&")
       ms foreach {e =>
        doSpace(1)
@@ -277,7 +277,7 @@ class NotationBasedPresenter extends ObjectPresenter {
      doOperator("&]")
    }
 
-   def doTr(ms : List[Cont])(implicit pc : PresentationContext) {
+   def doTr(ms : List[Cont])(implicit pc : PresentationContext): Unit = {
      doOperator("[\\")
       ms foreach {e =>
        doSpace(1)
@@ -286,7 +286,7 @@ class NotationBasedPresenter extends ObjectPresenter {
      doOperator("\\]")
    }
 
-   def doTable(ms : List[Cont])(implicit pc : PresentationContext) {
+   def doTable(ms : List[Cont])(implicit pc : PresentationContext): Unit = {
      doOperator("[[")
       ms foreach {e =>
        doSpace(1)
@@ -306,7 +306,7 @@ class NotationBasedPresenter extends ObjectPresenter {
      }
    } else {}
 
-   def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext){
+   def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext): Unit ={
      if(root != Nil){
        doOperator("'")
        doBracketedGroup{
@@ -320,15 +320,15 @@ class NotationBasedPresenter extends ObjectPresenter {
      doSqrt(root)
    }
 
-   def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
+   def doNumberMarker(arg : Delim)(implicit pc: PresentationContext): Unit = {
      doOperator("#num_" + arg.s)
    }
 
-   def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+   def doIdenMarker(arg : Delim)(implicit pc: PresentationContext): Unit = {
      doOperator("#id_" + arg.s)
    }
 
-   def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
+   def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext): Unit ={
       doOperator("#err_")
       doBracketedGroup {
         args.head
@@ -339,7 +339,7 @@ class NotationBasedPresenter extends ObjectPresenter {
       }
    }
 
-   def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext){
+   def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext): Unit ={
      doOperator("//*")
      doBracketedGroup {
      args.head
@@ -351,15 +351,15 @@ class NotationBasedPresenter extends ObjectPresenter {
      doOperator("*//")
    }
 
-   def doTextMarker(text : Delim)(implicit pc: PresentationContext){
+   def doTextMarker(text : Delim)(implicit pc: PresentationContext): Unit ={
      doOperator("/*" + text.s + "*/")
    }
 
-   def doGlyphMarker(src: Delim, alt: String="Failed to Load")(implicit pc: PresentationContext){
+   def doGlyphMarker(src: Delim, alt: String="Failed to Load")(implicit pc: PresentationContext): Unit ={
      doOperator("#glyph_"+src.s)
    }
 
-   def doLabelMarker(args: List[Cont], label : String ) (implicit pc: PresentationContext){
+   def doLabelMarker(args: List[Cont], label : String ) (implicit pc: PresentationContext): Unit ={
     doBracketedGroup {
       args.head
       args.tail.foreach {e=>
@@ -370,7 +370,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     doOperator( ".label(" +label+ ")" )
    }
 
-   def doWord(s : String)(implicit pc: PresentationContext) {
+   def doWord(s : String)(implicit pc: PresentationContext): Unit = {
      pc.out(s)
    }
 
@@ -646,7 +646,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                    *   for DelimiterMarkers, renders delimiter via doDelimiter
                    *   for presentation markers, recurses into groups and arranges them according to doX methods
                    */
-                  def doMarkers(markers: List[Marker]) {
+                  def doMarkers(markers: List[Marker]): Unit = {
                      val numDelims = markers count countsAsDelim
                      var numDelimsSeen = 0
                      def currentPosition = {

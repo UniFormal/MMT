@@ -23,7 +23,7 @@ class ScalaCompiler extends BuildTarget {
   }
 
 
-   def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
+   def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
      (a / ScalaOutDim).mkdirs
      // find all source folders to collect files in
      val folderList = a.properties.getOrElse("scala", "scala")
@@ -65,7 +65,7 @@ class ScalaCompiler extends BuildTarget {
      }
    }
 
-   def clean(a: Archive, in: FilePath) {
+   def clean(a: Archive, in: FilePath): Unit = {
      delete(a / Dim("bin"))
    }
 }

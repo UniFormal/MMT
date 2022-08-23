@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
 package tiscaf
 
 import scala.collection.{ mutable => mute }
@@ -52,7 +53,7 @@ private class HConnData {
     tail = new Array[Byte](0)
     acceptedTotalLength = 0L
     header = None
-    parMap.clear
+    parMap.clear()
     appLet = None
     octetStream = None
     parts = None

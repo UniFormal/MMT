@@ -29,7 +29,7 @@ case class UserModel(f : File) {
     save()
   }
   def setValueDeps(n : FullsTeXGraph.sTeXNode,value : Double) = {
-    n.topologicalSort.foreach(in => map(in.id) = value)
+    n.topologicalSort.nodes().foreach(in => map(in.id) = value)
     save()
   }
 }

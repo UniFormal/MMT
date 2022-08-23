@@ -63,7 +63,7 @@ class AddIdentifiers(managerID: OWLOntologyManager) {
 }
 
 object AddIdentifiers {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     val manager: OWLOntologyManager = OWLManager.createOWLOntologyManager()
     val managerID: OWLOntologyManager = OWLManager.createOWLOntologyManager()

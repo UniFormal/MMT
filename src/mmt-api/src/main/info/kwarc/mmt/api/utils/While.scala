@@ -3,13 +3,13 @@ package info.kwarc.mmt.api.utils
 /** while loops with break and continue */
 object While {
   private object Break extends Throwable
-  def break {throw Break}
+  def break: Unit = {throw Break}
 
   private object Continue extends Throwable
-  def continue {throw Continue}
+  def continue: Unit = {throw Continue}
 
   @scala.annotation.tailrec
-  def apply(b: => Boolean)(body: => Unit) {
+  def apply(b: => Boolean)(body: => Unit): Unit = {
     if (b) {
       try {body}
       catch {

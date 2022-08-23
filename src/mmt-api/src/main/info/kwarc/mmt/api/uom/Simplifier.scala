@@ -34,7 +34,7 @@ case class SimplificationUnit(context: Context, expandConDefs: Boolean, expandVa
 /** simplifies/elaborates structural elements */
 trait StructureSimplifier extends Extension {
    /** convenience abbreviation */
-   def apply(p: ContentPath) {
+   def apply(p: ContentPath): Unit = {
      apply(controller.get(p))
    }
    /** elaborates one element and relevant parts of its dependency closure
@@ -42,7 +42,7 @@ trait StructureSimplifier extends Extension {
     *  This is typically used for assumed-correct content that is not checked, e.g., content loaded directly from OMDoc
     *  For container elements that are checked incrementally, one may alternatively use applyElementBegin and applyElementEnd
     */
-   def apply(se: StructuralElement) {applyChecked(se)(TrivialSimplificationEnvironment)}
+   def apply(se: StructuralElement): Unit = {applyChecked(se)(TrivialSimplificationEnvironment)}
    
    /** like apply but takes an extra argument to handle checking and error reporting */
    def applyChecked(se: StructuralElement)(implicit env: SimplificationEnvironment): Unit

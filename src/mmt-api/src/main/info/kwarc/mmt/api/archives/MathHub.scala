@@ -226,7 +226,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
 
 
   /** installs a list of new entries at once by cloning them from the server */
-  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true) {
+  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true): Unit = {
     var visits: List[LMHHubEntry] = Nil
     entries.foreach({
       case (id, version) =>

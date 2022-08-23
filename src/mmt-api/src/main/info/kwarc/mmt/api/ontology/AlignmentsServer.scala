@@ -20,7 +20,7 @@ class AddAlignments extends Extension {
     a
   }
 
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     var errors : List[String] = Nil
     def wrap(f : File) : List[(Alignment,String)] = try {
       align.readFile(f).map((_,f.toString))
@@ -152,7 +152,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   private var filebase : File = null
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     controller.extman.addExtension(new AlignQuery)
     AlignmentsServer.findAlignmentsFolder(controller, args.headOption).foreach(filebase ⇒ try {
       val fs = FilePath.getall(filebase)
@@ -164,7 +164,7 @@ class AlignmentsServer extends ServerExtension("align") {
       case e: Exception ⇒ throw e // println(e.getMessage)
     })
   }
-  override def destroy {
+  override def destroy: Unit = {
     controller.extman.get(classOf[AlignQuery]) foreach { a ⇒
       a.destroy
       controller.extman.removeExtension(a)
@@ -370,7 +370,7 @@ class AlignmentsServer extends ServerExtension("align") {
   def getAsString = alignments.filter(!_.isGenerated).map(_.toString).mkString("\n")
 
   // TODO needs reworking
-  private def readJSON(file: File) {
+  private def readJSON(file: File): Unit = {
     ???
   }
 

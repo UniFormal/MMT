@@ -70,7 +70,13 @@ trait XHTMLParser extends TraversingBuildTarget {
       sys.env.get("MATHHUB") match {
         case Some(v) =>
           File(v) / ".rustex"
-        case _ => ???
+        case _ => sys.env.get("HOME") match {
+          case Some(f) if (File(f) / ".stex" / "mathhub.path").exists() =>
+            val tf = File(f) / ".stex" / "mathhub.path"
+            val nf = File(File.read(tf).trim)
+            if (nf.exists()) nf else ???
+          case _ => ???
+        }
       }
     } // c_stex_module_
     var errored = false
@@ -266,7 +272,7 @@ object PdfLatex {
       pdffile.setExtension("blg"),
       pdffile.setExtension("fdb_latexmk"),
       pdffile.setExtension("fls"),
-      pdffile.setExtension("sref"),
+      //pdffile.setExtension("sref"),
       pdffile.setExtension("sms"),
       File(pdffile.stripExtension.toString + ".run.xml"),
       File(pdffile.stripExtension.toString + ".synctex.gz"),

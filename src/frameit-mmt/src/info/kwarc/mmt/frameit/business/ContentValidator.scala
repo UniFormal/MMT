@@ -113,7 +113,7 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
         decl.tpC.copy,
         decl.dfC.copy,
         decl.rl,
-        decl.notC.copy,
+        decl.notC.copy(),
         decl.vs
       )
 

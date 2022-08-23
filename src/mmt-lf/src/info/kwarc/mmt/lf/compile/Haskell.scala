@@ -104,7 +104,7 @@ object Haskell extends FuncLang[String] {
      case COMMENT(s) => "-- " + s 
    }
    private var ids: List[(String,Boolean)] = Nil
-   def reset {ids = Nil}
+   def reset: Unit = {ids = Nil}
    override def prog(ds: List[DECL]) : List[String] = {
 //      val q =
         ds map {d =>

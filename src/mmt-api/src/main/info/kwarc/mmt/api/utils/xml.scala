@@ -37,7 +37,7 @@ object xml {
     *
     * overwrites existing files, creates directories if necessary
     */
-   def writeFile(N : scala.xml.Node, file : File) {
+   def writeFile(N : scala.xml.Node, file : File): Unit = {
       val out = File.Writer(file)
       // do not use pretty printing - whitespace matters
       out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + N.toString)

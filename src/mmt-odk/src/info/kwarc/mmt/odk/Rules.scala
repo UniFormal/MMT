@@ -337,11 +337,11 @@ class SubtypeGenerator extends ChangeListener {
     }
   }
 
-  override def onAdd(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {
     onCheck(e)
   }
 
-  override def onDelete(e: StructuralElement) {
+  override def onDelete(e: StructuralElement): Unit = {
     getGeneratedRule(e.path).foreach { r => rulePath(r).foreach(controller.delete) }
   }
 

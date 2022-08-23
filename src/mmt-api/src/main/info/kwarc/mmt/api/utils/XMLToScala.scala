@@ -386,7 +386,7 @@ class XMLToScala(pkg: String) {
 }
 
 object XMLToScala {
-   def checkString(value: String, allowed: String*) {
+   def checkString(value: String, allowed: String*): Unit = {
      if (! (allowed contains value))
          throw FatalExtractError(s"illegal string value: $value; expected: ${allowed.mkString(",")}")
    }
@@ -428,7 +428,7 @@ object Test {
                     Ce(List(J(B("a1",Nil), Ca("Ca1")), J(B("a2",Nil), Ca("Ca2"))), Some(Ca("Ca")))
                )
              )
-   def main(args: Array[String]) {
+   def main(args: Array[String]): Unit = {
       val a1 = new XMLToScala("info.kwarc.mmt.api.utils").apply(n1)
       println(a1)
       assert(a1 == r1)

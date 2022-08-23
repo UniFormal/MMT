@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
 package tiscaf
 
 import java.net.InetSocketAddress
@@ -60,7 +61,7 @@ private trait HPlexer extends HLoggable {
       selector.close
       for((socket, _) <- servers)
         socket.asInstanceOf[ServerSocketChannel].close
-      servers.clear
+      servers.clear()
     }
   }
 
@@ -175,7 +176,7 @@ private trait HPlexer extends HLoggable {
         if (att == null || att.asInstanceOf[HKeyData].stamp < timeX) key.channel.close
       }
       // discard the old value
-      lastExpire.take
+      lastExpire.take()
       // and put the new one
       lastExpire.put(now)
     }

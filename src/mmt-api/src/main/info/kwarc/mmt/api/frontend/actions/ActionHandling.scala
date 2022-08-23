@@ -28,13 +28,13 @@ trait ActionHandling extends
   def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
 
   /** executes a string command */
-  def handleLine(l: String, showLog: Boolean = true, errorCont: Option[ErrorHandler] = None) {
+  def handleLine(l: String, showLog: Boolean = true, errorCont: Option[ErrorHandler] = None): Unit = {
     val act = Action.parseAct(this, l)
     handle(act, showLog, errorCont)
   }
 
   /** executes an Action */
-  def handle(act: Action, showLog: Boolean = true, errorCont: Option[ErrorHandler] = None) {
+  def handle(act: Action, showLog: Boolean = true, errorCont: Option[ErrorHandler] = None): Unit = {
     act.init(this)
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>

@@ -27,7 +27,7 @@ class TPSImporter extends Importer {
             i += 1
             if (i > ignore) { */
                println(e.msg)
-               sys.exit
+               sys.exit()
                //throw utils.ExtractError(msg)
 //            } else
   //             return

@@ -12,6 +12,8 @@ import info.kwarc.mmt.stex.OMDocHTML
 import info.kwarc.mmt.stex.vollki.FullsTeXGraph
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
+
+import scala.xml.Elem
 //import info.kwarc.mmt.stex.xhtml.{HTMLConstant, HTMLParser, HTMLRule, HTMLTheory, HasLanguage, OMDocHTML}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 import info.kwarc.mmt.stex.{STeX, translations}
@@ -40,6 +42,16 @@ object FragmentExtension extends STeXExtension {
           val path = Path.parse(comp)
           doFragment(path,lang)
       }
+    case Some("symbol") =>
+      request.query match {
+        case "" =>
+          Some(ServerResponse("Empty Document path", "txt"))
+        case s =>
+          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+          html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + server.pathPrefix + "/declaration?" + s)
+          html = html.replace("BASE_URL_PLACEHOLDER", "")
+          Some(ServerResponse(html, "text/html"))
+      }
     case Some("declaration") =>
       request.query match {
         case "" =>
@@ -53,66 +65,87 @@ object FragmentExtension extends STeXExtension {
           val path = Path.parse(comp)
           Some(doDeclaration(path,lang))
       }
+    case Some("declheader") =>
+      request.query match {
+        case "" =>
+          Some(ServerResponse("Empty fragment","txt"))
+        case ps =>
+          val path = Path.parse(ps)
+          Some(controller.getO(path) match {
+            case Some(c: Constant) =>
+              val (doc, body) = server.emptydoc
+              body.add(doDeclHeader(c))
+              ServerResponse("<body>" + body.toString + "</body>", "text/html")
+            case Some(d) =>
+              ServerResponse("Not yet implemented: " + d.getClass.toString, "txt")
+            case _ =>
+              ServerResponse("Declaration not found", "txt")
+          })
+      }
     case _ => None
+  }
+
+  def doDeclHeader(c:Constant) : Elem = {
+    <div style="font-size:small">
+      <table><tr><td>
+        <font size="+2">{" ☞ "}</font><code>{c.path.toString}</code>
+      </td><td>{if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {
+        <a href={"/:vollki?path=" + c.parent.toString} target="_blank" style="pointer-events:all;color:blue">{"> Guided Tour"}</a>
+      } else <span></span>
+        }</td>
+      </tr></table><hr/>
+      <table>
+        {
+        OMDocHTML.getMacroName(c) match {
+          case None => <tr><td></td><td></td></tr>
+          case Some(s) => <tr><td style="padding:3px"><b>TeX Macro:</b></td><td><code>{"\\" + s}</code></td></tr>
+        }
+        }
+        {
+        def td[A](a:A) = <td style="border:1px solid;padding:3px">{a}</td>
+        OMDocHTML.getNotations(c.path)(controller) match {
+          case Nil => <tr><td></td><td></td></tr>
+          case ls =>
+            <tr><td style="padding-right:3px"><b>Notations:</b></td><td>
+              <table>
+                <tr>{td("identifier")}{td("notation")}{td("operator notation")}{td("in module")}</tr>
+                {ls.map(n =>
+                <tr>
+                  {td(n._4 match {
+                  case "" => "(None)"
+                  case s => s
+                })
+                  }
+                  {td(<math xmlns="http://www.w3.org/1998/Math/MathML">{server.htmlpres.doNotation(n._2)}</math>)}
+                  {td(n._5 match {
+                  case Some(n) => <math xmlns="http://www.w3.org/1998/Math/MathML">{server.htmlpres.doNotation(n)}</math>
+                  case None => <span></span>
+                })}
+                  {td(if (n._1 != c.parent) n._1.toString else "(here)")}
+                </tr>
+              )}
+              </table>
+            </td></tr>
+        }
+        }
+        {c.tp match {
+        case None => <tr><td></td><td></td></tr>
+        case Some(tp) =>
+          <tr><td style="padding:3px"><b>Type:</b></td><td>{server.xhtmlPresenter.asXML(tp,Some(c.path $ TypeComponent))}</td></tr>
+      }}
+        {c.df match {
+        case None => <tr><td></td><td></td></tr>
+        case Some(df) =>
+          <tr><td style="padding:3px"><b>Definiens:</b></td><td>{server.xhtmlPresenter.asXML(df,Some(c.path $ DefComponent))}</td></tr>
+      }}
+      </table></div>
   }
 
   def doDeclaration(path : Path,language : Option[String]) : ServerResponse = {
     controller.getO(path) match {
       case Some(c: Constant) =>
         val (doc,body) = server.emptydoc
-        body.add(<div style="font-size:small">
-          <table><tr><td>
-            <font size="+2">{" ☞ "}</font><code>{path.toString}</code>
-          </td><td>{if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {
-              <a href={"/:vollki?path=" + c.parent.toString} target="_blank" style="pointer-events:all;color:blue">{"> Guided Tour"}</a>
-            } else <span></span>
-            }</td>
-          </tr></table><hr/>
-          <table>
-            {
-            OMDocHTML.getMacroName(c) match {
-              case None => <tr><td></td><td></td></tr>
-              case Some(s) => <tr><td style="padding:3px"><b>TeX Macro:</b></td><td><code>{"\\" + s}</code></td></tr>
-            }
-            }
-          {
-          def td[A](a:A) = <td style="border:1px solid;padding:3px">{a}</td>
-          OMDocHTML.getNotations(c.path)(controller) match {
-            case Nil => <tr><td></td><td></td></tr>
-            case ls =>
-              <tr><td style="padding-right:3px"><b>Notations:</b></td><td>
-                <table>
-                  <tr>{td("identifier")}{td("notation")}{td("operator notation")}{td("in module")}</tr>
-                  {ls.map(n =>
-                    <tr>
-                      {td(n._4 match {
-                        case "" => "(None)"
-                        case s => s
-                      })
-                      }
-                      {td(<math xmlns="http://www.w3.org/1998/Math/MathML">{server.htmlpres.doNotation(n._2)}</math>)}
-                      {td(n._5 match {
-                        case Some(n) => <math xmlns="http://www.w3.org/1998/Math/MathML">{server.htmlpres.doNotation(n)}</math>
-                        case None => <span></span>
-                      })}
-                      {td(if (n._1 != c.parent) n._1.toString else "(here)")}
-                    </tr>
-                  )}
-                </table>
-                </td></tr>
-          }
-          }
-          {c.tp match {
-      case None => <tr><td></td><td></td></tr>
-      case Some(tp) =>
-        <tr><td style="padding:3px"><b>Type:</b></td><td>{server.xhtmlPresenter.asXML(tp,Some(c.path $ TypeComponent))}</td></tr>
-    }}
-    {c.df match {
-      case None => <tr><td></td><td></td></tr>
-      case Some(df) =>
-        <tr><td style="padding:3px"><b>Definiens:</b></td><td>{server.xhtmlPresenter.asXML(df,Some(c.path $ DefComponent))}</td></tr>
-    }}
-          </table></div>)
+        body.add(doDeclHeader(c))
         getFragment(path,language) match {
           case Some(htm) =>
             body.add(<hr/>)

@@ -10,7 +10,7 @@ sealed abstract class ExtensionAction extends Action {
 }
 
 case object ListExtensions extends ExtensionAction with ResponsiveAction {
-  def apply() {
+  def apply(): Unit = {
     respond("the following extensions are active: ")
 
     logGroup {
@@ -27,7 +27,7 @@ case object ListExtensions extends ExtensionAction with ResponsiveAction {
 object ListExtensionsCompanion extends ObjectActionCompanion(ListExtensions, "list all extensions", "show extensions")
 
 case class AddExtension(cls: String, args: List[String]) extends ExtensionAction {
-  def apply() {extman.addExtension(cls, args)}
+  def apply(): Unit = {extman.addExtension(cls, args)}
   def toParseString = s"extension $cls${args.map(" " + _).mkString}"
 }
 object AddExtensionCompanion extends ActionCompanion("registers an extension", "extension"){
@@ -36,7 +36,7 @@ object AddExtensionCompanion extends ActionCompanion("registers an extension", "
 }
 
 case class RemoveExtension(cls: String) extends ExtensionAction {
-  def apply() {extman.extensions.foreach {
+  def apply(): Unit = {extman.extensions.foreach {
     case e: Extension if e.getClass.getName == cls => extman.removeExtension(e)
   }}
   def toParseString = s"unload $cls"
@@ -48,7 +48,7 @@ object RemoveExtensionCompanion extends ActionCompanion("remove an extension", "
 
 
 case class AddMWS(uri: URI) extends ExtensionAction {
-  def apply() {extman.addExtension(new MathWebSearch(uri.toURL))}
+  def apply(): Unit = {extman.addExtension(new MathWebSearch(uri.toURL))}
   def toParseString = s"mws $uri"
 }
 object AddMWSCompanion extends ActionCompanion("add MathWebSearch as a web service", "mws"){

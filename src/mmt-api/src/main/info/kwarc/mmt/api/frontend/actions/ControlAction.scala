@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.parser.SourceRef
 sealed abstract class ControlAction extends Action
 
 case object Clear extends ControlAction {
-  def apply() {
+  def apply(): Unit = {
     controller.clear
   }
   def toParseString = "clear"
@@ -20,7 +20,7 @@ object ClearCompanion extends ObjectActionCompanion(Clear, "clear the current st
   * concrete syntax: exit
   */
 case object Exit extends ControlAction {
-  def apply() {
+  def apply(): Unit = {
     controller.cleanup
     sys.exit()
   }
@@ -29,7 +29,7 @@ case object Exit extends ControlAction {
 object ExitCompanion extends ObjectActionCompanion(Exit, "release all resources and exit MMT", "exit")
 
 case object NoAction extends ControlAction {
-  def apply() {}
+  def apply(): Unit = {}
   def toParseString = "noop"
 }
 object NoActionCompanion extends ObjectActionCompanion(NoAction, "do nothing", "noop")
@@ -44,7 +44,7 @@ object SetBaseCompanion extends ActionCompanion("set the current base path", "ba
 }
 
 case class Navigate(p: Path) extends ControlAction {
-  def apply() {controller.navigate(p)}
+  def apply(): Unit = {controller.navigate(p)}
   def toParseString = s"navigate $p"
 }
 object NavigateCompanion extends ActionCompanion("navigate to knowledge item", "navigate") {
@@ -53,7 +53,7 @@ object NavigateCompanion extends ActionCompanion("navigate to knowledge item", "
 }
 
 case class NavigateSource(ref: SourceRef) extends ControlAction {
-  def apply() {controller.navigateSource(ref)}
+  def apply(): Unit = {controller.navigateSource(ref)}
   def toParseString = s"navigateSource $ref"
 }
 object NavigateSourceCompanion extends ActionCompanion("navigate to physical location", "navigateSource") {
@@ -62,7 +62,7 @@ object NavigateSourceCompanion extends ActionCompanion("navigate to physical loc
 }
 
 case class SuppressErrors(act: Action) extends ControlAction with ActionWithErrorRecovery {
-  override def init(c: Controller) {
+  override def init(c: Controller): Unit = {
     super.init(c)
     act.init(c)
   }

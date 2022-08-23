@@ -91,7 +91,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       def traverse(t: Term)(implicit context : Context, state: SimplifierState) : Term = {
        if (state.unit.isKilled) return t
        val Stability = state.unit.solverO.map(_.stability)
-       def setStable(o: Obj) {
+       def setStable(o: Obj): Unit = {
          Stability.foreach {s => s.set(o)}
        }
        def getStable(o: Obj) = {
@@ -279,7 +279,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
    *  this only uses the context of where the constant is declared, not where it is referenced.
    *  This may under-normalize occasionally.
    */
-  private def normalizeConstant(c: Constant, fullRec: Boolean) {
+  private def normalizeConstant(c: Constant, fullRec: Boolean): Unit = {
     c.dfC.normalize {u =>
       val cont = controller.getContext(c)
       val rs = RuleSet.collectRules(controller, cont)

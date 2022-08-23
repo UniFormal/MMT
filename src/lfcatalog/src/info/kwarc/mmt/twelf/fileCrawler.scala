@@ -13,7 +13,7 @@ object FileCrawler {
   * @return a Document object with the information extracted from the file, which includes a LinkedList of errors occurred during parsing
   * @throws ParseError for syntactical errors in the file
   * @throws FileOpenError if the file cannot be opened */
-  def apply(file : File) : Document = (new FileCrawler(file)).crawl
+  def apply(file : File) : Document = (new FileCrawler(file)).crawl()
 }
 
 
@@ -43,7 +43,7 @@ class FileCrawler(file : File) {
     throw FileOpenError("error: file cannot be opened")
   try {
     val source = scala.io.Source.fromFile(file, "utf-8")
-    lines = source.getLines.toArray                          // get all lines from the file
+    lines = source.getLines().toArray                          // get all lines from the file
     source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
   } catch {
     case e : Throwable => throw FileOpenError("error: file cannot be opened or the encoding is not UTF-8")

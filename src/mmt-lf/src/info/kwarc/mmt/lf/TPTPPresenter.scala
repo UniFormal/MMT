@@ -103,9 +103,9 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
       }
    }
 
-   protected def doName(p: GlobalName)(implicit rh : RenderingHandler) {apply(OMS(p),None)}
+   protected def doName(p: GlobalName)(implicit rh : RenderingHandler): Unit = {apply(OMS(p),None)}
 
-   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {e match {
+   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler): Unit = {e match {
       case d: Document =>
          d.getDeclarations.foreach {i => apply(i)}
       case r: DRef =>

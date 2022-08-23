@@ -35,12 +35,12 @@ abstract class RuleGenerator extends ChangeListener {
      }
   }
 
-  override def onAdd(e: StructuralElement) {onCheck(e)}
-  override def onDelete(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {onCheck(e)}
+  override def onDelete(e: StructuralElement): Unit = {
      getGeneratedRule(e.path).foreach {r => controller.delete(r.rulePath)}
   }
 
-  override def onCheck(e: StructuralElement) {
+  override def onCheck(e: StructuralElement): Unit = {
      val c = e match {
         case c: Constant if c.rl.exists(ruleTags.contains) =>
           if (c.tpC.analyzed.isDefined) {
@@ -75,7 +75,7 @@ abstract class RuleGenerator extends ChangeListener {
   val EqualityRuleTag = "Equality"
 
   /** reflects a declared rule into an implemented rule */
-  private def generateRule(r: DeclarativeRule) {
+  private def generateRule(r: DeclarativeRule): Unit = {
      val ir = r.conclusion match {
         case AtomicJudgement(TypingRuleTag, typingOp, List(a,b)) =>
             //doesn't quite work because typing rules should be sufficient and *necessary*

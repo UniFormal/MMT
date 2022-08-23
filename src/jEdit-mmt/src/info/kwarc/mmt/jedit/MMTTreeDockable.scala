@@ -11,7 +11,7 @@ class MMTTreeDockable(view: View, position: String) extends JPanel {
   val tree = new MMTTree(controller) {
 
   }
-  def init {
+  def init: Unit = {
     setLayout(new GridLayout(1,1))
     tree.setRootVisible(false)
     val treepane = new JScrollPane(tree)

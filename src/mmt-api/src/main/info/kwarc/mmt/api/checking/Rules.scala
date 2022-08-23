@@ -525,8 +525,8 @@ class AbbreviationRuleGenerator extends ChangeListener {
     }
   }
 
-  override def onAdd(e: StructuralElement) {onCheck(e)}
-  override def onDelete(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {onCheck(e)}
+  override def onDelete(e: StructuralElement): Unit = {
     getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
   }
   override def onCheck(e: StructuralElement): Unit = e match {

@@ -76,7 +76,7 @@ package object utils {
       var current = ""
       var inquoted = false
       var todo = s
-      def done {
+      def done: Unit = {
         if (current.nonEmpty) {
           segments ::= current
           current = ""

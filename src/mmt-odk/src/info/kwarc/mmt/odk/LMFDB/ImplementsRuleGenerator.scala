@@ -30,14 +30,14 @@ class ImplementsRuleGenerator extends ChangeListener {
      }
   }
 
-  def onUpdate(e: StructuralElement) {
+  def onUpdate(e: StructuralElement): Unit = {
      onAdd(e)
   }
-  override def onAdd(e: StructuralElement) {onCheck(e)}
-  override def onDelete(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {onCheck(e)}
+  override def onDelete(e: StructuralElement): Unit = {
      getGeneratedRule(e.path).foreach {r => controller.delete(r.from.path / nameSuffix)}
   }
-  override def onCheck(e: StructuralElement) {
+  override def onCheck(e: StructuralElement): Unit = {
     e match {
        case c: Constant =>
          val r = getGeneratedRule(c.path)
@@ -61,7 +61,7 @@ class ImplementsRuleGenerator extends ChangeListener {
        case _ =>
     }
   }
-  private def error(e: StructuralElement, msg: String) {
+  private def error(e: StructuralElement, msg: String): Unit = {
      logError(e.path + ": " + msg)
   }
 }

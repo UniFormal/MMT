@@ -11,7 +11,7 @@ import scala.tools.nsc.interpreter.shell.ReplReporterImpl
 
 /** a Scala console for jEdit */ 
 class ScalaConsole extends ThreadedConsole("scala") {
-   override def printInfoMessage (output: Output) {
+   override def printInfoMessage (output: Output): Unit = {
     output.print(null, "This is a Scala shell provided by MMT; the names `controller` (the main MMT object) and `view` (the jEdit window) are predefined")
    }
 
@@ -25,9 +25,9 @@ class ScalaConsole extends ThreadedConsole("scala") {
    private var currentOutput: Output = null
    /** forwards all input to the currentOutput */
    private val writer = new java.io.Writer {
-     def flush() {}
-     def close() {}
-     def write(cbuf: Array[Char], off: Int, len: Int) {
+     def flush(): Unit = {}
+     def close(): Unit = {}
+     def write(cbuf: Array[Char], off: Int, len: Int): Unit = {
        val s = new String(cbuf.slice(off, off + len))
        currentOutput.print(null,s)
      }

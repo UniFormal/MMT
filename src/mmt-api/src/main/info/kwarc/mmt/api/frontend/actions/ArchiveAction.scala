@@ -30,7 +30,7 @@ object ArchiveBuildCompanion extends ActionCompanion("builds a dimension in a pr
 }
 
 case class ArchiveMar(id: String, file: File) extends ArchiveAction {
-  def apply() {
+  def apply(): Unit = {
     val arch = controller.backend.getArchive(id).getOrElse(throw ArchiveError(id, "archive not found"))
     arch.toMar(file)
   }
@@ -47,7 +47,7 @@ trait ArchiveActionHandling {self: Controller =>
     * Builds a given target from an Archive, handling the [[ArchiveBuild]] Action
     *
     */
-  def buildArchive(ids: List[String], key: String, mod: BuildTargetModifier, inRaw: FilePath, errorCont: Option[ErrorHandler]) {
+  def buildArchive(ids: List[String], key: String, mod: BuildTargetModifier, inRaw: FilePath, errorCont: Option[ErrorHandler]): Unit = {
     val archs = ids.flatMap {s =>
       backend.getArchive(s) match {
         case None =>
@@ -89,7 +89,7 @@ trait ArchiveActionHandling {self: Controller =>
     waitForBuild
   }
 
-  def waitForBuild {
+  def waitForBuild: Unit = {
     log("waiting for build to finish")
     val pollingInterval = 1000
     while (true) {

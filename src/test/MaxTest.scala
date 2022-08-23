@@ -8,11 +8,11 @@ import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
 
 object Diagramtester extends MagicTest() {
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
   }
-  def run : Unit = {
+  def run() : Unit = {
     //println(MagicTest.archiveRoot)
     //List(File(System.getProperty("user.home") / "MMT" / "myformalizations")find.(_exists).getOrElse(println("Does not exist"))
     hl("extension info.kwarc.mmt.argsemcomp.ArgumentationSemanticComputer")
@@ -25,8 +25,8 @@ object Diagramtester extends MagicTest() {
 
 object Graphtester extends MagicTest("jgraph", "argcomp") {
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
@@ -37,7 +37,7 @@ object Graphtester extends MagicTest("jgraph", "argcomp") {
     controller.extman.addExtension(new PathGraphExporter)
   }
 
-  def run : Unit = {
+  def run() : Unit = {
     //println(MagicTest.archiveRoot)
     //List(File(System.getProperty("user.home") / "MMT" / "myformalizations")find.(_exists).getOrElse(println("Does not exist"))
     hl("extension info.kwarc.mmt.argsemcomp.ArgumentationSemanticComputer")
