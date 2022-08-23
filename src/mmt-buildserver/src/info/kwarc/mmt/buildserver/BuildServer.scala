@@ -169,11 +169,12 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
               None
             case c@(Change(_)|Add(_)) =>
               log("Update [" + a.archive.id + "] " + c.path)
+              val path = a.archive.root / c.path
               configs.collectFirst{
-                case cf if c.path.headOption.contains((a.archive / source).toFilePath.last) && cf.applies(a.archive,a.archive.root / c.path).isDefined =>
-                  val bt = cf.applies(a.archive,a.archive.root / c.path).get
+                case cf if (a.archive / source) <= path && cf.applies(a.archive,path).isDefined =>
+                  val bt = cf.applies(a.archive,path).get
                   log("Using " + bt.key)
-                  controller.handleLine("build " + a.archive.id + " " + bt.key + " " + c.path.tail.mkString("/"))
+                  controller.handleLine("build " + a.archive.id + " " + bt.key + " " + (a.archive / source).relativize(path).toString)
               }
           }
         case _ =>
