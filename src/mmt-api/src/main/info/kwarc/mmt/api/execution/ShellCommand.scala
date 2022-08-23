@@ -24,6 +24,7 @@ class ExecuteFromShell extends ShellExtension("run") {
      val thy = Path.parseM(args.head, nsMap)
      println("start",thy)
      val theory = controller.getTheory(thy)
+     controller.handleLine("file /home/alexander/Dokumente/Studium/MMTWorkspace/MMT/LATIN2/source/computation/build.msl ")
      // TODO this is an inefficient way to fill the mathpath: load everything we know
      controller.getConfig.getEntries(classOf[LMHConf]).foreach { e => controller.addArchive(e.local)}
      val con = Context(thy)
@@ -32,6 +33,7 @@ class ExecuteFromShell extends ShellExtension("run") {
      val pu = ParsingUnit(SourceRef.anonymous(progS), con, progS, iiC)
      val parser = controller.extman.get(classOf[Parser], "mmt").get
      val progP = parser(pu)(makeErrorThrower("ill-formed program")).toTerm
+     controller.handleLine("log+ object-checker")
       val progC = checking.Solver.check(controller, Stack(con), progP) match {
        case Left((t,_)) => t
        case Right(s) =>

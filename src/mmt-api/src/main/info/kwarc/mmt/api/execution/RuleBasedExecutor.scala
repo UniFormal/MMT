@@ -4,6 +4,8 @@ import info.kwarc.mmt.api._
 import objects._
 import symbols._
 import frontend._
+import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.checking.CheckingUnit
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Obj.getConstants
 import info.kwarc.mmt.api.uom.SimplificationUnit
@@ -22,7 +24,7 @@ class RuleBasedExecutor() extends Executor {
   def apply(theory: Theory,context: Context, prog: Term) = {
      // we don't want to deal with an explicit heap anymore
      // instead we embedd the objects onto the JVM heap
-     val stack = new execution.Stack
+    val stack = new execution.Stack
      stack.setTop(context)
      val rules = RuleSet.collectRules(controller, context)
      val env = new RuntimeEnvironment(stack, rules)
@@ -30,6 +32,7 @@ class RuleBasedExecutor() extends Executor {
      // print(definedas)
      val runtime = new Runtime(controller, env,defined_rules, logPrefix)
      log("executing " + prog + " with rules " + env.execRules.map(_.toString).mkString(", "))
+     // val sol = Solver.infer(controller,context, prog, Some(rules))
      runtime.execute(prog)
   }
   def traverseTree(queue:mutable.ListBuffer[MPath],includedSet:mutable.Set[MPath],constants: mutable.ListBuffer[Theory]): Unit = {
@@ -150,7 +153,12 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, defined_rules: It
          // a prominent example of this is substituting in a function in a mutable reference:
          // you were unable to execute e.g. OMA(OMV(f),...) but now it's OMA(OMBINDC(..),...) which can be executed
          // this mirrors the basic structure of all rules: execute arguments, then execute term.
-         execute(ComplexTerm(p, subs, cont, argsE))
+         // typededInstance OMID(?Counter)
+         val cT = ComplexTerm(p, subs, cont, argsE)
+         if(cT hasheq prog)
+           cT
+         else
+          execute(cT)
        case _ => prog
        //case t =>
        //  throw ExecutionError("cannot execute: " + t)

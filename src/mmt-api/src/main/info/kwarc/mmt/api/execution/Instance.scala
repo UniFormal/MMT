@@ -50,3 +50,10 @@ object InstanceType extends uom.Atomic[InstanceOfTheory] {
   val cls = classOf[InstanceOfTheory]
   def fromString(s: String) = throw ImplementationError("runtime instances do not have string representation")
 }
+
+
+object ListType extends uom.Atomic[scala.List[Term]] {
+  def asString = "List"
+  val cls = classOf[scala.List[Term]]
+  def fromString(s: String) = throw ImplementationError("runtime instances do not have string representation")
+}

@@ -632,7 +632,7 @@ object Obj {
      case OMA(fun, args) => (fun::args).map(toPathEncodingAux).mkString("(", sepString, ")")
      case OMID(p) => p.toPath
      case ComplexTheory(Context.empty) => toPathEncodingAux(OMA(OMS(ModExp.complextheory), Nil))
-     case _ => throw ImplementationError("path encoding only available for theory expressions")
+     case q => throw ImplementationError("path encoding only available for theory expressions "+ q.toString)
   }
   private object MPathEncodedOMA {
       def unapply(s: String): Option[(Path,List[String])] =
