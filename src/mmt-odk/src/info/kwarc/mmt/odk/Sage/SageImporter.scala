@@ -186,10 +186,10 @@ class SageImporter extends Importer {
       case e: utils.ExtractError =>
         println("utils.ExtractError")
         println(e.msg)
-        sys.exit
+        sys.exit()
       case e : Exception =>
         println(e.getMessage)
-        sys.exit
+        sys.exit()
     }
     // categories foreach(c => log(c.toString))
     categories = categories.distinct

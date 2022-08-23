@@ -313,7 +313,7 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     //Ret(vd.name.toString,Some(region))
   }
 
-  def buildFile(f: String) {
+  def buildFile(f: String): Unit = {
     val file = File(f)
     val errorCont = new ErrorHandler {
       override protected def addError(e: Error): Unit = {}

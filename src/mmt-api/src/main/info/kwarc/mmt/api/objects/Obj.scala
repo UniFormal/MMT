@@ -96,7 +96,7 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
     * @param o the original object
     * call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata
     */
-   def copyFrom(o: Obj) {
+   def copyFrom(o: Obj): Unit = {
       metadata = o.metadata
    }
    /** applies copyFrom and returns this

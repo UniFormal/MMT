@@ -20,7 +20,7 @@ trait GeneralImporter extends Extension {
     * doc.path must be of the form a.narrationBase / sourcePath  
     * The produced narration file will be in the location given by sourcePath.
     */
-  private[archives] def indexDocument(a: Archive, doc: Document) {
+  private[archives] def indexDocument(a: Archive, doc: Document): Unit = {
     ImporterAnnotator.update(doc, key)
     // write narration file
     val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
@@ -44,7 +44,7 @@ trait GeneralImporter extends Extension {
   }
 
   /** index a module */
-  private def indexModule(a: Archive, mod: Module) {
+  private def indexModule(a: Archive, mod: Module): Unit = {
     ImporterAnnotator.update(mod, key)
     // write content file
     writeToContent(a, mod)
@@ -55,7 +55,7 @@ trait GeneralImporter extends Extension {
   }
   
   /** Write a module to content folder */
-  private def writeToContent(a: Archive, mod: Module) {
+  private def writeToContent(a: Archive, mod: Module): Unit = {
     val contFile = a.MMTPathToContentPath(mod.path)
     log("[  -> content   ]     " + contFile.getPath)
     val w = new presentation.FileWriter(contFile, compress = true)
@@ -66,7 +66,7 @@ trait GeneralImporter extends Extension {
   }
 
   /** extract the relational information about a knowledge item and write it to a file */
-  protected def writeToRel(se: StructuralElement, file: File) {
+  protected def writeToRel(se: StructuralElement, file: File): Unit = {
     val relFile = file.setExtension("rel")
     log("[  -> relational]     " + relFile.getPath)
     val relFileHandle = File.Writer(relFile)
@@ -77,11 +77,11 @@ trait GeneralImporter extends Extension {
   }
 
   /** extract the notations of a knowledge item and write them to a file */
-  protected def writeToNot(mod: Module, file: File) {
+  protected def writeToNot(mod: Module, file: File): Unit = {
     val notFile = file.setExtension("not")
     log("[  -> notations]     " + notFile.getPath)
     val notFileHandle = File.Writer(notFile)
-    def doModule(mod: Module) {
+    def doModule(mod: Module): Unit = {
       mod.getDeclarations.foreach {
         case nm: NestedModule =>
           doModule(nm.module)
@@ -109,17 +109,17 @@ abstract class NonTraversingImporter extends BuildTarget with GeneralImporter {
    * doc.path must be of the form a.narrationBase/sourcePath  
    * The produced narration file will be in the location a.root/narration/sourcePath.
    */
-  def importDocument(a: Archive, doc: Document) {
+  def importDocument(a: Archive, doc: Document): Unit = {
     indexDocument(a, doc)
   }
 
-  def importDocument(a: Archive, dpath: DPath) {
+  def importDocument(a: Archive, dpath: DPath): Unit = {
     val doc = controller.getDocument(dpath)
     importDocument(a, doc)
   }
   
   /** like index, but additionally allows for error reporting */
-  def importDocumentWithErrorHandler(a: Archive, dpath: DPath)(body: ErrorHandler => Unit) {
+  def importDocumentWithErrorHandler(a: Archive, dpath: DPath)(body: ErrorHandler => Unit): Unit = {
     val errorFileName = a / errors / key
     val eh = MultipleErrorHandler(List(new ErrorWriter(errorFileName)), report)
     body(eh)
@@ -168,7 +168,7 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
   }
 
   /** additionally deletes content and relational */
-  override def cleanFile(a: Archive, curr: Current) {
+  override def cleanFile(a: Archive, curr: Current): Unit = {
     val controller = new Controller(report)
     val Current(inFile, narrPath) = curr
     val narrFile = getOutFile(a, narrPath)
@@ -194,7 +194,7 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
     super.cleanFile(a, curr)
   }
 
-  override def cleanDir(a: Archive, curr: Current) {
+  override def cleanDir(a: Archive, curr: Current): Unit = {
     val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
     delete((a / relational / inPathFile).setExtension("rel"))
   }

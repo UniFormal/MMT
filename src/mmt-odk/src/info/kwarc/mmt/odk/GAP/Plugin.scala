@@ -65,7 +65,7 @@ object FilterRelations extends RelationalExtractor {
 
   val gaprels : scala.collection.mutable.HashMap[Constant,List[RelationalElement]] = mutable.HashMap.empty
 
-  def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {e match {
+  def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = {e match {
     case d: Module => d.getDeclarations foreach {
       case c: Constant => gaprels.getOrElse(c,Nil) foreach f
       case _ =>
@@ -81,7 +81,7 @@ object GAPGraphExporter extends SimpleRelationGraphExporter("gapgraph", "Gap gra
 class Plugin extends frontend.Plugin {
   val theory = GAP.theory
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     controller.extman.addExtension(new GAPJSONImporter)
     controller.extman.addExtension(FilterRelations)
     controller.extman.addExtension(GAPGraphExporter)

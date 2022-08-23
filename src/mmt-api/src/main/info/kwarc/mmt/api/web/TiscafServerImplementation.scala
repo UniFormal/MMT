@@ -63,7 +63,7 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
               val buffer = new Array[Byte](4096)
               // read from disk and write to network simultaneously
               @scala.annotation.tailrec
-              def step(wasRead: Int) {if (wasRead > 0) {
+              def step(wasRead: Int): Unit = {if (wasRead > 0) {
                 tiscafRef.write(buffer, 0, wasRead)
                 step(io.read(buffer))
               }}
@@ -77,7 +77,7 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
   }
 
   /** stop the server; for some reason this throws IOException which we catch here */
-  override def stop {
+  override def stop: Unit = {
     try {
       super.stop
     } catch {

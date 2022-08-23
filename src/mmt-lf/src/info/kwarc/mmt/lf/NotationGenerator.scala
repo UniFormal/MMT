@@ -20,7 +20,7 @@ import notations._
 class NotationGenerator extends ChangeListener {
    override val logPrefix = "notation-gen"
 
-   override def onAdd(e: StructuralElement) {e match {
+   override def onAdd(e: StructuralElement): Unit = {e match {
       case c: Constant =>
          implicit val lup = controller.globalLookup
          val notC = c.notC

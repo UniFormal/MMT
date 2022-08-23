@@ -16,10 +16,10 @@ abstract class Linker[A](key: GlobalName) {
   /** convert from URIs to A when reading from metadata */
   def toURI(a: A): URI
   def get(e: HasMetaData) : Option[A] = e.metadata.getLinks(key).headOption.map(fromURI)
-  def update(e: HasMetaData, target: A) {
+  def update(e: HasMetaData, target: A): Unit = {
      e.metadata.update(Link(key, toURI(target)))
   }
-  def delete(e: HasMetaData) {
+  def delete(e: HasMetaData): Unit = {
      e.metadata.delete(key)
   }
   def copy(from:HasMetaData,to:HasMetaData) = {

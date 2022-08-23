@@ -51,7 +51,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   private def currentNS = prefixes.default
 
 
-  private def init(ps: ParsingStream) {
+  private def init(ps: ParsingStream): Unit = {
     var line: String = null
     var lineList: List[String] = Nil
     while ({line = ps.stream.readLine; line != null}){
@@ -1315,7 +1315,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
 
 
   /** tells the controller given as class parameter to add the StructuralElement */
-  private def add(e : StructuralElement) {
+  private def add(e : StructuralElement): Unit = {
     controller.add(e)
   }
 
@@ -1369,12 +1369,12 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   private def getSourceRef(startsAt : Int, endsAt : Int) = SourceRef(dpath.uri, SourceRegion(toPos(startsAt), toPos(endsAt)))
 
   /** adds sourceRef to the metadata of the first argument */
-  private def addSourceRef(target : HasMetaData, startsAt : Int, endsAt : Int) {
+  private def addSourceRef(target : HasMetaData, startsAt : Int, endsAt : Int): Unit = {
     SourceRef.update(target, getSourceRef(startsAt, endsAt))
   }
 
   /** adds metadata from the optional semantic comment to the target */
-  private def addSemanticComment(target : HasMetaData, comment : Option[MetaData] = keepComment) {
+  private def addSemanticComment(target : HasMetaData, comment : Option[MetaData] = keepComment): Unit = {
     comment match {
       case Some(metadata) => target.metadata.add(metadata.getAll: _*)
       case None =>

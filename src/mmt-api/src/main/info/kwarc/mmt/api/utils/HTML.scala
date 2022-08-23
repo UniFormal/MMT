@@ -10,7 +10,7 @@ import scala.xml.Utility.escape
  */
 abstract class HTML {
    /** continuation function called on the text snippets making up the HTML document */
-   def out(s: String)
+   def out(s: String): Unit
 
    private var nextid = 0
    /** @return a fresh id */
@@ -37,7 +37,7 @@ abstract class HTML {
        * @param body the content of the element
        * empty attributes are dropped, all arguments are empty by default
        */
-      def apply(cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) {
+      def apply(cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
          val mainatts = List("class" -> cls, "id" -> id, "title" -> title, "onclick" -> onclick)
          var attString = ""
          (mainatts ::: attributes) foreach {case (a,v) =>
@@ -48,7 +48,7 @@ abstract class HTML {
          out("</" + tag + ">")
       }
       /** convenience method for the case of using an element without attributes */
-      def apply(body: => Unit) {
+      def apply(body: => Unit): Unit = {
          apply()(body)
       }
    }
@@ -106,52 +106,52 @@ abstract class HTML {
    val button = new Element("button")
 
    /** br element */
-   def br {out("<br/>")}
+   def br: Unit = {out("<br/>")}
    /** anchor element */
-   def a(ref: String)(body: => Unit) {
+   def a(ref: String)(body: => Unit): Unit = {
       out(s"""<a href="$ref">""")
       body
       out("</a>")
    }
-   def form(action : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) {
+   def form(action : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
       new Element("form").apply(cls,id,title,onclick,("action",action) :: attributes) { body }
    }
    def select(name : String, cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) = {
       new Element("select").apply(cls,id,title,onclick,("name",name) :: attributes) { body }
    }
-   def input(itype : String = "", name : String = "", value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) {
+   def input(itype : String = "", name : String = "", value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
       new Element("input").apply(cls,id,title,onclick,("type",itype) :: List(("name",name),("value",value)).filterNot(_._2 == "") ::: attributes) { body }
    }
-   def option(value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit) {
+   def option(value : String = "", cls: String = "", id: String = "", title: String = "", onclick: String = "", attributes: List[(String,String)] = Nil)(body: => Unit): Unit = {
       new Element("option").apply(cls,id,title,onclick,("value",value) :: attributes) { body }
    }
    /** object element */
-   def htmlobject(ref: String, tp: String) {
+   def htmlobject(ref: String, tp: String): Unit = {
       out(s"""<object type="$tp" data="$ref"></object>""")
    }
    /** iframe element */
-   def iframe(src: String){
+   def iframe(src: String): Unit ={
       out(s"""<iframe src="$src">""")
       out("</iframe>")
    }
    /** img element */
-   def img(src: String) {
+   def img(src: String): Unit = {
      out(s"""<img src="$src"/>""")
    }
    /** embed element */
-   def embed(src: String) {
+   def embed(src: String): Unit = {
      out(s"""<embed src="$src"/>""")
    }
    /** text node */
-   def text(s : String) {
+   def text(s : String): Unit = {
      out(escape(s))
    }
    /** outputs as is */
-   def literal(s: String) {
+   def literal(s: String): Unit = {
      out(s)
    }
    /** outputs as is */
-   def literal(n: scala.xml.Node) {
+   def literal(n: scala.xml.Node): Unit = {
      out(n.toString)
    }
 
@@ -159,14 +159,14 @@ abstract class HTML {
     * produces a script element for a javascript file
     * @param src the src attribute (i.e., the javascript file)
     */
-   def javascript(src: String) {
+   def javascript(src: String): Unit = {
       out(s"""<script type="text/javascript" src="$src"></script>""")
    }
    /**
     * produces a link tag for a css file
     * @param src the href attribute (i.e., the css file)
     */
-   def css(src: String) {
+   def css(src: String): Unit = {
       out(s"""<link rel="stylesheet" type="text/css" href="$src"></link>""")
    }
 
@@ -179,23 +179,23 @@ abstract class HTML {
 /** collects HTML in a String */
 class HTMLBuilder extends HTML {
    private var _result = new StringBuilder
-   def out(s: String) {_result append s}
+   def out(s: String): Unit = {_result append s}
    def result = _result.toString
-   def reset {_result.clear}
+   def reset: Unit = {_result.clear}
 }
 
 /** collects HTML in a file */
 class HTMLFileWriter(f: File) extends HTML {
    private val fw = File.Writer(f)
-   def out(s: String) {fw.write(s)}
-   def close {
+   def out(s: String): Unit = {fw.write(s)}
+   def close: Unit = {
       fw.close
    }
 }
 
 object HTML {
    def apply(f: String => Unit) = new HTML {
-      def out(s: String) {f(s)}
+      def out(s: String): Unit = {f(s)}
    }
    def build(f: HTML => Unit) = {
       val h = new HTMLBuilder

@@ -76,7 +76,7 @@ class NotationBasedParser extends ObjectParser {
   private lazy val lup = controller.globalLookup
 
   /** constructs a SourceError, all errors go through this method */
-  private def makeError(msg: String, reg: SourceRegion)(implicit pu: ParsingUnit, errorCont: ErrorHandler) {
+  private def makeError(msg: String, reg: SourceRegion)(implicit pu: ParsingUnit, errorCont: ErrorHandler): Unit = {
     val ref = SourceRef(pu.source.container, reg)
     val err = SourceError(logPrefix, ref, msg)
     errorCont(err)
@@ -506,7 +506,7 @@ class NotationBasedParser extends ObjectParser {
     // We walk through found and fill subs, vars, and args by
     // recursively processing the respective TokenListElem in ml.tokens
     /** adds terms to either subs or args, depending on n */
-    def addTerm(n: Int, mt:MadeTerm) {
+    def addTerm(n: Int, mt:MadeTerm): Unit = {
       val (bns,tm) = mt
       val ntm = (n,tm)
       if (n < firstVar)
@@ -516,7 +516,7 @@ class NotationBasedParser extends ObjectParser {
       if (isBlock)
          newBoundNamesSoFar = newBoundNamesSoFar ::: bns
     }
-    def addVar(v: Var, md: MadeDecl) {
+    def addVar(v: Var, md: MadeDecl): Unit = {
       val oml = md._2
       val name = oml.name
       val newBound = List(BoundName(name, false))
@@ -525,7 +525,7 @@ class NotationBasedParser extends ObjectParser {
       newBoundNamesSoFar = newBoundNamesSoFar ::: newBound
     }
     // will be called below (in abstract syntax order) on every FoundContent
-    def doFoundContent(fc: FoundContent, toks: List[UnmatchedList]) {fc match {
+    def doFoundContent(fc: FoundContent, toks: List[UnmatchedList]): Unit = {fc match {
       // argument before the variables
       case FoundSimp(_, m: SimpArg) =>
         if (attrib)
@@ -772,7 +772,7 @@ class NotationBasedParser extends ObjectParser {
         /** the remaining list of unknowns to be used during the current subsequent run */
         private var nextUnknowns: List[Term] = Nil
         /** initializes before every subsequent run */
-        def prepareNextRun {
+        def prepareNextRun: Unit = {
            firstRun = false
            nextUnknowns = cachedUnknowns
         }

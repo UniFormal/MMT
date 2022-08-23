@@ -56,7 +56,7 @@ abstract class Escaping {
   protected lazy val escapedChars = usePlainEscapeVal ::: useCustomEscapeVal.map(_._1)
 
   /** check invariant that guarantees invertibility of escaping (not guaranteed if the default functions are overridden) */
-  def check {
+  def check: Unit = {
     useCustomEscapeVal foreach {case (c,s) =>
       if (s == "")
         throw Error("empty custom escape")

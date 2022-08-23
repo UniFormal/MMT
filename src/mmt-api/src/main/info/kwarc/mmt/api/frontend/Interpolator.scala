@@ -21,7 +21,7 @@ class MMTInterpolator(controller: frontend.Controller) {
    implicit def floatt2OM(f: Double) = OMF(f)
 
    /** a shortcut for running MMT shell commands while in the Scala interpreter */
-   def shell(command: String) {
+   def shell(command: String): Unit = {
      controller.handleLine(command)
    }
 
@@ -109,7 +109,7 @@ class MMTInterpolator(controller: frontend.Controller) {
         controller.presenter.asString(t)
       }
       /** standard string interpolation that is executed immediately as an MMT action */
-      def act(ss: String*) {
+      def act(ss: String*): Unit = {
          shell(sc.s(ss))
       }
    }

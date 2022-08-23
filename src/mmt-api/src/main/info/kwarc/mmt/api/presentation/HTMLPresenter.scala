@@ -44,7 +44,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
 
-   protected def doNameAsSpanList(p: Path, n: LocalName) {
+   protected def doNameAsSpanList(p: Path, n: LocalName): Unit = {
      val l = n.length - 1
      n.zipWithIndex.foreach {case (step,i) =>
        step match {
@@ -57,7 +57,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
      }
    }
 
-   protected def doName(d: Declaration) {
+   protected def doName(d: Declaration): Unit = {
       val (name,_) = d.primaryNameAndAliases
       val (adaptedName, path) = name match {
          case LocalName(ComplexStep(t)::Nil) => (t.name, t) // hardcoding the important case of includes
@@ -68,7 +68,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
    /** renders a MMT URI outside a math object */
-   protected def doPath(p: Path) {
+   protected def doPath(p: Path): Unit = {
       span("mmturi", attributes=List(href -> p.toPath)) {
          val pS = p match {
             case d: DPath => d.last
@@ -79,7 +79,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          text {pS}
       }
    }
-   protected def doMath(t: Obj, owner: Option[CPath]) {
+   protected def doMath(t: Obj, owner: Option[CPath]): Unit = {
         objectLevel(t match {
           case tm : Term => ParseResult.fromTerm(tm).term
           case o => o
@@ -101,7 +101,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
     * @param dpath identifies the directory (needed for relative paths)
     * @param doit if true, wrap HTML header etc. around argument, otherwise, return arguments as a div
     */
-   private def doHTMLOrNot(dpath: DPath, doit: Boolean)(b: => Unit) {
+   private def doHTMLOrNot(dpath: DPath, doit: Boolean)(b: => Unit): Unit = {
       if (! doit) {
         return div(attributes=List("xmlns" -> utils.xml.namespace("html"))) {b}
       }
@@ -128,7 +128,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
 
-   def doDeclaration(d: Declaration) {
+   def doDeclaration(d: Declaration): Unit = {
       val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
       val alignmentsServer: AlignmentsServer = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse {
         val a = new AlignmentsServer
@@ -148,10 +148,10 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
              case _ => d.feature
            }} + " ")}
            doName(d)
-           def toggleComp(comp: ComponentKey) {
+           def toggleComp(comp: ComponentKey): Unit = {
               toggle(compRow(comp), comp.toString.replace("-", " "))
            }
-           def toggle(key: String, label: String) {
+           def toggle(key: String, label: String): Unit = {
               button(compToggle, attributes = List(toggleTarget -> key)) {text(label)}
            }
            if (aliases.nonEmpty)
@@ -208,7 +208,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                   k => div("tag") {text(k.toPath)}
                }}}
             }
-            def doKey(k: GlobalName) {
+            def doKey(k: GlobalName): Unit = {
                td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
             }
             d.metadata.getAll.foreach {
@@ -248,11 +248,11 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }
    }
 
-   protected def doComponent(cpath: CPath, t: Obj) {
+   protected def doComponent(cpath: CPath, t: Obj): Unit = {
       td {span(compLabel) {text(cpath.component.toString)}}
       td {doMath(t, Some(cpath))}
    }
-   protected def doNotComponent(cpath: CPath, tn: TextNotation) {
+   protected def doNotComponent(cpath: CPath, tn: TextNotation): Unit = {
       td {span(compLabel) {text(cpath.component.toString)}}
       td {span {
          val firstVar = tn.arity.firstVarNumberIfAny
@@ -290,15 +290,15 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }}
    }
 
-   def doTheory(m: ModuleOrLink) {
+   def doTheory(m: ModuleOrLink): Unit = {
       div(m.feature) {
          doNarrativeElementInMod(m, m.asDocument)
       }
    }
-   def doView(v: View) {
+   def doView(v: View): Unit = {
       doTheory(v)
    }
-   override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
+   override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {
       doHTMLOrNot(dpath, true) {div("namespace") {
          namespaces.foreach {case bd =>
             div("subnamespace") {
@@ -318,7 +318,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }}
    }
 
-   def doDocument(doc: Document) {
+   def doDocument(doc: Document): Unit = {
      div {
         doNarrativeElementInDoc(doc)
         val locOpt = controller.backend.resolveLogical(doc.path.uri)
@@ -347,7 +347,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
    // ********************** narrative elements
 
    /** captures common parts of narrative and content element rendering */
-   protected def doNarrativeElement(ne: NarrativeElement, recurse: NarrativeElement => Unit) {ne match {
+   protected def doNarrativeElement(ne: NarrativeElement, recurse: NarrativeElement => Unit): Unit = {ne match {
       case doc: Document =>
         div("document toggle-root inlineBoxSibling") {
           div("document-header", attributes=List(toggleTarget -> "document-body")) {
@@ -401,11 +401,11 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
         }
    }}
    /** auxiliary method of doDocument */
-   protected def doNarrativeElementInDoc(ne: NarrativeElement) {
+   protected def doNarrativeElementInDoc(ne: NarrativeElement): Unit = {
       doNarrativeElement(ne, doNarrativeElementInDoc(_))
    }
    /** auxiliary method of doTheory */
-   protected def doNarrativeElementInMod(body: ModuleOrLink, ne: NarrativeElement) {ne match {
+   protected def doNarrativeElementInMod(body: ModuleOrLink, ne: NarrativeElement): Unit = {ne match {
       case r:SRef =>
          val d = body.get(r.target.name)
          doDeclaration(d)
@@ -420,7 +420,7 @@ class MMTDocExporter extends HTMLPresenter(new MathMLPresenter) {
   val key = "mmtdoc"
   import htmlRh._
 
-  override def doDocument(doc: Document) {
+  override def doDocument(doc: Document): Unit = {
       html {
          body {
             ul {doc.getDeclarations foreach {

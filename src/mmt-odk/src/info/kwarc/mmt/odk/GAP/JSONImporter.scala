@@ -89,7 +89,7 @@ class GAPJSONImporter extends Importer {
       case e: utils.ExtractError =>
         println("utils.ExtractError")
         println(e.msg)
-        sys.exit
+        sys.exit()
     }
     log(all.length + " Objects parsed.")
     log("Converting...")
@@ -125,7 +125,7 @@ class GAPJSONImporter extends Importer {
     BuildResult.empty
   }
 
-  private def parse(obj : JSONObject) {
+  private def parse(obj : JSONObject): Unit = {
     val givenname = obj.getAsString("name")
 
     val tp = obj.getAsString("type")

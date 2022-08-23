@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.gui.MMTObjAsset
 class MMTMouseAdapter(editPane: EditPane) extends MouseAdapter {
    private val textArea = editPane.getTextArea
    private val view = editPane.getView
-   override def mouseClicked(e: MouseEvent) {
+   override def mouseClicked(e: MouseEvent): Unit = {
       if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount == 2) {
          val as = MMTSideKick.getAssetAtOffset(view, textArea.getCaretPosition)
          as match {

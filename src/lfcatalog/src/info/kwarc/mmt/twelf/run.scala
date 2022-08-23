@@ -22,7 +22,7 @@ object Run {
   /** Port on which the server runs. Default value is 8080 */
   private var port = 8080
 
-  def main(args : Array[String]) {
+  def main(args : Array[String]): Unit = {
 
     // parse program arguments
     var patternsAndLocations : Array[String] = args
@@ -58,7 +58,7 @@ object Run {
 
     // accept console input
     while (true) {
-          val input = scala.io.StdIn.readLine.trim
+          val input = scala.io.StdIn.readLine().trim
           val words : Array[String] = input.split("\\s")
           if (words.length >= 1)
             if (words(0) == "exit") {       // exit the program

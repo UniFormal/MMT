@@ -16,7 +16,7 @@ sealed abstract class LMHAction extends Action {
 
 case object ShowLMH extends LMHAction with ResponsiveAction {
   override def toParseString: String = "show lmh"
-  def apply() {
+  def apply(): Unit = {
     controller.getMathHub match {
       case Some(mh) =>
         respond("Local LMH Root at: " + mh.local)
@@ -28,7 +28,7 @@ case object ShowLMH extends LMHAction with ResponsiveAction {
 object ShowLMHCompanion extends ObjectActionCompanion(ShowLMH, "print information about lmh", "show lmh")
 
 case class LMHList(spec: List[String]) extends LMHAction with LocalAction with ResponsiveAction {
-  protected def applyActual(archive: LMHHubEntry) {
+  protected def applyActual(archive: LMHHubEntry): Unit = {
     val name = archive match {
       case ge: LMHHubGroupEntry =>   s"Group   ${ge.group}"
       case ae: LMHHubArchiveEntry => s"Archive ${ae.id}"
@@ -46,7 +46,7 @@ object LMHListCompanion extends ActionCompanion("show archives that are installe
 }
 
 case class SetLMHRoot(path: String, https: Boolean) extends LMHAction {
-  def apply() {
+  def apply(): Unit = {
     // create a new lmh instance
     controller.lmh = Some(new MathHub(controller, File(path), MathHub.defaultURL, https))
   }
@@ -63,7 +63,7 @@ object SetLMHRootCompanion extends ActionCompanion("set the lmh root folder", "l
 // #endregion
 
 case class LMHInit(path: String, template: Option[String]) extends LMHAction {
-  def apply() {mathHub.createEntry(path)}
+  def apply(): Unit = {mathHub.createEntry(path)}
   override def toParseString = s"lmh init $path"
 }
 object LMHInitCompanion extends ActionCompanion("create a new lmh archive", "lmh init", "oaf init"){
@@ -91,7 +91,7 @@ object LMHOpenCompanion extends ActionCompanion("opens the folder belonging to a
 }
 
 case class LMHInstall(spec: List[String]) extends LMHAction {
-  def apply() {
+  def apply(): Unit = {
     val resolved = mathHub.available(spec: _*)
     mathHub.installEntries(resolved, recursive=true)
   }
@@ -104,7 +104,7 @@ object LMHInstallCompanion extends ActionCompanion("install a set of archives fr
 }
 
 case class LMHUse(spec: List[String]) extends LMHAction {
-  def apply() {
+  def apply(): Unit = {
     /* find all local entries matching the pattern */
     val resolved = mathHub.available(spec: _*)
     mathHub.installEntries(resolved, recursive=false)
@@ -118,7 +118,7 @@ object LMHUseCompanion extends ActionCompanion("use a specific version of specif
 }
 
 case class LMHListRemote(spec: List[String]) extends LMHAction with ResponsiveAction {
-  def apply() {
+  def apply(): Unit = {
     mathHub.available(spec: _*).foreach {case (id, version) => respond(s"$id")}
   }
   def toParseString = s"lmh search ${spec.mkString(" ")}".trim
@@ -135,7 +135,7 @@ sealed trait LocalAction extends LMHAction {
   /** list archives that this action will iterate over */
   val spec: List[String]
 
-  def apply() {mathHub.entries(spec: _*) foreach applyActual}
+  def apply(): Unit = {mathHub.entries(spec: _*) foreach applyActual}
   protected def applyActual(archive: LMHHubEntry): Unit
 }
 
@@ -145,7 +145,7 @@ case class LMHPull(spec: List[String]) extends LMHAction {
     val updates = mathHub.entries(spec: _*).map({a => (a.id, None)})
     mathHub.installEntries(updates, recursive = true)
   }
-  def applyActual(entry: LMHHubEntry) {entry.pull}
+  def applyActual(entry: LMHHubEntry): Unit = {entry.pull}
   def toParseString = s"lmh pull ${spec.mkString(" ")}".trim
 }
 object LMHPullCompanion extends ActionCompanion("pull updates to locally installed archives", "lmh pull", "oaf pull"){
@@ -156,7 +156,7 @@ object LMHPullCompanion extends ActionCompanion("pull updates to locally install
 
 
 case class LMHPush(spec: List[String]) extends LMHAction with LocalAction {
-  def applyActual(entry: LMHHubEntry) {entry.push}
+  def applyActual(entry: LMHHubEntry): Unit = {entry.push}
   def toParseString = s"lmh push ${spec.mkString(" ")}".trim
 }
 object LMHPushCompanion extends ActionCompanion("push updates to locally installed archives", "lmh push", "oaf push"){

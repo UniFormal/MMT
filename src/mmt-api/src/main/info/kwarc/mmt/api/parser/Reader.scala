@@ -61,7 +61,7 @@ class Reader(val jr: java.io.BufferedReader) {
     * This only affects the SourceRegion returned by read operations,
     * not the actual position in the stream.
     */
-   def setNextSourcePosition(s: SourcePosition) {
+   def setNextSourcePosition(s: SourcePosition): Unit = {
       line = s.line
       column = s.column
       offset = s.offset
@@ -203,7 +203,7 @@ class Reader(val jr: java.io.BufferedReader) {
    def readAll = readUntil()
 
    /** closes the underlying Java reader */
-   def close {
+   def close: Unit = {
       jr.close
    }
 }

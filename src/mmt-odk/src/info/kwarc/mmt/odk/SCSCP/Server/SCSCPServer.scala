@@ -44,7 +44,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     * @param symbol  Symbol to handle
     * @param handler Handler to register
     */
-  def register(symbol: OMSymbol, handler: SCSCPHandler) {
+  def register(symbol: OMSymbol, handler: SCSCPHandler): Unit = {
     // TODO: Figure out relative paths, etc.
     if (handlers.isDefinedAt(symbol)) {
       throw new Exception("Handler already defined for symbol: " + symbol)
@@ -82,7 +82,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     *
     * @param symbol Symbol to unregister
     */
-  def unregister(symbol: OMSymbol) {
+  def unregister(symbol: OMSymbol): Unit = {
 
     if (!handlers.isDefinedAt(symbol)) {
       throw new Exception("No handler defined for symbol: " + symbol)
@@ -96,7 +96,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   private var hasQuit: Boolean = false
 
   /** Processes forever until  */
-  def processForever() {
+  def processForever(): Unit = {
 
     // process stuff forever
     while(!hasQuit){
@@ -106,7 +106,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   }
 
   /** Represents one iteration of processing. Never blocks. */
-  def process() {
+  def process(): Unit = {
     addClients()
     processClients()
     cleanupClients()
@@ -114,7 +114,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
 
 
   /** Adds all the clients to the pool of connections */
-  private def addClients() {
+  private def addClients(): Unit = {
     // make sure to wait at most 500 ms for a new connection
     socket.setSoTimeout(500)
 
@@ -135,7 +135,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
     *
     * @param socket Socket that represents the new client
     */
-  private def addClient(socket: Socket) {
+  private def addClient(socket: Socket): Unit = {
     try {
       val client = new SCSCPServerClient(socket, this, encoding)
       client_map(client.identifier) = client
@@ -149,7 +149,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   }
 
   /** removes all non-connected clients from this server */
-  private def cleanupClients() {
+  private def cleanupClients(): Unit = {
     clients.foreach(c => {
       // if the client is not connected, we can remove it
       if (!c.connected) {
@@ -162,19 +162,19 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   }
 
   /** Processes all of the clients */
-  private def processClients() {
+  private def processClients(): Unit = {
     cleanupClients()
     clients.foreach(_.processSafe())
   }
 
   /** Sends an info message to all clients attached to this server */
-  def info(message: String) {
+  def info(message: String): Unit = {
     cleanupClients()
     clients.foreach(_.info(message))
   }
 
   /** Quits all clients attached to this server */
-  def quit(reason: Option[String]) {
+  def quit(reason: Option[String]): Unit = {
     event(SCSCPQuittingServer(reason, this))
     hasQuit = true // ends the process forever
     cleanupClients()

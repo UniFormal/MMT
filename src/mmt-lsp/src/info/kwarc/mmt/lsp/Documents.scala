@@ -8,7 +8,7 @@ import scala.concurrent.Future
 trait SyncedDocUnparsed {
   def offset : Int
   def LineChar : (Int,Int)
-  def trim
+  def trim: Unit
   def empty : Boolean
   def first : Char
   def drop(i : Int) : Unit

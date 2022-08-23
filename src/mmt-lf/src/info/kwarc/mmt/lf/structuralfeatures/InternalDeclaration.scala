@@ -100,7 +100,7 @@ private object InternalDeclarationUtil {
     val p = StructuralFeatureUtils.externalName(parent, name)
     new SimpleLazyConstant(OMMOD(p.module), p.name) {
       otherDefined = true
-      def onAccess {
+      def onAccess: Unit = {
         _tp = Some(Ltp())
         _df = Ldf()
         _not = Lnot()

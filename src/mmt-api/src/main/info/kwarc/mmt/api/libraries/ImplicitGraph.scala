@@ -109,7 +109,7 @@ class ImplicitGraph {
   @inline private def getDependants(p: MPath) = dependants.getOrElse(p, Nil)
 
   /** adds a path to all stateful data structures */
-  @inline private def addPath(p: IPath) {
+  @inline private def addPath(p: IPath): Unit = {
       /* because IPath is a case class and does not contain the include-edges,
          multiple paths that only differ in the include-steps result in only one element in the hash-set
          however, we have to use replace instead of simply adding to make sure an existing invalid path is replaced with the new valid one
@@ -126,7 +126,7 @@ class ImplicitGraph {
   /** weird-looking function to replace an element in a hash-set with a new version of itself (or add it if it is not in the set yet)
     * only relevant if the hash-code is not injective, e.g., if it is a case class with mutable fields
     */
-  @inline private def replace[U](hs: HashSet[U], u: U) {
+  @inline private def replace[U](hs: HashSet[U], u: U): Unit = {
     hs -= u
     hs += u
   }
@@ -136,7 +136,7 @@ class ImplicitGraph {
    *  @param to codomain
    *  @param mor the morphism; absent if identity (i.e., plain include)
    */
-  def add(from: MPath, to: MPath, mor: Option[Term]) {
+  def add(from: MPath, to: MPath, mor: Option[Term]): Unit = {
     val e = mor match {
       case None =>
         includes.add(from,to)
@@ -163,7 +163,7 @@ class ImplicitGraph {
   }
   
   /** deletes all implicit morphisms that depend on an element, must be called when that element is deleted */
-  def delete(d: MPath) {
+  def delete(d: MPath): Unit = {
     getDependants(d) foreach {p =>
       p.valid = false
     }
@@ -289,7 +289,7 @@ class ImplicitGraph {
   }
 
   /** clears all data */
-  def clear {
+  def clear: Unit = {
     incoming.clear
     outgoing.clear
     primaryPath.clear

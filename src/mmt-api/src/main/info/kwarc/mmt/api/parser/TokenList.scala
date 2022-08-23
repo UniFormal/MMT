@@ -58,7 +58,7 @@ object TokenList {
     var whitespace = true //there was a whitespace before the current Token
     var tokens: List[TokenListElem] = Nil // Token's found so far in reverse order
     //end the current Token
-    def endToken() {
+    def endToken(): Unit = {
       if (current != "") {
         tokens ::= Token(current, i - current.length, whitespace)
         current = ""
@@ -145,7 +145,7 @@ object TokenList {
   */
 class TokenList(private var tokens: List[TokenListElem]) {
   /** supposed to be guaranteed by invariants, but checked redundantly to detect subtle otherwise hard-to-find implementation errors */
-  private def checkIndex(n: Int, msg: String = "") {
+  private def checkIndex(n: Int, msg: String = ""): Unit = {
     if (n >= tokens.length || n < 0)
       throw ImplementationError("token index " + n + " out of range in token list of length " + tokens.length + " (message: " + msg + "): " + tokens.toString)
   }
@@ -307,7 +307,7 @@ class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: 
   else
     tokens.map(_._2.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
 
-  private[parser] def addRules(rules : ParsingRuleTable, replace: Boolean) {tokens foreach {
+  private[parser] def addRules(rules : ParsingRuleTable, replace: Boolean): Unit = {tokens foreach {
     case (_,ul) => ul.foreach(_.addRules(rules, replace))
   }}
 }
@@ -325,7 +325,7 @@ class UnmatchedList(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], rt: 
   val firstPosition = tl(0).firstPosition
   val lastPosition = tl(tl.length - 1).lastPosition
   private val scanner: Scanner = new Scanner(tl, parsingUnitOpt, rt, rep)
-  def addRules(rules : ParsingRuleTable, replace: Boolean) {
+  def addRules(rules : ParsingRuleTable, replace: Boolean): Unit = {
     scanner.addRules(rules, replace)
     tl.getTokens.foreach {
       case ul : UnmatchedList => ul.addRules(rules, replace)
@@ -333,7 +333,7 @@ class UnmatchedList(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], rt: 
       case _ =>
     }
   }
-  def scan() {scanner.scan()}
+  def scan(): Unit = {scanner.scan()}
 
   override def toString: String = if (tl.length == 1) tl(0).toString else "{unmatched " + tl.toString + " unmatched}"
 }

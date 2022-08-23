@@ -12,7 +12,7 @@
 package info.kwarc.mmt.lf.compile
 
 object Compiler {
-  def apply(fl: FuncLang[String], log: LogicSyntax) {
+  def apply(fl: FuncLang[String], log: LogicSyntax): Unit = {
     val cp = new Compiler(log)
     cp.get foreach {
        d => println(fl.decl(d))

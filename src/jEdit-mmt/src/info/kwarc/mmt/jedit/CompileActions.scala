@@ -9,10 +9,10 @@ import org.gjt.sp.jedit._
 class BuildActions(mmtplugin: MMTPlugin) {
    private val errorSource = mmtplugin.errorSource
    private val controller = mmtplugin.controller
-   private def log(msg: String) {controller.report("jedit-compile", msg)}
+   private def log(msg: String): Unit = {controller.report("jedit-compile", msg)}
 
    /** builds a file or directory */
-   def build(f: String) {
+   def build(f: String): Unit = {
       val file = File(f)
       val errorCont = new ErrorListForwarder(errorSource, controller, file)
       errorSource.removeMMTFileErrors(file)
@@ -27,7 +27,7 @@ class BuildActions(mmtplugin: MMTPlugin) {
    }
 
    //TODO saving may trigger sidekick-parsing in which case parsing and building happen at the same time and likely confuse each other
-   private def saveAndBuild(view: View, buffer: Buffer) {
+   private def saveAndBuild(view: View, buffer: Buffer): Unit = {
       if (buffer.isDirty) {
          buffer.save(view, null)
          io.VFSManager.waitForRequests // wait until buffer is saved
@@ -36,17 +36,17 @@ class BuildActions(mmtplugin: MMTPlugin) {
    }
 
    /** saves and builds the current file of the current view */
-   def buildCurrent(view: View) {
+   def buildCurrent(view: View): Unit = {
       val buffer = view.getBuffer
       saveAndBuild(view, buffer)
    }
    /** saves and builds the open files in the current view */
-   def buildOpen(view: View) {
+   def buildOpen(view: View): Unit = {
       val buffers = view.getBuffers
       buffers.foreach {b => saveAndBuild(view, b)}
    }
    /** saves and build the file/folder currently selected in the the file browser */
-   def buildSelected(view: View, brw: browser.VFSBrowser) {
+   def buildSelected(view: View, brw: browser.VFSBrowser): Unit = {
       val files = brw.getSelectedFiles
       files foreach {vfsfile =>
          val file = vfsfile.getPath

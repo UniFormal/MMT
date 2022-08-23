@@ -28,7 +28,7 @@ trait ClientProperties {
  */
 class ClientProperty[-C <: ClientProperties,A](val property: URI) {
    /** put the client property */
-   def put(t: C, a:A) {
+   def put(t: C, a:A): Unit = {
       t.clientProperty(property) = a
    }
    /** get the client property if defined */
@@ -39,7 +39,7 @@ class ClientProperty[-C <: ClientProperties,A](val property: URI) {
       case Some(_) =>
          throw ImplementationError("client property has bad type") // impossible if put was used
    }
-   def erase(t: C) {
+   def erase(t: C): Unit = {
       t.clientProperty -= property
    }
 }
@@ -57,10 +57,10 @@ class BooleanClientProperty[-C <: ClientProperties](p: URI) extends ClientProper
           case Some(true) => Some(t)
           case _ => None
       }
-   def set(t: C) {
+   def set(t: C): Unit = {
      put(t, true)
    }
-   def unset(t: C) {
+   def unset(t: C): Unit = {
      put(t, false)
    }
    def is(t: C) = get(t) contains true
@@ -68,7 +68,7 @@ class BooleanClientProperty[-C <: ClientProperties](p: URI) extends ClientProper
 
 
 class TermProperty[A](p: URI) extends ClientProperty[Obj, A](p) {
-  def eraseDeep(o: Obj) {
+  def eraseDeep(o: Obj): Unit = {
     erase(o)
     o.subobjects foreach {case (_,so) => eraseDeep(so)}
   }
@@ -77,7 +77,7 @@ class BooleanTermProperty(p: URI) extends BooleanClientProperty[Obj](p)
 
 object TermProperty {
    /** removes all term properties recursively (not a Traverser to avoid copying the Term) */
-   def eraseAll(t: Term) {
+   def eraseAll(t: Term): Unit = {
       t.clientProperty.clear
       t match {
         case OMA(f,as) => (f::as) foreach eraseAll

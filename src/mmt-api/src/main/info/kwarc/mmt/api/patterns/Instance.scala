@@ -44,7 +44,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
      }
    }
 
-   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
      val (pat, args) = getPattern(dd).getOrElse {
        env.errorCont(InvalidElement(dd, "no pattern found"))
        return

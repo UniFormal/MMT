@@ -58,12 +58,12 @@ class OEISImporter extends Importer {
   //stex/latexml generated omdoc
   var docParser: DocumentParser = null
 
-  override def init(controller: Controller) {
+  override def init(controller: Controller): Unit =  {
     this.controller = controller
     report = controller.report
   }
 
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     args match {
       case hd :: Nil =>
         val dict = scala.io.Source.fromFile(hd).getLines().map(_.trim).toSet
@@ -115,7 +115,7 @@ class OEISImporter extends Importer {
   /**
     * Translate a toplevel <omdoc> node
     */
-  private def translateDocument(n: Node, tsref: SourceRef)(implicit dpath: DPath, errorCont: ErrorHandler) {
+  private def translateDocument(n: Node, tsref: SourceRef)(implicit dpath: DPath, errorCont: ErrorHandler): Unit = {
     n.label match {
       case "omdoc" =>
         //creating document
@@ -129,7 +129,7 @@ class OEISImporter extends Importer {
   /**
     * translate second-level, in-document elements (typically modules)
     */
-  private def translateModule(n: Node, tsref: SourceRef)(implicit doc: Document, errorCont: ErrorHandler) {
+  private def translateModule(n: Node, tsref: SourceRef)(implicit doc: Document, errorCont: ErrorHandler): Unit = {
     val sref = OMDoc.parseSourceRef(n, doc.path).getOrElse(tsref)
     try {
       n.label match {
@@ -151,7 +151,7 @@ class OEISImporter extends Importer {
   /**
     * translate third level, in-module elements (typically declarations)
     */
-  private def translateDeclaration(n: Node, tsref: SourceRef)(implicit doc: Document, thy: Theory, errorCont: ErrorHandler) {
+  private def translateDeclaration(n: Node, tsref: SourceRef)(implicit doc: Document, thy: Theory, errorCont: ErrorHandler): Unit = {
     val sref = OMDoc.parseSourceRef(n, doc.path).getOrElse(tsref)
     implicit val dpath = doc.path
     implicit val mpath = thy.path

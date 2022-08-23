@@ -188,7 +188,7 @@ class Theory(doc: DPath, name: LocalName, private var mt: Option[MPath], val par
         {headerNodes ++ innerNodesElab}
       </theory>
    /** overridden for streaming */
-   override def toNode(rh: presentation.RenderingHandler) {
+   override def toNode(rh: presentation.RenderingHandler): Unit = {
       val metaS = if (meta.isDefined) s""" meta="${meta.get.toPath}"""" else ""
       rh << s"""<theory name="${name.last.toPath}" base="${doc.toPath}"$metaS>"""
       streamInnerNodes(rh)

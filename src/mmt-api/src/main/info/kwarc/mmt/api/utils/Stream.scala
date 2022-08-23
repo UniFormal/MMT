@@ -25,7 +25,7 @@ object StreamReading {
     * @param in the stream
     * @param proc a function applied to every line (without line terminator)
     */
-  def ReadLineWise(in: InputStream)(proc: String => Unit) {
+  def ReadLineWise(in: InputStream)(proc: String => Unit): Unit = {
     val r = Reader(in)
     var line: Option[String] = None
     try {

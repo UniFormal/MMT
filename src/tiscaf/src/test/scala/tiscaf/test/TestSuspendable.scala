@@ -8,7 +8,7 @@ object Test extends App with HServer {
   def ports = Set(8910)
   def apps = List(app)
 
-  override def startStopListener { }
+  override def startStopListener: Unit = { }
 
   object app extends HApp {
     def resolve(req: HReqData) = req.uriPath match {
@@ -26,7 +26,7 @@ object Test extends App with HServer {
   }
 
   object resumeLet extends HSimpleLet {
-    def act(talk: HTalk) {
+    def act(talk: HTalk): Unit = {
       pending.keys.asScala map { s =>
         s.resume(next)
         s
@@ -53,7 +53,7 @@ object Test extends App with HServer {
     }
 
 
-    def onSuspend[T: ru.TypeTag](suspended: Suspended[T]) {
+    def onSuspend[T: ru.TypeTag](suspended: Suspended[T]): Unit = {
       val mirror = ru.runtimeMirror( getClass.getClassLoader )
       val classSym = mirror.classSymbol( suspended.getClass.getComponentType )
 

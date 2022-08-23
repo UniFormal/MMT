@@ -126,7 +126,7 @@ object OpaqueText {
         // we cannot parse at this point because opaque elements may have forward references
         val tc = if (decl) ContextContainer(s) else TermContainer(s)
         i += 1
-        def delayedParse(localCon: Context) {
+        def delayedParse(localCon: Context): Unit = {
           val contextNot = if (decl) Some(Context.parsingRule) else None
           val pU = ParsingUnit(srcref, pu.context ++ localCon, s, pu.iiContext, contextNot)
           val pr = oP(pU)
@@ -232,12 +232,12 @@ case class ScopeFragment(body: List[TextFragment]) extends TextFragment {
      declSOs:::otherSOs
   }
   def removeTerms = copy(body = body.map(_.removeTerms))
-  def toString(oP: ObjectPresenter)(implicit rh: RenderingHandler, escapes: OpaqueText.Escapes) {
+  def toString(oP: ObjectPresenter)(implicit rh: RenderingHandler, escapes: OpaqueText.Escapes): Unit = {
      rh << escapes.scope.begin.toString
      body.foreach {b => b.toString(oP)}
      rh << escapes.scope.end.toString
   }
-  def toHTML(oP: ObjectPresenter)(implicit rh: RenderingHandler, oe: OpaqueElement) {
+  def toHTML(oP: ObjectPresenter)(implicit rh: RenderingHandler, oe: OpaqueElement): Unit = {
     body.foreach {b => b.toHTML(oP)}
   }
 }
@@ -265,7 +265,7 @@ class ObjFragment(val index: Int, val isDecl: Boolean, val tc: ObjContainer[_<:O
    }
    def subobjects(context: OpaqueContext) = List((context,this))
    def removeTerms = ScopeFragment(Nil)
-   def toString(oP: ObjectPresenter)(implicit rh: RenderingHandler, escapes: OpaqueText.Escapes) {
+   def toString(oP: ObjectPresenter)(implicit rh: RenderingHandler, escapes: OpaqueText.Escapes): Unit = {
       tc.get match {
         case None =>
           rh << escapes.unparsed.begin.toString
@@ -277,7 +277,7 @@ class ObjFragment(val index: Int, val isDecl: Boolean, val tc: ObjContainer[_<:O
           rh << escapes.obj.end.toString
       }
   }
-  def toHTML(oP: ObjectPresenter)(implicit rh: RenderingHandler, oe: OpaqueElement) {
+  def toHTML(oP: ObjectPresenter)(implicit rh: RenderingHandler, oe: OpaqueElement): Unit = {
     tc.get match {
       case None =>
          rh << "<pre>"
@@ -296,10 +296,10 @@ case class StringFragment(value: String) extends TextFragment {
    def getComponents = Nil
    def subobjects(context: OpaqueContext) = Nil
    def removeTerms = this
-   def toString(oP: ObjectPresenter)(implicit rh: RenderingHandler, escapes: OpaqueText.Escapes) {
+   def toString(oP: ObjectPresenter)(implicit rh: RenderingHandler, escapes: OpaqueText.Escapes): Unit = {
      rh << value
    }
-   def toHTML(oP: ObjectPresenter)(implicit rh: RenderingHandler, oe: OpaqueElement) {
+   def toHTML(oP: ObjectPresenter)(implicit rh: RenderingHandler, oe: OpaqueElement): Unit = {
       val escaped = scala.xml.Utility.escape(value)
       val formatted = escaped.replace("\n\n", "<p/>").replace("\n","<br/>")
       rh << formatted

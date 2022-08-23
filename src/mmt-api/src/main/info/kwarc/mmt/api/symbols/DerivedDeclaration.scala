@@ -43,7 +43,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
     </derived>
   }
   // override def toNodeElab
-  override def toNode(rh: presentation.RenderingHandler) {
+  override def toNode(rh: presentation.RenderingHandler): Unit = {
     rh << s"""<derived feature="$feature" name="${name.toPath}" base="${parent.toPath}">"""
     (getMetaDataNode++tpNode++dfNode++notNode) foreach {n =>
       rh(n)
@@ -185,7 +185,7 @@ abstract class StructuralFeature(feature: String) extends GeneralStructuralFeatu
    def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration
 
    def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
-   def checkInContext(prev: Context, dv: VarDecl) {}
+   def checkInContext(prev: Context, dv: VarDecl): Unit = {}
 
    /** for creating/matching variable declarations of this feature */
    object VarDeclFeature extends DerivedVarDeclFeature(feature)
@@ -282,7 +282,7 @@ trait ParametricTheoryLike extends StructuralFeature {
      case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
    }
 
-   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
      //TODO check IsContext here
    }
    
@@ -291,7 +291,7 @@ trait ParametricTheoryLike extends StructuralFeature {
     override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
   }
   
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     initOther(noLookupPresenter)
   }
   
@@ -332,7 +332,7 @@ trait Untyped {self : StructuralFeature =>
       }
     }
   }
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 trait UnnamedUntyped {self : StructuralFeature =>
@@ -349,7 +349,7 @@ trait UnnamedUntyped {self : StructuralFeature =>
       }
     }
   }
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 trait TypedConstantLike {self: StructuralFeature =>
@@ -363,7 +363,7 @@ trait TypedConstantLike {self: StructuralFeature =>
     case None => throw ImplementationError("no type present")
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     // TODO env.objectChecker(CheckingUnit())
   }
 }
@@ -393,7 +393,7 @@ trait TheoryLike extends StructuralFeature {
     case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     // TODO env.objectChecker(CheckingUnit())
   }
 }
@@ -573,7 +573,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
       }
    }
 
-   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
@@ -798,7 +798,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   }
   private def checkpath(mp : MPath) = controller.get(mp)
   // def modules(d: DerivedDeclaration): List[Module] = Nil
-  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 object StructuralFeatureUtil {

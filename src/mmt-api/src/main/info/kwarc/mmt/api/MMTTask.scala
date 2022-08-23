@@ -7,7 +7,7 @@ trait MMTTask extends Killable {
   /** the unconsumed progress messages */
   private var updates: List[MMTTaskProgress] = Nil
   /** adds a report and forwards it to all listeners */ 
-  def reportProgress(a: MMTTaskProgress) {
+  def reportProgress(a: MMTTaskProgress): Unit = {
     updates ::= a
     listeners.foreach {l => l(a)}
   }
@@ -16,8 +16,8 @@ trait MMTTask extends Killable {
 
   /** the listeners to which updates are sent */ 
   private var listeners : List[MMTTaskProgressListener] = Nil
-  def addListener(l: MMTTaskProgressListener) {listeners ::= l}
-  def removeListener(l: MMTTaskProgressListener) {listeners = listeners.filterNot(_ == l)}
+  def addListener(l: MMTTaskProgressListener): Unit = {listeners ::= l}
+  def removeListener(l: MMTTaskProgressListener): Unit = {listeners = listeners.filterNot(_ == l)}
 }
 
 object MMTTask {

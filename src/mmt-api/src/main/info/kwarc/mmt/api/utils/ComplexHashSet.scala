@@ -15,7 +15,7 @@ class ComplexHashSet[H, A](hash: A => H) extends Set[A] {
   def iterator = elements.valuesIterator.flatten
 
   override def empty = new ComplexHashSet[H,A](hash)
-  override def foreach[U](f: A => U) {
+  override def foreach[U](f: A => U): Unit = {
     elements.valuesIterator foreach {s => s foreach f}
   }
 }

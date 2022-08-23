@@ -145,7 +145,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** @return the current home directory */
   def getHome: File = state.home
   /** sets the current home directory (relative to which path names in commands are executed) */
-  def setHome(h: File) {
+  def setHome(h: File): Unit = {
     state.home = h
   }
 
@@ -163,7 +163,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** integrate a configuration into the current state */
-  def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
+  def loadConfig(conf: MMTConfig, loadEverything: Boolean): Unit = {
        state.config.add(conf)
        // add entries to the namespace
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
@@ -182,18 +182,18 @@ class Controller(report_ : Report = new Report) extends ROController with Action
          loadAllNeededTargets(conf)
        }
    }
-  def loadConfigFile(f: File, loadEverything: Boolean) {
+  def loadConfigFile(f: File, loadEverything: Boolean): Unit = {
      val cfg = MMTConfig.parse(f)
      loadConfig(cfg, loadEverything)
   }
 
-   private def loadAllArchives(conf: MMTConfig) {
+   private def loadAllArchives(conf: MMTConfig): Unit = {
        conf.getArchives foreach { arch =>
         addArchive(File(conf.getBase + arch.id))
       }
    }
 
-   private def loadAllNeededTargets(conf: MMTConfig) {
+   private def loadAllNeededTargets(conf: MMTConfig): Unit = {
       val archives = conf.getArchives
       val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
         conf.getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw ConfigurationError("Unknown format id: " + id))
@@ -212,7 +212,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
 
   // *************************** initialization and termination
 
-  private def init {
+  private def init: Unit = {
     extman.addDefaultExtensions
     // load default configuration
     val mmtrc = MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc"), None)
@@ -222,7 +222,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   init
 
   /** releases all resources that are not handled by the garbage collection */
-  def cleanup {
+  def cleanup: Unit = {
     // notify all extensions
     extman.cleanup
     //close all open storages in backend
@@ -298,7 +298,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** builds a file/folder in an archive using an appropriate importer */
-  def build(f: File)(implicit errorCont: ErrorHandler) {
+  def build(f: File)(implicit errorCont: ErrorHandler): Unit = {
     backend.resolvePhysical(f) orElse backend.resolveAnyPhysicalAndLoad(f) match {
       case Some((a, p)) =>
         val format = f.getExtension.getOrElse {
@@ -500,7 +500,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** loads a path via the backend and reports it */
-  protected def retrieve(nf: NotFound) {
+  protected def retrieve(nf: NotFound): Unit = {
     log("asking backend for URI " + nf.path)
     logGroup {
       try {
@@ -531,7 +531,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     *
     * @param at the position where it should be added (only inside modules, documents)
    */
-  def add(nw: StructuralElement, at: AddPosition = AtEnd) {
+  def add(nw: StructuralElement, at: AddPosition = AtEnd): Unit = {
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>
@@ -629,12 +629,12 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
   
   /** called after adding all elements in the body of a container element */
-  def endAdd(c: ContainerElement[_]) {
+  def endAdd(c: ContainerElement[_]): Unit = {
     memory.content.endAdd(c)
   }
   
   /** marks this and its descendants as inactive */
-  private def deactivate(se: StructuralElement) {
+  private def deactivate(se: StructuralElement): Unit = {
      if (!se.isGenerated) {
        // generated constants and refs to them (see (*)) should be updated/removed by change listeners
        memory.content.deactivate(se)
@@ -654,7 +654,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
      }
   }
   /** deletes all inactive descendants */
-  private def deleteInactive(se: StructuralElement) {
+  private def deleteInactive(se: StructuralElement): Unit = {
      if (InactiveElement.is(se)) {
         log("deleting deactivated " + se.path)
         delete(se.path)
@@ -676,7 +676,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** deletes a document or module from memory
     * no change management, deletions are non-recursive, listeners are notified
     */
-  def delete(p: Path) {
+  def delete(p: Path): Unit = {
     p match {
       case _: CPath =>
          throw DeleteError(p, "deletion of component paths not implemented")
@@ -690,7 +690,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** clears the state */
-  def clear {
+  def clear: Unit = {
     memory.clear
     backend.clear
     extman.clear

@@ -310,7 +310,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
     }
   }
 
-  def constantToOWL(constant: Constant) {
+  def constantToOWL(constant: Constant): Unit = {
     val mData = constant.metadata
     val mDatumList = mData.getAll
     val annotationList = mDatumList.map(annotationToOWL)
@@ -536,7 +536,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
 object Export {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     implicit val eh = ErrorThrower
 
     val controller = new Controller
@@ -548,7 +548,7 @@ object Export {
     val target = utils.File(args(1))
     val doc: DPath = controller.read(parser.ParsingStream.fromFile(source), interpret = false).path
 
-    def writeToFile(iri: IRI, trg: File) {
+    def writeToFile(iri: IRI, trg: File): Unit = {
       val onto = manager.getOntology(iri)
       val file = new java.io.FileWriter(trg.toJava)
       val ontoTarget = new WriterDocumentTarget(file)

@@ -234,7 +234,7 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean, floatR
   def trigger = None
   def apply(s: String, index: Int) = {
      var i = index
-     def scanDigits {
+     def scanDigits: Unit = {
         while (i < s.length && s(i).isDigit) {
            i += 1
         }
@@ -451,12 +451,12 @@ abstract class StringInterpolationLexer(operator: String, str: Bracket, val mmt:
      var i = index
      var parts: List[StringInterpolationPart] = Nil // invariant: alternating types of parts, begins and ends with a string part
      var current = ""
-     def advanceBy(a: String, addToCurrent: Boolean) {
+     def advanceBy(a: String, addToCurrent: Boolean): Unit = {
        currentPos = currentPos.after(a)
        i += a.length
        if (addToCurrent) current += a
      }
-     def newPart(stringPart: Boolean, delim: String, includeDelimInPart: Boolean) {
+     def newPart(stringPart: Boolean, delim: String, includeDelimInPart: Boolean): Unit = {
        val (endPosOfCurrent,startPosOfNext) = if (includeDelimInPart) {
          advanceBy(delim.init, false)
          val ep = currentPos

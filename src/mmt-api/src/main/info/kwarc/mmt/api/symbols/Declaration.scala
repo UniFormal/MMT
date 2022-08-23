@@ -26,12 +26,12 @@ abstract class Declaration extends ContentElement {
       But it is realized as a variable because it would be too tedious to add it as a constructor argument everywhere.
     */
    private var relDocHome_ = LocalName.empty
-   def setDocumentHome(ln: LocalName) {
+   def setDocumentHome(ln: LocalName): Unit = {
       relDocHome_ = ln
    }
    def relativeDocumentHome = relDocHome_
    def documentHome = parent.toDPath / relDocHome_
-   override def merge(that: StructuralElement) {
+   override def merge(that: StructuralElement): Unit = {
       that match {
          case that: Declaration =>
            relDocHome_ = that.relDocHome_

@@ -12,18 +12,18 @@ object Inserter {
      c.toChar.toString
    }
 
-   private def insert(ta: TextArea, ifmmt: String, ifother: String) {
+   private def insert(ta: TextArea, ifmmt: String, ifother: String): Unit = {
       val insert = if (ta.getBuffer.getMode.getName == "mmt") ifmmt else ifother
       ta.replaceSelection(insert)
    }
-   def insertUSorTab(ta: TextArea) {
+   def insertUSorTab(ta: TextArea): Unit = {
       val offset = ta.getCaretPosition
       insert(ta, getChar(Reader.US), "\t")
    }
-   def insertRSReturn(ta: TextArea) {
+   def insertRSReturn(ta: TextArea): Unit = {
       insert(ta, getChar(Reader.RS) + "\n", "\n")
    }
-   def insertGSReturn(ta: TextArea) {
+   def insertGSReturn(ta: TextArea): Unit = {
       insert(ta, getChar(Reader.GS) + "\n", "\n")
    }
 }

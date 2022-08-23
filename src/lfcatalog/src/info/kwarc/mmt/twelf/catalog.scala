@@ -129,14 +129,14 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Stop the web server */
-  def destroy {
+  def destroy: Unit = {
       server.stop
-      bkgCrawler.interrupt
-      bkgEliminator.interrupt
-      locations.clear
-      urlToDocument.clear
-      uriToNamedBlock.clear
-      uriToModulesDeclared.clear
+      bkgCrawler.interrupt()
+      bkgEliminator.interrupt()
+      locations.clear()
+      urlToDocument.clear()
+      uriToNamedBlock.clear()
+      uriToModulesDeclared.clear()
   }
 
 
@@ -216,7 +216,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
           throw FileOpenError("error: file cannot be opened")
         try {
           val source = scala.io.Source.fromFile(document, "utf-8")
-          val lines = source.getLines.toArray                          // get all lines from the file
+          val lines = source.getLines().toArray                          // get all lines from the file
           source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
           return lines.mkString("\n")
         } catch {
@@ -239,7 +239,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
             throw FileOpenError("error: file cannot be opened")
           try {
             val source = scala.io.Source.fromFile(doc, "utf-8")
-            val lines = source.getLines.toArray.slice(pos._1._1, pos._2._1 + 1)      // get the desired lines from the file
+            val lines = source.getLines().toArray.slice(pos._1._1, pos._2._1 + 1)      // get the desired lines from the file
             //log(Time + lines.mkString("\n"))
             source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
             return lines.mkString("\n").drop(pos._1._2).dropRight(lines.last.length - pos._2._2 - 1)
@@ -375,7 +375,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   /** Write the Omdoc skeleton to a file with the same name as the original and in the same folder, but with extension .omdocsk
     * @param stringUrl the URL of the .elf file to be converted.
     * @throws CatalogError(s) if the URL is not OK or not crawled already */
-  def writeOmdocToFile(stringUrl : String) {
+  def writeOmdocToFile(stringUrl : String): Unit = {
     val realUrl : String = java.net.URLDecoder.decode(stringUrl, "UTF-8")
     val document = new File(realUrl)
     if (document == null)
@@ -415,7 +415,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Add an inclusion pattern to the storage */
-  def addInclusion(pattern : String) {
+  def addInclusion(pattern : String): Unit = {
     if (pattern == "")
       log(Time + "error: empty inclusion patern")
     else {
@@ -427,7 +427,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Add an exclusion pattern to the storage */
-  def addExclusion(pattern : String) {
+  def addExclusion(pattern : String): Unit = {
     if (pattern == "")
       log(Time + "error: empty exclusion patern")
     else {
@@ -443,7 +443,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     * If the location is an ancestor of an already watched location, then it is added and the already watched location is removed.
     * @param locationName the (absolute or relative) address of the location on disk
     * @throws InexistentLocation if the file/folder does not exist or cannot be read */
-  def addStringLocation(locationName : String) {
+  def addStringLocation(locationName : String): Unit = {
     val location = new File(locationName)
     if (location == null || !location.canRead)
       throw InexistentLocation(getOriginalPath(location) + ": error: location does not exist or cannot be read")
@@ -476,7 +476,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   /** Delete from watch list a location given by its string address.
     * @param locationName the (absolute or relative) address of the location on disk
     * @throws InexistentLocation if the location is not in the watch list */
-  def deleteStringLocation(locationName : String) {
+  def deleteStringLocation(locationName : String): Unit = {
     val location = new File(locationName)
     if (location == null || !location.canRead)
       throw InexistentLocation(getOriginalPath(location) + ": error: location does not exist or cannot be read, hence it cannot be deleted")
@@ -494,20 +494,20 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Crawl through all stored locations, ignoring (but logging) errors */
-  def crawlAll {
+  def crawlAll: Unit = {
     locations.foreach(crawl)
   }
 
 
   /** Clear the storage */
-  def uncrawlAll {
+  def uncrawlAll: Unit = {
     locations.map(getPath).foreach(uncrawl)
   }
 
 
   /** Delete all the hash entries associated with a specific file or folder
     * @param location the file or folder URL, as a string */
-  def uncrawl(url: String) { ConflictGuard.synchronized {
+  def uncrawl(url: String): Unit = { ConflictGuard.synchronized {
     val crawledFiles = urlToDocument.filterKeys(_.toString.startsWith(url)) // the file itself, or all files in the given folder
     for ((url, doc) <- crawledFiles) {
       doc.modules.foreach(m => {
@@ -533,7 +533,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
   /** Crawl through a specific file or folder
     * @param location the file or folder descriptor */
-  def crawl(location: File) { ConflictGuard.synchronized {
+  def crawl(location: File): Unit = { ConflictGuard.synchronized {
     if (!location.canRead) {
       log(Time + getOriginalPath(location) + ": error: file/folder does not exist or cannot be read")
       return
@@ -672,7 +672,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 /** A thread that checks for updated files and crawls them every crawlingInterval seconds */
 class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends Thread {
-  override def run {
+  override def run: Unit = {
     while(true && !isInterrupted()) {
         try {
             Thread.sleep(crawlingInterval * 1000)
@@ -686,7 +686,7 @@ class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends
 
 /** A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes */
 class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) extends Thread {
-  override def run {
+  override def run: Unit = {
     while(true && !isInterrupted()) {
       try {
           Thread.sleep(deletingInterval * 1000)

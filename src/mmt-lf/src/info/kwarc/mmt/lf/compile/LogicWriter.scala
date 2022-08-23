@@ -44,13 +44,13 @@ class LogicWriter(ls : LogicSyntax) {
 
     val comp = new Compiler(ls)
     val decls = comp.get
-    val labels = comp.getLabels
+    val labels = comp.getLabels()
 
     val decls_l = decls.zip(labels)
 
     val templdir = "/home/aivaras/Hets-src/MMT/newLogicTemplates/"
 
-    comp.getLabels.distinct foreach { x =>
+    comp.getLabels().distinct foreach { x =>
        val dd = decls_l mapPartial {
          case (d,y) => if (x == y) Some(d) else  None
        }

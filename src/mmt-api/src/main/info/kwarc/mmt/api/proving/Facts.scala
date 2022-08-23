@@ -41,7 +41,7 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
    def logPrefix = outerLogPrefix + "/facts"
 
    private var constantAtoms : List[Atom] = Nil
-   private[proving] def addConstantAtom(a: Atom) {
+   private[proving] def addConstantAtom(a: Atom): Unit = {
       constantAtoms ::= a
    }
    // these become facts during forward search (as a trivial case of ForwardPiElimination) 
@@ -64,14 +64,14 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
     *
     *  facts are ignored if their proof does not use a free variable
     */
-   def add(f: Fact) {
+   def add(f: Fact): Unit = {
       if (!f.tm.freeVars.isEmpty)
          futureFacts ::= f
    }
    /**
     * adds all queued facts to the database
     */
-   private[proving] def integrateFutureFacts {
+   private[proving] def integrateFutureFacts: Unit = {
       futureFacts foreach {f =>
          val fS = prover.simplifyFact(f)
          log("new fact: " + fS.present(prover.presentObj))
@@ -89,7 +89,7 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
     *
     * only approximate matching based on shapes is performed; fun must still perform a precise match
     */
-   private def foreachFact(queryVars: Context, query: Term)(fun: Fact => Unit) {
+   private def foreachFact(queryVars: Context, query: Term)(fun: Fact => Unit): Unit = {
       val querySh = Shape(queryVars, Nil, query, shapeDepth)
       facts.keys foreach {sh =>
          if (Shape.matches(querySh, sh)) {

@@ -17,11 +17,11 @@ object MMTILoop {
 }
 class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
    /** this is overridden in order to bind variables after the interpreter has been created */
-   override def createInterpreter(settings: Settings = MMTILoop.settings) {
+   override def createInterpreter(settings: Settings = MMTILoop.settings): Unit = {
       super.createInterpreter(settings)
       init
    }
-   override def printWelcome {
+   override def printWelcome: Unit = {
       out.println
       out.println("This is a Scala interpreter running within MMT; ':help' lists commands.")
       out.println("Use 'controller' to access the current MMT Controller.")
@@ -29,8 +29,8 @@ class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
       out.flush
    }
    override lazy val prompt = "scala-mmt> "
-   private def init {
-     def printError(r: Results.Result, s: String) {
+   private def init: Unit = {
+     def printError(r: Results.Result, s: String): Unit = {
        if (r != Results.Success)
          println("binding of " + s + " failed")
      }
@@ -46,7 +46,7 @@ class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
       }
    }
    /** run a command and return or interactively read commands */
-   def run(command: Option[String]) {
+   def run(command: Option[String]): Unit = {
       //settings.sourceReader.value = "SimpleReader"
       //settings.debug.value = true
       command match {

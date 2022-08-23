@@ -36,19 +36,19 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
 
   val omdocIRI: IRI = IRI.create("http://omdoc.org/identifier#id")
 
-  def printClass(c: OWLClassExpression) {
+  def printClass(c: OWLClassExpression): Unit = {
     println(c)
   }
 
-  def printIndividual(i: OWLIndividual) {
+  def printIndividual(i: OWLIndividual): Unit = {
     println(i)
   }
 
-  def printProperty[R <: OWLPropertyRange, P <: OWLPropertyExpression[R, P]](p: OWLPropertyExpression[R, P]) {
+  def printProperty[R <: OWLPropertyRange, P <: OWLPropertyExpression[R, P]](p: OWLPropertyExpression[R, P]): Unit = {
     println(p)
   }
 
-  def printObject(o: OWLPropertyAssertionObject) {
+  def printObject(o: OWLPropertyAssertionObject): Unit = {
     println(o)
   }
 
@@ -125,7 +125,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
     OMID(currThy ? IRItoLocalName(i))
   }
 
-  def addConstant(a: OWLAxiom, n: LocalName, tp: Term, md: MetaData) {
+  def addConstant(a: OWLAxiom, n: LocalName, tp: Term, md: MetaData): Unit = {
     val name =
       if (n == null) {
         a.getAnnotations.asScala.find(annot => annot.getProperty.getIRI == omdocIRI) match {
@@ -637,7 +637,7 @@ class OWLCompiler extends archives.Importer {
 }
 
 object Import {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     /*val report = new FileReport(new java.io.File("controller.log")) //report("owl", "message")
     val checker = new FoundChecker(new DefaultFoundation, report)
     val controller = new Controller(checker, report)

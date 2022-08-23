@@ -32,7 +32,7 @@ trait JupyterKernelPython {
   def makePWidget(kind: String, args: PythonParamDict): WidgetPython
 
   def Text(args: PythonParamDict): Text
-  def display(widgets: List[WidgetPython])
+  def display(widgets: List[WidgetPython]): Unit
   override def toString : String
 }
 
@@ -50,7 +50,7 @@ trait WidgetPython {
   def observe(callback: (JupyterKernelPython,java.util.HashMap[String,Any]) => Unit, key: String) : WidgetPython
   def on_click(callback: (JupyterKernelPython,WidgetPython) => Unit) : WidgetPython
   def display: WidgetPython
-  def close
+  def close: Unit
   def toString: String
 }
 
@@ -70,7 +70,7 @@ class JupyterKernel extends Extension {
 
   override def logPrefix: String = "jupyter"
   
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     super.start(args)
     initOther(presenter)
     val extman = controller.extman

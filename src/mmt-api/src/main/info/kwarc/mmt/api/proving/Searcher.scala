@@ -68,7 +68,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       })
       case _ =>
    }
-   private def initFacts {
+   private def initFacts: Unit = {
       val imports = controller.library.visibleDirect(ComplexTheory(goal.context))
       imports.map(OMMOD(_)).foreach(doTerm)
       // atoms from variables are collected during the first round of forward search (somewhat weirdly, by ForwardPiElimination)
@@ -122,7 +122,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
     * therefore, many proofs fails because the critical first step is never made
     */
    
-   private def search(levels: Int) {
+   private def search(levels: Int): Unit = {
       if (provingUnit.isKilled) {
         return
       }
@@ -135,7 +135,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       search(levels-1)
    }
 
-   private def forwardSearch(interactive: Boolean) {
+   private def forwardSearch(interactive: Boolean): Unit = {
       log("Performing forward search")
       searchForward.foreach {e =>
          e.generate(this, interactive)
@@ -149,7 +149,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
      *
      * @param g the goal to apply tactics to
     */
-   private def backwardSearch(g: Goal) {
+   private def backwardSearch(g: Goal): Unit = {
       // recurse into subgoals first so that we do not recurse into freshly-added goals
       g.getAlternatives.foreach {case Alternative(sgs,_) =>
          sgs.foreach {sg => backwardSearch(sg)}
@@ -164,7 +164,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
    }
 
    /** statefully changes g to a simpler goal */
-   private def simplifyGoal(g: Goal) {
+   private def simplifyGoal(g: Goal): Unit = {
       g.setConc(controller.simplifier(g.conc, SimplificationUnit(g.fullContext, false,false, true), rules))
    }
    /** simplify a fact */
@@ -204,7 +204,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       true
    }
    /** exhaustively applies invertible tactics to a goal */
-   private def expand(g: Goal) {
+   private def expand(g: Goal): Unit = {
       g.setExpansionTactics(this, invertibleBackward, invertibleForward)
       g.getNextExpansion match {
          case Some(at) =>

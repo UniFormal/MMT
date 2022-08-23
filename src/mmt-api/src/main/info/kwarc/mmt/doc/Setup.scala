@@ -107,7 +107,7 @@ class Setup extends ShellExtension("setup") {
     * @param setupJEdit if given, also install MMT as a plugin for jEdit
     * @param installContent if given, the branch of the content archives to install (Some("") for main branch)
     */
-   def setup(systemFolder: File, contentFolder: File, setupJEdit: Option[(Shell, File, Option[Boolean])], installContent: Option[String] = Some("")) {
+   def setup(systemFolder: File, contentFolder: File, setupJEdit: Option[(Shell, File, Option[Boolean])], installContent: Option[String] = Some("")): Unit = {
      //log("\n\nI'm going to try to set things up now.\n" +
      //         "If the following code fails and no help is around, you can try looking at the source code in info.kwarc.mmt.doc.Setup\n")
 

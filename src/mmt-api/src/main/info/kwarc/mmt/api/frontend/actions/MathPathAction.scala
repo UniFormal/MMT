@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.utils.{File, FilePath, URI}
 sealed abstract class MathPathAction extends Action
 
 case object ShowArchives extends MathPathAction with ResponsiveAction {
-  def apply() {
+  def apply(): Unit = {
     println("The following archives are loaded: ")
     logGroup {
       controller.backend.getArchives.foreach({ a =>
@@ -29,7 +29,7 @@ case object ShowArchives extends MathPathAction with ResponsiveAction {
 object ShowArchivesCompanion extends ObjectActionCompanion(ShowArchives, "show currently loaded archives", "show archives")
 
 case object Local extends MathPathAction {
-  def apply() {
+  def apply(): Unit = {
     val currentDir = new java.io.File(".").getCanonicalFile
     val b = URI.fromJava(currentDir.toURI)
     controller.backend.addStore(LocalSystem(b))
@@ -49,7 +49,7 @@ object AddArchiveCompanion extends ActionCompanion("add catalog entries for a se
 }
 
 case class AddMathPathFS(uri: URI, file: File) extends MathPathAction {
-  def apply() {
+  def apply(): Unit = {
     val lc = new LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
     controller.backend.addStore(lc)
   }

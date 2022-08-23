@@ -81,15 +81,15 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
 
     // our completer will use the suggestions method above
     val completer = new Completer {
-      override def complete(lineReader: LineReader, parsedLine: ParsedLine, list: util.List[Candidate]) {
+      override def complete(lineReader: LineReader, parsedLine: ParsedLine, list: util.List[Candidate]): Unit = {
         list.addAll(suggestions(parsedLine.line()).map(new Candidate(_)).asJavaCollection)
       }
     }
 
     // our history can not be loaded or saved
     val history = new DefaultHistory {
-      override def load(){}
-      override def save(){}
+      override def load(): Unit = {}
+      override def save(): Unit = {}
     }
 
     // finally put it all together and make the LineReader
@@ -121,7 +121,7 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
   def history() : List[String] = reader.getHistory.iterator.asScala.map(_.line).toList
 
   /** starts a loop of input and output */
-  def run(){
+  def run(): Unit ={
     var shouldQuit = false
 
     while (!shouldQuit) {

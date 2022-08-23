@@ -31,16 +31,16 @@ class Exporter extends archives.Exporter {
   override val outExt = "ocd"
 
   /** We are only interested in CDs, so we skip documents */
-  def exportDocument(doc: documents.Document, bt: BuildTask) {}
+  def exportDocument(doc: documents.Document, bt: BuildTask): Unit = {}
 
   /** This could be used to export a table of contents */
-  def exportNamespace(dp: DPath, bt: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
+  def exportNamespace(dp: DPath, bt: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {}
 
   /** OpenMath does not support views, so we skip them */
-  def exportView(view: View, bf: BuildTask) {}
+  def exportView(view: View, bf: BuildTask): Unit = {}
 
   /** flatten a theory and export it as a CD */
-  def exportTheory(thy: Theory, bf: BuildTask) {
+  def exportTheory(thy: Theory, bf: BuildTask): Unit = {
     // simplification flattens a theory, this removes in particular all named imports
     // controller is MMT's main object, it is available to every extension
     controller.simplifier(thy)
@@ -98,7 +98,7 @@ class Exporter extends archives.Exporter {
  *  This is straightforward except for a few case where MMT objects go beyond OpenMath.
  */
 object OpenMathPresenter extends ObjectPresenter {
-   def apply(o: Obj, origin: Option[CPath] = None)(implicit rh : RenderingHandler) {
+   def apply(o: Obj, origin: Option[CPath] = None)(implicit rh : RenderingHandler): Unit = {
      // recursively translate to XML, wrap in OMOBJ, and write to output stream
      rh(<OMOBJ>{applyRec(o)}</OMOBJ>)
    }

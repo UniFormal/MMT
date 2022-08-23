@@ -67,11 +67,11 @@ class SimplificationRuleGenerator extends ChangeListener {
      }
   }
 
-  override def onAdd(e: StructuralElement) {onCheck(e)}
-  override def onDelete(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {onCheck(e)}
+  override def onDelete(e: StructuralElement): Unit = {
      getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
   }
-  override def onCheck(e: StructuralElement) {
+  override def onCheck(e: StructuralElement): Unit = {
        val c = e match {
           case c: symbols.Constant if c.rl == Some(SimplifyTag) =>
              val name = c.name
@@ -119,7 +119,7 @@ class SimplificationRuleGenerator extends ChangeListener {
               error(e, "not a depth rule")
        }
   }
-  private def error(e: StructuralElement, msg: String) {
+  private def error(e: StructuralElement, msg: String): Unit = {
      logError(e.path + ": " + msg)
   }
   private def present(t: Term) = controller.presenter.asString(t)
@@ -187,9 +187,9 @@ class SimplificationRuleGenerator extends ChangeListener {
   private lazy val msc = new MatchStepCompiler(controller.globalLookup)
 
   /** @param args implicit ::: List(t1, t2) for a rule {context} t1 ~> t2 */
-  private def generateRule(c: symbols.Constant, context: Context, args: List[Term]) {
+  private def generateRule(c: symbols.Constant, context: Context, args: List[Term]): Unit = {
      val ruleName = c.name / SimplifyTag
-     def addSimpRule(r: Rule) {
+     def addSimpRule(r: Rule): Unit = {
          val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(r))
          ruleConst.setOrigin(GeneratedFrom(c.path, this))
          controller.add(ruleConst)
@@ -230,7 +230,7 @@ class SimplificationRuleGenerator extends ChangeListener {
      into
         v = outer(before, t, after)
   */
-  private def generateSolutionRule(c: Constant, names: OuterInnerNames, rhs: Term) {
+  private def generateSolutionRule(c: Constant, names: OuterInnerNames, rhs: Term): Unit = {
      // TODO obtain implicit arguments of outer in terms of arguments of inner, currently only trivial case handled
      if (names.implArgsOuter.nonEmpty) return
      rhs match {

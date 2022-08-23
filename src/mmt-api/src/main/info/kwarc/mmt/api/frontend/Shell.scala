@@ -53,7 +53,7 @@ class Shell extends StandardIOHelper {
   var disableFirstRun = false
 
   /** creates controller, loads configurations/startup files, processes arguments, possibly drops into shell or terminates */
-  def main(a: Array[String]) {
+  def main(a: Array[String]): Unit = {
     try {
        mainRaw(a)
     } catch {
@@ -68,19 +68,19 @@ class Shell extends StandardIOHelper {
 
   protected def exitFail = sys.exit(Level.Fatal.toInt)
 
-  private def loadConfig(cfg: File) {
+  private def loadConfig(cfg: File): Unit = {
      if (cfg.exists) {
         controller.loadConfig(MMTConfig.parse(cfg), false)
      }
   }
-  private def loadMsl(msl: File) {
+  private def loadMsl(msl: File): Unit = {
      if (msl.exists) {
         controller.runMSLFile(msl, None, true, None)
      }
   }
 
   /** run a ShellExtension */
-  private def deferToExtension(key: String, args: List[String]) {
+  private def deferToExtension(key: String, args: List[String]): Unit = {
      controller.extman.getOrAddExtension(classOf[ShellExtension], key) match {
        case Some(se) =>
           controller.report.addHandler(ConsoleHandler)
@@ -108,7 +108,7 @@ class Shell extends StandardIOHelper {
   }
 
   /** main method without exception handling */
-  private def mainRaw(a: Array[String]) {
+  private def mainRaw(a: Array[String]): Unit = {
 
      val deployFolder = runStyle match {
        case rs: MMTSystem.DeployRunStyle => Some(rs.deploy)
@@ -226,7 +226,7 @@ trait REPLExtension extends Extension {
   /* A report handler to be added to the console automatically when needed */
   protected val handler : ReportHandler = ConsoleHandler
   /** Called when entering (i.e. starting up) the REPL */
-  def enter(args : ShellArguments) {
+  def enter(args : ShellArguments): Unit = {
     //print the banner
     println(banner)
     // switch on console reports for wrong user inputs
@@ -241,7 +241,7 @@ trait REPLExtension extends Extension {
 /** The standard, bare-bones implementation of the REPL */
 class StandardREPL extends REPLExtension {
   private lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-  def run {
+  def run: Unit = {
     var command = Option(input.readLine)
     while (command.isDefined) {
       controller.tryHandleLine(command.get) match {
@@ -251,7 +251,7 @@ class StandardREPL extends REPLExtension {
       command = Option(input.readLine)
     }
   }
-  def exit {input.close()}
+  def exit: Unit = {input.close()}
 }
 
 /** A shell, the default way to run MMT as an application */

@@ -177,7 +177,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case t : Exception =>
         log("Exception: " + t.getMessage)
         t.printStackTrace()
-        sys.exit
+        sys.exit()
     }
   }
 
@@ -233,7 +233,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
     case _ =>
       println(" -- OTHER: " + m.getClass)
-      sys.exit
+      sys.exit()
   }
 
   def doDatatypeConstructor(con:constructor,datatp:FinalConstant) = {
@@ -261,7 +261,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     case d : Decl => doDecl(d)(true)
     case _ =>
       println("TODO Assumption: "+ad.getClass)
-      sys.exit
+      sys.exit()
   }
 
 
@@ -316,7 +316,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       case importing(un,n) =>
       case _ =>
         println("TODO Formal: " + f.getClass + ": " + f)
-        sys.exit
+        sys.exit()
     }
   }
 
@@ -503,12 +503,12 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         if (bindings.nonEmpty) {
           println("bindings in Decl expr_judgement: " + bindings)
           println(e)
-          sys.exit
+          sys.exit()
         }
         state.th add Constant(state.th.toTerm, name, Nil, Some(state.bind(fulltp)), None, if (isAss) Some("Assumption") else None)
       case _ =>
         println("TODO Decl: " + d.getClass + ": " + d)
-        sys.exit
+        sys.exit()
     }
   }
 }

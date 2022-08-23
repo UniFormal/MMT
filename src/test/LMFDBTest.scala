@@ -16,7 +16,7 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "debug") {
   override val gotoshell: Boolean = false
 
   override def doFirst: Unit = {
-    super.doFirst
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")

@@ -36,7 +36,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
   }
 
   /** closes the current container element, e.g., a theory */
-  def parseElementEnd {
+  def parseElementEnd: Unit = {
     currentScope match {
       case IsMod(m,_) =>
         val newScope = if (m.name.length > 1) IsMod(m ^, LocalName.empty) else IsDoc(m ^^)
@@ -264,7 +264,7 @@ class REPLServer extends ServerExtension("repl") {
     s
   }
 
-  private def deleteSession(s: REPLSession) {
+  private def deleteSession(s: REPLSession): Unit = {
     controller.delete(s.doc.path)
     sessions = sessions.filterNot(_.id == s.id)
   }

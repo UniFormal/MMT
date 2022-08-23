@@ -169,7 +169,7 @@ class TestErrorBuffer(controller: Controller) extends ErrorHandler {
   private var errors: ListBuffer[(Path, Error)] = new ListBuffer
 
   /** resets the internal state to an empty state */
-  override def reset {
+  override def reset: Unit = {
     errors.clear()
     super.reset
   }

@@ -120,7 +120,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * and then on each child, finally end(se) must be called on the container element.
    * This holds accordingly for nested declared modules. 
    */
-  protected def seCont(se: StructuralElement)(implicit state: ParserState) {
+  protected def seCont(se: StructuralElement)(implicit state: ParserState): Unit = {
     log(se.toString)
     val reg = currentSourceRegion
     SourceRef.update(se, state.makeSourceRef(reg))
@@ -136,7 +136,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
   /** called at the end of a document or module, does common bureaucracy */
-  protected def end(s: ContainerElement[_])(implicit state: ParserState) {
+  protected def end(s: ContainerElement[_])(implicit state: ParserState): Unit = {
     //extend source reference until end of element
     SourceRef.get(s) foreach {r =>
       SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getLastReadSourcePosition)))
@@ -153,7 +153,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     SourceRegion(state.startPosition, state.reader.getLastReadSourcePosition)
 
   /** like seCont but may wrap in NestedModule */
-  private def moduleCont(m: Module, par: HasParentInfo)(implicit state: ParserState) {
+  private def moduleCont(m: Module, par: HasParentInfo)(implicit state: ParserState): Unit = {
     val se = par match {
        case IsDoc(dp) =>
          m.parentDoc = Some(dp)
@@ -301,14 +301,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     (obj, reg.copy(end = reg.end-1), pr)
   }
 
-  private def doComponent(tc: TermContainer, cont: Context)(implicit state: ParserState) {
+  private def doComponent(tc: TermContainer, cont: Context)(implicit state: ParserState): Unit = {
     val (obj, _, pr) = readParsedObject(cont)
     tc.read = obj
     tc.parsed = pr.toTerm
   }
 
   /** like doComponent, but expects to find a context (using contextRule notation) */
-  private def doContextComponent(cc: ContextContainer, context: Context)(implicit state: ParserState) {
+  private def doContextComponent(cc: ContextContainer, context: Context)(implicit state: ParserState): Unit = {
     val (obj, reg, pr) = readParsedObject(context, Some(Context.parsingRule))
     cc.read = obj
     val cont: Context = pr.term match {
@@ -343,7 +343,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     (fromRef,from,tms)
   }
 
-  private def doNotation(c: NotationComponentKey, nc: NotationContainer, treg: SourceRegion)(implicit state: ParserState) {
+  private def doNotation(c: NotationComponentKey, nc: NotationContainer, treg: SourceRegion)(implicit state: ParserState): Unit = {
     val notString = state.reader.readObject._1
     if (nc(c).isDefined)
       errorCont(makeError(treg, "notation of this constant already given, ignored"))
@@ -380,7 +380,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     *
     * @param doc the containing Document (must be in the controller already)
     */
-  private def readInDocument(doc: Document)(state: ParserState) {
+  private def readInDocument(doc: Document)(state: ParserState): Unit = {
     // state argument is not implicit because we have to copy the state whenever we recurse into a nested declaration
     implicit val stateI = state
     if (state.reader.endOfDocument) return
@@ -480,11 +480,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     *
     * this function handles one declaration if possible, then calls itself recursively
     */
-  def readInModule(mod: ModuleOrLink, context: Context, features: Features)(state: ParserState) {
+  def readInModule(mod: ModuleOrLink, context: Context, features: Features)(state: ParserState): Unit = {
      readInModuleAux(mod, mod.asDocument.path, context, features)(state)
   }
 
-  private def readInModuleAux(mod: ModuleOrLink, docHome: DPath, context: Context, features: Features)(state: ParserState) {
+  private def readInModuleAux(mod: ModuleOrLink, docHome: DPath, context: Context, features: Features)(state: ParserState): Unit = {
     // state argument is not implicit because we have to copy the state whenever we recurse into a nested declaration
     implicit val stateI = state
     //This would make the last RS marker of a module optional, but it's problematic with nested modules.
@@ -499,7 +499,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     /* complete declarations should only be added through this method
      * Incomplete container elements must be added separately, e.g., as in readStructure.
      */
-    def addDeclaration(d: Declaration) {
+    def addDeclaration(d: Declaration): Unit = {
        d.setDocumentHome(currentSection)
        seCont(d)
        d match {
@@ -718,7 +718,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param parent the containing document or module (if any)
     * @param context the context (excluding the theory to be read)
     */
-  private def readTheory(parent: HasParentInfo, context: Context)(implicit state: ParserState) {
+  private def readTheory(parent: HasParentInfo, context: Context)(implicit state: ParserState): Unit = {
     val rname = readName
     val (ns, name) = parent match {
       case IsDoc(doc) =>
@@ -782,7 +782,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (excluding the view to be read)
     * @param isImplicit whether the view is implicit
     */
-  private def readView(parent: HasParentInfo, context: Context, isImplicit: Boolean)(implicit state: ParserState) {
+  private def readView(parent: HasParentInfo, context: Context, isImplicit: Boolean)(implicit state: ParserState): Unit = {
     val rname = readName
     val (ns, name) = parent match {
       case IsDoc(doc) =>
@@ -838,7 +838,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
   
-  private def readDerivedModule(parent: HasParentInfo, context: Context, feature: String)(implicit state: ParserState) {
+  private def readDerivedModule(parent: HasParentInfo, context: Context, feature: String)(implicit state: ParserState): Unit = {
     val rname = readName
     val (ns, name) = parent match {
       case IsDoc(doc) =>
@@ -1059,7 +1059,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param isImplicit whether the structure is implicit
     */
   private def readStructure(parentInfo: IsMod, mod: ModuleOrLink, context: Context,
-                            isImplicit: Boolean, isTotal: Boolean)(implicit state: ParserState) {
+                            isImplicit: Boolean, isTotal: Boolean)(implicit state: ParserState): Unit = {
     val link = mod match {case l: Link => Some(l) case _ => None}
     val givenName = readName
     val home = OMMOD(parentInfo.modParent)
@@ -1148,7 +1148,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** reads a [[DerivedDeclaration]] and calls continuations */
-  private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState) {
+  private def readDerivedDeclaration(feature: StructuralFeature, parentInfo: IsMod, context: Context)(implicit state: ParserState): Unit = {
     val parent = parentInfo.modParent
     val pr = feature.getHeaderRule
     val (_, reg, header) = readParsedObject(context, Some(pr))
@@ -1238,7 +1238,7 @@ trait MMTStructureEstimator {self: Interpreter =>
           t
         case _ => Traverser(this, t)
       }
-      def apply(tC: AbstractTermContainer, context: Context) {
+      def apply(tC: AbstractTermContainer, context: Context): Unit = {
         tC.get.foreach {t => apply(t, context)}
       }
     }
@@ -1263,12 +1263,12 @@ trait MMTStructureEstimator {self: Interpreter =>
 
     override def resolveDeclarationName[A](cls: Class[A], parent: ModuleOrLink, name: LocalName)(implicit state: ParserState) = name
     override def getFeatures(m: MPath) = noFeatures
-    override def errorCont(e: => SourceError)(implicit state: ParserState) {}
+    override def errorCont(e: => SourceError)(implicit state: ParserState): Unit = {}
     override def getParseExt(se: StructuralElement, key: String): Option[ParserExtension] = key match {
       case "rule" => None
       case _ =>
         super.getParseExt(se, key)
     }
-    override def end(s: ContainerElement[_])(implicit state: ParserState) {}
+    override def end(s: ContainerElement[_])(implicit state: ParserState): Unit = {}
   }
 }

@@ -59,7 +59,7 @@ class InductiveTypes extends StructuralFeature(inductiveUtil.feature) with Param
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
     
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 

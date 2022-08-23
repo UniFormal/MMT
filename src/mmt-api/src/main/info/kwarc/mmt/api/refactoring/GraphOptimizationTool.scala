@@ -593,7 +593,7 @@ class GraphOptimizationTool extends BuildTarget {
     /*control buttons*/
     val yesButton = new JButton("yes")
     yesButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="yes"
           disableButtons()
@@ -603,7 +603,7 @@ class GraphOptimizationTool extends BuildTarget {
     })
     val noButton = new JButton("no")
     noButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="no"
           disableButtons()
@@ -613,7 +613,7 @@ class GraphOptimizationTool extends BuildTarget {
     })
     val laterButton = new JButton("later")
     laterButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="later"
           disableButtons()
@@ -623,7 +623,7 @@ class GraphOptimizationTool extends BuildTarget {
     })
     val neverButton = new JButton("never")
     neverButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="never"
           disableButtons()

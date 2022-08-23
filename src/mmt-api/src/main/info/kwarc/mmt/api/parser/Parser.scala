@@ -214,9 +214,9 @@ object DefaultObjectParser extends ObjectParser {
   */
 class StructureParserContinuations(val errorCont: ErrorHandler) {
   /** to be called after parsing an element (but before parsing its body if any) */
-  def onElement(se: StructuralElement) {}
+  def onElement(se: StructuralElement): Unit = {}
   /** to be called after parsing the body of a [[ContainerElement]], e.g., documents and declared modules */
-  def onElementEnd(se: ContainerElement[_]) {}
+  def onElementEnd(se: ContainerElement[_]): Unit = {}
 }
 
 /** the type of structural parsers

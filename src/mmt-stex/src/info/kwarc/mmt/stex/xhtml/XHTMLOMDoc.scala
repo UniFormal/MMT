@@ -138,7 +138,7 @@ class HTMLDocument(val path : DPath,orig : HTMLParser.HTMLNode) extends OMDocHTM
 
 
 case class HTMLInputref(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     sstate.foreach { state =>
       collectAncestor {
         case t: HTMLDocument => t
@@ -282,7 +282,7 @@ case class HTMLComplexAssignment(orig : HTMLParser.HTMLNode) extends OMDocHTML(o
 }
 
 case class HTMLAliasComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ass : HTMLComplexAssignment => ass
     }.foreach(_.alias = resource)
@@ -305,7 +305,7 @@ case class HTMLSimpleAssignment(orig : HTMLParser.HTMLNode) extends OMDocHTML(or
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  def init {
+  def init: Unit = {
     collectAncestor {
       case hl: HasSimpleAssignments =>
         hl
@@ -338,7 +338,7 @@ case class HTMLSimpleAssignment(orig : HTMLParser.HTMLNode) extends OMDocHTML(or
 }
 
 case class HTMLLanguageComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case hl: HasLanguage =>
         hl
@@ -355,7 +355,7 @@ case class HTMLLanguageComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(o
 }
 
 case class HTMLSignatureComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case th: HTMLTheory => th
     }.foreach(_.signature = resource)
@@ -371,7 +371,7 @@ case class HTMLSignatureComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(
 }
 
 case class HTMLArityComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasArity => ha
     }.foreach(_.arity = resource)
@@ -387,7 +387,7 @@ case class HTMLArityComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig
 }
 
 case class HTMLMacroNameComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasMacroName => ha
     }.foreach(_.macroname = resource)
@@ -403,7 +403,7 @@ case class HTMLMacroNameComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(
 }
 
 case class HTMLMetatheoryComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     if (resource.nonEmpty) {
       collectAncestor {
         case ha: HTMLModuleLike => ha
@@ -428,7 +428,7 @@ case class HTMLBindTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(ori
     children.foreach(c => ret.add(c.copy))
     ret.asInstanceOf[this.type]
   }
-  def init {
+  def init: Unit = {
     collectAncestor {
       case g: HTMLGroupLike => g
     }.foreach { g =>
@@ -453,7 +453,7 @@ case class HTMLBindTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(ori
 }
 
 case class HTMLAssoctypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasAssocType => ha
     }.foreach(_.assoctype = resource)
@@ -469,7 +469,7 @@ case class HTMLAssoctypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(or
 }
 
 case class HTMLReorderComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     collectAncestor {
       case ha: HasReorderArgs => ha
     }.foreach(_.reorders = resource)
@@ -485,7 +485,7 @@ case class HTMLReorderComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig
 }
 
 case class HTMLTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     if (sstate.exists(_.in_term)) {
       ???
     }
@@ -513,7 +513,7 @@ case class HTMLTypeComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
 
 case class HTMLDefComponent(orig:HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   var wasinterm = false
-  def init {
+  def init: Unit = {
     if (sstate.exists(_.in_term)) {wasinterm = true}
     //assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)
@@ -562,7 +562,7 @@ case class HTMLNotationPrec(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) 
 }
 
 case class HTMLNotationComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)
   }
@@ -591,7 +591,7 @@ case class HTMLNotationComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(o
 }
 
 case class HTMLNotationOpComponent(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
-  def init {
+  def init: Unit = {
     assert(sstate.forall(!_.in_term))
     sstate.foreach(_.in_term = true)
   }

@@ -10,13 +10,13 @@ class Window(val id: String, wm: WindowManager) extends JWindow() {
    private val textArea = new JTextArea()
    add(textArea)
    addWindowListener(new WindowAdapter {
-      override def windowClosed(e: WindowEvent) {wm.deleteWindow(id)}
+      override def windowClosed(e: WindowEvent): Unit = {wm.deleteWindow(id)}
    })
    //setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
    setVisible(true)
    //toFront()
    setAlwaysOnTop(true)
-   def set(content: String) {
+   def set(content: String): Unit = {
       textArea.setText(content)
       pack()
    }
@@ -26,12 +26,12 @@ class WindowManager(val controller: Controller) {
    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
    private var windows : List[Window] = Nil
    private var gui: Option[JFrame] = None
-   def openBrowser {
+   def openBrowser: Unit = {
       val b = new GUIFrame(this)
       //b.paint
       gui = Some(b)
    }
-   def closeBrowser {
+   def closeBrowser: Unit = {
       gui.foreach(_.dispose)
       gui = None
    }
@@ -41,7 +41,7 @@ class WindowManager(val controller: Controller) {
          case None => createWindow(id)
       }
    }
-   def deleteWindow(id: String) {
+   def deleteWindow(id: String): Unit = {
       windows = windows filter {w =>
          if (w.id == id) {
             w.dispose

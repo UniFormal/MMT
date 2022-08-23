@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.utils.MMT_TODO
 
 @MMT_TODO("this is experimental and may still be removed")
 class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     implicit val parentTerm = dd.path

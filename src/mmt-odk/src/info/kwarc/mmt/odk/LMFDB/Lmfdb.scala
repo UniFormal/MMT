@@ -28,7 +28,7 @@ import scala.util.Try
 class Plugin extends frontend.Plugin {
   val theory = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     controller.backend.addStore(new LMFDBStore {
       def debug(s: String) = report("lmfdb", s)
     })
@@ -303,7 +303,7 @@ object LMFDBStore {
 
 
 abstract class LMFDBStore extends Storage with LMFDBBackend {
-  def load(path: Path)(implicit controller: Controller) {
+  def load(path: Path)(implicit controller: Controller): Unit = {
     val db = DB.fromPath(path, allowSchemaPath = false).getOrElse {
       throw NotApplicable("not an LMFDB theory")
     }
@@ -320,11 +320,11 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
     }
   }
 
-  override def loadFragment(needed: Path, known: Path)(implicit controller: Controller) {
+  override def loadFragment(needed: Path, known: Path)(implicit controller: Controller): Unit = {
     load(needed)
   }
 
-  private def loadConstant(path: GlobalName, db: DB)(implicit controller: Controller) {
+  private def loadConstant(path: GlobalName, db: DB)(implicit controller: Controller): Unit = {
 
     // find the type we are implementing, getting from records --> instance
     val dbT = getTP(db)

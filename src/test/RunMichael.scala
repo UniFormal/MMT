@@ -19,8 +19,8 @@ import scala.collection.mutable
 
 object RunMichael extends MagicTest {
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
@@ -31,11 +31,11 @@ object RunMichael extends MagicTest {
     controller.extman.addExtension(new PathGraphExporter)
   }
 
-  def run : Unit = {
-    //exportMMT
-    //viewfinder
-    findIntersecter
-    //intersect
+  def run() : Unit = {
+    //exportMMT()
+    //viewfinder()
+    findIntersecter()
+    //intersect()
   }
 
   def findIntersecter() : Unit = {
