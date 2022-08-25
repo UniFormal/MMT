@@ -50,7 +50,17 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 //
 scalaVersion in Global := "2.13.4"
 scalacOptions in Global := Seq(
-  "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
+  "-feature",
+  "-language:postfixOps", "-language:implicitConversions", "-language:reflectiveCalls", "-language:existentials",
+
+  "-deprecation", // turn on deprecation warnings
+
+  // turn down the severity of specific warnings
+  "-Wconf:msg=early initializers are deprecated*:i",                 // Info all "early initializers are deprecated" (need to fix in scala3)
+  "-Wconf:cat=other-match-analysis:i",                               // Info all "non-exhaustive match" warnings
+  "-Wconf:msg=Exhaustivity analysis reached max recursion depth*:s", // Disable "Exhaustivity analysis reached max recursion depth"
+
+  // "-Xno-patmat-analysis", // to temporarily disable
   // "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems // does not exist anymore since scala 2.13.*
   "-sourcepath", baseDirectory.value.getAbsolutePath // make sure that all scaladoc source paths are relative
 )
