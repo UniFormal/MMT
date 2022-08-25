@@ -444,7 +444,7 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
  *
  * assumption: notations give meta-arguments as arguments before context
  */
-class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
+class NestedHOASNotation(val obj: HOAS, val meta: HOAS) extends NotationExtension {
    override def priority = 2
    def isApplicable(t: Term) = t match {
       case OMA(OMS(meta.apply), OMS(obj.apply) :: _) => true

@@ -957,6 +957,7 @@ case class HTMLSymbol(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with H
           OMDocHTML.setReorder(c,reorders)
           OMDocHTML.setMacroName(c,macroname)
           OMDocHTML.setArity(c,arity)
+          state.getHOAS.foreach(OMDocHTML.setHOAS(c,_))
           sourceref.foreach(s => SourceRef.update(c,s))
           state.add(c)
           (df,tp) match {
@@ -1079,6 +1080,7 @@ case class HTMLVarDecl(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with 
       }.foreach { g =>
         val vd = VarDecl(LocalName(resource),None,tp.map(state.applyTerm),None,None)
         sourceref.foreach(s => SourceRef.update(vd,s))
+        state.getHOAS.foreach(OMDocHTML.setHOAS(vd, _))
         OMDocHTML.setArity(vd,arity)
         OMDocHTML.setAssoctype(vd,assoctype)
         OMDocHTML.setReorder(vd,reorders)
@@ -1257,6 +1259,7 @@ case class HTMLCopyModule(orig : HTMLParser.HTMLNode,istotal:Boolean) extends OM
             case _ => p
           }
           val c = Constant(struct.toTerm,ComplexStep(npath.module) / npath.name,alias.toList,None,df,None)
+          state.getHOAS.foreach(OMDocHTML.setHOAS(c, _))
           df match {
             case Some(OMS(p)) =>
               state.getO(p) match {
@@ -1316,6 +1319,7 @@ case class HTMLRealization(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) w
             case _ => p
           }
           val c = Constant(struct.toTerm,ComplexStep(npath.module) / npath.name,alias.toList,None,df,None)
+          state.getHOAS.foreach(OMDocHTML.setHOAS(c, _))
           state.add(c)
           state.check(c)
       }
@@ -1535,6 +1539,7 @@ case class HTMLSDefinition(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) w
           (orig,collectAncestor { case s : HTMLModuleLike => s}) match {
             case (Some(c : Constant),Some(t)) if t.signature_theory.isDefined && c.parent == t.sighome.get.toMPath && c.df.isEmpty =>
               val nc = Constant(c.home,c.name,c.alias,c.tp,Some(defi),c.rl)
+              nc.metadata = c.metadata
               sourceref.foreach(s => SourceRef.update(nc,s))
               this.path = Some(nc.path)
               state.update(nc)

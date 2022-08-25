@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.parsing
 
-import info.kwarc.mmt.api.{DPath, GlobalName, LNStep, Level, LocalName, MPath, NamespaceMap, Path, SimpleStep, SourceError}
+import info.kwarc.mmt.api.{DPath, GlobalName, LNStep, Level, LocalName, MPath, NamespaceMap, ParseError, Path, SimpleStep, SourceError}
 import info.kwarc.mmt.api.archives.{Archive, source}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
@@ -1123,7 +1123,12 @@ object STeXRules {
             val mod = s.trim.drop(5).trim
             if (mod == "NONE") meta = None
             else {
-              ???
+              try {
+                meta = Some(Path.parseM(mod))
+              } catch {
+                case t : ParseError =>
+                  throw LaTeXParseError("Not a valid module path: " + mod)
+              }
             }
           case s if s.trim.startsWith("title=") =>
             title = s.trim.drop(6).trim

@@ -280,7 +280,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
             println("???")
         }
       } catch {
-        case e: JSONError =>
+        case _: JSONError | _: java.lang.StringIndexOutOfBoundsException =>
       } else {
         jsonfile.up.mkdirs()
         jsonfile.createNewFile()

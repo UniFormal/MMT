@@ -148,9 +148,10 @@ trait MathHubServer { this : STeXLSPServer =>
 
   private var allRemotes : List[Remote] = Nil
 
-  def installArchives(ids : String) = {
+  def installArchives(ids : String) = if (ids != null) {
     getAllRemotes
-    getDeps(ids,new {var ls : List[Any] = Nil}).distinct.foreach(installArchiveI)
+    val relevant = getDeps(ids,new {var ls : List[Any] = Nil}).distinct
+    relevant.foreach(installArchiveI)
     client.client.updateMathHub()
   }
 
@@ -228,6 +229,7 @@ trait MathHubServer { this : STeXLSPServer =>
                   }
                   val max = files.length
                   val count = new AtomicInteger(0)
+                  val done = new AtomicInteger(0)
                   files.par.foreach{ case (dim, f) =>
                     val nc = count.incrementAndGet()
                     update(nc.toDouble / max, "Downloading " + (nc + 1) + "/" + max + "... (" + dim + "/" + f + ")")
@@ -271,6 +273,8 @@ trait MathHubServer { this : STeXLSPServer =>
                       case t: Throwable =>
                         println(t.getMessage)
                         print("")
+                    } finally {
+                      done.incrementAndGet()
                     }
                   }
                   ((), "success")
