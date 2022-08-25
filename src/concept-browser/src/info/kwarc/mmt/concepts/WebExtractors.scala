@@ -27,7 +27,7 @@ abstract class WebExtractor {
         val input = URI.get(url)
         var output = new java.io.ByteArrayOutputStream()
         try {
-          val byteArray = LazyList.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
+          val byteArray = Stream.continually(input.read).takeWhile(_ != -1).map(_.toByte).toArray
           output.write(byteArray)
           XML.withSAXParser(new SAXFactoryImpl().newSAXParser()).loadString(output.toString)
         } catch {

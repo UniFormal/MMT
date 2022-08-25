@@ -84,7 +84,7 @@ class Compiler(log: LogicSyntax) extends Program {
    val declare(symb,sname) = ("symb" record ("sname" ::: id)).derive(List("Show","Typeable"))
    addTag("basic")
 
-   val declare(error) = "error".exception()
+   val declare(error) = "error" exception
 
    addTag("basic")
 

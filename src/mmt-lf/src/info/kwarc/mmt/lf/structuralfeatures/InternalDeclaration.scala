@@ -463,7 +463,7 @@ object Constructor {
 case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term]=None, ctx: Option[Context]=None, notC: Option[NotationContainer]=None) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
-  def notation = notC getOrElse NotationContainer.empty()
+  def notation = notC getOrElse NotationContainer()
   def isTypeLevel = {false}
 }
 

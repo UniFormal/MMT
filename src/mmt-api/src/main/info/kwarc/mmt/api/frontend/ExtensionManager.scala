@@ -212,7 +212,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
     val ext = try {
       val Ext = clsJ.asInstanceOf[Class[Extension]]
-      Ext.getDeclaredConstructor().newInstance()
+      Ext.newInstance
     } catch {
       case e: Exception =>
         throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)

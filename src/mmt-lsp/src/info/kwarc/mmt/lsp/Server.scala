@@ -83,7 +83,7 @@ abstract class LSP[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClas
     lazy val ss = new ServerSocket(port)
     new Thread {
       override def run(): Unit = {
-        while (true) /*try*/ {
+        while (true) try {
           log("Waiting for connection...",Some("socket"))
           val conn = ss.accept()
           log("connected.",Some("socket"))
@@ -97,7 +97,7 @@ abstract class LSP[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClas
             setOutput(conn.getOutputStream).validateMessages(true).setClassLoader(this.getClass.getClassLoader)/*.traceMessages(wr)*/.create()
           end.connect(launcher.getRemoteProxy)
           launcher.startListening()
-        } /* catch { ... } */
+        }
       }
     }.run()
   }

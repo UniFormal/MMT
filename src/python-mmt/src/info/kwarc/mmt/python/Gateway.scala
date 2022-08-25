@@ -6,6 +6,8 @@ import frontend._
 import py4j._
 import GatewayServer._
 
+import scala.collection.convert.ImplicitConversionsToJava._
+
 /**
  * allows controlling MMT from Python
  * 
@@ -20,7 +22,9 @@ class Py4JGateway extends Extension {
     val port = utils.stringToInt(portS).getOrElse {
       throw LocalError("expected numeric argument")
     }
-    gatewayServer = new GatewayServer(controller, port, port+1, DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT, null)
+    // twiesing: this line depends on scala.collection.convert.ImplicitConversionsToJava
+    // so can't remove the deprecation for now
+    gatewayServer = new GatewayServer(controller, port, port+1, DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT, Nil)
     gatewayServer.start()
   }
   
