@@ -94,7 +94,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   protected val custom: ArchiveCustomization = {
     properties.get("customization") match {
       case None => new DefaultCustomization
-      case Some(c) => java.lang.Class.forName(c).asInstanceOf[java.lang.Class[ArchiveCustomization]].newInstance
+      case Some(c) => java.lang.Class.forName(c).asInstanceOf[java.lang.Class[ArchiveCustomization]].getDeclaredConstructor().newInstance()
     }
   }
 

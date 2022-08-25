@@ -114,7 +114,7 @@ case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInf
   */
 case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader) extends MMTTask {
   /** the whole stream as a string */
-  def fullString = Stream.continually(stream.readLine()).takeWhile(_ != null).mkString("\n")
+  def fullString = LazyList.continually(stream.readLine()).takeWhile(_ != null).mkString("\n")
 }
 
 object ParsingStream {

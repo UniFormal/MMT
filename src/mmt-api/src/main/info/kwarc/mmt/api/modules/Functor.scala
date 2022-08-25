@@ -52,7 +52,7 @@ abstract class StructureTransformer[ET <: ExpressionTransformer] extends Extensi
 
   /** translates a path and builds the desired theory */
   def applyModule(mp: MPath): Unit = {
-    if (mp == from) return to // optimization
+    if (mp == from) return /*to*/ // optimization
     val m = controller.getAs(classOf[Module],mp)
     applyModule(m)
   }
