@@ -178,6 +178,10 @@ trait TeXRule {
           in.drop(1)
           children = children ::: List(new PlainText("[", in.offset - 1, in.offset))
           while (!done) {
+            if (in.empty) {
+              done = true
+              throw LaTeXParseError("File ended unexpectedly")
+            }
             var curr : List[TeXTokenLike] = Nil
             var inbrackets = 0
             var break = false
