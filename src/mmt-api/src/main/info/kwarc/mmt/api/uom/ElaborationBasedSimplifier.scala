@@ -30,7 +30,7 @@ object ElaboratedElement extends ClientProperty[StructuralElement,Int](utils.mmt
   def getDefault(t: StructuralElement) = get(t).getOrElse(0)
   def setInprogress(t: StructuralElement) = put(t, -get(t).getOrElse(1).abs)
   def isInprogress(t: StructuralElement) = getDefault(t) < 0
-  def setPartially(t: StructuralElement) = put(t, get(t).getOrElse(1).signum * 2)
+  def setPartially(t: StructuralElement) = put(t, get(t).getOrElse(1).sign * 2)
   def isPartially(t : StructuralElement): Boolean = getDefault(t).abs >= 2
   def setFully(t: StructuralElement) = put(t,3)
   def isFully(t : StructuralElement) : Boolean = getDefault(t).abs >= 3
@@ -264,7 +264,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
    */
   private def flattenDerivedModule(dm: DerivedModule, rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment): Unit = {
      controller.extman.get(classOf[ModuleLevelFeature], dm.feature) match {
-       case None => Nil
+       case None => /*Nil*/
        case Some(sf) =>
           val elab = sf.modules(dm, rulesO, env)
           val docO = dm.parentDoc
