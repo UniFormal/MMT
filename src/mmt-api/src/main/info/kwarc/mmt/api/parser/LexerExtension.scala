@@ -65,7 +65,7 @@ abstract class PrefixedTokenLexer(delim: Char, includeDelim: Boolean = true) ext
      }
      val start = if (includeDelim) index else index + 1
      val word = s.substring(start, i)
-     val text = if (includeDelim) None else Some("$delim$word")
+     val text = if (includeDelim) None else Some(s"$delim$word")
      Some(Token(word, firstPosition, true, text))
   }
   /** true for the characters to be included before ending the token */
