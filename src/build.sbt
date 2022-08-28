@@ -60,6 +60,9 @@ Global / scalacOptions := Seq(
   "-Wconf:cat=other-match-analysis:i",                               // Info all "non-exhaustive match" warnings
   "-Wconf:msg=Exhaustivity analysis reached max recursion depth*:s", // Disable "Exhaustivity analysis reached max recursion depth"
 
+  "-Wconf:msg=.*MMT_TODO.*:i",                                        // Info all the MMT_TODOs
+  // "-Wconf:msg=.*MMT_TODO.*:s",                                     // to temporarily disable
+
   // "-Xno-patmat-analysis", // to temporarily disable
   // "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems // does not exist anymore since scala 2.13.*
   "-sourcepath", baseDirectory.value.getAbsolutePath // make sure that all scaladoc source paths are relative

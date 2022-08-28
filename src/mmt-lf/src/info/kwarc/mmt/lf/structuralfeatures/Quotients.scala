@@ -13,7 +13,7 @@ import StructuralFeatureUtils._
 import InternalDeclarationUtil._
 import info.kwarc.mmt.api.utils.MMT_TODO
 
-@MMT_TODO("this is experimental and may still be removed")
+@deprecated("MMT_TODO: this is experimental and may still be removed", since="forever")
 class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 

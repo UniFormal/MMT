@@ -221,7 +221,7 @@ object TermContainer {
    /** factory for an optionally given Term
     *  @param tOpt the term; treated as parsed or analyzed depending on AbstractObjectParser.isOnlyParsed
     */
-   @MMT_TODO("remove this - force users to decide whether a term is analyzed/parsed") def apply(tOpt: Option[Term]): TermContainer = {
+   @deprecated("MMT_TODO: remove this - force users to decide whether a term is analyzed/parsed", since="forever") def apply(tOpt: Option[Term]): TermContainer = {
       val tc = new TermContainer
       tOpt foreach {t => if (parser.ObjectParser.isOnlyParsed(t))
          tc.parsed = t

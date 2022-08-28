@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.parser.SourceRef
 import collection.immutable.{HashMap}
 
 /** used by [[MMTStructureSimplifier]] */
-@MMT_TODO("needs review")
+@deprecated("MMT_TODO: needs review", since="forever")
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 
 /**
@@ -159,7 +159,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     env.task.reportProgress(Elaborated(s))
   }
 
-  @MMT_TODO("needs to be reviewed")
+  @deprecated("MMT_TODO: needs to be reviewed", since="forever")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret

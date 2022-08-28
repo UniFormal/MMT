@@ -27,7 +27,7 @@ object EMEPaths {
 }
 
 /** An evaluation combination */
-@MMT_TODO("We should remove this in favor of the Jupyter stuff")
+@deprecated("MMT_TODO: We should remove this in favor of the Jupyter stuff", since="forever")
 case class Evaluation() extends activeComputation("eval", "Evaluate") {
   def apply(mathElement : Node, values: ACContext) : ACContext = {
 

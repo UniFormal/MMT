@@ -51,7 +51,7 @@ abstract class RenderingHandler {
    def writeAttribute(prefix : String, name : String, value : String) {
      write(s""" ${getQualifiedName(prefix, name)}="$value"""")
    }*/
-   @MMT_TODO("probably not needed anymore")
+   @deprecated("MMT_TODO: probably not needed anymore", since="forever")
    /** write an XML start tag at once, including attributes and scope */
    def writeStartTag(prefix : String, label : String, attributes : MetaData, scope : NamespaceBinding): Unit = {
      write("<")
@@ -60,12 +60,12 @@ abstract class RenderingHandler {
      write(scope.toString) //starts with a space
      write(">")
    }
-   @MMT_TODO("probably not needed anymore")
+   @deprecated("MMT_TODO: probably not needed anymore", since="forever")
    /** write an XML end tag */
    def writeEndTag(prefix : String, label : String): Unit = {
      write(s"</${getQualifiedName(prefix, label)}>")
    }
-   @MMT_TODO("probably not needed anymore")
+   @deprecated("MMT_TODO: probably not needed anymore", since="forever")
    /** returns a qualified name from a prefix and a local part */
    private def getQualifiedName(prefix : String, name: String) =
      if (prefix == "" || prefix == null) name else (prefix + ":" + name)

@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.utils.MMT_TODO
 import info.kwarc.mmt.api.{ContentPath, GlobalName}
 
-@MMT_TODO("Directly use info.kwarc.mmt.api.symbols.Renamer")// since "2019-03-14"
+@deprecated("MMT_TODO: Directly use info.kwarc.mmt.api.symbols.Renamer", since="forever")// since "2019-03-14"
 object ReferenceSubstituter {
 
 	/**

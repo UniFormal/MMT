@@ -69,7 +69,7 @@ class DerivedDeclaration(val home: Term, val name: LocalName, val feature: Strin
   
   def meta = None
   
-  @MMT_TODO("redundant: every DerivedDeclaration is module-like now")
+  @deprecated("MMT_TODO: redundant: every DerivedDeclaration is module-like now", since="forever")
   val module = this // left over from old definition via NestedModule
 
   override def translate(newHome: Term, prefix: LocalName, tl: Translator, con : Context) = {
