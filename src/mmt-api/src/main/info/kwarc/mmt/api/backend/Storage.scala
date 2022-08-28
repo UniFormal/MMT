@@ -90,6 +90,9 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
   }
 }
 
+private[backend] abstract class ArchiveNarrationStorageEI(val a: Archive, val nBase: URI)
+  extends LocalCopy(nBase.schemeNull, nBase.authorityNull, nBase.pathAsString, a / narration)
+
 /**Ï
  * like [[LocalCopy]] but optimized for [[Archive]]s
  *
@@ -97,8 +100,8 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
  * @param a the archive
  * @param folderName file name of folder descriptions in source folder (without .html ending)
  */
-class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase = a.narrationBase}
-      with LocalCopy(nBase.schemeNull, nBase.authorityNull, nBase.pathAsString, a / narration) {
+class ArchiveNarrationStorage(a: Archive, folderName: String)
+  extends ArchiveNarrationStorageEI(a, a.narrationBase) {
    override def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller): Unit = {
       val narrFolder = base / suffix
       val entries = narrFolder.children.filter(x => x.isDirectory || (x.getExtension contains "omdoc"))

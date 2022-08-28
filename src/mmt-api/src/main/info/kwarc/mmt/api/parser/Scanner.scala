@@ -6,9 +6,9 @@ import utils._
 
 import scala.annotation.tailrec
 
-case class Ambiguous(notations: List[ParsingRule]) extends {
-  val message = "multiple notations apply: " + notations.map(_.toString).mkString(",")
-} with Error(message)
+case class Ambiguous(notations: List[ParsingRule]) extends Error(
+  "multiple notations apply: " + notations.map(_.toString).mkString(",")
+)
 
 import info.kwarc.mmt.api.parser.ActiveNotation._
 
