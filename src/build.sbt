@@ -48,7 +48,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 //   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
 //       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
 //
-Global / scalaVersion := "2.13.4"
+Global / scalaVersion := "2.13.8"
 Global / scalacOptions := Seq(
   "-feature",
   "-language:postfixOps", "-language:implicitConversions", "-language:reflectiveCalls", "-language:existentials",
@@ -91,7 +91,7 @@ ScalaUnidoc / unidoc / scalacOptions  ++=
   "-diagrams" +:
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl({
-      val repo = System.getenv("TRAVIS_REPO_SLUG")
+      val repo = System.getenv("GITHUB_REPOSITORY")
       s"https://github.com/${if (repo != null) repo else "UniFormal/MMT"}/blob/master/src€{FILE_PATH}.scala"
     })
 ScalaUnidoc / unidoc / target := file("../apidoc")
@@ -113,7 +113,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.3" % "test",
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test",
   fork := true,
   assembly / test := {},
   assembly / assemblyMergeStrategy := {
