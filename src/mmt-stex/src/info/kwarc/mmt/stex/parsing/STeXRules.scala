@@ -71,7 +71,9 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
   }
 
   def resolveMPath(archiveid:String,path:String) : MPath = {
-    val archive = if (archiveid == "") current_archive else controller.backend.getArchive(archiveid)
+    val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse{
+      throw LaTeXParseError("Archive missing: " + archiveid)
+    })
     resolveMPath(archive,path)
   }
 
