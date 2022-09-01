@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.frontend.{Controller, Report, Run}
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, SandboxedWebSocket, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import info.kwarc.mmt.stex.parsing.STeXSuperficialParser
 import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
@@ -62,7 +62,24 @@ trait STeXClient extends LSPClient {
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
   @JsonNotification def updateMathHub(): Unit
 }
-class STeXLSPWebSocket extends LSPWebsocket(classOf[STeXClient],classOf[STeXLSPServer])
+final class STeXLSPWebSocket extends SandboxedWebSocket(classOf[STeXClient],classOf[STeXLSPServer]) {
+  override def initialize: Unit = {
+    val controller = new Controller()
+    List("lsp"
+      , "lsp-stex"
+      , "lsp-stex-server-methodcall"
+      , "lsp-stex-websocket"
+      , "lsp-stex-server"
+      , "fullstex").foreach(s => controller.handleLine("log+ " + s))
+    controller.handleLine("log console")
+    controller.handleLine("server on 8090")
+    val lsp = new STeXLSP
+    controller.extman.addExtension(lsp)
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
+    this._lsp = Some(lsp.asInstanceOf[LSP[STeXClient,STeXLSPServer,this.type]])
+  }
+}
 class STeXLSP extends LSP(classOf[STeXClient],classOf[STeXLSPServer],classOf[STeXLSPWebSocket])("stex",5007,5008){
   override def newServer(style: RunStyle): STeXLSPServer = new STeXLSPServer(style)
 }
@@ -348,6 +365,28 @@ object Socket {
     controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
     controller.extman.addExtension(new TrivialBuildManager)
     lsp.runSocketListener
+  }
+}
+
+object WebSocket {
+  def main(args : Array[String]) : Unit = {
+    SandboxedWebSocket.runWebSocketListener[STeXClient,STeXLSPServer,STeXLSPWebSocket](classOf[STeXLSPWebSocket],5008)
+    /*
+    val lsp = new STeXLSP
+    val controller = Run.controller
+    List("lsp"
+      , "lsp-stex"
+      , "lsp-stex-server-methodcall"
+      , "lsp-stex-websocket"
+      , "lsp-stex-server"
+      , "fullstex").foreach(s => controller.handleLine("log+ " + s))
+    controller.handleLine("log console")
+    controller.handleLine("server on 8090")
+    controller.extman.addExtension(lsp)
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
+    lsp.runWebSocketListener
+     */
   }
 }
 

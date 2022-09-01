@@ -44,6 +44,13 @@ object RusTeX {
     if (Bridge.initialized()) this.synchronized { Bridge.parse(f.toString,p,memories) } else ""
   }
 
+  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil) = {
+    if (Bridge.initialized()) this.synchronized {
+      Bridge.parseString(f.toString,text, p, memories)
+    } else ""
+  }
+
+
 }
 
 trait XHTMLParser extends TraversingBuildTarget {

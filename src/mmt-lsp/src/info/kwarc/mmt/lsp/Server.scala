@@ -24,7 +24,9 @@ import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
 import java.io.{PrintStream, PrintWriter, StringWriter}
+import javax.websocket.{CloseReason, Session}
 import javax.websocket.server.ServerEndpointConfig
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 /** To implement an LSP, extend the following four (abstract) classes, that work in tandem:
@@ -218,6 +220,53 @@ class LSPWebsocket[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClas
   }
 }
 
+abstract class SandboxedWebSocket[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClass]](clct : Class[ClientClass],svct : Class[ServerClass]) extends LSPWebsocket(clct,svct) {
+
+  def initialize : Unit
+  protected var _lsp : Option[LSP[ClientClass, ServerClass, this.type]] = None
+  override def configure(builder: Launcher.Builder[ClientClass]): Unit = {
+    initialize
+    _lsp.foreach { lsp =>
+      val server = lsp.newServer(WebSocketStyle)
+      val end = new AbstractLSPServer(server, lsp) {}
+      LSP.controller.extman.addExtension(end, Nil)
+      builder.setLocalServices(Seq(end, server).asJava).setClassLoader(this.getClass.getClassLoader).setRemoteInterface(clct)
+    }
+  }
+
+  override def onClose(session: Session, closeReason: CloseReason): Unit = {
+    super.onClose(session, closeReason)
+    _lsp.foreach{ lsp =>
+      val ctrl = lsp.getController
+      ctrl.server.foreach(_.stop)
+      ctrl.extman.cleanup
+    }
+  }
+
+  override def connect(localServices: util.Collection[AnyRef], remoteProxy: ClientClass): Unit = {
+    localServices.asScala.collect { case lca: LanguageClientAware => lca }.foreach(_.connect(remoteProxy))
+  }
+}
+object SandboxedWebSocket {
+  def runWebSocketListener[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClass], EndpointClass <: SandboxedWebSocket[ClientClass,ServerClass]](epc:Class[EndpointClass],webport:Int) = {
+    val server = new Server()
+    val connector = new ServerConnector(server)
+    connector.setPort(webport)
+    connector.setHost("localhost")
+    connector.setIdleTimeout(-1)
+    server.setConnectors(Array(connector))
+
+    val context = new ServletContextHandler
+    context.setContextPath("/")
+    server.setHandler(context)
+
+    val container = WebSocketServerContainerInitializer.initialize(context)
+    val endpointConfig = ServerEndpointConfig.Builder.create(epc, "/").build
+    container.addEndpoint(endpointConfig)
+    server.start()
+  }
+}
+
 object LSP {
   private[lsp] var controller : Controller = null
 }
@@ -337,9 +386,10 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def semanticTokensFullDelta(params: SemanticTokensDeltaParams): (Option[SemanticTokens], Option[SemanticTokensDelta]) = (None,None)
   def semanticTokensRange(params: SemanticTokensRangeParams): SemanticTokens = null
   def inlayHint(params:InlayHintParams) : List[InlayHint] = Nil
+  def setTrace(params: SetTraceParams): Unit = {}
 }
 
-class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B]](server : B,lsp:LSP[A,B,C])
+class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B]](val server : B,lsp:LSP[A,B,C])
   extends LanguageClientAware
     with LanguageServer
     with WorkspaceService
@@ -661,6 +711,8 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
     Completable { server.inlayHint(params).asJava }
   }
 
+  override def setTrace(params: SetTraceParams): Unit = server.setTrace(params)
+
   override def callHierarchyIncomingCalls(params: CallHierarchyIncomingCallsParams): CompletableFuture[util.List[CallHierarchyIncomingCall]] = super.callHierarchyIncomingCalls(params)
   override def callHierarchyOutgoingCalls(params: CallHierarchyOutgoingCallsParams): CompletableFuture[util.List[CallHierarchyOutgoingCall]] = super.callHierarchyOutgoingCalls(params)
   override def resolveCompletionItem(unresolved: CompletionItem): CompletableFuture[CompletionItem] = super.resolveCompletionItem(unresolved)
@@ -676,7 +728,6 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def typeHierarchySubtypes(params: TypeHierarchySubtypesParams): CompletableFuture[util.List[TypeHierarchyItem]] = super.typeHierarchySubtypes(params)
   override def diagnostic(params: WorkspaceDiagnosticParams): CompletableFuture[WorkspaceDiagnosticReport] = super.diagnostic(params)
   override def cancelProgress(params: WorkDoneProgressCancelParams): Unit = super.cancelProgress(params)
-  override def setTrace(params: SetTraceParams): Unit = super.setTrace(params)
   override def didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams): Unit = super.didChangeWorkspaceFolders(params)
   override def willCreateFiles(params: CreateFilesParams): CompletableFuture[WorkspaceEdit] = super.willCreateFiles(params)
   override def didCreateFiles(params: CreateFilesParams): Unit = super.didCreateFiles(params)

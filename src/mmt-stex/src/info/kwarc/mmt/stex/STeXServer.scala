@@ -116,7 +116,7 @@ class STeXServer extends ServerExtension("sTeX") {
           case _ =>
         })
     }
-    ServerResponse("Unknown request: " + request.path.mkString("/"),"text/plain")
+    ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs,"text/plain")
     //ServerResponse(ret.toString, "application/xhtml+xml")
   } catch {
     case ret:ErrorReturn => ret.toResponse
