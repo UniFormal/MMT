@@ -29,20 +29,20 @@ class appsym(s : String) extends sym(s) {
 
 }
 
+private[rules] class uasym(s: String) extends sym(s) {
+  def unapply(t: Term): Option[(Term, List[OML])] = t match {
+    case OMA(`tm`, th :: args) if args.forall(_.isInstanceOf[OML]) => Some((th, args.map(_.asInstanceOf[OML])))
+    case _ => None
+  }
+}
+
 // object Extends extends StructuralFeatureRule("extend")
 // object Renaming extends StructuralFeatureRule("RenamingOf")
 // object Combine extends StructuralFeatureRule("combine")
 
+private[rules] abstract class ExtendsEI(val extend: uasym) extends TheoryExpRule(extend.path,OfType.path)
 
-
-object Extends extends {
-  val extend = new sym("extends") {
-    def unapply(t : Term) : Option[(Term,List[OML])] = t match {
-      case OMA(`tm`,th :: args) if args.forall(_.isInstanceOf[OML]) => Some((th,args.map(_.asInstanceOf[OML])))
-      case _ => None
-    }
-  }
-} with TheoryExpRule(extend.path,OfType.path) {
+object Extends extends ExtendsEI(new uasym("extends")) {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
     case extend(th,ls) =>
       solver.check(IsTheory(stack,th))
@@ -62,16 +62,9 @@ object Extends extends {
   }
 }
 
+private[rules] abstract class RenamingEI(val rename: uasym) extends TheoryExpRule(rename.path,OfType.path)
 
-
-object Renaming extends {
-  val rename = new sym("renaming") {
-    def unapply(t : Term) : Option[(Term,List[OML])] = t match {
-      case OMA(`tm`,th :: args) if args.forall(_.isInstanceOf[OML]) => Some((th,args.map(_.asInstanceOf[OML])))
-      case _ => None
-    }
-  }
-} with TheoryExpRule(rename.path,OfType.path) {
+object Renaming extends RenamingEI(new uasym("renaming")) {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
     case rename(th,ls) =>
       solver.check(IsTheory(stack,th))
@@ -89,10 +82,9 @@ object Renaming extends {
   }
 }
 
+private[rules] abstract class CombineEI(val combine: appsym) extends TheoryExpRule(combine.path,OfType.path)
 
-object Combine extends {
-  val combine = new appsym("combine")
-} with TheoryExpRule(combine.path,OfType.path) {
+object Combine extends CombineEI(new appsym("combine")) {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
     case combine(ls) =>
       ls.forall(p => solver.check(IsTheory(stack,p)))
@@ -106,9 +98,9 @@ object Combine extends {
   }
 }
 
-object Labcont extends {
-  val compth = new appsym("LabCont")
-} with TheoryExpRule(compth.path,OfType.path) {
+private[rules] abstract class LabcontEI(val compth: appsym) extends TheoryExpRule(compth.path,OfType.path)
+
+object Labcont extends LabcontEI(new appsym("LabCont")) {
   def apply(tm: Term, covered: Boolean)(implicit solver : Solver, stack: Stack, history: History): Boolean = tm match {
     case compth(ls) =>
       true

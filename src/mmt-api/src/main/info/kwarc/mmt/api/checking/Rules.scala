@@ -239,7 +239,7 @@ abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends Infe
 
 
 
-@MMT_TODO("must be reimplemented cleanly")
+@deprecated("MMT_TODO: must be reimplemented cleanly", since="forever")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val checks = apply(tm, covered)(solver,stack,history)

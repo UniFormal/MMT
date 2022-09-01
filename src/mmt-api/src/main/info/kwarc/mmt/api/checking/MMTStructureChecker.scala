@@ -99,7 +99,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
-  @MMT_TODO("unclear what happens here")
+  @deprecated("MMT_TODO: unclear what happens here", since="forever")
   def elabContext(th : Theory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)

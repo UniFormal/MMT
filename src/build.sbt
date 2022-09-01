@@ -48,7 +48,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 //   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
 //       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
 //
-Global / scalaVersion := "2.13.4"
+Global / scalaVersion := "2.13.8"
 Global / scalacOptions := Seq(
   "-feature",
   "-language:postfixOps", "-language:implicitConversions", "-language:reflectiveCalls", "-language:existentials",
@@ -59,6 +59,9 @@ Global / scalacOptions := Seq(
   "-Wconf:msg=early initializers are deprecated*:i",                 // Info all "early initializers are deprecated" (need to fix in scala3)
   "-Wconf:cat=other-match-analysis:i",                               // Info all "non-exhaustive match" warnings
   "-Wconf:msg=Exhaustivity analysis reached max recursion depth*:s", // Disable "Exhaustivity analysis reached max recursion depth"
+
+  "-Wconf:msg=.*MMT_TODO.*:i",                                        // Info all the MMT_TODOs
+  // "-Wconf:msg=.*MMT_TODO.*:s",                                     // to temporarily disable
 
   // "-Xno-patmat-analysis", // to temporarily disable
   // "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems // does not exist anymore since scala 2.13.*
@@ -88,7 +91,7 @@ ScalaUnidoc / unidoc / scalacOptions  ++=
   "-diagrams" +:
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl({
-      val repo = System.getenv("TRAVIS_REPO_SLUG")
+      val repo = System.getenv("GITHUB_REPOSITORY")
       s"https://github.com/${if (repo != null) repo else "UniFormal/MMT"}/blob/master/src€{FILE_PATH}.scala"
     })
 ScalaUnidoc / unidoc / target := file("../apidoc")
@@ -110,7 +113,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.3" % "test",
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test",
   fork := true,
   assembly / test := {},
   assembly / assemblyMergeStrategy := {
