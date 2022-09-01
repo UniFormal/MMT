@@ -297,8 +297,8 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(
     libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
     libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
-    libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
-    libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
+    //libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
+    //libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
     libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.46.v20220331",
     libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
   )
