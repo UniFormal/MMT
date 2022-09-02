@@ -16,7 +16,6 @@ object BrowserExtension extends STeXExtension {
           html = html.replace("BASE_URL_PLACEHOLDER", "")
           html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "true")
           Some(ServerResponse(html, "html"))
-          //Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"html"))
         case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
           request.query match {
             case "" =>

@@ -127,17 +127,7 @@ class STeXServer extends ServerExtension("sTeX") {
   }
 
 
-  def doHeader(doc : HTMLNode) = { /*
-    val head = doc.get("head")()().head
-    val body = doc.get("body")()().head
-    val headstring = MMTSystem.getResourceAsString("/mmt-web/stex/htmlfragments/header.xml")
-    doc.addBefore(headstring,head)
-    head.delete
-    val nhead = doc.get("head")()().head
-
-    extensions.foreach(_.doHeader(nhead,body))
-    nhead
-  */ }
+  def doHeader(doc : HTMLNode) = {}
 
   def getState : ParsingState = {
     val rules = extensions.flatMap(_.rules)
@@ -147,7 +137,7 @@ class STeXServer extends ServerExtension("sTeX") {
   def emptydoc = {
     val rules = extensions.flatMap(_.rules)
     val state = new ParsingState(controller,rules)
-    val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/emptydoc.xhtml"))(state)
+    val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/stex/emptydoc.xhtml"))(state)
     doHeader(doc)
     (doc,doc.get("div")()("body").head)
   }

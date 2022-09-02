@@ -51,8 +51,6 @@ object DocumentExtension extends STeXExtension {
   }
 
   override def doHeader(head: HTMLNode,body: HTMLNode): Unit = {
-    //head.add(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))
-    //body.add(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/overlaymain.xml"))
   }
 
   def getDocument(uri : String) : HTMLNode = {

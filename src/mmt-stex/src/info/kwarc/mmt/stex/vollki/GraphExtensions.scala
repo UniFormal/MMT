@@ -45,25 +45,6 @@ object FullsTeXGraph extends ServerExtension("vollki") {
 
     request.path.lastOption match {
       case Some(":vollki") =>
-        /*
-        val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/vollki/guidedtours.html"))(server.getState)
-        val entrydoc = doc.get("select")()("entrydoc").head
-        val usermodel = doc.get("select")()("usermodel").head
-        usermodels.foreach(_.getAllUsers.foreach{ u =>
-          if (user.contains(u))
-            usermodel.add(<option value={u.f.name} selected="true">{u.f.name}</option>)
-          else
-            usermodel.add(<option value={u.f.name}>{u.f.name}</option>)
-        })
-        allobjects.foreach{ n =>
-          if (path.contains(n))
-            entrydoc.add(<option value={n.id} selected="true">{n.getTitle(language)}</option>)
-          else
-            entrydoc.add(<option value={n.id}>{n.getTitle(language)}</option>)
-        }
-        ServerResponse(doc.toString,"application/xhtml+xml")
-
-         */
           var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
           html = html.replace("TOUR_ID_PLACEHOLDER",path.map(_.id).getOrElse(""))
           html = html.replace("BASE_URL_PLACEHOLDER","")
