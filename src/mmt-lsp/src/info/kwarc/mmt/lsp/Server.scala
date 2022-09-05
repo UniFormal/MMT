@@ -1,6 +1,6 @@
 package info.kwarc.mmt.lsp
 
-import info.kwarc.mmt.api.{Invalid, InvalidElement, InvalidObject, InvalidUnit, Level, SourceError}
+import info.kwarc.mmt.api.{GetError, Invalid, InvalidElement, InvalidObject, InvalidUnit, Level, SourceError}
 
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.{CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CodeAction, CodeActionParams, CodeLens, CodeLensParams, ColorInformation, ColorPresentation, ColorPresentationParams, Command, CompletionItem, CompletionList, CompletionParams, CreateFilesParams, DeclarationParams, DefinitionParams, DeleteFilesParams, Diagnostic, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentColorParams, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams, DocumentHighlight, DocumentHighlightParams, DocumentLink, DocumentLinkParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, ImplementationParams, InitializeParams, InitializeResult, InitializedParams, InlayHint, InlayHintParams, InlineValue, InlineValueParams, LinkedEditingRangeParams, LinkedEditingRanges, Location, LocationLink, MessageParams, MessageType, Moniker, MonikerParams, Position, PrepareRenameParams, PrepareRenameResult, ProgressParams, PublishDiagnosticsParams, ReferenceParams, RenameFilesParams, RenameParams, SelectionRange, SelectionRangeParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SetTraceParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, TypeDefinitionParams, TypeHierarchyItem, TypeHierarchyPrepareParams, TypeHierarchySubtypesParams, TypeHierarchySupertypesParams, WillSaveTextDocumentParams, WorkDoneProgressBegin, WorkDoneProgressCancelParams, WorkDoneProgressCreateParams, WorkDoneProgressEnd, WorkDoneProgressNotification, WorkDoneProgressReport, WorkspaceDiagnosticParams, WorkspaceDiagnosticReport, WorkspaceEdit, WorkspaceSymbol, WorkspaceSymbolParams}
@@ -150,6 +150,9 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
       all_errors ::= e
       val d = new Diagnostic
       val (lvl,msg) = e match {
+        case ge:GetError =>
+          d.setRange(new lsp4j.Range(new Position(0, 0), new Position(0, 0)))
+          (Level.Warning,"MMT: " + ge.shortMsg)
         case SourceError(_,ref,_,ems,_) =>
           val start = ref.region.start.offset
           val end = ref.region.end.offset + 1
