@@ -653,6 +653,7 @@ class LaTeXParserState(initrules : List[TeXRule]) {
   }
   def closegroup = rules = rules.tail
   def macrorules = rules.flatMap(_.rules).collect{case mr : MacroRule => mr}
+  def getRules = rules.flatMap(_.rules)
   def envrules = rules.flatMap(_.rules).collect{case er: EnvironmentRule => er}
   def addRule(rule : TeXRule,global:Boolean = false) = if (global) rules.foreach(_.rules ::= rule) else rules.head.rules ::= rule
   var letters : List[Char] = Nil

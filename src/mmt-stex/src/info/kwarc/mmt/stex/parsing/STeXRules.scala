@@ -16,13 +16,16 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 
 class MutList(var ls : List[DictionaryModule] = Nil)
+case class ModuleRule(dict : DictionaryModule) extends TeXRule {
+  val name = "Module " + dict.path
+}
 class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
   val path = macr.mp
   var archive : Option[Archive] = None
   var file : Option[File] = None
   var lang:String = ""
   var imports : List[(DictionaryModule,Boolean)] = Nil
-  var exportrules : List[TeXRule] = Nil
+  var exportrules : List[TeXRule] = List(ModuleRule(this))
   def getRules(lang:String,dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
     dones.ls ::= this
     val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(_._1.getRules(lang,dones))
@@ -221,7 +224,11 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
 
   def addimport(ima: ImportModuleApp)(implicit state: LaTeXParserState): ImportModuleApp = {
     val mod = all_modules.get(ima.mp) match {
-      case Some(mod) => mod
+      case Some(mod) =>
+        if (state.getRules.contains(ModuleRule(mod))) {
+          ima.addError("Redundant Import",None,Level.Info)
+        }
+        mod
       case _ =>
         val archive = if (ima.archivestring == "") current_archive else controller.backend.getArchive(ima.archivestring)
         val (rpath, name) = ima.path.split('?').toList match {
