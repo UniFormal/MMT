@@ -215,7 +215,13 @@ trait SolverAlgorithms {self: Solver =>
            case Some(t) => check(Subtyping(stack, t, tp))
          }
        // note that OMLs do not have a generally-defined type
-       case l: OMLIT => check(Subtyping(stack, l.rt.synType, tp))
+       /* case l: OMLIT =>
+          check(Subtyping(stack, l.rt.synType, tp))
+          We could use the above code here, but that would be equivalent to checking by inference, which is the default anyway.
+          By not having a case here, the default case below will call rules,
+          which allows for typing rules to hook in and succeed more generously,
+          e.g., to allow an integer literal as a natural number.
+       */
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
