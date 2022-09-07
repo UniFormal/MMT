@@ -467,7 +467,7 @@ trait SymRefRuleLike extends MacroRule {
         var i = 1
         while (!idone) {
           val np = td.path.doc.uri.path.takeRight(i)
-          if ((np.mkString("/") + td.path.module.name + "?" + td.path.name).length <= td.string.length) i += 1 else idone = true
+          if ((np.mkString("/") + "?" + td.path.module.name + "?" + td.path.name).length <= td.string.length) i += 1 else idone = true
         }
         td.string = td.path.doc.uri.path.takeRight(i).mkString("/") + "?" + td.path.module.name + "?" + td.path.name
       }
