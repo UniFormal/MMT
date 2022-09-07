@@ -469,7 +469,7 @@ trait SymRefRuleLike extends MacroRule {
           val np = td.path.doc.uri.path.takeRight(i)
           if ((np.mkString("/") + td.path.module.name + "?" + td.path.name).length <= td.string.length) i += 1 else idone = true
         }
-        td.string = td.path.doc.uri.path.takeRight(i).mkString("/") + "?" + td.path.name
+        td.string = td.path.doc.uri.path.takeRight(i).mkString("/") + "?" + td.path.module.name + "?" + td.path.name
       }
     }
     retstrings.map(r => (r.path,r.string))
