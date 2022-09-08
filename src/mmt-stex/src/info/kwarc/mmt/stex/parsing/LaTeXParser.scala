@@ -528,6 +528,7 @@ object LaTeXRules {
   }
   val lstinline = new InlineVerbRule("lstinline")
   val inlineverb = new InlineVerbRule("inlineverb")
+  val verb = new InlineVerbRule("verb")
 
   val ensuremath = new SimpleMacroRule("ensuremath",args=1) with MathMacroRule {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = inmath { super.parse(plain) }
@@ -543,7 +544,7 @@ object LaTeXRules {
     _def,edef,
     array,array_star,eqnarray,eqnarray_star,align,align_star,displaynd,displaytableau,displaytableau_star,textnd,cboxnd,tableau,
       capital_displaynd,fignd,
-    verbatim,lstlisting,lstinline,inlineverb,iffalse
+    verbatim,lstlisting,lstinline,inlineverb,verb,iffalse
   )
 }
 
