@@ -329,12 +329,12 @@ object STeXRules {
     ModuleRule(dict),UseModuleRule(dict),NotationRule(dict),mmtrule,
     SymrefRule(dict),SymnameRule(dict),CapSymnameRule(dict),
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
-    VarDefRule(dict),
+    VarDefRule(dict),VarInstanceRule(dict),
     patchdefinitionrule,patchassertionrule,stexinline
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),MathStructureRule(dict),
-    AssertionRule(dict)
+    AssertionRule(dict),InlineAssertionRule(dict),InstanceRule(dict)
   )
 
   class PatchRule(name : String) extends SimpleMacroRule(name,2) {
@@ -610,6 +610,142 @@ object STeXRules {
     }
   }
 
+  case class InstanceRule(dict:Dictionary) extends MacroRule with SymDeclRuleLike with NotationRuleLike {
+    val name = "instantiate"
+
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
+      var children: List[TeXTokenLike] = Nil
+      val (nametk, nch) = readArg
+      children = nch
+      val maybename = nametk match {
+        case g: Group =>
+          g.content match {
+            case List(pt: PlainText) => pt.str
+            case _ => throw LaTeXParseError("Could not determine name for \\instantiate", lvl = Level.Warning)
+          }
+        case _ => throw LaTeXParseError("Name for \\instantiate expected")
+      }
+      val inmath = state.inmath
+      val (opt, nch2) = try {
+        state.inmath = true
+        readOptArg
+      } finally {
+        state.inmath = inmath
+      }
+      children = children ::: nch2
+      var name = maybename
+      var ls = opt
+      ls.foreach { l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s if s.startsWith("name=") =>
+            ls = ls.filterNot(_ == l)
+            val rest = s.drop(5)
+            name = if (rest.startsWith("{") && rest.endsWith("}")) rest.init.tail else rest
+          case _ =>
+            print("")
+        }
+      }
+      val (structArg, nch3) = readArg
+      children = children ::: nch3
+      val struct = structArg match {
+        case g: Group =>
+          g.content match {
+            case List(pt: PlainText) => pt.str
+            case _ => throw LaTeXParseError("Could not determine structure name for \\instantiate", lvl = Level.Warning)
+          }
+        case _ => throw LaTeXParseError("mathstructure name for \\instantiate expected")
+      }
+      val module = state.macrorules.collectFirst {
+        case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+          dict.all_modules.get(m.mpi)
+      }.flatten match {
+        case Some(mod) => mod
+        case _ =>
+          throw LaTeXParseError("No mathstructure" + struct + " found")
+      }
+
+      val (_, nch4) = readArg
+      children = children ::: nch4
+
+      val (_, nch5) = readOptArg
+      children = children ::: nch5
+
+      val path =dict.getGlobalName(name)
+      val ret = InstanceApp(plain, children, this, maybename, path, module, dict.getFile, in.offset)
+      val top = dict.getModule
+      top.rules ::= ret
+      top.exportrules ::= ret
+      ret
+    }
+  }
+
+  case class VarInstanceRule(dict: Dictionary) extends MacroRule with SymDeclRuleLike with NotationRuleLike {
+    val name = "varinstantiate"
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
+      var children: List[TeXTokenLike] = Nil
+      val (nametk, nch) = readArg
+      children = nch
+      val maybename = nametk match {
+        case g: Group =>
+          g.content match {
+            case List(pt: PlainText) => pt.str
+            case _ => throw LaTeXParseError("Could not determine name for \\varinstantiate", lvl = Level.Warning)
+          }
+        case _ => throw LaTeXParseError("Name for \\varinstantiate expected")
+      }
+      val inmath = state.inmath
+      val (opt, nch2) = try {
+        state.inmath = true
+        readOptArg
+      } finally {
+        state.inmath = inmath
+      }
+      children = children ::: nch2
+      var name = maybename
+      var ls = opt
+      ls.foreach { l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s if s.startsWith("name=") =>
+            ls = ls.filterNot(_ == l)
+            val rest = s.drop(5)
+            name = if (rest.startsWith("{") && rest.endsWith("}")) rest.init.tail else rest
+          case _ =>
+            print("")
+        }
+      }
+      val (structArg, nch3) = readArg
+      children = children ::: nch3
+      val struct = structArg match {
+        case g: Group =>
+          g.content match {
+            case List(pt: PlainText) => pt.str
+            case _ => throw LaTeXParseError("Could not determine structure name for \\varinstantiate", lvl = Level.Warning)
+          }
+        case _ => throw LaTeXParseError("mathstructure name for \\varinstantiate expected")
+      }
+      val module = state.macrorules.collectFirst {
+        case m:MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+          dict.all_modules.get(m.mpi)
+      }.flatten match {
+        case Some(mod) => mod
+        case _ =>
+          throw LaTeXParseError("No mathstructure" + struct + " found")
+      }
+
+      val (_, nch4) = readArg
+      children = children ::: nch4
+
+      val (_,nch5) = readOptArg
+      children = children ::: nch5
+
+      val ret = VarInstanceApp(plain, children, this, maybename, name, module, dict.getFile, in.offset)
+      state.addRule(ret)
+      ret
+    }
+  }
+
   case class ImportModuleRule(dict : Dictionary) extends MacroRule with ImportModuleRuleLike {
     val name = "importmodule"
     override val isusemodule: Boolean = false
@@ -619,8 +755,8 @@ object STeXRules {
     override val isusemodule: Boolean = true
   }
 
+  case class InlineAssertionRule(dict:Dictionary) extends InlineStatementRule("inlineass",dict)
   case class AssertionRule(dict:Dictionary) extends StatementRule("sassertion",dict)
-
   case class MathStructureRule(dict: Dictionary) extends EnvironmentRule("mathstructure") {
     override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env.begin match {
       case ms : MathStructureMacro =>

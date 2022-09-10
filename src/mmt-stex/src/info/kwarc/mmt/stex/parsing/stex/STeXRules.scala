@@ -258,7 +258,7 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
   val syminfo:SymdeclInfo
   lazy val name = syminfo.macroname
 
-  protected def parseInner(plain:PlainMacro,requireNotation:Boolean)
+  def parseInner(plain:PlainMacro,requireNotation:Boolean)
                           (cons : (PlainMacro,List[TeXTokenLike],Option[NotationInfo]) => TeXTokenLike)(implicit in: SyncedDocUnparsed, state: LaTeXParserState) : TeXTokenLike = safely[TeXTokenLike](plain) {
     var children: List[TeXTokenLike] = Nil
     val (custom, op) = if (state.inmath) {
@@ -334,7 +334,97 @@ trait VariableRule extends SemanticMacro {
   override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike =
     parseInner(plain,false)((pl,ch,nt) => SemanticVariableApp(pl,this,ch,nt))
 }
+trait InstanceRuleLike extends SemanticMacro {
+  val module:DictionaryModule
 
+  def parseField(plain: PlainMacro)
+                          (cons: (PlainMacro, List[TeXTokenLike], Option[SymdeclInfo], Option[NotationInfo]) => TeXTokenLike)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
+    var children: List[TeXTokenLike] = Nil
+    val (custom, op) = if (state.inmath) {
+      val o = readChar('!') match {
+        case (b, ch) =>
+          children = ch.reverse
+          b
+      }
+      val c = if (o) readChar('*') match {
+        case (b, ch) =>
+          children = children ::: ch.reverse
+          b
+      } else false
+      (c, o)
+    } else {
+      (true, readChar('!') match {
+        case (b, ch) =>
+          children = ch.reverse
+          b
+      })
+    }
+    if (!custom && op) return cons(plain,children,None,None)
+    if (op) {
+      val (a, ch) = readSafeArg("\\" + plain.name)
+      children = children ::: ch
+      return cons(plain, children, None,None)
+    }
+    val (sym,ch) = readArg
+    children = children ::: ch
+    val mac = sym match {
+      case g: Group =>
+        g.content match {
+          case List(pt: PlainText) =>
+            module.exportrules.collectFirst {
+              case mr : SemanticMacro if mr.syminfo.path.name.toString == pt.str => mr
+            }.getOrElse {
+              throw LaTeXParseError("No field " + pt.str + " found in module " + module.path)
+            }
+          case _ => throw LaTeXParseError("Could not determine field name for instance \\" + this.name, lvl = Level.Warning)
+        }
+      case _ => throw LaTeXParseError("Field name for instance \\" + this.name + " expected")
+    }
+    mac.parseInner(plain,false){(pl,ch,nt) =>
+      cons(pl,children ::: ch,Some(mac.syminfo),nt)
+    }
+  }
+}
+trait InstanceFieldRule extends InstanceRuleLike {
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike =
+    parseField(plain)((pl, ch, sd,nt) => StructureFieldApp(pl, this, ch, sd,nt))
+}
+trait VarInstanceFieldRule extends InstanceRuleLike {
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike =
+    parseField(plain)((pl, ch, sd,nt) => VarStructureFieldApp(pl, this, ch, sd,nt))
+}
+
+class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+    val (optargs, ch) = readOptArg
+    var name: Option[String] = None
+    optargs.foreach { l =>
+      val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+      s match {
+        case s if s.trim.startsWith("name=") =>
+          name = Some(s.drop(5))
+        case s if s.trim.startsWith("type=") =>
+        case s if s.trim.startsWith("id=") =>
+        case _ =>
+          ???
+      }
+    }
+    val (_,nch) = readArg
+    name match {
+      case Some(name) =>
+        val gn = dict.getGlobalName(name)
+        val ret = new InlineStatement(plain,ch:::nch,this) with SemanticMacro {
+          override val syminfo: SymdeclInfo =
+            SymdeclInfo(gn.toString, gn, "", "", false, dict.getFile, plain.startoffset, children.last.endoffset)
+        }
+        val mod = dict.getModule
+        mod.exportrules ::= ret
+        mod.rules ::= ret
+        ret
+      case None => new InlineStatement(plain,ch:::nch,this) {}
+    }
+  }
+}
 class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name) {
   override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = {
     env.begin match {

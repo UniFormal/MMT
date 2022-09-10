@@ -137,6 +137,33 @@ case class SemanticVariableApp(pl:PlainMacro,rl:VariableRule,ch:List[TeXTokenLik
     pma.setHover("Variable " + rl.syminfo.path.name.toString)
   }
 }
+case class StructureFieldApp(pl:PlainMacro,rl:InstanceFieldRule,ch:List[TeXTokenLike],orig:Option[SymdeclInfo],not:Option[NotationInfo]) extends MacroApplication(pl,ch,rl) with HasAnnotations {
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,rl.syminfo.path.toString)
+    val pma = if (children.isEmpty) a else in.Annotations.add(pl,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant)
+    pma.setDeclaration(rl.syminfo.file,rl.syminfo.start,rl.syminfo.end)
+    pma.setSemanticHighlightingClass(3)
+    pma.setHover("Variable " + rl.syminfo.path.name.toString)
+  }
+}
+case class VarStructureFieldApp(pl:PlainMacro,rl:VarInstanceFieldRule,ch:List[TeXTokenLike],orig:Option[SymdeclInfo],not:Option[NotationInfo]) extends MacroApplication(pl,ch,rl) with HasAnnotations {
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val pma = orig match {
+      case None =>
+        val a = in.Annotations.add(this,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant,rl.syminfo.path.toString)
+        a.setDeclaration(rl.syminfo.file, rl.syminfo.start, rl.syminfo.end)
+        a.setHover("Variable " + rl.syminfo.path.name.toString)
+        a
+      case Some(sd) =>
+        val a = in.Annotations.add(this,pl.startoffset,children.head.endoffset - pl.startoffset,SymbolKind.Constant)
+        a.setDeclaration(sd.file,sd.start,sd.end)
+        a.setHover("Variable " + rl.syminfo.path.name.toString + "\nField " + sd.path)
+        a
+    }
+    pma.setDeclaration(rl.syminfo.file,rl.syminfo.start,rl.syminfo.end)
+    pma.setSemanticHighlightingClass(3)
+  }
+}
 
 case class SymdeclApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:SymDeclRuleLike,
                       syminfo:SymdeclInfo) extends MacroApplication(pl,ch,rl)
@@ -187,22 +214,31 @@ case class VardefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarDefRule
   with VariableRule with HasAnnotations {
   override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),args,assoctype,false,file,plain.startoffset,end)
   override def doAnnotations(in: sTeXDocument): Unit = {
-    val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Function,symbolname = syminfo.path.toString)
+    //val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Function,symbolname = syminfo.path.toString)
     val pma = in.Annotations.add(pl,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant)
     pma.setSemanticHighlightingClass(1)
-    //a.addInlay(im.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = im.endoffset,padleft = true)
-    a.addCodeLens("Variable " + syminfo.path.name.toString ,"",Nil,startoffset,endoffset)
-    if (syminfo.local) {
-      pma.setSemanticHighlightingClass(1,List(0))
-      val start = in._doctext.toLC(startoffset)
-      val end = in._doctext.toLC(endoffset)
-      in.client.documentErrors(rl.dict.controller,in,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
-        SourceRegion(
-          SourcePosition(startoffset,start._1,start._2),
-          SourcePosition(endoffset,end._1,end._2)
-        )),"key \"local\" is deprecated",List("Please use a variable instead"),Level.Warning)
-      )
-    }
+  }
+}
+
+case class InstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.InstanceRule,macroname:String,path:GlobalName,module:DictionaryModule,file:String,end:Int)
+  extends MacroApplication(pl,ch,rl) with InstanceFieldRule with HasAnnotations {
+  val syminfo:SymdeclInfo = SymdeclInfo(macroname,path,"","",false,file,pl.startoffset,end)
+
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Function, symbolname = syminfo.path.toString)
+    val pma = in.Annotations.add(pl, pl.startoffset, pl.endoffset - pl.startoffset, SymbolKind.Constant)
+    pma.setSemanticHighlightingClass(1)
+    a.addCodeLens(syminfo.path.toString, "", Nil, startoffset, endoffset)
+  }
+}
+case class VarInstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarInstanceRule,macroname:String,_name:String,module:DictionaryModule,file:String,end:Int)
+  extends MacroApplication(pl,ch,rl) with VarInstanceFieldRule with HasAnnotations {
+  override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),"","",false,file,plain.startoffset,end)
+
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    //val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Function, symbolname = syminfo.path.toString)
+    val pma = in.Annotations.add(pl, pl.startoffset, pl.endoffset - pl.startoffset, SymbolKind.Constant)
+    pma.setSemanticHighlightingClass(1)
   }
 }
 
@@ -224,6 +260,7 @@ case class BeginStatement(pl:PlainMacro,ch:List[TeXTokenLike],rl:StatementRule,n
 abstract class Statement(bg: BeginStatement,en:TeXTokenLike,ch:List[TeXTokenLike],rl:StatementRule) extends Environment(bg,en,ch,Some(rl)) with HasAnnotations {
   override def doAnnotations(in: sTeXDocument): Unit = {}
 }
+abstract class InlineStatement(pl:PlainMacro,ch:List[TeXTokenLike],rl:InlineStatementRule) extends MacroApplication(pl,ch,rl)
 
 case class MathStructure(bg:MathStructureMacro,en:TeXTokenLike,ch:List[TeXTokenLike],rl:STeXRules.MathStructureRule) extends Environment(bg,en,ch,Some(rl)) with HasAnnotations {
   override def doAnnotations(in: sTeXDocument): Unit = {
