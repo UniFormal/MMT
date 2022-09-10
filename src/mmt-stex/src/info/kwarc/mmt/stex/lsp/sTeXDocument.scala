@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
+import info.kwarc.mmt.stex.parsing.stex.HasAnnotations
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml.{HTMLDefiniendum, HTMLParser, HTMLTopLevelTerm, HasHead, SemanticState}
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXParseError, TeXError}
