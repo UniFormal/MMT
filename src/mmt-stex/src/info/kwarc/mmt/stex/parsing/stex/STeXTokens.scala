@@ -1,11 +1,13 @@
 package info.kwarc.mmt.stex.parsing.stex
 
-import info.kwarc.mmt.api.{GlobalName, Level, MPath, Path, SourceError}
+import info.kwarc.mmt.api.{GlobalName, Level, LocalName, MPath, Path, SourceError}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.stex.lsp.sTeXDocument
 import info.kwarc.mmt.stex.parsing.{Environment, EnvironmentRule, MacroApplication, PlainMacro, TeXRule, TeXTokenLike}
 import org.eclipse.lsp4j.SymbolKind
+
+import scala.collection.mutable
 
 trait HasAnnotations extends TeXTokenLike {
   def doAnnotations(in:sTeXDocument) : Unit
@@ -14,7 +16,32 @@ trait HasAnnotations extends TeXTokenLike {
 abstract class TeXModuleLike(pm:PlainMacro,val mp:MPath,ch:List[TeXTokenLike],rl:EnvironmentRule) extends MacroApplication(pm,ch,rl) {
   val sig : String
 }
-
+class StructureModuleBegin(pm:PlainMacro, mp:MPath, val dom:DictionaryModule, ch:List[TeXTokenLike], val rl:StructureLikeRule)
+  extends TeXModuleLike(pm,mp,ch,rl) {
+  val sig = ""
+  val fields = mutable.HashMap.empty[SemanticMacro,(Option[LocalName],String,Boolean)]
+  lazy val domfields = dom.getRules("").collect {
+    case sm : SemanticMacro => sm
+  }
+}
+case class StructureModule(bg:StructureModuleBegin,en:TeXTokenLike,ch:List[TeXTokenLike]) extends Environment(bg,en,ch,Some(bg.rl)) with HasAnnotations {
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, bg.mp.toString, true)
+    val mac = in.Annotations.add(bg, bg.startoffset, bg.endoffset - bg.startoffset, SymbolKind.Constructor, "module")
+    val mace = in.Annotations.add(end, end.startoffset, end.endoffset - end.startoffset, SymbolKind.Constructor, "module")
+    mac.setHover(bg.mp.toString)
+    //mac.addInlay(mod.bg.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = mod.bg.endoffset,padleft = true)
+    mac.addCodeLens("Structure " + bg.mp.name.last.toString + ": " + bg.dom.path.toString, "", Nil, bg.startoffset, bg.endoffset)
+    //mace.setHover(bg.mp.toString)
+    bg.children.take(2).foreach { c =>
+      val a = in.Annotations.add(this, c.startoffset, c.endoffset - c.startoffset, SymbolKind.Module, bg.mp.toString)
+      a.setSemanticHighlightingClass(0)
+    }
+    mace.setSemanticHighlightingClass(0)
+    //mace.addInlay(mod.bg.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = mod.end.endoffset,padleft = true)
+    //mace.addCodeLens(bg.mp.toString, "", Nil, end.startoffset, end.endoffset)
+  }
+}
 case class TeXModuleMacro(
                            pm:PlainMacro,
                            mpi:MPath,
@@ -40,7 +67,7 @@ case class TeXModule(bg:TeXModuleMacro,en:TeXTokenLike,ch:List[TeXTokenLike],rl:
     }
     mace.setSemanticHighlightingClass(0)
     //mace.addInlay(mod.bg.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = mod.end.endoffset,padleft = true)
-    mace.addCodeLens(bg.mp.toString,"",Nil,end.startoffset,end.endoffset)
+    //mace.addCodeLens(bg.mp.toString,"",Nil,end.startoffset,end.endoffset)
   }
 }
 
@@ -210,9 +237,9 @@ case class SymdefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.SymDefRule
     }
   }
 }
-case class VardefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarDefRule,macroname:String,_name:String,args:String,assoctype:String,file:String,end:Int) extends MacroApplication(pl,ch,rl)
+case class VardefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarDefRule,macroname:String,_name:String,args:String,assoctype:String,file:String,end:Int,defd:Boolean) extends MacroApplication(pl,ch,rl)
   with VariableRule with HasAnnotations {
-  override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),args,assoctype,false,file,plain.startoffset,end)
+  override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),args,assoctype,false,file,plain.startoffset,end,defd)
   override def doAnnotations(in: sTeXDocument): Unit = {
     //val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Function,symbolname = syminfo.path.toString)
     val pma = in.Annotations.add(pl,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant)
@@ -222,7 +249,7 @@ case class VardefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarDefRule
 
 case class InstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.InstanceRule,macroname:String,path:GlobalName,module:DictionaryModule,file:String,end:Int)
   extends MacroApplication(pl,ch,rl) with InstanceFieldRule with HasAnnotations {
-  val syminfo:SymdeclInfo = SymdeclInfo(macroname,path,"","",false,file,pl.startoffset,end)
+  val syminfo:SymdeclInfo = SymdeclInfo(macroname,path,"","",false,file,pl.startoffset,end,false)
 
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Function, symbolname = syminfo.path.toString)
@@ -233,7 +260,7 @@ case class InstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.Instance
 }
 case class VarInstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarInstanceRule,macroname:String,_name:String,module:DictionaryModule,file:String,end:Int)
   extends MacroApplication(pl,ch,rl) with VarInstanceFieldRule with HasAnnotations {
-  override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),"","",false,file,plain.startoffset,end)
+  override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),"","",false,file,plain.startoffset,end,false)
 
   override def doAnnotations(in: sTeXDocument): Unit = {
     //val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Function, symbolname = syminfo.path.toString)

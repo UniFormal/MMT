@@ -1,7 +1,8 @@
 package info.kwarc.mmt.stex.parsing.stex
 
-import info.kwarc.mmt.api.{GlobalName, Level, MPath}
+import info.kwarc.mmt.api.{GlobalName, Level, LocalName, MPath}
 import info.kwarc.mmt.lsp.SyncedDocUnparsed
+import info.kwarc.mmt.stex.parsing.stex.STeXRules.{AssignRule, RenameDeclRule}
 import info.kwarc.mmt.stex.parsing.{Environment, EnvironmentRule, Group, LaTeXParseError, LaTeXParserState, MacroApplication, MacroRule, PlainMacro, PlainText, TeXRule, TeXTokenLike}
 
 case class ModuleRule(dict : DictionaryModule) extends TeXRule {
@@ -74,9 +75,9 @@ trait SymDeclRuleLike extends MacroRule {
       state.inmath = inmath
     }
     children = children ::: nch2
-    val (name, args, assoctype, local, err, nopt) = parseSymOpts(opt)
+    val (name, args, assoctype, local, err, nopt,defd) = parseSymOpts(opt)
     val gn = dict.getGlobalName(if (name == "") maybename else name)
-    (SymdeclInfo(if (makemacro) maybename else gn.toString, gn, args, assoctype, local, file, children.head.startoffset, children.last.endoffset), children, err, nopt)
+    (SymdeclInfo(if (makemacro) maybename else gn.toString, gn, args, assoctype, local, file, children.head.startoffset, children.last.endoffset,defd), children, err, nopt)
   }
 
   def parseSymOpts(ls: List[List[TeXTokenLike]]) = {
@@ -86,6 +87,7 @@ trait SymDeclRuleLike extends MacroRule {
     var name = ""
     var assoctype = ""
     var local = false
+    var defd = false
     ls.foreach { l =>
       val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
       s match {
@@ -123,13 +125,14 @@ trait SymDeclRuleLike extends MacroRule {
         // TODO?
         case s if s.startsWith("def=") =>
           ret = ret.filterNot(_ == l)
+          defd = true
         // TODO?
         case s if s.startsWith("op=") || s.startsWith("prec=") || !s.contains('=') =>
         case _ =>
           print("")
       }
     }
-    (name, args, assoctype, local, error, ret)
+    (name, args, assoctype, local, error, ret,defd)
   }
 }
 
@@ -415,7 +418,7 @@ class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
         val gn = dict.getGlobalName(name)
         val ret = new InlineStatement(plain,ch:::nch,this) with SemanticMacro {
           override val syminfo: SymdeclInfo =
-            SymdeclInfo(gn.toString, gn, "", "", false, dict.getFile, plain.startoffset, children.last.endoffset)
+            SymdeclInfo(gn.toString, gn, "", "", false, dict.getFile, plain.startoffset, children.last.endoffset,false)
         }
         val mod = dict.getModule
         mod.exportrules ::= ret
@@ -436,7 +439,7 @@ class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name)
             val gn = dict.getGlobalName(name)
             val ret = new Statement(bs,env.end,env.children,this) with SemanticMacro {
               override val syminfo: SymdeclInfo =
-                SymdeclInfo(gn.toString,gn,"","",false,dict.getFile,env.children.head.startoffset,children.last.endoffset)
+                SymdeclInfo(gn.toString,gn,"","",false,dict.getFile,env.children.head.startoffset,children.last.endoffset,false)
             }
             val mod = dict.getModule
             mod.exportrules ::= ret
@@ -476,5 +479,151 @@ case class MathStructureMacro(
                              ) extends TeXModuleLike(pm,mpi,ch,rl) with TeXRule with SemanticMacro {
   val sig = ""
   override lazy val name = "mathstructure " + mpi.toString
-  val syminfo = SymdeclInfo(macroname,symbolpath,"","",false,this.file,this.startoffset,this.endoffset)
+  val syminfo = SymdeclInfo(macroname,symbolpath,"","",false,this.file,this.startoffset,this.endoffset,true)
+}
+
+trait StructureLikeRule extends EnvironmentRule with InStructureRule {
+  val dict: Dictionary
+
+  def finalizeStructure(mod:StructureModuleBegin,env:StructureModule)(implicit state: LaTeXParserState) = {}
+  override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = {
+    env.begin match {
+      case sm: StructureModuleBegin =>
+        dict.getModule.macr match {
+          case bg: StructureModuleBegin =>
+            var allnots = bg.dom.getRules("").collect {
+              case nl: NotationLike => nl
+            }
+            allnots = allnots.filter(_.isInstanceOf[SetNotationLike]) ::: allnots.filterNot(_.isInstanceOf[SetNotationLike])
+            bg.domfields.foreach { sm =>
+              if (!bg.fields.contains(sm)) {
+                val name = getName / sm.syminfo.path.name
+                bg.fields(sm) = (Some(name), name.toString, false)
+              } else if (bg.fields(sm)._1.isEmpty) {
+                val trpl = bg.fields(sm)
+                val name = getName / sm.syminfo.path.name
+                bg.fields(sm) = (Some(name), trpl._2, trpl._3)
+              }
+            }
+            dict.closeModule
+            bg.fields.foreach { case (sm, (Some(newname), macroname, ass)) =>
+              val macr = new SemanticMacro {
+                val syminfo = SymdeclInfo(macroname, dict.getGlobalName(newname.toPath), sm.syminfo.args, sm.syminfo.assoctype, false, dict.getFile, bg.startoffset, env.endoffset,ass)
+              }
+              dict.getModule.exportrules ::= macr
+              dict.getModule.rules ::= macr
+              allnots.filter(_.notinfo.syminfo == sm.syminfo).foreach { nt =>
+                val nr = new MacroApplication(nt.plain, nt.children, this) with NotationLike {
+                  override val notinfo: NotationInfo = NotationInfo(
+                    macr.syminfo, nt.notinfo.prec, nt.notinfo.id, nt.notinfo.notation, nt.notinfo.opnotation
+                  )
+
+                  override def name: String = nt.name
+                }
+                dict.getModule.exportrules ::= nr
+                dict.getModule.rules ::= nr
+              }
+            }
+            val ret = StructureModule(sm, env.end, env.children)
+            finalizeStructure(bg,ret)
+            ret
+          case _ =>
+            dict.closeModule
+            StructureModule(sm, env.end, env.children)
+        }
+      case _ => env
+    }
+  }
+  def setupBody[A <:StructureModuleBegin](archive: List[List[TeXTokenLike]], domaintk: TeXTokenLike, nametk: Option[TeXTokenLike])
+                                         (make: (MPath,DictionaryModule) => A)(implicit state: LaTeXParserState) = {
+    val domstr = domaintk match {
+      case gr: Group =>
+        gr.content match {
+          case List(t: PlainText) => t.str
+          case _ => ???
+        }
+      case _ =>
+        ???
+    }
+    val a = archive match {
+      case List(List(pt: PlainText)) => pt.str
+      case _ => ""
+    }
+    val module = dict.requireModule(dict.resolveMPath(a, domstr), a, domstr)
+
+    val name = nametk match {
+      case Some(gr: Group) =>
+        gr.content match {
+          case List(t: PlainText) => LocalName(t.str)
+          case _ => ???
+        }
+      case Some(_) =>
+        ???
+      case None =>
+        LocalName(module.path)
+    }
+
+    val mp = dict.getModule.path.parent ? (dict.getModule.path.name/ name)
+    val ret = dict.openModule(make(mp,module))
+    state.addRule(RenameDeclRule(dict))
+    state.addRule(AssignRule(dict))
+    ret
+  }
+}
+
+trait InStructureRule extends TeXRule {
+  val dict:Dictionary
+  def getName = {
+    dict.getModule.macr match {
+      case bg: StructureModuleBegin =>
+        bg.mp.name.last
+      case _ =>
+        throw LaTeXParseError("Not in CopyModule")
+    }
+  }
+  def addToField(sm: SemanticMacro,name:Option[LocalName] = None,macroname:String = "",isassigned: Boolean = false) = {
+    dict.getModule.macr match {
+      case bg: StructureModuleBegin =>
+        bg.fields.get(sm) match {
+          case None =>
+            bg.fields(sm) = (name,macroname,isassigned)
+          case Some((a,b,c)) =>
+            bg.fields(sm) = (
+              (a,name) match {
+                case (None,Some(n)) => Some(n)
+                case (Some(n),None) => Some(n)
+                case _ => name
+              },
+              (b,macroname) match {
+                case (s,"") => s
+                case _ => macroname
+              },
+              c || isassigned
+            )
+        }
+      case _ =>
+        throw LaTeXParseError("Not in CopyModule")
+    }
+  }
+  def getTarget(tk : TeXTokenLike) = {
+    tk match {
+      case g: Group =>
+        g.content match {
+          case List(pt: PlainText) =>
+            val tg = pt.str
+            dict.getModule.macr match {
+              case bg: StructureModuleBegin =>
+                bg.domfields.collectFirst {
+                  case sm if sm.syminfo.path.name.toString == tg => sm
+                }.getOrElse {
+                  throw LaTeXParseError("No field " + tg + " found in copymodule")
+                }
+              case _ =>
+                throw LaTeXParseError("Not in CopyModule")
+            }
+          case _ => throw LaTeXParseError("Could not identify field for \\" + name, lvl = Level.Warning)
+        }
+      case _ => throw LaTeXParseError("Could not identify field for \\" + name)
+    }
+  }
 }
