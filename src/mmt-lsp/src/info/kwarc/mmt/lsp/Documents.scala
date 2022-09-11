@@ -129,7 +129,7 @@ class SyncedDocument {
   }
   //                      endoffset, line, lineending
   private var lines : List[Line] = Nil
-  def getText = lines.mkString("\n")
+  def getText = lines.map(_.line).mkString("\n")
 
   private def doLines(s : String, add : Line => Unit): Unit ={
     var curro = 0

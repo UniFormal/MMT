@@ -949,6 +949,7 @@ object STeXRules {
         case _ =>
           env.addError("Missing assignments: " + missings.map(_.syminfo.path.toString).mkString(", "))
       }
+        dict.addimport(ImportModuleApp(mod.plain, mod.dom.path, Nil, ImportModuleRule(dict), "", "", false, None))
     }
 
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {

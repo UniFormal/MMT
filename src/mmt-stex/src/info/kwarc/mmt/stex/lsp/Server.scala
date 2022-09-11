@@ -286,6 +286,14 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    @JsonNotification("sTeX/installArchive")
    def installArchive(arch: ArchiveMessage) : Unit = installArchives(arch.archive)
 
+   @JsonNotification("sTeX/buildHTML")
+   def buildHTML(a:BuildMessage): Unit = safely {
+     val d = documents.synchronized {
+       documents.getOrElseUpdate(a.file, newDocument(a.file))
+     }
+     d.buildHTML()
+   }
+
    override def workspaceSymbol(params: WorkspaceSymbolParams): List[WorkspaceSymbol] = {
      print("")
      super.workspaceSymbol(params)
@@ -305,11 +313,6 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        }
      }
    }
-
-   override def didSave(docuri: String): Unit = safely {this.documents.get(docuri) match {
-     case Some(document) => document.buildHTML()
-     case _ =>
-   }}
 
    val self = this
 

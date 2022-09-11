@@ -153,7 +153,10 @@ object LaTeXRules {
 
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
       val rules = state.rules
-      val ch = (readArg, readArg)
+      state.rules = Nil
+      val ch = try {(readArg, readArg)} finally {
+        state.rules = rules
+      }
       new SimpleMacroApplication(plain, ch._1._2 ::: ch._2._2, false, List(ch._1._1, ch._2._1), this)
     }
   }
