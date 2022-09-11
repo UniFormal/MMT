@@ -123,7 +123,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    @JsonNotification("sTeX/buildFile")
    def buildFile(a :BuildMessage) : Unit = {
-     val d = documents.synchronized{documents.getOrElseUpdate(a.file,newDocument(a.file))}
+     val d = documents.synchronized{documents.getOrElseUpdate(a.file.replace("%3A",":"),newDocument(a.file.replace("%3A",":")))}
      d.buildFull()
    }
 
@@ -289,7 +289,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    @JsonNotification("sTeX/buildHTML")
    def buildHTML(a:BuildMessage): Unit = safely {
      val d = documents.synchronized {
-       documents.getOrElseUpdate(a.file, newDocument(a.file))
+       documents.getOrElseUpdate(a.file.replace("%3A",":"), newDocument(a.file.replace("%3A",":")))
      }
      d.buildHTML()
    }
