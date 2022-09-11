@@ -631,3 +631,50 @@ trait InStructureRule extends TeXRule {
     }
   }
 }
+
+trait ProofLike extends TeXRule {
+  def parseI(plain: PlainMacro,children:List[TeXTokenLike])(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+    val math = state.inmath
+    state.inmath = true
+    val (_, ch) = try {
+      readOptArg
+    } finally {
+      state.inmath = math
+    }
+    val (_, ch2) = readArg
+    new MacroApplication(plain, children ::: ch ::: ch2, this)
+  }
+
+}
+object Proofs {
+
+  lazy val rules = List(ProofEnv("subproof"), ProofMacro("assumption"), ProofMacro("spfstep"),
+    ProofMacro("conclude"), new TeXRule with MacroRule {
+      val name: String = "eqstep"
+
+      override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+        val math = state.inmath
+        state.inmath = true
+        val (_, ch) = try {
+          readArg
+        } finally {
+          state.inmath = math
+        }
+        new MacroApplication(plain, ch, this)
+      }
+    })
+
+}
+case class ProofEnv(_name:String) extends EnvironmentRule(_name) with ProofLike {
+  override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+  def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+    val ret = parseI(begin.plain,begin.children)
+    Proofs.rules.foreach(state.addRule(_))
+    ret
+  }
+}
+case class ProofMacro(name : String) extends MacroRule with ProofLike {
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+    parseI(plain, Nil)
+  }
+}

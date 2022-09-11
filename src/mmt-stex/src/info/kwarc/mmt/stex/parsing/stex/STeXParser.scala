@@ -358,7 +358,7 @@ object STeXRules {
     SymrefRule(dict),SymnameRule(dict),CapSymnameRule(dict),
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
     VarDefRule(dict),VarInstanceRule(dict),UseStructureRule(dict),
-    patchdefinitionrule,patchassertionrule,stexinline,stexcode,nstexcode,texcode
+    patchdefinitionrule,patchassertionrule,stexinline,stexcode,nstexcode,texcode,ProofEnv("sproof"),
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
