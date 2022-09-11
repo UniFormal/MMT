@@ -335,11 +335,12 @@ object STeXRules {
     ModuleRule(dict),UseModuleRule(dict),NotationRule(dict),mmtrule,
     SymrefRule(dict),SymnameRule(dict),CapSymnameRule(dict),
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
-    VarDefRule(dict),VarInstanceRule(dict),
+    VarDefRule(dict),VarInstanceRule(dict),UseStructureRule(dict),
     patchdefinitionrule,patchassertionrule,stexinline
   )
   def moduleRules(dict:Dictionary) = List(
-    ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),MathStructureRule(dict),
+    ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
+    ExtStructureRule(dict),
     AssertionRule(dict),InlineAssertionRule(dict),InstanceRule(dict),
     CopymoduleRule(dict),InterpretmoduleRule(dict),RealizationRule(dict)
   )
@@ -904,7 +905,7 @@ object STeXRules {
       )
     }
   }
-  case class MathStructureRule(dict: Dictionary) extends EnvironmentRule("mathstructure") {
+  class MathStructureRule(dict: Dictionary) extends EnvironmentRule("mathstructure") {
     override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env.begin match {
       case ms : MathStructureMacro =>
         dict.closeModule
@@ -949,6 +950,48 @@ object STeXRules {
       val ret = safely(macr){dict.openModule(macr)}
 
       ret
+    }
+  }
+
+  case class ExtStructureRule(dict:Dictionary) extends MathStructureRule(dict) {
+    override val name: String = "extstructure"
+
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+      super.parse(begin) match {
+        case m : MathStructureMacro =>
+          val (args, children) = readArg
+          val ret = MathStructureMacro(m.pm,m.mpi,m.macroname,m.symbolpath,m.ch ::: children,this,m.file)
+          val exts = args match {
+            case g: Group =>
+              g.content.filterNot(_.isInstanceOf[Comment]) match {
+                case List(pt:PlainText) =>
+                  pt.str.split(',').map(_.trim)
+                case _ =>
+                  ret.addError("Expected mathstructures to extend")
+                  return ret
+              }
+            case _ =>
+              ret.addError("Expected mathstructures to extend")
+              return ret
+          }
+          val modules = exts.flatMap { struct =>
+            state.macrorules.collectFirst {
+              case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+                dict.all_modules.get(m.mpi)
+            }.flatten match {
+              case Some(mod) => Some(mod)
+              case _ =>
+                ret.addError("No mathstructure" + struct + " found")
+                None
+            }
+          }
+          modules.foreach{mod =>
+            dict.addimport(ImportModuleApp(begin.plain,mod.path,Nil,ImportModuleRule(dict),"","",false,None))
+          }
+          ret
+        case o => o
+      }
+
     }
   }
 
@@ -1017,6 +1060,30 @@ object STeXRules {
     }
   }
 
+  case class UseStructureRule(dict: Dictionary) extends EnvironmentRule("usestructure") {
+    override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+      val (structArg, children) = readArg
+      val struct = structArg match {
+        case g: Group =>
+          g.content match {
+            case List(pt: PlainText) => pt.str
+            case _ => throw LaTeXParseError("Could not determine structure name forusestructure", lvl = Level.Warning)
+          }
+        case _ => throw LaTeXParseError("mathstructure name for usestructure expected")
+      }
+      val module = state.macrorules.collectFirst {
+        case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+          dict.all_modules.get(m.mpi)
+      }.flatten match {
+        case Some(mod) => mod
+        case _ =>
+          throw LaTeXParseError("No mathstructure" + struct + " found")
+      }
+      module.exportrules.reverse.foreach(state.addRule(_))
+      new MacroApplication(begin.plain,begin.children ::: children,this)
+    }
+  }
 
   case class ProblemRule(dict : Dictionary) extends EnvironmentRule("sproblem") {
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
