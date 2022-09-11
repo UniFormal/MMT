@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex.xhtml
 
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
+import info.kwarc.mmt.api.{AddError, ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
@@ -42,7 +42,9 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
     v.metadata.update(ParseResult.unknown,OMS(ParseResult.unknown))
     v
   }
-  def add(se : StructuralElement) = controller.library.add(se)
+  def add(se : StructuralElement) = try {controller.library.add(se)} catch {
+    case AddError(e,msg) => error("Error adding " + e.path.toString + ": " + msg)
+  }
   def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = controller.library.endAdd(ce)
   def getO(p : Path) = controller.getO(p)
   def update(se : StructuralElement) = controller.library.update(se)
