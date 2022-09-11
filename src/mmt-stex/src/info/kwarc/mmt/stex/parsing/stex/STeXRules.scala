@@ -460,6 +460,8 @@ class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name)
           name = Some(s.drop(5))
         case s if s.trim.startsWith("type=") =>
         case s if s.trim.startsWith("id=") =>
+        case s if s.trim.startsWith("title=") =>
+        case s if s.trim.startsWith("for=") =>
         case _ =>
           ???
       }
@@ -540,7 +542,8 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
       case gr: Group =>
         gr.content match {
           case List(t: PlainText) => t.str
-          case _ => ???
+          case _ =>
+            ???
         }
       case _ =>
         ???
@@ -555,7 +558,8 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
       case Some(gr: Group) =>
         gr.content match {
           case List(t: PlainText) => LocalName(t.str)
-          case _ => ???
+          case _ =>
+            ???
         }
       case Some(_) =>
         ???

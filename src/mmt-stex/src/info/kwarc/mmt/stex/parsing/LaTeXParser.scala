@@ -39,7 +39,15 @@ object SuperficialLaTeXParser {
   }
   def readTop(break:Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : List[TeXTokenLike] = {
     var ret : List[TeXTokenLike] = Nil
-    while(!in.empty && !break(in.first)) ret ::= readOne(break)
+    while(!in.empty && !break(in.first)) try {
+      ret ::= readOne(break)
+    } catch {
+      case e:LaTeXParseError =>
+        ret.headOption match {
+          case Some(tk) => tk.addError(e.s,e.extramsg,e.lvl)
+          case None =>
+        }
+    }
     ret.reverse
   }
   def readOne(break:Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state:LaTeXParserState): TeXTokenLike = {
@@ -114,7 +122,10 @@ class LaTeXParserState(initrules : List[TeXRule]) {
   def opengroup = {
     rules ::= new RuleContainer
   }
-  def closegroup = rules = rules.tail
+  def closegroup = {
+    if (rules.isEmpty) throw LaTeXParseError("No group here to close")
+    rules = rules.tail
+  }
   def macrorules = rules.flatMap(_.rules).collect{case mr : MacroRule => mr}
   def getRules = rules.flatMap(_.rules)
   def envrules = rules.flatMap(_.rules).collect{case er: EnvironmentRule => er}
@@ -136,6 +147,15 @@ object LaTeXRules {
   }
   val edef = new MacroRule with DefLikeRule {
     override val name: String = "edef"
+  }
+  val let = new MacroRule {
+    override val name: String = "let"
+
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+      val rules = state.rules
+      val ch = (readArg, readArg)
+      new SimpleMacroApplication(plain, ch._1._2 ::: ch._2._2, false, List(ch._1._1, ch._2._1), this)
+    }
   }
 
   val end = new SimpleMacroRule("end",1) {
@@ -324,7 +344,7 @@ object LaTeXRules {
     explsyntaxoff,
     dmathstart, dmathend, ensuremath,
     begin,end,
-    _def,edef,
+    _def,edef,let,
     array,array_star,eqnarray,eqnarray_star,align,align_star,displaynd,displaytableau,displaytableau_star,textnd,cboxnd,tableau,
     capital_displaynd,fignd,
     verbatim,lstlisting,lstinline,inlineverb,verb,iffalse

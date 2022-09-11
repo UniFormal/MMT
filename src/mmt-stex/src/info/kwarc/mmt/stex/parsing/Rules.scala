@@ -79,6 +79,15 @@ trait TeXRule {
           val ret = readGroup
           children ::= ret
           return (ret,children.reverse)
+        case '\\' =>
+          done = true
+          val rules = state.rules
+          val ret = try {
+            state.rules = Nil
+            readMacro
+          } finally {state.rules = rules}
+          children ::= ret
+          return (ret,children.reverse)
         case o =>
           done = true
           in.drop(1)

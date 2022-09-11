@@ -38,9 +38,6 @@ class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
 
 class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
 
-  private var filetracker:List[File] = Nil
-  def previouslyread(f : File) = filetracker.contains(f)
-
   implicit val ec : ExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool(1000))
 
   def getMPath(name:String):MPath = {
@@ -51,7 +48,8 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
             d.^ ? name
           case Some(d) =>
             d ? LocalName.parse(name)
-          case _ => ???
+          case _ =>
+            ???
         }
       case Some(m) =>
         m.path.parent ? (m.path.name / LocalName.parse(name))
@@ -143,7 +141,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
   def getModuleOpt = current_modules.headOption
 
   def inFile[A](file : File,a:Option[Archive] = None)(f: => A) : A = {
-    filetracker ::= file
+    //filetracker ::= file
     val prevarch = current_archive
     val prevfile = current_file
     val prevmod = current_modules
@@ -220,6 +218,10 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
     case _ =>
   }
 
+  //private case class ParseThread(file : File,ft : Future[Unit])
+  //private var filetracker : List[ParseThread] = Nil
+  private var readfiles : List[File] = Nil
+
   def requireModule(mp: MPath, arch: String, mpstr: String): DictionaryModule = {
     all_modules.getOrElse(mp, {
       val archive = if (arch == "") current_archive else controller.backend.getArchive(arch)
@@ -250,17 +252,37 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
           throw LaTeXParseError("No candidate file for module " + mp + " found")
         }
       }
-      //if (!filetracker.contains(file)) {
-      Await.result(Future {
+      /*
+      filetracker.find(_.file == file) match {
+        case Some(f) => Await.result(f.ft,Duration.Inf)
+        case None =>
+          val future = Future {
+            try { */
+      if (readfiles contains file) {
+        throw LaTeXParseError("No module " + mp + " found")
+      }
+      else {
+        def add() = {
+          readfiles ::= file
+        }
         try {
           parser.applyFormally(file, archive)
-        } catch {
-          case e: Throwable =>
-            e.printStackTrace()
-            print("")
+        } finally {
+          add()
         }
-      }, Duration.Inf)
-      // }
+      } /*
+            } catch {
+              case e: Throwable =>
+                e.printStackTrace()
+                print("")
+            } finally {
+              filetracker = filetracker.filterNot(_.file == file)
+            }
+            ()
+          }
+          filetracker ::= ParseThread(file, future)
+          Await.result(future, Duration.Inf)
+      } */
 
       all_modules.getOrElse(mp, {
         throw LaTeXParseError("No module " + mp + " found")
@@ -336,7 +358,7 @@ object STeXRules {
     SymrefRule(dict),SymnameRule(dict),CapSymnameRule(dict),
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
     VarDefRule(dict),VarInstanceRule(dict),UseStructureRule(dict),
-    patchdefinitionrule,patchassertionrule,stexinline
+    patchdefinitionrule,patchassertionrule,stexinline,stexcode,nstexcode,texcode
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
@@ -362,6 +384,43 @@ object STeXRules {
   val patchassertionrule = new PatchRule("stexpatchassertion")
 
   val stexinline = new InlineVerbRule("stexinline")
+  val texcode = new MacroRule {
+    override def name: String = "texcode"
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+      val currrules = state.rules
+      val main = try {
+        state.rules = Nil
+        readArg
+      } finally {
+        state.rules = currrules
+      }
+      new SimpleMacroApplication(plain, main._2, false, Nil, this)
+    }
+  }
+
+  val stexcode = new EnvironmentRule("stexcode") with VerbatimLikeRule {
+    override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+      val (terminated, nch) = readVerb("\\end{stexcode}")
+      val ret = new MacroApplication(begin.plain, begin.children ::: nch :: Nil, this)
+      if (!terminated) {
+        ret.addError("stexcode environment closed unexpectedly")
+      }
+      ret
+    }
+  }
+
+  val nstexcode = new EnvironmentRule("nstexcode") with VerbatimLikeRule {
+    override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+      val (terminated, nch) = readVerb("\\end{nstexcode}")
+      val ret = new MacroApplication(begin.plain, begin.children ::: nch :: Nil, this)
+      if (!terminated) {
+        ret.addError("nstexcode environment closed unexpectedly")
+      }
+      ret
+    }
+  }
 
   val mmtrule = new SimpleMacroRule("MMTrule",2) {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
@@ -490,7 +549,7 @@ object STeXRules {
   case class AssignRule(dict: Dictionary) extends MacroRule with InStructureRule with SymRefRuleLike {
     val name = "assign"
 
-    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       var children: List[TeXTokenLike] = Nil
 
       val (domtk, ch) = readArg
@@ -708,13 +767,7 @@ object STeXRules {
           }
         case _ => throw LaTeXParseError("Name for \\instantiate expected")
       }
-      val inmath = state.inmath
-      val (opt, nch2) = try {
-        state.inmath = true
-        readOptArg
-      } finally {
-        state.inmath = inmath
-      }
+      val (opt, nch2) = readOptArg
       children = children ::: nch2
       var name = maybename
       var ls = opt
@@ -751,7 +804,11 @@ object STeXRules {
       val (_, nch4) = readArg
       children = children ::: nch4
 
-      val (_, nch5) = readOptArg
+      val inmath = state.inmath
+      state.inmath = true
+      val (_, nch5) = try {readOptArg} finally {
+        state.inmath = inmath
+      }
       children = children ::: nch5
 
       val path =dict.getGlobalName(name)
@@ -920,7 +977,8 @@ object STeXRules {
         case gr:Group =>
           gr.content match {
             case List(t:PlainText) => t.str
-            case _ => ???
+            case _ =>
+              ???
           }
         case _ =>
           ???
@@ -1040,6 +1098,7 @@ object STeXRules {
           case s if s.trim.startsWith("creators=") =>
           case s if s.trim.startsWith("contributors=") =>
           case s if s.trim.startsWith("deprecate=") =>
+          case s if s.trim.startsWith("ns=") => // TODO
           case s if s.trim.startsWith("srccite=") =>
             deprecation = s.trim.drop(10).trim
           case s =>
