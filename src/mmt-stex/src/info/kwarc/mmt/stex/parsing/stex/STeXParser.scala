@@ -1140,7 +1140,7 @@ object STeXRules {
         case _ =>
           throw LaTeXParseError("No mathstructure" + struct + " found")
       }
-      module.exportrules.reverse.foreach(state.addRule(_))
+      module.getRules("").foreach(state.addRule(_))
       new MacroApplication(begin.plain,begin.children ::: children,this)
     }
   }
