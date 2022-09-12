@@ -231,7 +231,11 @@ trait SymRefRuleLike extends MacroRule {
       case Array(s) => rules.collectFirst {
         case m: SemanticMacro if m.name == s => m.syminfo
       } match {
-        case Some(s) => (Some(s), Nil)
+        case Some(si) =>
+          val candidates = rules.collect {
+            case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
+          }.filterNot(_ == si).map(_.path).distinct
+          (Some(si), candidates)
         case _ =>
           val candidates =rules.collect {
             case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
