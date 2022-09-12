@@ -339,6 +339,14 @@ object LaTeXRules {
   val ensuremath = new SimpleMacroRule("ensuremath",args=1) with MathMacroRule {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = inmath { super.parse(plain) }
   }
+  val text = new SimpleMacroRule("text",args=1)  {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+      val math = state.inmath
+      state.inmath = false
+      val (ret,ch) = try { readArg } finally { state.inmath = math }
+      new SimpleMacroApplication(plain,ch,false,Nil,this)
+    }
+  }
 
   val allrules = List(
     makeatletter,
@@ -349,7 +357,7 @@ object LaTeXRules {
     begin,end,
     _def,edef,let,
     array,array_star,eqnarray,eqnarray_star,align,align_star,displaynd,displaytableau,displaytableau_star,textnd,cboxnd,tableau,
-    capital_displaynd,fignd,
+    capital_displaynd,fignd,text,
     verbatim,lstlisting,lstinline,inlineverb,verb,iffalse
   )
 }
