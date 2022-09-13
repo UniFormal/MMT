@@ -49,7 +49,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
           case Some(d) =>
             d ? LocalName.parse(name)
           case _ =>
-            ???
+            throw LaTeXParseError("Error resolving Global Name")
         }
       case Some(m) =>
         m.path.parent ? (m.path.name / LocalName.parse(name))
@@ -135,8 +135,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
   private var current_language : String = "en"
 
   def getModule = current_modules.headOption.getOrElse({
-    print("")
-    ???
+    throw LaTeXParseError("Only allowed in Module")
   })
   def getModuleOpt = current_modules.headOption
 
@@ -308,8 +307,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         m.imports ::= (mod, !ima.isusemodule)
         m.rules = mod.getRules(getLanguage) ::: m.rules
       case None =>
-        print("")
-        ???
+        throw LaTeXParseError("Only allowed in module")
     }
     ima
   }
@@ -587,7 +585,7 @@ object STeXRules {
           case s if s.trim.startsWith("name=") =>
             name = Some(s.drop(5))
           case _ =>
-            ???
+            throw LaTeXParseError("Unknown key " + s.trim)
         }
       }
 
@@ -918,10 +916,12 @@ object STeXRules {
           throw LaTeXParseError("No mathstructure" + struct + " found")
       }
 
-      val (_, nch4) = readArg
+      val (notation, nch4) = readArg
       children = children ::: nch4
 
-      val (_,nch5) = readOptArg
+      val inmath2 = state.inmath
+      state.inmath = true
+      val (assignments,nch5) = try {readOptArg} finally {state.inmath = inmath2}
       children = children ::: nch5
 
       val ret = VarInstanceApp(plain, children, this, maybename, name, module, dict.getFile, in.offset)
@@ -1023,10 +1023,10 @@ object STeXRules {
           gr.content match {
             case List(t:PlainText) => t.str
             case _ =>
-              ???
+              throw LaTeXParseError("Name expected")
           }
         case _ =>
-          ???
+          throw LaTeXParseError("Name expected")
       }
       val (optargs,ch2) = readOptArg
       children = children ::: ch2
@@ -1035,9 +1035,9 @@ object STeXRules {
         val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
         s match {
           case s if s.trim.startsWith("name=") =>
-            name = s.drop(5)
+            name = s.drop(5).trim
           case _ =>
-            ???
+            throw LaTeXParseError("Unknown key:" + s.drop(5).trim)
         }
       }
       val mp = dict.getMPath(name + "-structure")
@@ -1147,7 +1147,7 @@ object STeXRules {
           case s if s.trim.startsWith("srccite=") =>
             deprecation = s.trim.drop(10).trim
           case s =>
-            ???
+            throw LaTeXParseError("Unknow key " + s.trim)
         }
       }
       val mp = dict.getMPath(name)
@@ -1207,7 +1207,10 @@ object STeXRules {
             val mod = s.trim.drop(5).trim
             if (mod == "NONE") meta = None
             else {
-              ???
+              meta = Some(try{Path.parseM(mod)} catch {
+                case t =>
+                  throw LaTeXParseError("Module path expected: " + mod)
+              })
             }
           case s if s.trim.startsWith("title=") =>
             title = s.trim.drop(6).trim
@@ -1228,7 +1231,7 @@ object STeXRules {
           case s if s.startsWith("uses=") || s.startsWith("imports=") =>
             // TODO
           case s =>
-            ???
+            throw LaTeXParseError("Unknow key " + s.trim)
         }
       }
       if (name == "") {

@@ -378,7 +378,7 @@ trait InstanceRuleLike extends SemanticMacro {
       case g: Group =>
         g.content match {
           case List(pt: PlainText) =>
-            module.exportrules.collectFirst {
+            module.getRules("").collectFirst {
               case mr : SemanticMacro if mr.syminfo.path.name.toString == pt.str => mr
             }.getOrElse {
               throw LaTeXParseError("No field " + pt.str + " found in module " + module.path)
@@ -413,7 +413,7 @@ class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
         case s if s.trim.startsWith("type=") =>
         case s if s.trim.startsWith("id=") =>
         case _ =>
-          ???
+          throw LaTeXParseError("Unknow key " + s.trim)
       }
     }
     val (_,nch) = readArg
@@ -467,7 +467,7 @@ class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name)
         case s if s.trim.startsWith("title=") =>
         case s if s.trim.startsWith("for=") =>
         case _ =>
-          ???
+          throw LaTeXParseError("Unknow key " + s.trim)
       }
     }
     BeginStatement(begin.plain,begin.children ::: ch,this,name)
@@ -547,10 +547,10 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
         gr.content match {
           case List(t: PlainText) => t.str
           case _ =>
-            ???
+            throw LaTeXParseError("CopyModule missing domain")
         }
       case _ =>
-        ???
+        throw LaTeXParseError("CopyModule missing domain")
     }
     val a = archive match {
       case List(List(pt: PlainText)) => pt.str
@@ -563,10 +563,10 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
         gr.content match {
           case List(t: PlainText) => LocalName(t.str)
           case _ =>
-            ???
+            throw LaTeXParseError("CopyModule missing name")
         }
       case Some(_) =>
-        ???
+        throw LaTeXParseError("CopyModule missing name")
       case None =>
         LocalName(module.path)
     }

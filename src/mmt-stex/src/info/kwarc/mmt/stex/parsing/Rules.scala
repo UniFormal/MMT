@@ -105,7 +105,7 @@ trait TeXRule {
     in.trim
     var children : List[TeXTokenLike] = Nil
     var args : List[List[TeXTokenLike]] = Nil
-    while (true) {
+    while (!in.empty) {
       in.first match {
         case '%' =>
           children = children ::: List(readComment)
@@ -157,7 +157,7 @@ trait TeXRule {
         case _ => return (Nil, children)
       }
     }
-    ???
+    throw LaTeXParseError("File ended unexpectedly")
   }
 }
 
