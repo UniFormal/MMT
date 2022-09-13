@@ -359,10 +359,11 @@ object STeXRules {
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
     VarDefRule(dict),VarInstanceRule(dict),UseStructureRule(dict),
     patchdefinitionrule,patchassertionrule,stexinline,stexcode,nstexcode,texcode,ProofEnv("sproof"),
+    MMTInterfaceRule(dict)
   )
   def moduleRules(dict:Dictionary) = List(
-    ImportModuleRule(dict),SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
-    ExtStructureRule(dict),
+    ImportModuleRule(dict),new SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
+    ExtStructureRule(dict),TextSymDeclRule(dict),
     AssertionRule(dict),InlineAssertionRule(dict),InstanceRule(dict),
     CopymoduleRule(dict),InterpretmoduleRule(dict),RealizationRule(dict)
   )
@@ -651,7 +652,7 @@ object STeXRules {
       ret
     }
   }
-  case class SymDefRule(dict:Dictionary) extends MacroRule with SymDeclRuleLike with NotationRuleLike {
+  class SymDefRule(val dict:Dictionary) extends MacroRule with SymDeclRuleLike with NotationRuleLike {
     val name = "symdef"
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       var children : List[TeXTokenLike] = Nil
@@ -671,6 +672,49 @@ object STeXRules {
         val mod = dict.getModule
         mod.exportrules ::= ret
         mod.rules ::= ret
+        ret
+      }
+    }
+  }
+
+  case class TextSymDeclRule(override val dict: Dictionary) extends SymDefRule(dict) {
+    override val name = "textsymdecl"
+
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
+      var children: List[TeXTokenLike] = Nil
+      val (sdinfo, ch, err, nopt) = parseNameAndOpts(dict.getFile)
+      children = ch
+      safely[TeXTokenLike] {
+        val n = SymdeclApp(plain, children, this, sdinfo)
+        if (err != "") n.addError(err)
+        n
+      } {
+        val (ninfo, err2, nopt2, nch) = optsAndNotation(sdinfo, nopt)
+        val nsdinfo = SymdeclInfo(sdinfo.macroname + "-sym",sdinfo.path,"","",false,sdinfo.file,sdinfo.start,sdinfo.end,false)
+        children = children ::: nch
+        val ret = SymdefApp(plain, children, this, nsdinfo, ninfo)
+        val ret2 = new SymdefApp(plain,children,this,sdinfo,ninfo) {
+          override def parseInner(plain: PlainMacro, requireNotation: Boolean)(cons: (PlainMacro, List[TeXTokenLike], Option[NotationInfo]) => TeXTokenLike)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+            val notations = getNotations(syminfo)
+            val notation = notations.headOption match {
+              case None =>
+                val ret = cons(plain, children, None)
+                if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString)
+                return ret
+              case Some(not) =>
+                not
+            }
+            cons(plain, children, Some(notation.notinfo))
+          }
+        }
+        if (err != "") ret.addError(err)
+        if (err2 != "") ret.addError(err2)
+        if (nopt2.nonEmpty) ret.addError("Unknown parameters for \\symdef: " + nopt.mkString(", "))
+        val mod = dict.getModule
+        mod.exportrules ::= ret
+        mod.exportrules ::= ret2
+        mod.rules ::= ret
+        mod.rules ::= ret2
         ret
       }
     }

@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.parsing.stex
 
-import info.kwarc.mmt.api.{GlobalName, Level, LocalName, MPath}
+import info.kwarc.mmt.api.{GlobalName, Level, LocalName, MPath, Path}
 import info.kwarc.mmt.lsp.SyncedDocUnparsed
 import info.kwarc.mmt.stex.parsing.stex.STeXRules.{AssignRule, RenameDeclRule}
 import info.kwarc.mmt.stex.parsing.{Environment, EnvironmentRule, Group, LaTeXParseError, LaTeXParserState, MacroApplication, MacroRule, PlainMacro, PlainText, TeXRule, TeXTokenLike}
@@ -667,7 +667,6 @@ object Proofs {
         new MacroApplication(plain, ch, this)
       }
     })
-
 }
 case class ProofEnv(_name:String) extends EnvironmentRule(_name) with ProofLike {
   override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
@@ -680,5 +679,46 @@ case class ProofEnv(_name:String) extends EnvironmentRule(_name) with ProofLike 
 case class ProofMacro(name : String) extends MacroRule with ProofLike {
   override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
     parseI(plain, Nil)
+  }
+}
+
+case class MMTInterfaceRule(dict:Dictionary) extends EnvironmentRule("mmtinterface") {
+  override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+    var children: List[TeXTokenLike] = Nil
+    val (pathstr,ch) = readArg
+    children = ch
+    val mmtpath = pathstr match {
+      case gr : Group =>
+        gr.content match {
+          case List(pt:PlainText) =>
+            try { Path.parseM(pt.str)} catch {
+              case t =>
+                throw LaTeXParseError("Module path expected")
+            }
+          case _ =>
+            throw LaTeXParseError("Missing MMT-URI")
+        }
+      case _ => throw LaTeXParseError("Missing MMT-URI")
+    }
+    val (nametk,ch2) = readArg
+    children = children ::: ch2
+    val name = nametk match {
+      case gr: Group =>
+        gr.content match {
+          case List(t: PlainText) => t.str
+          case _ =>
+            throw LaTeXParseError("Module name expected")
+        }
+      case _ =>
+        throw LaTeXParseError("Module name expected")
+    }
+    val stexpath = dict.getMPath(name)
+    val ret = MMTInterfaceBegin(begin.plain,mmtpath,stexpath,begin.children ::: children,this)
+    dict.openModule(ret)
+  }
+
+  override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = {
+    dict.closeModule
+    env
   }
 }

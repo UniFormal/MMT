@@ -24,6 +24,16 @@ class StructureModuleBegin(pm:PlainMacro, mp:MPath, val dom:DictionaryModule, ch
     case sm : SemanticMacro => sm
   }
 }
+case class MMTInterfaceBegin(pm:PlainMacro,mmtpath:MPath,stexpath:MPath,ch:List[TeXTokenLike],rl:MMTInterfaceRule)
+  extends TeXModuleLike(pm,stexpath,ch,rl) with HasAnnotations {
+  val sig = ""
+
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, stexpath.toString, true)
+    a.addCodeLens("Interface " + stexpath.toString + " for " + mmtpath.toString,"",Nil,startoffset,endoffset)
+    a.setSemanticHighlightingClass(0)
+  }
+}
 case class StructureModule(bg:StructureModuleBegin,en:TeXTokenLike,ch:List[TeXTokenLike]) extends Environment(bg,en,ch,Some(bg.rl)) with HasAnnotations {
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, bg.mp.toString, true)
