@@ -19,7 +19,7 @@ object CheckCompanion extends ActionCompanion("check a knowledge item with respe
 }
 
 case class CheckTerm(s: String) extends CheckAction {
-  def apply() {controller.checkTerm(s)}
+  def apply(): Unit = {controller.checkTerm(s)}
   def toParseString = "term \""+s+"\""
 }
 object CheckTermCompanion extends ActionCompanion("check a knowledge item with respect to a certain checker", "term") {
@@ -31,7 +31,7 @@ object CheckTermCompanion extends ActionCompanion("check a knowledge item with r
 trait CheckActionHandling {self: Controller =>
 
   /** Checks a path using the [[Checker]] of the given ID, handling [[CheckAction]] */
-  def checkPath(p: Path, id: String)(implicit task: MMTTask) {
+  def checkPath(p: Path, id: String)(implicit task: MMTTask): Unit = {
     val checker = extman.get(classOf[Checker], id).getOrElse {
       throw GeneralError(s"no checker $id found")
     }

@@ -72,7 +72,7 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
    //var test : List[Individual] = Nil
    
    /** adds a RelationalElement */
-   def +=(d : RelationalElement) {
+   def +=(d : RelationalElement): Unit = {
       synchronized {
          d match {
            case Relation(dep, subj, obj) =>
@@ -87,7 +87,7 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
    }
 
    /** deletes all RelationalElements with a given subject */
-   def deleteSubject(subj : Path) {
+   def deleteSubject(subj : Path): Unit = {
       synchronized {
         types -= subj
         individuals.values.foreach {v => v -= subj}
@@ -121,7 +121,7 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
     * @param q the query to be executed; the way in which results are related to the start
     * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
     */
-   def query(start : Path, q : RelationExp)(implicit add : Path => Unit) {q match {
+   def query(start : Path, q : RelationExp)(implicit add : Path => Unit): Unit = {q match {
       case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d
       case ToSubject(d) => subjects(d, start).foreach(add) //all paths inversely related to start via d
       //only start itself
@@ -129,7 +129,7 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
       //the set of paths related to start via arbitrarily many q-steps (depth-first, children before parent)
       case Transitive(qn) =>
          var added = HashSet.empty[Path]
-         def step(p : Path) {
+         def step(p : Path): Unit = {
             if (! added.contains(p)) {
                //println("Added path "+p.toString()+" as a path related to the starting path "+start.toString()+" with search query "+q.toString())
                added += p
@@ -170,13 +170,13 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
       l
    }
    /** deletes all declarations */
-   def clear {
+   def clear: Unit = {
       this.synchronized {
-         dependencies.clear
-         subjects.clear
-         objects.clear
-         individuals.clear
-         types.clear
+         dependencies.clear()
+         subjects.clear()
+         objects.clear()
+         individuals.clear()
+         types.clear()
       }
    }
 }

@@ -124,7 +124,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          tree
       } catch {
         case e: Throwable =>
-          val msg = e.getClass + ": " + e.getMessage
+          val msg = e.getClass.toString + ": " + e.getMessage
           val pe = ParseError("unknown error: " + msg).setCausedBy(e)
           log(msg)
           try {errorCont(pe)} catch {case e: Exception => log(Error(e).toStringLong)}

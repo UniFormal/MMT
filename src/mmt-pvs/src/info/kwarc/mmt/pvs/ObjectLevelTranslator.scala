@@ -16,7 +16,7 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
     case e: Expr => doExpr(e)._1
     case _ =>
       println("TODO Object: " + o.getClass + ": " + o)
-      sys.exit
+      sys.exit()
   }
 
   def doType(t: Type): Term = {
@@ -64,7 +64,7 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
         PVSTheory.typeext(doType(tp),doType(by))
       case _ =>
         println("TODO Type: " + t.getClass + ": " + t)
-        sys.exit
+        sys.exit()
     }
     state.doSourceRef(t, tM)
     tM
@@ -214,7 +214,7 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
               println(" - " + asstp)
               println(" - " + x)
               println(" in " + tm + " : " + tp)
-              sys.exit
+              sys.exit()
           })
         }
         (assignlist.foldLeft(tm)((t,ass) => doUpdateAssignment(t,ass)),tp)
@@ -223,7 +223,7 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
 
       case _ =>
         println("TODO Expr: " + e.getClass + ": " + e)
-        sys.exit
+        sys.exit()
     }
     state.doSourceRef(e, eM._1)
     eM
@@ -262,11 +262,11 @@ case class ObjectLevelTranslator(state : TranslationState,controller : Controlle
 
     if(mappings.nonEmpty) {
       println("Found mappings in doPath")
-      sys.exit
+      sys.exit()
     }
     if(opttarget.isDefined) {
       println("Found target in doPath")
-      sys.exit
+      sys.exit()
     }
 
     if (mpath == state.path) state.getLocal(LocalName(id))

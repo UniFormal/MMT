@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.utils._
 object MakeTOC {
    private def skip(le: List[String]) =
       (List("index.html", "toc.html", "img").map(List(_)) contains le) || le.last.startsWith("_") || le.last.startsWith(".")
-   def main(args: Array[String]) {
+   def main(args: Array[String]): Unit = {
       val folder = File(System.getProperty("user.dir"))
       //val folder = File(args(0))
       val out = new HTMLFileWriter(folder / "toc.html")
@@ -15,7 +15,7 @@ object MakeTOC {
 
       css("_css/style.css")
       javascript("https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js")
-      def doFolder(l: List[String]) {
+      def doFolder(l: List[String]): Unit = {
          ul("sidebargroup") {
              (folder / l).list.sorted foreach {e =>
                val le = l ::: List(e)

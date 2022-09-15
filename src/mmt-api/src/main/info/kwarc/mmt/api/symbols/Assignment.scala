@@ -15,7 +15,7 @@ import notations._
   */
 object ConstantAssignment {
    def apply(home : Term, name : LocalName, alias: List[LocalName], target : Option[Term]) =
-      Constant(home, name, alias, None, target, None, NotationContainer())
+      Constant(home, name, alias, None, target, None, NotationContainer.empty())
 }
 
 /**

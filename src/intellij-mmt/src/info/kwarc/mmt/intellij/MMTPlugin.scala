@@ -195,15 +195,6 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     controller = new Controller
     controller.report.addHandler(errorReport)
 
-    /** Options */
-    val mslf = home / "startup.msl"
-    if (mslf.toJava.exists())
-      controller.runMSLFile(mslf, None, true, None)
-    else {
-      mslf.createNewFile()
-      File.append(mslf, "extension info.kwarc.mmt.odk.Plugin")
-    }
-
     val rc = home / "mmtrc"
     if (!rc.toJava.exists()) {
       rc.createNewFile()
@@ -215,6 +206,16 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     /** MathHub Folder */
     controller.setHome(home)
     controller.addArchive(home)
+
+    /** Options */
+    val mslf = home / "startup.msl"
+    if (mslf.toJava.exists())
+      controller.runMSLFile(mslf, None, true, None)
+    else {
+      mslf.createNewFile()
+      File.append(mslf, "extension info.kwarc.mmt.odk.Plugin")
+      controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
+    }
   }
 
   def syntaxTree(node: DefaultMutableTreeNode, docS: String): Unit = {
@@ -312,7 +313,7 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     //Ret(vd.name.toString,Some(region))
   }
 
-  def buildFile(f: String) {
+  def buildFile(f: String): Unit = {
     val file = File(f)
     val errorCont = new ErrorHandler {
       override protected def addError(e: Error): Unit = {}
@@ -425,8 +426,8 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     val T = controller.getTheory(Path.parseM(TPath, nsMap))
     val RToS = controller.getAs(classOf[View], Path.parseM(RToSPath, nsMap))
 
-    val newModulePath = T.path.parent ? (T.path.name + "Generalized")
-    val generatedMorphismPath = T.path.parent ? (T.path.name + "GeneralizedMorphism")
+    val newModulePath = T.path.parent ? (T.path.name.toString + "Generalized")
+    val generatedMorphismPath = T.path.parent ? (T.path.name.toString + "GeneralizedMorphism")
 
     val (invertedTheory, generatedMorphism) = LFLinkInverter.invertLink(
       R,

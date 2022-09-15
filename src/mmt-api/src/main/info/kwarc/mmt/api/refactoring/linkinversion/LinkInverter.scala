@@ -216,7 +216,8 @@ object LinkInverter {
 			globalContext,
 			// Do not expand OMIDs in declarations. But we still rewrite them
 			// using [[AbbrevRule AbbrevRules]].
-			expandDefinitions = false,
+			expandConDefs = false,
+			expandVarDefs =false,
 			fullRecursion = true
 		)
 
@@ -302,7 +303,7 @@ object LinkInverter {
 						tpC = newTypeContainer,
 						dfC = newDefContainer,
 						rl = originalConstant.rl,
-						notC = originalConstant.notC.copy,
+						notC = originalConstant.notC.copy(),
 						vs = originalConstant.vs
 					)
 

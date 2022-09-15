@@ -12,18 +12,18 @@ abstract class RenderingHandler {
    /** shortcut for write */
    def <<[A <% String](a: A) = write(a)
    /** output a string */
-   def apply(s : String) {
+   def apply(s : String): Unit = {
      write(s)
    }
    /** output an XML node */
-   def apply(N : NodeSeq) {apply(N.toString)}
+   def apply(N : NodeSeq): Unit = {apply(N.toString)}
 
    // Convenience methods for rendering text
    /** output a string with line ending */
-   def writeln(s: String) {apply(s + "\n")}
+   def writeln(s: String): Unit = {apply(s + "\n")}
 
    /** wraps output in a pair of brackets */
-   def wrap(before: String, after: String)(body: => Unit) {
+   def wrap(before: String, after: String)(body: => Unit): Unit = {
       apply(before)
       body
       apply(after)
@@ -51,27 +51,27 @@ abstract class RenderingHandler {
    def writeAttribute(prefix : String, name : String, value : String) {
      write(s""" ${getQualifiedName(prefix, name)}="$value"""")
    }*/
-   @MMT_TODO("probably not needed anymore")
+   @deprecated("MMT_TODO: probably not needed anymore", since="forever")
    /** write an XML start tag at once, including attributes and scope */
-   def writeStartTag(prefix : String, label : String, attributes : MetaData, scope : NamespaceBinding) {
+   def writeStartTag(prefix : String, label : String, attributes : MetaData, scope : NamespaceBinding): Unit = {
      write("<")
      write(getQualifiedName(prefix, label))
      write(attributes.toString) //starts with a space
      write(scope.toString) //starts with a space
      write(">")
    }
-   @MMT_TODO("probably not needed anymore")
+   @deprecated("MMT_TODO: probably not needed anymore", since="forever")
    /** write an XML end tag */
-   def writeEndTag(prefix : String, label : String) {
+   def writeEndTag(prefix : String, label : String): Unit = {
      write(s"</${getQualifiedName(prefix, label)}>")
    }
-   @MMT_TODO("probably not needed anymore")
+   @deprecated("MMT_TODO: probably not needed anymore", since="forever")
    /** returns a qualified name from a prefix and a local part */
    private def getQualifiedName(prefix : String, name: String) =
      if (prefix == "" || prefix == null) name else (prefix + ":" + name)
 
    /** write an XML element in a way that the XML nesting is reflected in the code (attribute values will be escaped) */
-   def elem(tag: String, attributes: (String,String)*)(body: => Unit) {
+   def elem(tag: String, attributes: (String,String)*)(body: => Unit): Unit = {
      val attS = attributes.map {case (k,v) => s"""$k="${XMLEscaping(v)}""""}.mkString(" ", " ", "")
      write(s"<$tag$attS>")
      nl
@@ -81,26 +81,26 @@ abstract class RenderingHandler {
    }
 
    /** write text inside an xml element (will be escaped) */
-   def xmltext(s: String) {
+   def xmltext(s: String): Unit = {
      write(XMLEscaping(s))
    }
 
    /** releases all resources, empty by default */
-   def done {}
+   def done: Unit = {}
 
    // indentation management
    private var indentLevel = 0
    val indentString = "  "
    protected var afterIndentationString = ""
    /** renders a newline followed by indentation */
-   def nl {
+   def nl: Unit = {
     apply("\n")
     Range(0, indentLevel).foreach { _ =>
       apply(indentString)
     }
    }
    /** renders the body in such a way that all calls to nl create indentation one level deeper */
-   def indent(body: => Unit) {
+   def indent(body: => Unit): Unit = {
      indentLevel += 1
      nl
      try {
@@ -116,32 +116,32 @@ trait RenderingResult[A] extends RenderingHandler {
    /** releases all resources and returns the result of building */
    def get: A
    /** releases all resources without returning a result */
-   override def done {get}
+   override def done: Unit = {get}
 }
 
 /** writes text output to the console */
 object ConsoleWriter extends RenderingHandler {
-   def write(s : String) {print(s)}
+   def write(s : String): Unit = {print(s)}
 }
 
 /** writes text output to a file */
 class FileWriter(val filename : File, compress: Boolean = false) extends RenderingHandler {
    private val file = utils.File.Writer(filename, compress)
-   def write(s : String) {
+   def write(s : String): Unit = {
      file.write(s)
    }
-   override def done {file.close}
+   override def done: Unit = {file.close}
 }
 
 /** writes text output to a StringBuilder */
 class StringBuilder extends RenderingHandler with RenderingResult[String] {
   private val sb = new scala.collection.mutable.StringBuilder(5000)
-   def write(s: String) {sb.append(s)}
-   def get: String = sb.result
+   def write(s: String): Unit = {sb.append(s)}
+   def get: String = sb.result()
 }
 
 class HTMLRenderingHandler(hb: HTML) extends RenderingHandler {
-   def write(s: String) {
+   def write(s: String): Unit = {
       hb.out(s)
    }
 }

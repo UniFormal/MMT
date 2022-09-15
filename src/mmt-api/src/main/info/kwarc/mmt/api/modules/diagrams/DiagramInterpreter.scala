@@ -259,7 +259,8 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
         val simplifiedDiag = {
           val su = SimplificationUnit(
             context = interpreterContext,
-            expandDefinitions = true,
+            expandConDefs = true,
+            expandVarDefs = true,
             fullRecursion = true
           )
 

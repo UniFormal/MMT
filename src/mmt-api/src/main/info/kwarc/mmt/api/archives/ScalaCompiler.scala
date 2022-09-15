@@ -19,11 +19,11 @@ class ScalaCompiler extends BuildTarget {
 
   /** find the classpath of a single archive */
   private def singleArchiveClassPath(a : Archive) = {
-    a.properties.get("classpath").map(p => a.root / p).mkString(sep)
+    a.classpath.map(p => a.root / p).mkString(sep)
   }
 
 
-   def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
+   def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
      (a / ScalaOutDim).mkdirs
      // find all source folders to collect files in
      val folderList = a.properties.getOrElse("scala", "scala")
@@ -65,7 +65,7 @@ class ScalaCompiler extends BuildTarget {
      }
    }
 
-   def clean(a: Archive, in: FilePath) {
+   def clean(a: Archive, in: FilePath): Unit = {
      delete(a / Dim("bin"))
    }
 }

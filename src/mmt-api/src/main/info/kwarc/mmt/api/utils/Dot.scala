@@ -80,15 +80,15 @@ class DotToSVG(dotPath: File) {
       s""""${e.from.id.toPath}" -> "${e.to.id.toPath}" [${labelAtt}${refAtt}tooltip="${esc(e.cls)}",weight=${e.weight}];"""
    }
 
-   private def toDot(dg: DotGraph, f: File) {
+   private def toDot(dg: DotGraph, f: File): Unit = {
        val file = File.Writer(f)
-       def write(s: String) {file.println(s)}
+       def write(s: String): Unit = {file.println(s)}
 
        // all nodes that have been added
        var nodesDone: List[DotNode] = Nil
        // add the minimal theories
 
-       def addNode(n: DotNode) {
+       def addNode(n: DotNode): Unit = {
           if (! nodesDone.contains(n)) {
             write(dotNode(n))
             nodesDone ::= n

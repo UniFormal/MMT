@@ -18,7 +18,7 @@ class Plugin extends ChangeListener {
   val theory: MPath = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
 
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     // load the systems
     // FR: done explicitly below now
     // controller.extman.addExtension(MitMConfigActionCompanion)
@@ -49,7 +49,7 @@ class Plugin extends ChangeListener {
 
 /** action for caching in MitM systems */
 case object Warmup extends Action with MitMExtension {
-  def apply() {
+  def apply(): Unit = {
     controller.extman.get(classOf[VRESystem]).foreach({ v =>
       log(s"warming up ${v.id}")
       v.warmup()

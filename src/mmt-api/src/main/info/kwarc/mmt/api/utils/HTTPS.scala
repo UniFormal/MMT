@@ -7,8 +7,8 @@ import java.security._
 /** a trust manager that does nothing */
 class TrustAllX509TrustManager extends X509TrustManager {
     def getAcceptedIssuers = Array()
-    def checkClientTrusted(certs: Array[X509Certificate], authType: String) {}
-    def checkServerTrusted(certs: Array[X509Certificate], authType: String) {}
+    def checkClientTrusted(certs: Array[X509Certificate], authType: String): Unit = {}
+    def checkServerTrusted(certs: Array[X509Certificate], authType: String): Unit = {}
 }
 
 /** Some sites use certificates that are not trusted by the JRE by default.
@@ -21,7 +21,7 @@ object TrustAllX509TrustManager {
      def verify(string: String, ssls: SSLSession) = true
   }
   /** configures Java so that it trusts all HTTPS connections (idempotent) */
-  def trustAll {
+  def trustAll: Unit = {
      if (!active) {
        val sc = SSLContext.getInstance("TLS")
        sc.init(null, Array(new TrustAllX509TrustManager), new SecureRandom)

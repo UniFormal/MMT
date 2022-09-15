@@ -32,7 +32,7 @@ object Sage {
 class Plugin extends frontend.Plugin {
   val theory = Sage.theory
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     controller.extman.addExtension(new SageImporter)
     controller.extman.addExtension(new SageSystem)
   }

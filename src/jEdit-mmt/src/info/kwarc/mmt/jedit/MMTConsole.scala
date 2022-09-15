@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.frontend.ReportHandler
 import info.kwarc.mmt.api.frontend.actions.Action
 
 class OutputAsReport(output: Output) extends ReportHandler("jEdit console") {
-   def apply(ind: Int, caller: => String, group : String, msgParts : List[String]) {
+   def apply(ind: Int, caller: => String, group : String, msgParts : List[String]): Unit = {
       msgParts.foreach {msg => output.print(null, indentString(ind) + group + ": " + msg)} // null for default color
    }
 }
@@ -22,7 +22,7 @@ abstract class ThreadedConsole(s: String) extends console.Shell(s) {
    private var success : Option[Boolean] = Some(true)
 
    //If your shell executes commands in a separate thread, this method should stop the currently running thread, if any.
-   override def stop (console: Console) {}
+   override def stop (console: Console): Unit = {}
 
    //This method should block until the currently running command has completed, and return true if the command executed successfully, false otherwise. If no command is currently running, it should return the status of the most recently run command.
    override def waitFor(console: Console) : Boolean = synchronized {
@@ -33,7 +33,7 @@ abstract class ThreadedConsole(s: String) extends console.Shell(s) {
    }
    
    /** the body of the execute function should be wrapped in this */
-   protected def executionWrapper(code: => Boolean) {synchronized {
+   protected def executionWrapper(code: => Boolean): Unit = {synchronized {
      success = None
      try {
        val r = code
@@ -47,7 +47,7 @@ abstract class ThreadedConsole(s: String) extends console.Shell(s) {
 /** a MMT console for jEdit, it reads MMT actions and prints the log output */ 
 class MMTConsole extends ThreadedConsole("mmt") {
    //This method is invoked by the console when the user selects the shell in question. It should print a short informational message, outlining the main capabilities of the shell.
-   override def printInfoMessage (output: Output) {
+   override def printInfoMessage (output: Output): Unit = {
       output.print(null, "This is the MMT Shell")
    }
 

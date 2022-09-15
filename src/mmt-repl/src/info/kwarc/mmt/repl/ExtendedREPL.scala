@@ -5,7 +5,7 @@ import actions._
 
 
 class ExtendedREPL extends REPLImpl with REPLExtension  {
-  override def enter(args: ShellArguments) {
+  override def enter(args: ShellArguments): Unit = {
     super.enter(args)
     if (isDumb()) {
       println("Unable to create a system terminal. No history or tab completion; prefix a partial command with '@' to see suggestions")

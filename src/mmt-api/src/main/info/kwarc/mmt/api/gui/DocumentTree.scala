@@ -60,11 +60,11 @@ class MMTTreeModel(controller: Controller) extends TreeModel {
 
    private var listeners: List[TreeModelListener] = Nil
 
-   def addTreeModelListener(l: TreeModelListener) {
+   def addTreeModelListener(l: TreeModelListener): Unit = {
       listeners ::= l
    }
 
-   def removeTreeModelListener(l: TreeModelListener) {
+   def removeTreeModelListener(l: TreeModelListener): Unit = {
       listeners = listeners.filter(_ != l)
    }
 
@@ -87,14 +87,14 @@ class MMTTreeModel(controller: Controller) extends TreeModel {
       case _ => false
    }
 
-   def valueForPathChanged(path: TreePath, newValue: Object) {}
+   def valueForPathChanged(path: TreePath, newValue: Object): Unit = {}
 }
 
 class MMTTree(controller: Controller) extends JTree(new MMTTreeModel(controller)) {
    setRootVisible(false)
 
    val ml = new MouseAdapter() {
-      override def mousePressed(e: MouseEvent) {
+      override def mousePressed(e: MouseEvent): Unit = {
          val jpath = getPathForLocation(e.getX, e.getY)
          if (jpath == null) return
          val node = jpath.getLastPathComponent.asInstanceOf[MMTNode]
@@ -108,7 +108,7 @@ class MMTTree(controller: Controller) extends JTree(new MMTTreeModel(controller)
    }
    addMouseListener(ml)
 
-   def clickOn(se: StructuralElement, e: MouseEvent) {}
+   def clickOn(se: StructuralElement, e: MouseEvent): Unit = {}
 }
 
 
@@ -132,13 +132,13 @@ class TreePane(controller: Controller) extends JPanel {
             mode = other
       }
    }
-   private def back {
+   private def back: Unit = {
       if (current+1 < history.length) {
          current += 1
          setCurrentElement
       }
    }
-   private def forward {
+   private def forward: Unit = {
       if (current-1 >= 0) {
          current -= 1
          setCurrentElement
@@ -157,7 +157,7 @@ class TreePane(controller: Controller) extends JPanel {
    ontologyPane.setLayout(new BoxLayout(ontologyPane, BoxLayout.PAGE_AXIS))
 
    private val tree = new MMTTree(controller) {
-      override def clickOn(se: StructuralElement, e: MouseEvent) {
+      override def clickOn(se: StructuralElement, e: MouseEvent): Unit = {
          (e.getButton, e.getClickCount) match {
             case (MouseEvent.BUTTON1, 1) =>
                if (se != null) setNewElement(se)
@@ -173,15 +173,15 @@ class TreePane(controller: Controller) extends JPanel {
 
    private var history: List[StructuralElement] = Nil
    private var current = 0
-   private def setNewElement(p: Path) {
+   private def setNewElement(p: Path): Unit = {
       val se = controller.get(p)
       setNewElement(se)
    }
-   private def setNewElement(se: StructuralElement) {
+   private def setNewElement(se: StructuralElement): Unit = {
       history = history.take(current) ::: se :: history.drop(current)
       setCurrentElement
    }
-   private def setCurrentElement {
+   private def setCurrentElement: Unit = {
       val se = history(current)
       val presenter = controller.extman.get(classOf[Presenter], mode).get // defined due to check above
       val rb = new presentation.StringBuilder

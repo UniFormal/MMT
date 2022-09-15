@@ -30,7 +30,7 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
     val view: Option[View] = query.semanticsView.map(controller.getO(_) match {
       case Some(v: View) => controller.simplifier.apply(v); v
       case None => return errorResponse("Could not find view " + query.semanticsView, query.version > 1)
-      case _ => return errorResponse(query.semanticsView + " does not appear to be a view", query.version > 1)
+      case _ => return errorResponse(query.semanticsView.toString + " does not appear to be a view", query.version > 1)
     })
 
     val langTheo = if (query.languageTheory.isEmpty) {
@@ -42,7 +42,7 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
     val theory: Theory = controller.getO(langTheo) match {
       case Some(th: Theory) => th
       case None => return errorResponse("Could not find theory " + langTheo, query.version > 1)
-      case _ => return errorResponse(langTheo + " does not appear to be a theory", query.version > 1)
+      case _ => return errorResponse(langTheo.toString + " does not appear to be a theory", query.version > 1)
     }
 
     val theoryMap: mutable.Map[String, Constant] = mutable.Map()
@@ -74,7 +74,7 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
           case None => t
         })
         .map(t => if (query.simplify) controller.simplifier(t,
-          SimplificationUnit(theory.getInnerContext, expandDefinitions = query.deltaExpansion, fullRecursion = true)) else t)
+          SimplificationUnit(theory.getInnerContext, expandVarDefs = query.deltaExpansion, expandConDefs = query.deltaExpansion, fullRecursion = true)) else t)
         .map(t => removeFakeLambdas(t, Set()))
         .distinct
 

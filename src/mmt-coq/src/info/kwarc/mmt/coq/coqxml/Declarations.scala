@@ -228,7 +228,7 @@ case class MUTIND(uri : URI, noType : Int, id : String) extends term with object
 case class MUTCONSTRUCT(uri : URI, noType : Int, noConstr : Int, id : String, sort : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val gn = variables.toGlobalName(uri)
-    OMS(gn.module ? (gn.name + "_C_" + noConstr ))
+    OMS(gn.module ? (gn.name.toString + "_C_" + noConstr ))
   }
 }// OMS
 //                                     ^  from 0      ^ starts from 1, index in list of constructors

@@ -15,7 +15,7 @@ class Pragmatics extends ChangeListener {
    /** caches (via change-listening) all known NotationExtensions */
    private var notExts: List[(MPath, NotationExtension)] = Nil
 
-   override def onAdd(se: StructuralElement) {
+   override def onAdd(se: StructuralElement): Unit = {
      se match {
        case rc: RuleConstant => rc.df.foreach {
          case ne: NotationExtension =>
@@ -25,7 +25,7 @@ class Pragmatics extends ChangeListener {
        case _ =>
      }
    }
-   override def onDelete(se: StructuralElement) {
+   override def onDelete(se: StructuralElement): Unit = {
      se match {
        case rc: RuleConstant => rc.df.foreach {
          case ne: NotationExtension =>
@@ -35,7 +35,7 @@ class Pragmatics extends ChangeListener {
        case _ =>
      }
    }
-   override def onClear {
+   override def onClear: Unit = {
      notExts = Nil
    }
 

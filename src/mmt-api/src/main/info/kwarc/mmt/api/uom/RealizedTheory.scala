@@ -20,7 +20,7 @@ abstract class RealizedTheory(mt: Option[MPath]) extends Theory(null, null, mt, 
   /**
     * creates the actual body of this class from the lazy body
     */
-  override def init {
+  override def init: Unit = {
     body
   }
 
@@ -30,10 +30,10 @@ abstract class RealizedTheory(mt: Option[MPath]) extends Theory(null, null, mt, 
    /**
     * adds a [[RuleConstant]] whose name is derived from the head of a rule
     */
-   protected def rule(r: SyntaxDrivenRule) {
+   protected def rule(r: SyntaxDrivenRule): Unit = {
     rule(r, "realize")
    }
-   protected def rule(r: SyntaxDrivenRule, tag: String) {
+   protected def rule(r: SyntaxDrivenRule, tag: String): Unit = {
     val rc = {
       val name = r.head.name / tag
       val tp = OMS(r.head)
@@ -58,14 +58,14 @@ abstract class RealizationInScala extends RealizedTheory(None) {
   /** the HOAS apply operators in applications */
   val under: List[GlobalName]
 
-  override def init {
+  override def init: Unit = {
      super.init
      add(symbols.PlainInclude(_path,path))
   }
 
    private var included: List[RealizedTheory] = Nil
   /** adds an include */
-   protected def include(r: RealizedTheory) {
+   protected def include(r: RealizedTheory): Unit = {
      included ::= r
     add(symbols.PlainInclude(r.path, path))
    }
@@ -86,15 +86,15 @@ abstract class RealizationInScala extends RealizedTheory(None) {
     * @param r a BreadthRule for n-ary operators and an AbbrevRule for nullary operators
     */
    private var _axioms: List[(String, () => Term, Term => Boolean)] = Nil
-   def _assert(name: String, term: () => Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
-   def _test(controller: frontend.Controller, log: String => Unit) {
+   def _assert(name: String, term: () => Term, assertion: Term => Boolean): Unit = {_axioms ::= ((name, term, assertion))}
+   def _test(controller: frontend.Controller, log: String => Unit): Unit = {
       _axioms.foreach {
          case (n, tL, a) =>
            log("test case " + n)
            try {
              val t = tL()
              //log("term: " + controller.presenter.asString(t))
-             val tS = controller.simplifier(t, SimplificationUnit(Context(_path), false, true))
+             val tS = controller.simplifier(t, SimplificationUnit(Context(_path), false,false, true))
              //log("simplified: " + controller.presenter.asString(tS))
              val result = a(tS)
              log((if (result) "PASSED" else "FAILED") + "\n")
@@ -113,27 +113,27 @@ abstract class RealizationInScala extends RealizedTheory(None) {
   /**
     * adds a rule for implementing a type
     */
-   def realizeType(synType: GlobalName)(semType: SemanticType) {
+   def realizeType(synType: GlobalName)(semType: SemanticType): Unit = {
         rule(RealizedType(OMS(synType), semType))
    }
 
    /** adds a rule for implementing a constant value (type must have been added previously) */
-   def realizeValue(op:GlobalName, rTypeN: GlobalName)(v: Any) {
+   def realizeValue(op:GlobalName, rTypeN: GlobalName)(v: Any): Unit = {
      realizeFunction(op, Nil, rTypeN)(FunctionN.from0(() => v))
    }
 
    /** convenience for adding a rule for realizing a unary function (types must have been added previously) */
-   def realizeUnary(op:GlobalName, aType: GlobalName, rTypeN: GlobalName)(v: Any => Any) {
+   def realizeUnary(op:GlobalName, aType: GlobalName, rTypeN: GlobalName)(v: Any => Any): Unit = {
     realizeFunction(op, List(aType), rTypeN)(FunctionN.from1(v))
    }
 
    /** convenience for adding a rule for realizing a biary function (types must have been added previously) */
-   def realizeBinary(op:GlobalName, aType1: GlobalName, aType2: GlobalName, rTypeN: GlobalName)(v: (Any,Any) => Any) {
+   def realizeBinary(op:GlobalName, aType1: GlobalName, aType2: GlobalName, rTypeN: GlobalName)(v: (Any,Any) => Any): Unit = {
     realizeFunction(op, List(aType1,aType2), rTypeN)(FunctionN.from2(v))
    }
 
    /** adds a rule for implementing a function symbol (argument and return types must have been added previously) */
-   def realizeFunction(op:GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: FunctionN) {
+   def realizeFunction(op:GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: FunctionN): Unit = {
      if (aTypesN.length != fun.arity) {
          throw AddError(this, "function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
      }
@@ -162,7 +162,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
    }
 
    /** typed variant, experimental, not used by ScalaExporter yet */
-   def realizeFunction[U,V](op:GlobalName, argType1: RepresentedRealizedType[U], rType: RepresentedRealizedType[V])(comp: U => V) {
+   def realizeFunction[U,V](op:GlobalName, argType1: RepresentedRealizedType[U], rType: RepresentedRealizedType[V])(comp: U => V): Unit = {
       val synTp = SynOpType(under, List(argType1.synType), rType.synType)
       val semOp = new SemanticOperator(List(argType1.semType) =>: rType.semType) {
         def apply(args: List[Any]) = args(0) match {
@@ -176,7 +176,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
    }
 
    /** the partial inverse of a unary operator */
-   def inverse(op: GlobalName, aTypeN: GlobalName, rTypeN: GlobalName)(comp: Any => Option[Any]) {
+   def inverse(op: GlobalName, aTypeN: GlobalName, rTypeN: GlobalName)(comp: Any => Option[Any]): Unit = {
      val rType = getRealizedType(rTypeN)
      val List(aType) = List(aTypeN) map {n => getRealizedType(n)}
      val inv = new InverseOperator(op) {
@@ -191,7 +191,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
       rule(inv, invertTag)
    }
    /** the partial inverse of an n-ary operator */
-   def inverse(op: GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: InvFunctionN) {
+   def inverse(op: GlobalName, aTypesN: List[GlobalName], rTypeN: GlobalName)(fun: InvFunctionN): Unit = {
       if (aTypesN.length != fun.arity) {
          throw AddError(this, "function realizing " + op + " of arity " + aTypesN.length + " has wrong arity " + fun.arity)
       }
@@ -298,13 +298,13 @@ object ConstantScala {
 trait DocumentScala {
    private var realizations: List[RealizationInScala] = Nil
    private var documents : List[DocumentScala] = Nil
-   def addRealization(r: RealizationInScala) {
+   def addRealization(r: RealizationInScala): Unit = {
       realizations ::= r
    }
-   def addDocument(d: DocumentScala) {
+   def addDocument(d: DocumentScala): Unit = {
       documents ::= d
    }
-   def test(controller: frontend.Controller, log: String => Unit) {
+   def test(controller: frontend.Controller, log: String => Unit): Unit = {
       documents.foreach {_.test(controller, log)}
       realizations.foreach {_._test(controller, log)}
    }

@@ -40,10 +40,10 @@ class RuleBasedChecker extends ObjectChecker {
       val updateComponent = cu.component map {comp =>
          controller.globalLookup.getComponent(comp) match {
             case tc: TermContainer =>
-               tc.dependsOn.clear
+               tc.dependsOn.clear()
                (comp,tc)
             case cc: ContextContainer =>
-               cc.dependsOn.clear
+               cc.dependsOn.clear()
                (comp,cc)
             case _ => throw ImplementationError("not a TermContainer")
          }

@@ -81,7 +81,7 @@ object Morph {
           case _ => mor
         }
       case OMIDENT(t) => if (preserveType) mor else OMCOMP()
-      case OMINST(_) => mor
+      case OMINST(_,_,_) => mor
       case OMStructuralInclude(f,t) => mor
       case OMCOMP(ms) =>
         val parts = associateComposition(ms)
@@ -406,11 +406,11 @@ object ModExp extends uom.TheoryScala {
   val morphismapplication = _path ? "morphismapplication"
   val instantiation = _path ? "theoryinstantiate"
 
-  @MMT_TODO("use anonymous theories")
+  @deprecated("MMT_TODO: use anonymous theories", since="forever")
   val complextheory = _path ? "complextheory"
-  @MMT_TODO("use anonymous morphisms")
+  @deprecated("MMT_TODO: use anonymous morphisms", since="forever")
   val complexmorphism = _path ? "complexmorphism"
-  @MMT_TODO("not needed but still used by Twelf")
+  @deprecated("MMT_TODO: not needed but still used by Twelf", since="forever")
   // legacy OMA(tunion,args) should be interpreted as TUnion(args), which represents it as a complextheory
   val tunion = _path ? "theory-union"
 }

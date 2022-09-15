@@ -13,9 +13,9 @@ import InternalDeclarationUtil._
 import info.kwarc.mmt.api.utils.MMT_TODO
 import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
-@MMT_TODO("this is experimental and may still be removed")
+@deprecated("MMT_TODO: this is experimental and may still be removed", since="forever")
 class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricTheoryLike {
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = { 
     //val name = LocalName(dd.path.last)

@@ -17,7 +17,7 @@ class InteractiveSimplifier(controller : Controller, intp : ILoop) {
   def path = current._1.path
   def result = current._2
 
-  def set(s : String) {
+  def set(s : String): Unit = {
     intp.interpret("if (uom\"" + s + "\" != null) \"Success\"")
     //uomLog = uom.simplificationLog.reverse.filter(p => p._1 != null)
     topTerm = current._1.t

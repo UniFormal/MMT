@@ -46,7 +46,7 @@ class FormulaParser(val dictionary : Set[String]) extends JavaTokenParsers with 
 
   def logger = new SilentLogger() //switch to the other loggers when debugging
 
-  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {
+  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit): Unit = {
     val print = new java.io.PrintWriter(f)
     try {
       op(print)

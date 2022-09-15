@@ -57,7 +57,7 @@ class SingularImporter extends Importer {
       case e: utils.ExtractError =>
         println("utils.ExtractError")
         println(e.msg)
-        sys.exit
+        sys.exit()
     }
     log("Finished")
     index(topdoc)

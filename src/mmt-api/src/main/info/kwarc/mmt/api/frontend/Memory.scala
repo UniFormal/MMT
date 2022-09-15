@@ -22,7 +22,7 @@ class Memory(extman: ExtensionManager, val report: Report) extends ROMemory {
   val content = new Library(extman, report, Some(previousContent))
   
   /** forgets everything */
-  def clear {
+  def clear: Unit = {
     ontology.clear
     content.clear
   }

@@ -5,7 +5,7 @@ import notations._
 import info.kwarc.mmt.stex.InformalMathMLPresenter
 
 class OEISObjectPresenter extends InformalMathMLPresenter {
-  override def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+  override def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext): Unit = {
       wrapBrackets(None, body)
   }
   override def getNotations(p: GlobalName): List[TextNotation] = {

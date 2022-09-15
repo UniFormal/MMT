@@ -2,7 +2,7 @@ import info.kwarc.mmt.api.archives.{BuildQueue, Dim}
 import info.kwarc.mmt.api.utils.File
 
 object SmglomTest extends MagicTest("stex-xhtml") {
-  override def run: Unit = {
+  override def run(): Unit = {
     // uncomment these to build smglom and fix the paths (if needed)
     // buildSmglom()
     // fixSmglomPaths()

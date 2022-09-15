@@ -41,7 +41,7 @@ class DirectGraphBuilder extends FormatBasedExtension {
 
   private case class CatchError(s: String) extends Throwable
 
-  final override def start(args: List[String]) {
+  final override def start(args: List[String]): Unit = {
     List(
       new JDocgraph,
       new JThgraph,
@@ -77,7 +77,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
 
   private case class CatchError(s: String) extends Throwable
 
-  final override def start(args: List[String]) {
+  final override def start(args: List[String]): Unit = {
     controller.extman.addExtension(new JGraphSideBar)
     controller.extman.addExtension(new DirectGraphBuilder)
   }
@@ -197,7 +197,7 @@ private class JGraphSideBar extends Extension {
 
   private def archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
 
-  final override def start(args: List[String]) {
+  final override def start(args: List[String]): Unit = {
     super.start(args)
     // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
   }
@@ -369,7 +369,7 @@ private class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
         case Some(v: View) => views ::= v
         case _ =>
       }
-      log(theories.length + " selected")
+      log(s"${theories.length} selected")
       (theories, views, Nil)
     }
   }
@@ -455,12 +455,12 @@ private class JMPDGraph extends SimpleJGraphExporter("mpd") {
             case Some(th: Theory) => theories ::= th
             case _ =>
           }
-          log(theories.length + " selected")
+          log(s"${theories.length} selected")
           theories
       }
       var (theories, views): (List[Theory], List[View]) = (Nil, Nil)
 
-      def recurse(ith: Theory) {
+      def recurse(ith: Theory): Unit = {
         log("Select: " + s)
         theories ::= ith
         val ins = ith.getIncludesWithoutMeta ::: ith.getNamedStructures.collect {
@@ -510,7 +510,7 @@ abstract class JGraphSelector {
 }
 
 abstract class JGraphBuilder {
-  def log(s: String) {}
+  def log(s: String): Unit = {}
 
   def build(theories: List[Theory], views: List[View], documents: List[Document])(implicit controller: Controller): JSON
 }
@@ -531,9 +531,9 @@ abstract class StandardBuilder extends JGraphBuilder {
         edges = edges ::: es
     })
     theories.indices foreach (th => {
-      log({
+      log(s"${
         th + 1
-      } + "/" + theories.length)
+      }/${theories.length}")
       doTheory(theories(th))
     } match {
       case (ns, es) =>
@@ -541,9 +541,9 @@ abstract class StandardBuilder extends JGraphBuilder {
         edges = edges ::: es
     })
     documents.indices foreach (doc => {
-      log({
+      log(s"${
         doc + 1
-      } + "/" + documents.length)
+      }/${documents.length}")
       doDocument(documents(doc))
     } match {
       case (ns, es) =>
@@ -566,7 +566,7 @@ object GraphBuilder {
       val uri = Some(th.path.toString)
     })
     val metaedge = if (th.meta.isDefined) List(new JGraphEdge {
-      val id = th.path + "?Meta"
+      val id = th.path.toString + "?Meta"
       val style = "meta"
       val from = th.meta.get.toString
       val to = th.path.toString

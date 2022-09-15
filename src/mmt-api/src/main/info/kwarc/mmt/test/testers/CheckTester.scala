@@ -30,7 +30,7 @@ trait CheckTester extends BaseTester {
 
       errorBuffer.getAll
     } catch {case e: Exception =>
-      val msg = e.getClass + ": " + e.getMessage
+      val msg = e.getClass.toString + ": " + e.getMessage
       throw testError("Unknown Error occured: " + msg, Some(e))
     }
   }
@@ -169,7 +169,7 @@ class TestErrorBuffer(controller: Controller) extends ErrorHandler {
   private var errors: ListBuffer[(Path, Error)] = new ListBuffer
 
   /** resets the internal state to an empty state */
-  override def reset {
+  override def reset: Unit = {
     errors.clear()
     super.reset
   }

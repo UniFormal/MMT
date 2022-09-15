@@ -61,7 +61,7 @@ class MMTOptimizationAnnotationReader extends AnnotationProvider{
     * @param a archive whose optimizations should be read
     * */
   private def readArchive(a : Archive) : Unit = {
-    val optFolder = new File(a.root + "/export/got/")
+    val optFolder = new File(a.root.toString + "/export/got/")
     if (!optFolder.exists || !optFolder.isDirectory) {
       return
     }

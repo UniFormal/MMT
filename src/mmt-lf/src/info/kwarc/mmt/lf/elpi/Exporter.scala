@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.sequences.NatRules.NatLit
 import ELPIExporter.translateTerm
+import info.kwarc.mmt.api.LocalName.toList
 
 object HelpCons {
   def apply(path: GlobalName)                 : ELPI.Variable = ELPI.Variable(LocalName("help") / path.name)
@@ -20,6 +21,7 @@ case class  ELPIError(msg: String) extends Error(msg)
 
 object ELPIExporter {
   /** straightforward translation of an LF terms to a lambda-Prolog term */
+
   def translateTerm(t: Term): ELPI.Expr = {
     t match {
       case OMS(p) =>
@@ -50,9 +52,23 @@ object ELPIExporter {
 
   // We want Variables to start with capital letters, so we rename things like "t" to "T/t".
   // "I don't anticipate any clashes here because MMT names can't contain slashes." -- Jonas, March 2021
+  // We also need to change variable names to ASCII only, ELPI seems to have a problem with Unicode.
   def elpiRename(ln : LocalName) : LocalName = {
-    val s : String = ln.toString
-    val nln : LocalName = if (s.head.isLower) { LocalName(s.head.toUpper + "/" + s) } else { ln }
+    var s : String = ""
+    for (ch : Char <- ln.toString) {
+      // Check for ascii-ness
+      if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+        s = s + ch.toString
+      } else {
+        val hex = Integer.toHexString(ch).toUpperCase.reverse.padTo(4, '0').reverse
+        s = s + hex
+      }
+    }
+    // Make sure everything still starts with a letter
+    if (!(s.head.isLetter)) {
+      s = "E" + s
+    }
+    val nln : LocalName = if (s.head.isLower) { LocalName(s"${s.head.toUpper}/${s}") } else { LocalName(s) }
     nln
   }
 }
@@ -101,14 +117,14 @@ class ELPIExporter extends Exporter {
     }
   }
 
-  def exportTheory(thy: Theory, bf: BuildTask) {
+  def exportTheory(thy: Theory, bf: BuildTask): Unit = {
     val thyE = translateTheory(thy)
     rh << thyE.toELPI
   }
 
-  def exportView(view: View, bf: BuildTask) {}
-  def exportDocument(doc: Document, bf: BuildTask) {}
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
+  def exportView(view: View, bf: BuildTask): Unit = {}
+  def exportDocument(doc: Document, bf: BuildTask): Unit = {}
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {}
 }
 
 private class VarCounter {
@@ -140,13 +156,15 @@ class ConstantHandlerSequence(handlers : List[ConstantHandler]) extends Constant
 }
 
 class GeneratedFromHandler(controller : Controller) extends ConstantHandler {
-  def handle(c : Constant) : List[ELPI.Decl] =
+  def handle(c : Constant) : List[ELPI.Decl] = {
+    println(">>> genfromhan constant: " + c.name + " / " + c.toString)
     List(ELPI.Comment(s"generated from ${c.name} : ${controller.presenter.asString(c.tp.get)}"))
+  }
 }
 
 abstract class BaseConstantHandler(handlerName : String) extends ConstantHandler {
   def fail(c: Constant, msg: String): ELPI.Decl = {
-    ELPI.Comment(c.path + ": " + handlerName + ": skipping due to error: " + msg)
+    ELPI.Comment(c.path.toString + ": " + handlerName + ": skipping due to error: " + msg)
   }
 }
 

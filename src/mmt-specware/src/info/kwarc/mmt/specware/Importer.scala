@@ -51,7 +51,7 @@ class SpecwareImporter extends Importer {
   }
 
   /** one argument: the location of the Specware directory */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     val rest = if (args.headOption.contains("debug")) {
       debug = true
       args.tail

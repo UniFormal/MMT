@@ -3,7 +3,7 @@ package info.kwarc.mmt.odk.OpenMath
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils.URI
 
-import scala.collection.GenTraversableOnce
+import scala.collection.{GenTraversableOnce, SeqView}
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -52,7 +52,7 @@ sealed abstract class OMAny {
     * @tparam A return type of the function.
     * @return
     */
-  def foreachComponent[A](f : OMAny => A) : GenTraversableOnce[A] = {
+  def foreachComponent[A](f : OMAny => A) : SeqView[A] = {
     components.view.map(f)
   }
 

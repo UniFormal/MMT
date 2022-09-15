@@ -36,7 +36,7 @@ case class Abs(exp : Expression) extends Expression{
 }
 
 case class Divisible(num : Expression, by : Expression) extends Expression{
-  def present : String = num + "|" + by
+  def present : String = num.toString + "|" + by
   def toNode(implicit theory : String) : Elem =
     <OMA>
       <OMS name="divisible" cd={URIDefaults.cd} base={URIDefaults.base}>

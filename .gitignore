@@ -31,11 +31,12 @@ bin
 .settings
 target
 .classpath
+.bsp
 
 # scala-bin compilation articfacts
 out/
 
-*/.DS_Store
+.DS_Store
 
 # Artifact of https://github.com/coursier/coursier when working with IntelliJ
 src/null

@@ -28,7 +28,7 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
     val rs = RuleSet.collectRules(controller,con)
     rs.add(systemRule(con))
     rs.add(queryRule)
-    controller.simplifier(tm,SimplificationUnit(con, true, true), rs)
+    controller.simplifier(tm,SimplificationUnit(con, true,true, true), rs)
   }
 
   /** a rule used to evaluate MMT queries */
@@ -136,14 +136,14 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
 /** used for tracing computation run by [[VREComputation]] */
 class MitMComputationTrace(present: Option[Term => String]) {
   var steps: List[MitMTracePart] = Nil
-  def +=(s: MitMTracePart) {
+  def +=(s: MitMTracePart): Unit = {
     present foreach {p => 
       println(s.toString(p) + "\n")
     }
     steps ::= s
   }
   
-  def toString(present: Term => String) = steps.reverseMap(_.toString(present)).mkString("\n\n")
+  def toString(present: Term => String) = steps.reverseIterator.map(_.toString(present)).mkString("\n\n")
 }
 
 /** dummy for ignoring the trace */

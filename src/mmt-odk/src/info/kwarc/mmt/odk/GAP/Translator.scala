@@ -72,7 +72,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
       case prop : DeclaredProperty =>
         val filters = prop.filters//(dones)
         var consts = List(Constant(OMMOD(prop.path.module),prop.name,Nil,Some(doArrow(1)),None,None),
-          Constant(OMMOD(prop.path.module),LocalName(prop.name + "_type"),Nil,Some(typeax(prop,List(filters),IsBool)),None,None))
+          Constant(OMMOD(prop.path.module),LocalName(prop.name.toString + "_type"),Nil,Some(typeax(prop,List(filters),IsBool)),None,None))
         addDependencies(prop.path.module,obj.dependencies)
         (IsAttribute(consts.last.path) :: doImpls(consts.head,prop.dependencies),consts)
       case a : DeclaredAttribute =>
@@ -80,7 +80,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         var consts = List(Constant(OMMOD(a.path.module),a.name,Nil,Some(Arrow(GAP.obj,GAP.obj)),None,None))
         //addConstant(c)
         if (a.returntype.isDefined) {
-          consts ::= Constant(OMMOD(a.path.module),LocalName(a.name + "_type"),Nil,Some(
+          consts ::= Constant(OMMOD(a.path.module),LocalName(a.name.toString + "_type"),Nil,Some(
             typeax(a,List(filters),a.returntype.get)
           ),None,None)
         }
@@ -91,7 +91,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         var consts = List(Constant(OMMOD(a.path.module),a.name,Nil,Some(Arrow(GAP.obj,GAP.obj)),None,None))
         //addConstant(c)
         if (a.returntype.isDefined) {
-          consts ::= Constant(OMMOD(a.path.module),LocalName(a.name + "_type"),Nil,Some(
+          consts ::= Constant(OMMOD(a.path.module),LocalName(a.name.toString + "_type"),Nil,Some(
             typeax(a,List(filters),a.returntype.get)
           ),None,None)
         }
@@ -103,7 +103,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         var consts = List(Constant(OMMOD(op.path.module),op.name,Nil,Some(
           if (op.arity.isDefined) doArrow(op.arity.get) else doArrow(1)),None,None))
         //addConstant(c)
-        if (op.arity.isDefined) consts ::= Constant(OMMOD(op.path.module),LocalName(op.name + "_type"),Nil,
+        if (op.arity.isDefined) consts ::= Constant(OMMOD(op.path.module),LocalName(op.name.toString + "_type"),Nil,
           Some(???),None,None)
         // TODO TODO TODO
         /*
@@ -121,7 +121,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         var consts = List(Constant(OMMOD(cat.path.module),cat.name,Nil,Some(GAP.cat),None,None))
         filters foreach (f =>
           {
-            consts ::= Constant(OMMOD(cat.path.module),LocalName(cat.name + "_st" + opcounter),Nil,
+            consts ::= Constant(OMMOD(cat.path.module),LocalName(cat.name.toString + "_st" + opcounter),Nil,
               Some(Pi(LocalName("x"),GAP.obj,Arrow(
                 GAP.dotp(OMV("x"),cat),
                 GAP.dotp(OMV("x"),f)))),None,None
@@ -137,7 +137,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         var consts = List(Constant(OMMOD(filt.path.module),filt.name,Nil,Some(GAP.filter),None,None))
         filters foreach (f =>
         {
-          consts ::= Constant(OMMOD(filt.path.module),LocalName(filt.name + "_st" + opcounter),Nil,
+          consts ::= Constant(OMMOD(filt.path.module),LocalName(filt.name.toString + "_st" + opcounter),Nil,
             Some(Pi(LocalName("x"),GAP.obj,Arrow(
               GAP.dotp(OMV("x"),filt),
               GAP.dotp(OMV("x"),f)))),None,None
@@ -153,7 +153,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         var consts = List(Constant(OMMOD(rep.path.module),rep.name,Nil,Some(GAP.filter),None,None))
         filters foreach (f =>
         {
-          consts ::= Constant(OMMOD(rep.path.module),LocalName(rep.name + "_st" + opcounter),Nil,
+          consts ::= Constant(OMMOD(rep.path.module),LocalName(rep.name.toString + "_st" + opcounter),Nil,
             Some(Pi(LocalName("x"),GAP.obj,Arrow(
               GAP.dotp(OMV("x"),rep),
               GAP.dotp(OMV("x"),f)))),None,None

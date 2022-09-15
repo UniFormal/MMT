@@ -26,12 +26,12 @@ class NotationCache extends ArchiveChangeListener {
   
   def get(c: ContentPath) = cache.get(c)
   
-  def delete(c: ContentPath) {
+  def delete(c: ContentPath): Unit = {
     cache -= c
   }
   
   private val nsMap = NamespaceMap.empty
-  def oncePerArchive(a: Archive) {
+  def oncePerArchive(a: Archive): Unit = {
     scala.concurrent.Future {
       log("reading archive " + a.id)
       if ((a / notational).exists) {

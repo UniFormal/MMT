@@ -17,12 +17,12 @@ class Make extends ShellExtension("make") {
      val input = controller.getHome resolve args(1)
      // get the archive containing the input file
      val (archRoot, relPath) = controller.backend.resolveAnyPhysical(input).getOrElse {
-       println(input + " not found")
+       println(input.toString + " not found")
        return withError
      }
      controller.backend.openArchive(archRoot)
      val arch = controller.backend.getArchive(archRoot).getOrElse {
-       println(input + " not found") // should be impossible
+       println(input.toString + " not found") // should be impossible
        return withError
      }
      // get the build target for the given key
@@ -38,7 +38,7 @@ class Make extends ShellExtension("make") {
            if (FilePath(dim) == arch.resolveDimension(tbt.inDim))
              FilePath(rest)
            else {
-             println(input + " is not an input file for " + key)
+             println(input.toString + " is not an input file for " + key)
              return withError
            }
        }

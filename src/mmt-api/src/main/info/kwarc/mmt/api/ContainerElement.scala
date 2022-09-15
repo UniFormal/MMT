@@ -71,7 +71,7 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
    /** must be provided by the implementing class to update the declarations */
    protected def setDeclarations(items: List[S]): Unit
 
-   def add(i: S, at: AddPosition = AtEnd) {
+   def add(i: S, at: AddPosition = AtEnd): Unit = {
      val items = getDeclarations
      // default: insert at end
      def defaultPos = items.length
@@ -91,7 +91,7 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
      setDeclarations(bef ::: i :: aft)
   }
   /** updates or adds a child */
-  def update(s: S) {
+  def update(s: S): Unit = {
      val items = getDeclarations
      val i = items.indexWhere(_.name == s.name)
      if (i != -1)
@@ -107,7 +107,7 @@ trait DefaultMutability[S <: NamedElement] extends {self: MutableElementContaine
      d
   }
   /** moves ln to the end */
-  def reorder(ln: LocalName) {
+  def reorder(ln: LocalName): Unit = {
      val items = getDeclarations
      items.find(_.name == ln) match {
         case Some(i) =>

@@ -20,7 +20,7 @@ abstract class Program {
    /** adds a declaration
     *  merges consecutive ADT's and FUNCTION's into ADTRec and FUNCTIONRec
     */
-   protected def add(d: DECL) {
+   protected def add(d: DECL): Unit = {
       decls = (d, decls) match {
          case (a: ADT, ADTRec(adts) :: tl) => ADTRec(adts ::: List(a)) :: tl
          case (a: ADT, (b: ADT) :: tl) => ADTRec(List(b,a)) :: tl
@@ -59,7 +59,7 @@ abstract class Program {
        }
    }
    /** checks this program */
-   def check {
+   def check: Unit = {
       var ds: List[DECL] = get
       implicit var context = Context(Nil)
       while (ds != Nil) {

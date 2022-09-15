@@ -54,7 +54,7 @@ class QueryEvaluator(controller: Controller) {
     }
   }
 
-  private def log(msg: => String) {
+  private def log(msg: => String): Unit = {
     controller.report("query", msg)
   }
 

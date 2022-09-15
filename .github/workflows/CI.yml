@@ -1,6 +1,6 @@
 name: Integration Tests
 
-on: [push, pull_request, workflow_dispatch]
+on: [push, workflow_dispatch]
 
 env:
   SCALA_VERSION: '2.13.4'

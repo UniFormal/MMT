@@ -19,7 +19,7 @@ trait Exporter extends BuildTarget {self =>
     * @param out the output file to be used while executing body
     * @param body any code that produces output
     */
-  protected def outputTo(out: File)(body: => Unit) {
+  protected def outputTo(out: File)(body: => Unit): Unit = {
     val fw = new presentation.FileWriter(out)
     _rh = fw
     body
@@ -30,14 +30,14 @@ trait Exporter extends BuildTarget {self =>
   /** gives access to the RenderingHandler for sending output */
   protected def rh = _rh
 
-  override def init(controller: Controller) {
+  override def init(controller: Controller): Unit = {
     this.controller = controller
     report = controller.report
     contentExporter.init(controller)
     narrationExporter.init(controller)
   }
 
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     controller.extman.addExtension(contentExporter, args)
     controller.extman.addExtension(narrationExporter, args)
   }
@@ -67,7 +67,7 @@ trait Exporter extends BuildTarget {self =>
     */
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit
 
-  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
+  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
     narrationExporter.build(a, w, in, errorCont)
     // find all modules in documents at path 'in'
     val doc = controller.getAs(classOf[Document], DPath(a.narrationBase / in))
@@ -78,7 +78,7 @@ trait Exporter extends BuildTarget {self =>
     }
   }
 
-  def clean(a: Archive, in: FilePath) {
+  def clean(a: Archive, in: FilePath): Unit = {
     contentExporter.clean(a, in)
     narrationExporter.clean(a, in)
   }
@@ -200,14 +200,14 @@ abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
     }
   }
 
-  def exportTheory(t: Theory, bf: BuildTask) {
+  def exportTheory(t: Theory, bf: BuildTask): Unit = {
     if (covered(t.path))
       exportCoveredTheory(t)
     else
       bf.skipped = true
   }
 
-  def exportView(v: View, bf: BuildTask) {
+  def exportView(v: View, bf: BuildTask): Unit = {
     if (covered(v.from.toMPath)) {
       val to = v.to.toMPath
       if (to == found)
@@ -221,12 +221,12 @@ abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
   }
 
   /** called on covered theories, i.e., theories with meta-theory meta */
-  def exportCoveredTheory(t: Theory)
+  def exportCoveredTheory(t: Theory): Unit
 
   /** called on views between covered theories */
-  def exportFunctor(v: View)
+  def exportFunctor(v: View): Unit
 
   /** called on realizations, i.e., views from a covered theory to found, e.g., models or implementations */
-  def exportRealization(r: View)
+  def exportRealization(r: View): Unit
 
 }

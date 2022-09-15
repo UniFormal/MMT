@@ -12,7 +12,7 @@
 package info.kwarc.mmt.lf.compile
 
 object Compiler {
-  def apply(fl: FuncLang[String], log: LogicSyntax) {
+  def apply(fl: FuncLang[String], log: LogicSyntax): Unit = {
     val cp = new Compiler(log)
     cp.get foreach {
        d => println(fl.decl(d))
@@ -84,7 +84,7 @@ class Compiler(log: LogicSyntax) extends Program {
    val declare(symb,sname) = ("symb" record ("sname" ::: id)).derive(List("Show","Typeable"))
    addTag("basic")
 
-   val declare(error) = "error" exception
+   val declare(error) = "error".exception()
 
    addTag("basic")
 
@@ -261,7 +261,7 @@ class Compiler(log: LogicSyntax) extends Program {
    */
    addTag("funs")
 
-   private def upc(string : String) : String = string.head.toUpper + string.substring(1)
+   private def upc(string : String) : String = s"${string.head.toUpper}${string.substring(1)}"
 
    private def getCons(ex : EXP) : EXP = {
      ID("")

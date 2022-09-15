@@ -428,7 +428,7 @@ object Beta extends GenericBeta(StandardArgumentChecker) {
     * Effectively applies the simplifier to the term using only one rule, namely `this`.
     */
   def reduce(t: Term)(implicit ctrl: Controller): Term = {
-    val su = SimplificationUnit(Context.empty, expandDefinitions = false, fullRecursion = true)
+    val su = SimplificationUnit(Context.empty, expandConDefs = false, expandVarDefs=false, fullRecursion = true)
     ctrl.simplifier(t, su, RuleSet(lf.Beta))
   }
 }
@@ -633,5 +633,20 @@ object RemoveUnusedPi extends SimplificationRule(Pi.path) {
       else Simplify(Arrow(tp, body))
 
     case _ => Simplifiability.NoRecurse
+  }
+}
+
+/** makes this applicabile to terms of the form operator(head(args)) where both operator and head use LF application */
+trait ApplicableUnderUnaryOperator extends SingleTermBasedCheckingRule {
+  val operator: GlobalName
+  private val ops = List(OMS(Apply.path), OMS(head))
+  override def applicable(tm: Term) = tm match {
+    case Apply(OMS(`operator`), t) => t match {
+      case OMA(f,a) => (f :: a).startsWith(ops)
+      case OMS(p) => head == p
+      case OMBINDC(OMS(p),_,_) => head == p
+      case _ => false
+    }
+    case _ => false
   }
 }

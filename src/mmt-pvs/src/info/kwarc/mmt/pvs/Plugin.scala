@@ -59,7 +59,7 @@ object PVSNotation extends NotationExtension {
       case _ => return None
     }
     val delim = Delim(fun.name match {
-      case ComplexStep(p) / s => p.name + "?" + s
+      case ComplexStep(p) / s => p.name.toString + "?" + s
       case _ => fun.name.toString
     })
     val fixity = Mixfix(List(SimpArg(1),Delim("%w"),delim,Delim("%w"),SimpArg(2)))

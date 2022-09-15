@@ -15,7 +15,7 @@ import modules._
 import objects._
 import symbols._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * @param view the current jEdit view
@@ -27,7 +27,7 @@ import scala.collection.JavaConverters._
 class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constants: List[Constant], text: String, items: List[String])
   extends SideKickCompletion(view, text, items.asJava) {
   // this methods modifies the textArea after the user selected a completion
-   override def insert(index: Int) {
+   override def insert(index: Int): Unit = {
      val con = constants(index)
      //the text to insert and after how many characters to place the caret
      val (newText,shift): (String,Int) = con.not match {
@@ -65,7 +65,7 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
 class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, region: SourceRegion, options: List[Term])
   extends SideKickCompletion(view, "", options.map(o => controller.presenter.asString(o)).asJava) {
   // this methods modifies the textArea after the user selected a completion
-  override def insert(index: Int) {
+  override def insert(index: Int): Unit = {
      // the new subterm, result of applying the rule
      val newTerm = options(index)
      val newText = controller.presenter.asString(newTerm)

@@ -35,7 +35,7 @@ class TextInterpreter extends OpaqueElementInterpreter
       fromFragments(parent, frags)
    }
 
-   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {
+   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment): Unit = {
       val ot = downcast(oe)
       // TODO turn into a single object, parse and check in one go
       log("opaque element: " + ot.text)
@@ -59,12 +59,12 @@ class TextInterpreter extends OpaqueElementInterpreter
       }
    }
 
-   def toString(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh: RenderingHandler) {
+   def toString(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh: RenderingHandler): Unit = {
       val ot = downcast(oe)
       ot.text.toString(oP)(rh, escapes)
    }
 
-   def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler) {
+   def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler): Unit = {
       val ot = downcast(oe)
       ot.text.toHTML(oP)(rh, oe)
    }

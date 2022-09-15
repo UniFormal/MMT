@@ -2,6 +2,7 @@ package info.kwarc.mmt.stex.rules
 
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, Rule, RuleSet, utils}
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, Continue, EliminationRule, ExtendedCheckingEnvironment, ExtensionalityRule, FormationRule, History, InhabitableRule, IntroductionRule, Solver, SubtypingRule, TermHeadBasedEqualityRule, TypingRule, ValueSolutionRule}
+import info.kwarc.mmt.api.frontend.NotFound
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory}
 import info.kwarc.mmt.api.notations.{LabelArg, LabelInfo, Marker, SimpArg}
@@ -43,8 +44,16 @@ object MathStructureRule extends RuleSet {
     RecTypeCongruence,
     RecExpCongruence,
     CanonicalSolution,
-    RecSubtype
+    RecSubtype,
+    ModTypeInhabitable
   )
+}
+
+object ModTypeInhabitable extends InhabitableRule(ModelsOf.sym) {
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+    case ModelsOf(OMPMOD(_,_)) => Some(true)
+    case _ => None
+  }
 }
 
 
@@ -87,7 +96,8 @@ object RecordsGeneral {
   def makeRecBody(checker: CheckingCallback, tm: Term)(implicit stack: Stack, history: History) = {
     implicit val lookup : Lookup = checker.lookup
     def unappl(t : Term) : Option[RecordBodyLike] = t match {
-      case RecordBodyLike(bd) => Some(bd)
+      case RecordBodyLike(bd) =>
+        Some(bd)
       case RecMerge(stp) =>
         val nstp = stp map {it =>
           checker.safeSimplifyUntil(it)(unappl)._1
@@ -701,6 +711,7 @@ object RecType extends SimpleRecordLike("rectp") {
     // case OMBINDC(this.term, Context(VarDecl(n, None, None, None, _), rest@_*), OMLList(fs)) if rest.isEmpty => Some(RecordBody(Some(n), fs,isType))
     case _ => None
   }
+  def make(fs : OML*) = OMA(this.term,fs.toList)
 }
 
 object RecExp extends SimpleRecordLike("recexpr") {
@@ -870,6 +881,8 @@ abstract class Merged(children_ : => List[RecordBodyLike]) extends RecordBodyLik
 
 trait RecordTypeLike extends RecordBodyLike {
 
+  def getOrig(name:LocalName)(implicit lookup : Lookup,history: History) : Option[Declaration] = None
+
   private val _defs : mutable.HashMap[(Term,LocalName),Option[Term]] = mutable.HashMap.empty
   private val _tps : mutable.HashMap[(Term,LocalName),Option[Term]] = mutable.HashMap.empty
   private var tpcycle : Option[(Term,LocalName)] = None
@@ -918,6 +931,11 @@ trait RecordTypeLike extends RecordBodyLike {
 case class RecordError(s : String) extends Throwable
 
 class MergedType(children_ : => List[RecordBodyLike]) extends Merged(children_) with RecordTypeLike {
+  override def getOrig(name: LocalName)(implicit lookup : Lookup,history: History): Option[Declaration] =
+    MyList(children).mapFind {
+      case rtl : RecordTypeLike => rtl.getOrig(name)
+      case r => throw RecordError("Merge of non-type records in record type " + r.asTerm)
+    }
 
   override def getDefiniensForTerm(name: LocalName, cont: LocalName => Option[Term],projectioncase : Term => Option[LocalName])(implicit lookup : Lookup,history: History): Option[Term] = {
     MyList(children).mapFind {
@@ -937,8 +955,9 @@ class MergedType(children_ : => List[RecordBodyLike]) extends Merged(children_) 
 }
 
 trait RecordExpressionLike extends RecordBodyLike {
-  private val _defs :mutable.HashMap[LocalName,Option[Term]] = mutable.HashMap.empty
-  private var dfcycle : Option[LocalName] = None
+  private val _defs: mutable.HashMap[LocalName, Option[Term]] = mutable.HashMap.empty
+  private var dfcycle: Option[LocalName] = None
+
   def getDefiniens(name: LocalName)(implicit lookup : Lookup,history:History):Option[Term] =
     _defs.getOrElseUpdate(name,{
       if (dfcycle contains name) {
@@ -1112,9 +1131,13 @@ object ModuleType {
       val is : List[(MPath,List[Term])] = getIncludes(sm.theory,ia).map(id => (id.from, id.args.map(_ ^? sm.subs))) //TODO id may now inlcude a definition
       is.flatMap(p => getAll(p._1,p._2)) ::: List(sm)
     }
-    val th = lookup.getO(mp) match {
-      case Some(t : Theory) => t
-      case _ => throw RecordError("Not a theory: " + mp)
+    val th = try {
+      lookup.getO(mp) match {
+        case Some(t: Theory) => t
+        case _ => throw RecordError("Not a theory: " + mp)
+      }
+    } catch {
+      case NotFound(_,_) => throw RecordError("Not found: " + mp)
     }
     if (getIncludes(th,args).isEmpty) get(mp,args) else
       new MergedType({ getAll(mp,args).distinct })
@@ -1142,6 +1165,13 @@ class SimpleModule(val theory : Theory, args : List[Term], _names : => List[Glob
   private lazy val localNames = _names.map(ModuleType.makepath(_,getD))
   override def asTerm: Term = ModelsOf(OMPMOD(theory.path,args))
   override def names : List[LocalName] = localNames.map(gn => ModuleType.makeName(gn.name))
+
+  override def getOrig(name: LocalName)(implicit lookup: Lookup, history: History): Option[Declaration] = {
+    Try(lookup.getO(OMPMOD(theory.path,args),name)).toOption.flatten match {
+      case Some(c : Constant) => Some(c)
+      case _ => None
+    }
+  }
 
   override def prfields(projectioncase : Term => Option[LocalName]): List[OML] = localNames.map(gn => {
     val n = ModuleType.makepath(gn,getD)

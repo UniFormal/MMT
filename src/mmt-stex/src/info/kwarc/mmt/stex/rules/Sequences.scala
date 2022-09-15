@@ -1,11 +1,11 @@
 package info.kwarc.mmt.stex.rules
 
-import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History, InferenceAndTypingRule, InferenceRule, Solver}
+import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History, InferenceAndTypingRule, InferenceRule, Solver, UniverseRule}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.{RecurseOnly, Simplifiability, Simplify}
 import info.kwarc.mmt.api.{GlobalName, LocalName, ParametricRule, Rule, RuleSet}
-import info.kwarc.mmt.stex.{SCtx, SOMB, STeX, STerm}
+import info.kwarc.mmt.stex.{SCtx, SOMA, SOMB, STeX, STerm}
 
 trait SeqRule {
   val seqexprpath : GlobalName
@@ -19,11 +19,11 @@ trait SeqRule {
   }
   object Seqtype {
     def unapply(tp : Term) = tp match {
-      case OMA(OMS(`seqtppath`),List(t)) =>
+      case OMA(OMS(`seqtppath`),List(t/*,l,u*/)) =>
         Some(t)
       case _ => None
     }
-    def apply(tp : Term) = OMA(OMS(seqtppath),List(tp))
+    def apply(tp : Term/*,lower: Term,upper:Term*/) = OMA(OMS(seqtppath),List(tp/*,lower,upper*/))
   }
   object Seqexpr {
     def unapply(tp : Term) = tp match {
@@ -32,6 +32,15 @@ trait SeqRule {
       case _ => None
     }
     def apply(ls : List[Term]) = OMA(OMS(seqexprpath),ls)
+  }
+}
+
+case class UnivRule(seqtppath : GlobalName,seqexprpath : GlobalName) extends UniverseRule(seqtppath) with SeqRule {
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+    case Seqtype(tp) =>
+    Some(solver.check(Universe(stack,tp)))
+    case _ => None
+
   }
 }
 
@@ -50,11 +59,16 @@ case class SeqInfTypeRule(seqtppath : GlobalName,seqexprpath : GlobalName) exten
     case Seqexpr(h :: ls) =>
       tp match {
         case Some(Seqtype(tpA)) =>
-          if (!covered) (h :: ls).foreach { tm =>
-            solver.check(Typing(stack, tm, tpA))
+          if (!covered) {
+            (h :: ls).foreach { tm =>
+              solver.check(Typing(stack, tm, tpA))
+            }
           }
           (tp, Some(true))
-        case Some(Seqexpr(tps)) =>
+        case Some(s@Seqexpr(_)) =>
+          if (!covered) {
+            solver.inferType(s)
+          }
           // TODO ?
           (tp,Some(true))
         case _ =>
@@ -88,7 +102,7 @@ object SequenceLike extends ParametricRule {
 
   override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
     case List(OMS(seqexpr),OMS(seqtp)) =>
-      RuleSet(TypeRule(seqtp,seqexpr),SeqInfTypeRule(seqtp, seqexpr))
+      RuleSet(TypeRule(seqtp,seqexpr),SeqInfTypeRule(seqtp, seqexpr),UnivRule(seqtp,seqexpr))
     case _ =>
       ???
   }
@@ -113,6 +127,10 @@ object FoldRRule extends ParametricRule {
   import info.kwarc.mmt.api.objects.Conversions._
 
   case class Infer(hhead : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends InferenceRule(hhead,STeX.judgmentholds.sym) {
+    override def applicable(t: Term): Boolean = t match {
+      case SOMB(OMS(`hhead`),List(STerm(_),STerm(_),SCtx(Context(_)),SCtx(Context(_)),STerm(_))) => true
+      case _ => false
+    }
     override def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val fold = Fold(head,seqexpr,seqtp)
       val tr = solver.rules.getByHead(classOf[TypeRule],seqtp).headOption.getOrElse { return None }
@@ -134,6 +152,10 @@ object FoldRRule extends ParametricRule {
   }
 
   case class Compute(hhead : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends ComputationRule(hhead) {
+    override def applicable(t: Term): Boolean = t match {
+      case SOMB(OMS(`hhead`),List(STerm(_),STerm(_),SCtx(Context(_)),SCtx(Context(_)),STerm(_))) => true
+      case _ => false
+    }
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       check match {
         case solver:Solver =>
@@ -172,6 +194,10 @@ object SeqInitRule extends ParametricRule {
   }
 
   case class Infer(hhead : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends InferenceRule(hhead,STeX.judgmentholds.sym) {
+    override def applicable(t: Term): Boolean = t match {
+      case SOMA(OMS(`head`),List(_)) => true
+      case _ => false
+    }
     override def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val init = Init(head,seqexpr,seqtp)
       //val tr = solver.rules.getByHead(classOf[TypeRule],seqtp).headOption.getOrElse { return None }
@@ -184,9 +210,9 @@ object SeqInitRule extends ParametricRule {
   }
 
   case class Init(head : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends Rule {
-    def apply(seq : Term) = OMA(OMS(`head`),List(seq))
+    def apply(seq : Term) = SOMA(OMS(`head`),seq)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`head`),List(seq)) =>
+      case SOMA(OMS(`head`),List(seq)) =>
         Some(seq)
       case _ => None
     }
@@ -194,6 +220,10 @@ object SeqInitRule extends ParametricRule {
   import info.kwarc.mmt.api.objects.Conversions._
 
   case class Compute(hhead : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends ComputationRule(hhead) {
+    override def applicable(t: Term): Boolean = t match {
+      case SOMA(OMS(`head`),List(_)) => true
+      case _ => false
+    }
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       check match {
         case solver:Solver =>
@@ -224,6 +254,10 @@ object SeqLastRule extends ParametricRule {
   }
 
   case class Infer(hhead : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends InferenceRule(hhead,STeX.judgmentholds.sym) {
+    override def applicable(t: Term): Boolean = t match {
+      case SOMA(OMS(`head`),List(_)) => true
+      case _ => false
+    }
     override def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
       val last = Last(head,seqexpr,seqtp)
       val tr = solver.rules.getByHead(classOf[TypeRule],seqtp).headOption.getOrElse { return None }
@@ -239,9 +273,9 @@ object SeqLastRule extends ParametricRule {
   }
 
   case class Last(head : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends Rule {
-    def apply(seq : Term) = OMA(OMS(`head`),List(seq))
+    def apply(seq : Term) = SOMA(OMS(`head`),seq)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`head`),List(seq)) =>
+      case SOMA(OMS(`head`),List(seq)) =>
         Some(seq)
       case _ => None
     }
@@ -249,6 +283,10 @@ object SeqLastRule extends ParametricRule {
   import info.kwarc.mmt.api.objects.Conversions._
 
   case class Compute(hhead : GlobalName, seqexpr : GlobalName, seqtp : GlobalName) extends ComputationRule(hhead) {
+    override def applicable(t: Term): Boolean = t match {
+      case SOMA(OMS(`head`),List(_)) => true
+      case _ => false
+    }
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       check match {
         case solver:Solver =>

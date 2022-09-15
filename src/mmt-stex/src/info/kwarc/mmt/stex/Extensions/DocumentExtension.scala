@@ -21,7 +21,18 @@ object DocumentExtension extends STeXExtension {
         case "" =>
           Some(ServerResponse("Empty Document path","txt"))
         case s =>
-          Some(ServerResponse(doDocument(s).toString, "application/xhtml+xml"))
+          Some(ServerResponse(doDocument(s).toString, "text/html"))
+      }
+    case Some("fulldocument") =>
+      request.query match {
+        case "" =>
+          Some(ServerResponse("Empty Document path","txt"))
+        case s =>
+          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+          html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/document?" + s)
+          html = html.replace("BASE_URL_PLACEHOLDER","")
+          html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
+          Some(ServerResponse(html, "text/html"))
       }
     case _ => None
   }
@@ -34,16 +45,14 @@ object DocumentExtension extends STeXExtension {
         e.documentRules
     }.flatten
     def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
-    filecontent.get("body")()().head.iterate(doE)
-    filecontent
+    val body = filecontent.get("body")()().head
+    body.iterate(doE)
+    body
   }
 
   override def doHeader(head: HTMLNode,body: HTMLNode): Unit = {
-    //head.add(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))
-    body.add(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/overlaymain.xml"))
   }
 
-  // TODO
   def getDocument(uri : String) : HTMLNode = {
     val rules = server.extensions.flatMap(_.rules)
     //val state = new ParsingState(,rules)
@@ -138,8 +147,16 @@ object DocumentExtension extends STeXExtension {
   }
 
   def sidebar(elem : HTMLNode, content: List[Node]) = {
-    val sidenotes = getTop(elem).get()()("sidenote-container").headOption
-    sidenotes.foreach(_.add(<div>{content}</div>))
+    def parent(e : HTMLNode) : Option[(HTMLNode,HTMLNode)] = e.parent match {
+      case Some(p) if !p.isMath => Some((p,e))
+      case Some(p) => parent(p)
+      case None => None
+    } //if (e.isMath) parent(e.parent.get) else e
+    parent(elem).foreach {case (p,c) =>
+      p.addBefore(<div class="sidebar">{content}</div>,c)
+    }
+    //val sidenotes = getTop(elem).get()()("sidenote-container").headOption
+    //sidenotes.foreach(_.add(<div>{content}</div>))
   }/*{
     val id = elem.state.generateId
     val side = <span id={id} class="sidenote-container"><span class="sidenote-container-b"><small class="sidenote">{content}</small></span></span>
@@ -153,56 +170,28 @@ object DocumentExtension extends STeXExtension {
   }*/
 
   def overlay(elem : HTMLNode, urlshort : String,urllong : String) : Unit = {
-    if (elem.classes.contains("hasoverlay")) return
-    elem.classes = "hasoverlay" :: elem.classes
+    if (elem.classes.contains("overlay-parent")) return
+    val id = elem.hashCode().toString
+    elem.attributes((elem.namespace,"id")) = id
+    elem.classes ::= "hasoverlay-parent"
+    //elem.classes ::= "hasoverlay" //:: elem.classes
     def pickelems(n : HTMLNode,inarg:Boolean = false) : List[HTMLNode] = n match {
       case comp : NotationComponent => List(comp)
       case a : HTMLArg => a.children.flatMap(pickelems(_,true))
       case _ : HasHead if inarg => Nil
       case o => o.children.flatMap(pickelems(_,inarg))
     }
-    val id = elem.state.generateId
     val targets = pickelems(elem)
-    val onhover = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.add('stexoverlaycontainerhover')").mkString(";")
-    val onout = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.remove('stexoverlaycontainerhover')").mkString(";")
-    val currp = elem.parent
-    targets.zipWithIndex.foreach {
-      case (txt: HTMLText,i) =>
-        val newthis = txt.parent.map(_.addAfter(<span class="stexoverlaycontainer" style="display:inline"
-                                            id={id + "_" + i}
-                                            onmouseover={"stexOverlayOn('" + id + "','" + urlshort + "');" + onhover}
-                                            onmouseout={"stexOverlayOff('" + id + "');" + onout}
-                                            onclick={"stexMainOverlayOn('" + urllong + "')"}
-        ></span>,txt))
-        txt.delete
-        newthis.foreach(_.add({
-          if (txt.endswithWS && txt.startswithWS) new HTMLText(txt.state,"&nbsp;" + txt.text + "&nbsp;")
-          else if (txt.endswithWS) new HTMLText(txt.state,txt.text + "&nbsp;")
-          else if (txt.startswithWS) new HTMLText(txt.state,"&nbsp;" + txt.text)
-          else txt
-        }))
-      case (e,i) =>
-        e.classes ::= "stexoverlaycontainer"
-        e.attributes((e.namespace, "onmouseover")) = "stexOverlayOn('" + id + "','" + urlshort + "');" + onhover
-        e.attributes((e.namespace, "onmouseout")) = "stexOverlayOff('" + id + "');" + onout
-        e.attributes((e.namespace, "onclick")) = "stexMainOverlayOn('" + urllong + "')"
-        e.attributes((e.namespace,"id")) = id + "_" + i
-    }
-    val overlay = <span style="position:relative;display:inline"><iframe src=" " class="stexoverlay" id={id} onLoad='this.style.height=(this.contentWindow.document.body.offsetHeight+5) + "px";'>{HTMLParser.empty}</iframe></span>
-    val after = if (elem.parent == currp) elem else elem.parent.get
-    if (!after.isMath) {
-      val p = after.parent.get
-      p.addAfter(overlay, after)
-    } else {
-      val tm = after.collectAncestor {
-        case n if n.parent.exists(!_.isMath) => n
-      }
-      tm.foreach(_.parent.foreach(_.addAfter(overlay, tm.get)))
+    targets.foreach{ e =>
+      e.classes ::= "group-highlight"
+      e.attributes((e.namespace,"data-highlight-parent")) = id
+      e.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
+      e.attributes((elem.namespace,"data-overlay-link-click")) = urllong
     }
   }
 
-  def makeButton(target : String,elem : Node) : Node =  // makesafe(XHTML(
-      <span class="propbtn" style="display:inline" target="stexoverlayinner" onclick={"stexMainOverlayOn('" + target + "')"}>
+  def makeButton(urlshort : String,urllong:String,elem : Node, withclass : Boolean = true) : Node =  // makesafe(XHTML(
+      <span class={if (withclass) "propbtn" else ""} style="display:inline" data-overlay-link-click={urllong} data-overlay-link-hover={urlshort}>
         {elem}
       </span>
   //))

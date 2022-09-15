@@ -104,7 +104,7 @@ object Haskell extends FuncLang[String] {
      case COMMENT(s) => "-- " + s 
    }
    private var ids: List[(String,Boolean)] = Nil
-   def reset {ids = Nil}
+   def reset: Unit = {ids = Nil}
    override def prog(ds: List[DECL]) : List[String] = {
 //      val q =
         ds map {d =>
@@ -154,7 +154,7 @@ object Haskell extends FuncLang[String] {
      }
    def cas(c: CASE) : String = exp(c.pattern) + " -> " + exp(c.body)
    // auxiliary function: upc(string) = String
-   def upc(string : String) : String = string.head.toUpper + string.substring(1)
+   def upc(string : String) : String = s"${string.head.toUpper}${string.substring(1)}"
    // haskell native datatypes and checker
    private val haskellTypes : List[String] = List("Integer","Bool")//,"String","Int")
    private def haskellType(name : String) : Boolean = haskellTypes.exists( name == )
@@ -191,7 +191,7 @@ object Haskell extends FuncLang[String] {
    private def idt : String = { " " * (indent * 2)}
    private def idt(n : Int) : String = { " " * (n * 2)}
    private def idt(s : String) : String = { s + idt}
-   private def idt(c : Char) : String = { c + idt}
+   private def idt(c : Char) : String = { s"$c$idt"}
    private def idtn : String = { idt('\n')}
    private def right : String = { indent = indent + 1; ""}
    private def left : String = { if (indent > 0) indent = indent - 1; ""}

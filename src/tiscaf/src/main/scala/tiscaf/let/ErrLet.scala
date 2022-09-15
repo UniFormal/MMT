@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
 package tiscaf
 package let
 
@@ -23,7 +24,7 @@ import ExecutionContext.Implicits.global
 /** Always send the given error as response. */
 class ErrLet(status: HStatus.Value, msg: String = "") extends HSimpleLet {
 
-  def act(tk: HTalk) {
+  def act(tk: HTalk): Unit = {
     val add = if (msg.length == 0) "" else ", " + msg
     val toWrite = (HStatus.asString(status) + add + "\n").getBytes("ISO-8859-1")
 
