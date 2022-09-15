@@ -7,13 +7,13 @@ import info.kwarc.mmt.api.utils._
  * replaces the generated source links in the scaladoc with relative paths
  */
 object AdjustScaladoc {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val mmtFolder = args(0)
     val apifolder = File(mmtFolder) / "doc" / "api" / "info"
     val oldPrefix = FileURI(File(args(0))).toString
     val newPrefix = "../../.."
     println(s"topfolder: $apifolder, old: $oldPrefix, new: $newPrefix")
-    def doFolder(l: List[String]) {
+    def doFolder(l: List[String]): Unit = {
       (apifolder / l).list foreach { e =>
         if (e != ".svn") {
           val le = l ::: List(e)

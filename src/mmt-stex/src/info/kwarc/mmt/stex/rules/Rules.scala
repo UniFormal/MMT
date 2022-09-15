@@ -7,9 +7,9 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Conversions.localName2OMV
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardString}
-import info.kwarc.mmt.stex.xhtml.{OMDocHTML, SemanticState}
-import info.kwarc.mmt.stex.{SCtx, SOMB, STeX, rules}
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardNat, StandardString}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, HTMLRule, OMDocHTML, SemanticState}
+import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMA, SOMB, STeX, rules}
 
 object Rules {
   import info.kwarc.mmt.api.objects.Conversions._
@@ -78,9 +78,18 @@ trait UsesPatterns extends SingleTermBasedCheckingRule {
 }
 
 object StringLiterals extends RepresentedRealizedType(OMS(STeX.string),StandardString)
+object NatLiterals extends RepresentedRealizedType(OMS(STeX.nat),StandardNat)
 
 trait BindingRule extends Rule {
   def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
+}
+case class SubstRule(in:GlobalName,out:GlobalName) extends Rule
+object SubstitutionRule extends ParametricRule {
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(a),OMS(b)) => SubstRule(a,b)
+    case _ =>
+      ???
+  }
 }
 
 object InformalBindingRule extends BindingRule {
@@ -90,7 +99,7 @@ object InformalBindingRule extends BindingRule {
         val v = state.markAsUnknown(OMV(state.getUnknownTp))
         VarDecl(x,tp=v)
       }
-      vd.metadata.update(STeX.meta_notation,tm)
+      //vd.metadata.update(STeX.meta_notation,tm)
       Some(Context(vd))
     case _ => None
   }
@@ -129,8 +138,19 @@ object ImplicitBindRule extends HTMLTermRule {
 
 object MiMoVariableRule extends HTMLTermRule {
   override def apply(tm: Term)(implicit state: SemanticState): Option[Term] = tm match {
-    case STeX.informal(n) if n.label == "mi" && n.child.length == 1 =>
+    case STeX.informal(n) if n.label == "mi" && n.child.length == 1 && MnRule(tm).isEmpty =>
       Some(OMV(n.child.head.toString()))
+    case _ => None
+  }
+}
+
+object MnRule extends HTMLTermRule {
+  override def apply(tm: Term)(implicit state: SemanticState): Option[Term] = tm match {
+    case STeX.informal(n) if n.label == "mi" && n.child.length == 1 && n.attribute("mathvariant").exists(_.head.toString() == "normal") =>
+      val str = n.child.head.toString()
+      if (str.forall(_.isDigit)) {
+        Some(NatLiterals.parse(str))
+      } else None
     case _ => None
   }
 }
@@ -169,7 +189,7 @@ object NotationRules extends RuleSet {
     override def applicable(t: Term): Boolean = NInhabitableRule.applicable(t)
 
     override def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = (tm,tp) match {
-      case (STeX.notation(_,_,_),STeX.notation.tp(_,_)) => Some(true)
+      case (STeX.notation(_,_,_,_),STeX.notation.tp(_,_)) => Some(true)
       case _ => None
     }
   }
@@ -192,32 +212,32 @@ object IsSeq {
 
 object AssocBinRModComp extends ComputationRule(Getfield.path) {
   override def applicable(t: Term): Boolean = t match {
-    case OMA(Getfield(_,_),_) => true
+    case SOMA(Getfield(_,_),_) => true
     case _ => false
   }
 
   override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
-    case OMA(Getfield(mod,field),args) =>
+    case SOMA(Getfield(mod,field),args) =>
       check.lookup.getO(mod,field) match {
         case Some(c : Constant) =>
           if (OMDocHTML.getAssoctype(c).contains("binr") || OMDocHTML.getAssoctype(c).contains("bin")) {
             args match {
               case IsSeq(Nil, ls, Nil) =>
-                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("x"))._1
-                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("y"))._1
+                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrightx"))._1
+                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrighty"))._1
                 val tp = check.inferType(ls) match {
                   case Some(STeX.flatseq.tp(t)) => t
                   case _ => return Simplifiability.NoRecurse
                 }
-                Simplify(STeX.seqfoldright(STeX.seqlast(ls), STeX.seqinit(ls), x, tp, y, tp, OMA(Getfield(mod, field), List(OMV(x), OMV(y)))))
+                Simplify(STeX.seqfoldright(STeX.seqlast(ls), STeX.seqinit(ls), x, tp, y, tp, SOMA(Getfield(mod, field), OMV(x), OMV(y))))
               case IsSeq(Nil, ls, rest) =>
-                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("x"))._1
-                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("y"))._1
+                val x = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrightx"))._1
+                val y = Context.pickFresh(check.outerContext ::: stack.context, LocalName("foldrighty"))._1
                 val tp = check.inferType(ls) match {
                   case Some(STeX.flatseq.tp(t)) => t
                   case _ => return Simplifiability.NoRecurse
                 }
-                Simplify(STeX.seqfoldright(OMA(Getfield(mod, field), STeX.seqlast(ls) :: rest), STeX.seqinit(ls), x, tp, y, tp, OMA(Getfield(mod, field), List(OMV(x), OMV(y)))))
+                Simplify(STeX.seqfoldright(SOMA(Getfield(mod, field), STeX.seqlast(ls) :: rest :_*), STeX.seqinit(ls), x, tp, y, tp, SOMA(Getfield(mod, field), OMV(x), OMV(y))))
               case _ => Simplifiability.NoRecurse
             }
           } else Simplifiability.NoRecurse
@@ -231,23 +251,23 @@ object AssocBinR extends ParametricRule {
   case class Assoc(head : GlobalName) extends CheckingRule
   case class Comp(hhead : GlobalName) extends ComputationRule(hhead) {
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
-      case OMA(OMS(`head`),args) => args match {
+      case SOMA(OMS(`head`),args) => args match {
         case IsSeq(Nil,ls,Nil) =>
-          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("x"))._1
-          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("y"))._1
+          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrightx"))._1
+          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrighty"))._1
           val tp = check.inferType(ls) match {
             case Some(STeX.flatseq.tp(t)) => t
             case _ => return Simplifiability.NoRecurse
           }
-          Simplify(STeX.seqfoldright(STeX.seqlast(ls),STeX.seqinit(ls),x,tp,y,tp,OMA(OMS(head),List(OMV(x),OMV(y)))))
+          Simplify(STeX.seqfoldright(STeX.seqlast(ls),STeX.seqinit(ls),x,tp,y,tp,SOMA(OMS(head),OMV(x),OMV(y))))
         case IsSeq(Nil,ls,rest) =>
-          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("x"))._1
-          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("y"))._1
+          val x = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrightx"))._1
+          val y = Context.pickFresh(check.outerContext ::: stack.context,LocalName("foldrighty"))._1
           val tp = check.inferType(ls) match {
             case Some(STeX.flatseq.tp(t)) => t
             case _ => return Simplifiability.NoRecurse
           }
-          Simplify(STeX.seqfoldright(OMA(OMS(head),STeX.seqlast(ls) :: rest),STeX.seqinit(ls),x,tp,y,tp,OMA(OMS(head),List(OMV(x),OMV(y)))))
+          Simplify(STeX.seqfoldright(SOMA(OMS(head),STeX.seqlast(ls) :: rest :_*),STeX.seqinit(ls),x,tp,y,tp,SOMA(OMS(head),OMV(x),OMV(y))))
         case _ => Simplifiability.NoRecurse
       }
       /*case OMA(OMS(`head`),List(STeX.flatseq(ls))) if ls.length >= 2 =>
@@ -288,20 +308,20 @@ object AssocBinL extends ParametricRule {
 
 object AssocConjModComp extends ComputationRule(Getfield.path) {
   override def applicable(t: Term): Boolean = t match {
-    case OMA(Getfield(_,_),_) => true
+    case SOMA(Getfield(_,_),_) => true
     case _ => false
   }
 
   override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
-    case OMA(Getfield(mod,field),args) =>
+    case SOMA(Getfield(mod,field),args) =>
       check.lookup.getO(mod,field) match {
         case Some(c : Constant) =>
           if (OMDocHTML.getAssoctype(c).contains("conj")) {
             args match {
               case IsSeq(pre, STeX.flatseq(a :: b :: Nil), Nil) =>
-                Simplify(OMA(Getfield(mod, field), pre ::: List(a, b)))
+                Simplify(SOMA(Getfield(mod, field), pre ::: List(a, b):_*))
               case IsSeq(pre, STeX.flatseq(a :: Nil), List(b)) =>
-                Simplify(OMA(Getfield(mod, field), pre ::: List(a, b)))
+                Simplify(SOMA(Getfield(mod, field), pre ::: List(a, b):_*))
               case _ => Simplifiability.NoRecurse
             }
           } else Simplifiability.NoRecurse
@@ -315,11 +335,11 @@ object AssocConj extends ParametricRule {
   case class Assoc(head : GlobalName) extends CheckingRule
   case class Comp(hhead : GlobalName) extends ComputationRule(hhead) {
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
-      case OMA(OMS(`head`), args) => args match {
+      case SOMA(OMS(`head`), args) => args match {
         case IsSeq(pre, STeX.flatseq(a :: b :: Nil), Nil) =>
-          Simplify(OMA(OMS(head), pre ::: List(a, b)))
+          Simplify(SOMA(OMS(head), pre ::: List(a, b) :_*))
         case IsSeq(pre, STeX.flatseq(a :: Nil), List(b)) =>
-          Simplify(OMA(OMS(head), pre ::: List(a, b)))
+          Simplify(SOMA(OMS(head), pre ::: List(a, b) :_*))
         case _ => Simplifiability.NoRecurse
         /*case OMA(OMS(`head`), List(pre,STeX.flatseq(ls))) if ls.length == 2 =>
         Simplify(OMA(OMS(head),List(pre,ls.head,ls(1))))

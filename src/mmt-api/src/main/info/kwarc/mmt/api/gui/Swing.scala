@@ -9,9 +9,9 @@ case class Item(label: String, id: String)
 object Swing {
 
    /** run code on the Swing thread */
-   def invokeLater[A](a: => A) {
+   def invokeLater[A](a: => A): Unit = {
       val r = new Runnable() {
-        def run {
+        def run: Unit = {
           a
         }
       }
@@ -28,7 +28,7 @@ object Swing {
       val jp = new JPanel
       jp.setLayout(new BoxLayout(jp, BoxLayout.X_AXIS))
       val al = new ActionListener {
-         def actionPerformed(e: ActionEvent) {
+         def actionPerformed(e: ActionEvent): Unit = {
             action(e.getActionCommand)
          }
       }
@@ -46,7 +46,7 @@ object Swing {
    def Button(label: String, tooltip: String = "")(action: => Unit): JButton = {
       val b = new JButton(label)
       val al = new ActionListener {
-         def actionPerformed(e: ActionEvent) {
+         def actionPerformed(e: ActionEvent): Unit = {
             action
          }
       }
@@ -123,7 +123,7 @@ class WrapLayout(defaultWidth: Int, align: Int = FlowLayout.CENTER, hgap: Int = 
       dim
    }
 
-   private def addRow(dim: Dimension, rowWidth: Int, rowHeight: Int) {
+   private def addRow(dim: Dimension, rowWidth: Int, rowHeight: Int): Unit = {
       dim.width = Math.max(dim.width, rowWidth)
       if (dim.height > 0)
          dim.height += getVgap

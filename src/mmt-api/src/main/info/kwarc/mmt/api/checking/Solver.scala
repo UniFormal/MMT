@@ -91,7 +91,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       // adder methods for the stateful lists
 
       /** registers a constraint */
-      def addConstraint(d: DelayedConstraint)(implicit history: History) {
+      def addConstraint(d: DelayedConstraint)(implicit history: History): Unit = {
         if (!mutable && !pushedStates.head.allowDelay) {
           throw MightFail(history)
         } else {
@@ -102,7 +102,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
         }
       }
       /** registers an error */
-      def addError(e: SolverError) {
+      def addError(e: SolverError): Unit = {
          if (mutable) _errors ::= e
          else {
            throw WouldFail
@@ -110,31 +110,31 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       }
 
       /** registers a dependency */
-      def addDependency(p: CPath) {
+      def addDependency(p: CPath): Unit = {
          _dependencies ::= p
       }
 
       // more complex mutator methods for the stateful lists
 
-      def removeConstraint(dc: DelayedConstraint) {
+      def removeConstraint(dc: DelayedConstraint): Unit = {
          _delayed = _delayed filterNot (_ == dc)
          if (!mutable) {
            val state = pushedStates.head
            state.delayedInThisRun = state.delayedInThisRun.filterNot(_ == dc)
          }
       }
-      def setNewSolution(newSol: Context) {
+      def setNewSolution(newSol: Context): Unit = {
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
          _solution = newSol
       }
       // special case of setNewSolution that does not count as a side effect
-      def reorderSolution(newSol: Context) {
+      def reorderSolution(newSol: Context): Unit = {
          _solution = newSol
       }
       
-      def setNewBounds(n: LocalName, bs: List[TypeBound]) {
+      def setNewBounds(n: LocalName, bs: List[TypeBound]): Unit = {
          if (!mutable && !pushedStates.head.allowSolving) {
            throw MightFail(NoHistory)
          }
@@ -167,7 +167,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
          val tempState = StateData(solution, _bounds, dependencies, _delayed, allowDelay, allowSolving)
          pushedStates ::= tempState
-         def rollback {
+         def rollback: Unit = {
             val oldState = pushedStates.head
             pushedStates = pushedStates.tail
             _solution = oldState.solutions
@@ -209,11 +209,11 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
        */
       private var currentBranch: Branchpoint = makeBranchpoint(None)
       def getCurrentBranch = currentBranch
-      def setCurrentBranch(bp: Branchpoint) {
+      def setCurrentBranch(bp: Branchpoint): Unit = {
         currentBranch = bp
       }
       /** restore the state from immediately before bp was created */
-      private def backtrack(bp: Branchpoint) {
+      private def backtrack(bp: Branchpoint): Unit = {
         // restore constraints
         _delayed = bp.delayed
         // remove new dependencies
@@ -281,7 +281,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   protected object JudgementStore {
     private val store = new scala.collection.mutable.HashMap[Judgement,Boolean]
     /** if a judgment is tried again, we may need to uncache it (e.g., when reactivating a delayed judgment) */
-    def delete(j: Judgement) {
+    def delete(j: Judgement): Unit = {
       store.remove(j)
     }
     /** lookup up result for j; if not known, run f to define it */
@@ -305,8 +305,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * @param prefix the log prefix to use (the normal one by default)
     * (occasionally it's useful to use a different prefix, e.g., "error" or when the normal prefix is not logged but the result should be)
     */
-  def logState(prefix: String = logPrefix) {
-      def logHistory(h: History) {
+  def logState(prefix: String = logPrefix): Unit = {
+      def logHistory(h: History): Unit = {
          logGroup {
             h.getSteps.reverse.foreach(s => report(prefix, s.present))
          }
@@ -641,7 +641,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    }
 
    /** moves declarations in solution to the right so that 'name' occurs as far to the right as allowed by dependencies */
-   protected def moveToRight(name: LocalName) {
+   protected def moveToRight(name: LocalName): Unit = {
      val (before, it::rest) = solution.span(_.name != name)
      var toLeft = Context.empty
      var toEnd = Context(it)
@@ -960,7 +960,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
 object Solver {
   /** counter for debugging */
   var checkId = 0
-  def breakAfter(id: Int) {
+  def breakAfter(id: Int): Unit = {
     if (checkId >= id)
       ()
   }
@@ -995,17 +995,17 @@ object Solver {
          Right(solver)
   }
   /** infers the type of a term that is known to be well-formed */
-  def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet]): Option[Term] = {
+  def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet],unknowns:Context = Context.empty): Option[Term] = {
       val rules = rulesOpt.getOrElse {
          RuleSet.collectRules(controller, context)
       }
       implicit val stack = Stack(Context.empty)
       implicit val history = new History(Nil)
-      val cu = CheckingUnit(None, context, Context.empty, null) // awkward but works because we do not call applyMain
+      val cu = CheckingUnit(None, context, unknowns, null) // awkward but works because we do not call applyMain
       val solver = new Solver(controller, cu, rules)
       val tpOpt = solver.inferType(tm, true)
       val tpSOpt = tpOpt map {t => solver.simplify(t)}
-      tpSOpt // map {tp => solver.simplify(tp)}
+      tpSOpt//.map(t => solver.substituteSolution(t)) // map {tp => solver.simplify(tp)}
   }
 
   /** checks a term without unknowns against a type, returns the solver if not successful */

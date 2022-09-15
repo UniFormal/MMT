@@ -111,7 +111,7 @@ abstract class LMHHub extends Logger {
     * @param entries
     * @param recursive
     */
-  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true)
+  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true): Unit
 
   /** get the default remote url for a repository with a given id */
   def remoteURL(id: String) : String
@@ -197,7 +197,7 @@ trait LMHHubDirectoryEntry extends LMHHubEntry {
 /** represents a single archive inside an [[LMHHub]] that is installed on disk */
 trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
   /** loads this archive into the controller (if not done already) */
-  override def load() {
+  override def load(): Unit = {
     controller.backend.getArchive(root).getOrElse {
       controller.addArchive(root)
     }

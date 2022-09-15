@@ -17,7 +17,7 @@ class StatisticsExporter extends Exporter {
     * @param doc the document to make the statistics for
     * @param bf the build task
     */  
-  def exportDocument(doc: Document, bf: BuildTask) {
+  def exportDocument(doc: Document, bf: BuildTask): Unit = {
     val rep = controller.report
     val rs = controller.depstore
     log("[  -> statistics]     "+doc.path.toPath+" "+bf.outFile.toString())
@@ -34,11 +34,11 @@ class StatisticsExporter extends Exporter {
     * @param doc the theory to make the statistics for
     * @param bf the build task
     */
-  def exportTheory(thy: Theory, bf: BuildTask) {
+  def exportTheory(thy: Theory, bf: BuildTask): Unit = {
     val rep = controller.report
     val rs = controller.depstore
     rh(rs.makeStatistics(thy.path).toJSON.toString)
   }
-  def exportView(view: View, bf: BuildTask)  {}
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
+  def exportView(view: View, bf: BuildTask): Unit =  {}
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {}
 }

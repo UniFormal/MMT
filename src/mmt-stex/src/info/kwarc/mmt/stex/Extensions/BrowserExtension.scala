@@ -12,9 +12,20 @@ object BrowserExtension extends STeXExtension {
         case "menu" =>
           Some(ServerResponse.JsonResponse(doMenu))
         case "" =>
-          Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"html"))
+          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+          html = html.replace("BASE_URL_PLACEHOLDER", "")
+          html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "true")
+          Some(ServerResponse(html, "html"))
         case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
-         Some(ServerResponse(DocumentExtension.doDocument(ps).toString.trim,"application/xhtml+xml"))
+          request.query match {
+            case "" =>
+              Some(ServerResponse("Empty Document path","txt"))
+            case s =>
+              var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+              html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/document?" + s)
+              html = html.replace("BASE_URL_PLACEHOLDER","")
+              Some(ServerResponse(html, "text/html"))
+          }
         case _ =>
           ???
       }
@@ -78,7 +89,7 @@ object BrowserExtension extends STeXExtension {
         val tex = {
           if ((toptex / fp).exists) (toptex / fp).children else Nil
         }.flatMap(f => if (f.isDirectory) Some(toptex.relativize(f),true) else if (f.getExtension.contains("tex")) Some(toptex.relativize(f).stripExtension,false) else None)
-        (tex ::: html).distinct
+        tex.filter(html.contains)
       }
       def iterate(fp: FilePath): JSON = JSONArray(
         children(fp).collect {
@@ -87,7 +98,7 @@ object BrowserExtension extends STeXExtension {
               ("label",JSONString(f.name)),
               ("children",iterate(fp / f.name)),
               ("link",doJs(
-                doLink("/:" + server.pathPrefix + "/browser?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
+                doLink("/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
                 setCurrentArchive(a.id),
                 setCurrentPath({if (fp.isEmpty) "" else "/"} + fp.toString + "/" + f.name),
                 deactivateButtons
@@ -99,11 +110,11 @@ object BrowserExtension extends STeXExtension {
               ("label",JSONString(f.name)),
               ("children",JSONArray()),
               ("link",doJs(
-                doLink(url("browser")),
+                doLink(url("fulldocument")),
                 setCurrentArchive(a.id),
                 setCurrentPath({if (fp.isEmpty) "" else "/"} + fp.toString + "/" + f.name),
                 //setEdit(url("editor"),url("browser")),
-                newtabbutton(url("browser"))
+                newtabbutton(url("fulldocument"))
               ))
             )
         }:_*)

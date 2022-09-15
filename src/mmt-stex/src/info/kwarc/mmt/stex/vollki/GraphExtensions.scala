@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
-import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, MMTSystem}
+import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser
@@ -45,22 +45,13 @@ object FullsTeXGraph extends ServerExtension("vollki") {
 
     request.path.lastOption match {
       case Some(":vollki") =>
-        val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/vollki/guidedtours.html"))(server.getState)
-        val entrydoc = doc.get("select")()("entrydoc").head
-        val usermodel = doc.get("select")()("usermodel").head
-        usermodels.foreach(_.getAllUsers.foreach{ u =>
-          if (user.contains(u))
-            usermodel.add(<option value={u.f.name} selected="true">{u.f.name}</option>)
-          else
-            usermodel.add(<option value={u.f.name}>{u.f.name}</option>)
-        })
-        allobjects.foreach{ n =>
-          if (path.contains(n))
-            entrydoc.add(<option value={n.id} selected="true">{n.getTitle(language)}</option>)
-          else
-            entrydoc.add(<option value={n.id}>{n.getTitle(language)}</option>)
-        }
-        ServerResponse(doc.toString,"application/xhtml+xml")
+          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+          html = html.replace("TOUR_ID_PLACEHOLDER",path.map(_.id).getOrElse(""))
+          html = html.replace("BASE_URL_PLACEHOLDER","")
+        html = html.replace("CONTENT_URL_PLACEHOLDER","")
+          html = html.replace("USER_MODEL_PLACEHOLDER",user.map(_.f.name).getOrElse(""))
+          html = html.replace("LANGUAGE_PLACEHOLDER",language)
+          ServerResponse(html, "text/html")
       case Some("frag") =>
         path.foreach {node =>
           val doc = node.getDocument(language).getOrElse(node.getDocument("en").getOrElse(node.getDocument("").get))
@@ -84,22 +75,8 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       case Some("tour") =>
         path match {
           case Some(n) =>
-            var nodes = n.topologicalSort.collect({
-              case n if user.forall(u => u.getValue(n) < 0.9) => n
-            })
-            if (nodes.isEmpty) {
-              nodes = (n.selectTopo.flatMap(_.selectTopo) ::: n.selectTopo ::: n :: Nil).distinct
-            }
-            val (_, body) = server.emptydoc
-            nodes.foreach { node =>
-              body.add(<tr style="width:100%">
-                <td>
-                  <a href={"javascript:collapse(\"" + node.id + "\")"} style="pointer-events: auto;"><b><span>{"> "}</span>{node.getTitle(language)}</b></a>
-                  <div class="collapsible" style="display:none;margin-left:30px;flex-direction:column;white-space:normal;" id={node.id + "-collapse"}></div>
-                </td>
-              </tr>)
-            }
-            ServerResponse(body.children.map(_.toString).mkString("\n"), "application/xhtml+xml")
+            val node = n.topologicalSort.filter(c => user.forall(u => u.getValue(c) < 0.9))
+            ServerResponse.JsonResponse(node.jsonify(language))
           case None =>
             ServerResponse("Unknown query: " + request.query, "text/plain")
         }
@@ -138,11 +115,50 @@ object FullsTeXGraph extends ServerExtension("vollki") {
     println("Done.")
   }
 
+  class MutableList[A] {
+    var dones: List[A] = Nil
+    var count : Int = 0
+  }
+  case class TopoDependencies(parent : sTeXNode,children:List[TopoDependencies]) {
+    def filter(f: sTeXNode => Boolean): TopoDependencies = TopoDependencies(parent,
+      children.filter(c => f(c.parent)).map(_.filter(f))
+    )
+
+    def jsonify(language:String):JSONArray = {
+      val map = mutable.HashMap.empty[sTeXNode,MutableList[sTeXNode]]
+      jsonifyI(map)
+      JSONArray(map.toList.sortBy(_._2.count).map(p => JSONObject(
+        ("id",JSONString(p._1.id)),
+        ("title",JSONString(p._1.getTitle(language).toString())),
+        ("successors",JSONArray(p._2.dones.map(c => JSONString(c.id)):_*))
+      )):_*)
+    }
+    protected def jsonifyI(map : mutable.HashMap[sTeXNode,MutableList[sTeXNode]]): Unit = if (!map.contains(this.parent)) {
+      val ls = new MutableList[sTeXNode]
+      ls.count = children.length
+      map(this.parent) = ls
+      this.children.foreach{c =>
+        c.jsonifyI(map)
+        val cc = map(c.parent)
+        cc.dones ::= this.parent
+        ls.count += cc.count
+      }
+    }
+    def nodes(o : MutableList[sTeXNode] = new MutableList[sTeXNode]) : List[sTeXNode] = if (o.dones.contains(this.parent)) Nil else {
+      o.dones ::= this.parent
+      this.parent :: children.flatMap(_.nodes(o))
+    }
+  }
+
   trait sTeXNode {
     val id : String
     def selectTopo : List[sTeXNode]
-    def topologicalSort : List[sTeXNode] = {
-      (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
+    private var _top : Option[TopoDependencies] = None
+    def topologicalSort : TopoDependencies = _top.getOrElse {
+      val ret = TopoDependencies(this,selectTopo.map(_.topologicalSort))
+      //val ret = (selectTopo.flatMap(_.topologicalSort) ::: List(this)).distinct
+      _top = Some(ret)
+      ret
     }
     private def getDocumentDefinitely(language : String) = getDocument(language) match {
       case Some(d) => Some(d)
@@ -184,8 +200,6 @@ object FullsTeXGraph extends ServerExtension("vollki") {
     override def selectTopo: List[sTeXNode] = _includes.reverse
   }
 
-  val all_languages = List("en","de","ar","bg","ru","fi","ro","tr","fr")
-
   private var allobjects : List[sTeXNode] = Nil
   def getAll() = allobjects
   private val objects = mutable.HashMap.empty[Path,sTeXNode]
@@ -195,7 +209,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       return None
     }
     pathstr = pathstr.dropRight(6)
-    val (id,lang) = if (all_languages.exists(s => pathstr.endsWith("." + s))) {
+    val (id,lang) = if (STeX.all_languages.exists(s => pathstr.endsWith("." + s))) {
       val ls = pathstr.split('.')
       (ls.init.mkString("."),ls.last)
     } else (pathstr,"")
@@ -215,7 +229,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         case _ =>
       }
     } else {
-      all_languages.foreach {l =>
+      STeX.all_languages.foreach {l =>
         controller.getO(Path.parseD(id + "." + l + ".omdoc",NamespaceMap.empty)) match {
           case Some(d : Document) =>
             objects(d.path) = node
@@ -242,7 +256,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       return None
     }
     pathstr = pathstr.dropRight(6)
-    val (id,lang) = if (all_languages.exists(s => pathstr.endsWith("." + s))) {
+    val (id,lang) = if (STeX.all_languages.exists(s => pathstr.endsWith("." + s))) {
       val ls = pathstr.split('.')
       (ls.init.mkString("."),ls.last)
     } else (pathstr,"")
@@ -257,7 +271,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
       objects(d.path) = node
       node.keys.add(d.path)
     } else {
-      all_languages.foreach {l =>
+      STeX.all_languages.foreach {l =>
         controller.getO(Path.parseD(id + "." + l + ".omdoc",NamespaceMap.empty)) match {
           case Some(d : Document) =>
             objects(d.path) = node
@@ -273,7 +287,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
   }
 
   private def doTheory(th: Theory,node:sTeXTheory): Unit = {
-    all_languages.foreach { s =>
+    STeX.all_languages.foreach { s =>
       node.getLanguageModule(s) match {
         case Some(t: Theory) =>
           node._languages ::= s
@@ -298,7 +312,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         controller.getO(a.target) match {
           case Some(th : Theory) =>
             th.metadata.get(STeX.meta_language) match {
-              case List(_) if all_languages.contains(th.name.toString) =>
+              case List(_) if STeX.all_languages.contains(th.name.toString) =>
                 controller.getO(th.path.parent.toMPath) match {
                   case Some(th : Theory) =>
                     Some(th)
@@ -312,11 +326,11 @@ object FullsTeXGraph extends ServerExtension("vollki") {
         (controller.getO(a.target),controller.getO(b.target)) match {
           case (Some(tha : Theory),Some(thb : Theory)) =>
             tha.metadata.get(STeX.meta_language) match {
-              case List(_) if all_languages.contains(tha.name.toString) && thb.path == tha.path.parent.toMPath =>
+              case List(_) if STeX.all_languages.contains(tha.name.toString) && thb.path == tha.path.parent.toMPath =>
                 Some(thb)
               case _ =>
                 thb.metadata.get(STeX.meta_language) match {
-                  case List(_) if all_languages.contains(thb.name.toString) && tha.path == thb.path.parent.toMPath =>
+                  case List(_) if STeX.all_languages.contains(thb.name.toString) && tha.path == thb.path.parent.toMPath =>
                     Some(tha)
                   case _ => None
                 }
@@ -359,7 +373,7 @@ object FullsTeXGraph extends ServerExtension("vollki") {
                 case _ =>
                   None
               }
-            case List(_) if all_languages.contains(th.name.toString) =>
+            case List(_) if STeX.all_languages.contains(th.name.toString) =>
               getO(th.path.parent.toMPath)
             case _ =>
               ???
@@ -425,7 +439,7 @@ object STeXGraph extends JGraphExporter("stexgraph") {
         }
     }
     JSONObject(
-      ("nodes",JSONArray(jnodes.map(_.toJSON) :_*)),
+      ("nodes",JSONArray(jnodes.map(_.toJSON).toIndexedSeq :_*)),
       ("edges",JSONArray(edges.map(_.toJSON) :_*))
     )
   }
@@ -448,7 +462,7 @@ object STeXGraph extends JGraphExporter("stexgraph") {
         inds.filter(_.toString.startsWith(s)).flatMap(FullsTeXGraph.getO)
       }
     }
-    if (ret.length == 1) ret.head.topologicalSort else ret
+    if (ret.length == 1) ret.head.topologicalSort.nodes() else ret
   }
 
   def computeSem(f: JSON, sem: String, comp: String = "default"): JSON = {

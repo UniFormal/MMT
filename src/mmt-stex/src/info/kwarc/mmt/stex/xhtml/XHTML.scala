@@ -35,12 +35,19 @@ object HTMLParser {
   val ns_stex = "http://kwarc.info/ns/sTeX"
   val ns_mmt = "http://uniformal.github.io/MMT"
   val ns_rustex = "http://kwarc.info/ns/RusTeX"
+  val ns_svg = "http://www.w3.org/2000/svg"
   val empty = '\u200E'
 
   class ParsingState(val controller : Controller, rules : List[HTMLRule]) {
     val namespaces = mutable.Map.empty[String,String]
+    namespaces("xhtml") = ns_html
+    namespaces("mml") = ns_mml
+    namespaces("stex") = ns_stex
+    namespaces("mmt") = ns_mmt
+    namespaces("rustex") = ns_rustex
+    namespaces("svg") = ns_svg
 
-    private[HTMLParser] var _top : Option[HTMLNode] = None
+    var _top : Option[HTMLNode] = None
     protected var _parent : Option[HTMLNode] = None
     private var _namespace : String = ""
     private val _rules : List[HTMLRule] = rules.sortBy(-_.priority)
@@ -54,10 +61,10 @@ object HTMLParser {
       nn
     }
     private var _id = 0
-    def generateId = {
+    /*def generateId = {
       _id += 1
       "stexelem" + (_id-1)
-    }
+    }*/
 
     protected def onTop(n : HTMLNode) : Option[HTMLNode] = None
 
@@ -197,11 +204,15 @@ object HTMLParser {
         error("???")
       }
       val elem = _parent.get
+      elem.onAddI
       _parent = elem._parent
       _namespace = _parent.map(_.namespace).getOrElse("")
-      elem.onAddI
       elem
     }
+
+    private val void_elements = List(
+      "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"
+    )
 
     private[HTMLParser] def present(n : HTMLNode,indent : Int = 0,forcenamespace : Boolean = false) : String = {
       {if (_top.contains(n)) header else ""} +
@@ -227,9 +238,9 @@ object HTMLParser {
           }.mkString + {
             if (n._sourceref.isDefined && !n._parent.exists(_._sourceref == n._sourceref)) " " + "stex:sourceref=\"" + n._sourceref.get.toString + "\"" else ""
           } + {
-            if (n.classes.nonEmpty) " class=\"" + n.classes.mkString(" ") + "\"" else ""
+            if (n.classes.nonEmpty) " class=\"" + n.classes.distinct.mkString(" ") + "\"" else ""
           } + {
-            if(n._children.isEmpty) "/>" else {
+            if(n._children.isEmpty && n.namespace == ns_html && void_elements.contains(n.label)) "/>" else {
               ">" + n._children.reverse.map(present(_,indent+1)).mkString + {
                 {if (n.endswithWS) "\n" + {if (indent>0) (0 until indent).map(_ => "  ").mkString else ""} else ""} +
                   "</" + n.label + ">"
@@ -424,7 +435,7 @@ object HTMLParser {
     def node = try {
       XML.loadString(state.present(this,forcenamespace=true).trim)
     } catch {
-      case o =>
+      case o: Throwable =>
         println(o.toString)
         throw o
     }
@@ -545,7 +556,7 @@ object HTMLParser {
             if (close) state.openclose(n) else state.open(n)
           }
         case c =>
-          var txt = c + in.takeWhileSafe(_ != '<')
+          var txt = s"${c}${in.takeWhileSafe(_ != '<')}"
           val endWS = txt.lastOption.exists(_.isWhitespace)
           txt = if (txt.trim == empty.toString) empty.toString else txt.trim/*Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
             print("")

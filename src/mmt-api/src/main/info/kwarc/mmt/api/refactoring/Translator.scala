@@ -413,7 +413,7 @@ class AcrossLibraryTranslator(controller : Controller,
 
   class TermClass(val original: Term) {
     private def termtostr(tm: Term) = tm match {
-      case OMS(p) => p.module.name + "?" + p.name
+      case OMS(p) => p.module.name.toString + "?" + p.name
       case _ => controller.presenter.objectLevel.asString(tm)
     }
 

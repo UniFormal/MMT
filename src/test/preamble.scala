@@ -70,7 +70,7 @@ abstract class Test(val archivepath: String,
   } catch {
     case e: api.Error =>
       println(e.toStringLong)
-      sys.exit
+      sys.exit()
   }
 
   def hl(s: String): Unit = controller.handleLine(s)
@@ -89,6 +89,7 @@ object MagicTest {
   lazy val archiveRoot: File = {
     List(
       home / "work" / "MathHub", // Dennis
+      File("D:\\") / "work" / "MathHub", // Dennis Windows
       home / "Projects" / "gl.mathhub.info", // Tom
       home / "Development" / "KWARC" / "content", // Jonas
       home / "content", // Michael
@@ -101,7 +102,9 @@ object MagicTest {
       // Navid
       home / "Desktop" / "mmt-archives",
       // John
-      home / "Documents" / "mmt_and_archives" / "archives"
+      home / "Documents" / "mmt_and_archives" / "archives",
+      // alexander
+      home / "Dokumente" / "Studium" / "MMTWorkspace"/"MMT"
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="buildQueueApp">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+    <script src="/script/angularjs/angular-1.5.3/angular.min.js"></script>
+    <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+    <script src="/script/mmt/mmt-js-api.js"></script>
+    <script src="/script/buildqueue/buildserver.js"></script>
+    <link rel="stylesheet" href="/css/bootstrap3/css/bootstrap.min.css"/>
+    <title>MMT Build Queue</title>
+</head>
+<body>
+<div class="container-fluid" ng-controller="QueueViewer">
+    <p id="top"><b>MMT Build Queue</b> (via <a href="errorview.html">Error Viewer</a>)
+        (<a href="https://github.com/UniFormal/MMT/issues/new?title=buildqueue">report issues here</a>)
+        (<a href="https://uniformal.github.io/doc/archives/buildqueue">get help</a>)
+    </p>
+    <p>refresh rate (secs):
+        <input type="number" min="1" max="1000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
+    </p>
+    <p>
+    queue length {{queue.count}}
+    </p>
+    <p>
+        <button ng-click="clear()">clear queue</button>
+        <button ng-click="list()">get current state</button>
+        <button ng-click="clearfinished()"><span>Clear finished</span></button>
+    </p>
+    <p>
+        <select ng-model="targets.current" ng-options="tar for tar in targets.list"></select>
+        <select ng-model="buildLevel">
+            <option value="5">build on change</option>
+            <option value="4">build on fatal error</option>
+            <option value="3">build on error</option>
+            <option value="2">build on warning</option>
+            <option value="1">build on info</option>
+            <option value="0">force build</option>
+            <option value="">force dependencies</option>
+            <option value="-">clean </option>
+        </select>
+        <select ng-model="archives.current" ng-options="option for option in archives.list"></select>
+        <button ng-click="make()">make</button>
+        <input type="text" ng-model="fileName">
+    </p>
+    queue (go to <a href="#blocked">blocked</a>) (go to <a href="#finished">finished</a>)
+    <ul>
+        <li ng-repeat="e in queue.queue" ng-class="e.indexOf('running') > -1 ? 'text-warning' : ''">{{e}}</li>
+    </ul>
+    <span id="blocked">blocked</span> (go to <a href="#top">top</a>) (go to <a href="#finished">finished</a>)
+    <ul>
+        <li ng-repeat="e in queue.blocked">{{e}}</li>
+    </ul>
+    <span id="finished">finished</span> (go to <a href="#top">top</a>) (go to <a href="#blocked">blocked</a>)
+    <ul>
+        <li ng-repeat="e in queue.finished" ng-class="colorOf(e.result.result)">
+            {{e.dependency}} {{e.result.result}}
+            <span ng-show="e.result.needed.length > 0">missing</span>
+            <ul>
+                <li ng-repeat="n in e.result.needed">
+                    {{n}}
+            </ul>
+            <span ng-show="e.result.used.length > 0">used</span>
+            <ul>
+                <li ng-repeat="n in e.result.used">
+                    {{n}}
+            </ul>
+            <span ng-show="e.result.provided.length > 0">provided</span>
+            <ul>
+                <li ng-repeat="n in e.result.provided">
+                    {{n}}
+            </ul>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

@@ -8,7 +8,7 @@ trait SemanticObject {
   /** errors in Java initializers are hard to debug; therefore, objects should put initialization code here, which will be called by MMT
    *  empty by default, may throw errors
    */
-  def init {}
+  def init: Unit = {}
 }
 
 object SemanticObject {

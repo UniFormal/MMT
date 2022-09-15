@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
+
 package tiscaf
 package let
 
@@ -66,7 +68,7 @@ trait FsLet extends HSimpleLet {
 
   //------------------ HLet implemented --------------------
 
-  def act(tk: HTalk) {
+  def act(tk: HTalk): Unit = {
       if ((tk.req.uriPath).startsWith(theUriRoot)) {
       val uriExt = if (tk.req.uriExt.isDefined) { ";" + tk.req.uriExt.get } else ""
 

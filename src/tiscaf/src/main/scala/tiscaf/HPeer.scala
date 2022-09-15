@@ -16,6 +16,7 @@
  ******************************************************************************/
 // twiesing 18-09-2018: Remove call to deprecated methods
 // twiesing 01-04-2020: Fix weird regression on Mac OS
+// twiesing 22-08-2022: Remove deprecated procedure syntax
 
 package tiscaf
 
@@ -100,7 +101,7 @@ private trait HPeer extends HLoggable {
   * However that would potentially break other versions.
   */
 object BufferHack {
-  def clear(buffer: ByteBuffer) {
+  def clear(buffer: ByteBuffer): Unit = {
     try {
       buffer.clear
     } catch {
@@ -108,7 +109,7 @@ object BufferHack {
         buffer.asInstanceOf[Buffer].clear()
     }
   }
-  def flip(buffer: ByteBuffer) {
+  def flip(buffer: ByteBuffer): Unit = {
     try {
       buffer.flip
     } catch {

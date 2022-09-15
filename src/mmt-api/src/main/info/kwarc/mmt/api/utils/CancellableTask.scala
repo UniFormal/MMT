@@ -13,7 +13,7 @@ import java.lang.Thread
 class KillButton {
   @volatile private var killed: Boolean = false
 
-  def press {
+  def press: Unit = {
     killed = true
   }
 
@@ -31,7 +31,7 @@ trait Killable {
   private var killButtons: List[KillButton] = List(new KillButton)
 
   /** signals aborting of processing */
-  def kill {
+  def kill: Unit = {
     killButtons.foreach(_.press)
   }
 

@@ -75,7 +75,7 @@ object TwelfTest {
 class Plugin extends frontend.Plugin {
    val theory = Path.parseM("http://test.org/mathscheme?Meta",NamespaceMap.empty)
    val dependencies = List("info.kwarc.mmt.lf.Plugin")
-   override def start(args: List[String]) {
+   override def start(args: List[String]): Unit = {
       val em = controller.extman
       // content enhancers
       // em.addExtension(new Extends)

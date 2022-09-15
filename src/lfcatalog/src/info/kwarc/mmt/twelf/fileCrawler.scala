@@ -13,7 +13,7 @@ object FileCrawler {
   * @return a Document object with the information extracted from the file, which includes a LinkedList of errors occurred during parsing
   * @throws ParseError for syntactical errors in the file
   * @throws FileOpenError if the file cannot be opened */
-  def apply(file : File) : Document = (new FileCrawler(file)).crawl
+  def apply(file : File) : Document = (new FileCrawler(file)).crawl()
 }
 
 
@@ -43,7 +43,7 @@ class FileCrawler(file : File) {
     throw FileOpenError("error: file cannot be opened")
   try {
     val source = scala.io.Source.fromFile(file, "utf-8")
-    lines = source.getLines.toArray                          // get all lines from the file
+    lines = source.getLines().toArray                          // get all lines from the file
     source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
   } catch {
     case e : Throwable => throw FileOpenError("error: file cannot be opened or the encoding is not UTF-8")
@@ -105,7 +105,7 @@ class FileCrawler(file : File) {
         }
         else                     // an alias namespace declaration
           if (currentNS == None)
-            throw ParseError(toPair(i, lineStarts) + ": error: current namespace must be defined before the namespace alias declaration")
+            throw ParseError(toPair(i, lineStarts).toString + ": error: current namespace must be defined before the namespace alias declaration")
           else {
             val absoluteRemoteURI = currentNS.get.resolve(uri).normalize
             prefixes += ((name.get, absoluteRemoteURI))
@@ -136,7 +136,7 @@ class FileCrawler(file : File) {
         i = skipUntilDot(i)
       }
       else
-        throw ParseError(toPair(i, lineStarts) + ": error: unknown entity. Module, comment or namespace declaration expected")
+        throw ParseError(toPair(i, lineStarts).toString + ": error: unknown entity. Module, comment or namespace declaration expected")
 
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
@@ -226,7 +226,7 @@ class FileCrawler(file : File) {
       else
         i += Character.charCount(c)
     }
-    throw ParseError(toPair(start, lineStarts) + ": error: left bracket { does not close")
+    throw ParseError(toPair(start, lineStarts).toString + ": error: left bracket { does not close")
     return -1
   }
 
@@ -317,7 +317,7 @@ class FileCrawler(file : File) {
   {
     val endsAt = flat.indexOf('"', start + 1)    // position of the final quotes
     if (endsAt == -1)
-      throw ParseError(toPair(start, lineStarts) + ": error: the string does not close")
+      throw ParseError(toPair(start, lineStarts).toString + ": error: the string does not close")
     return (flat.substring(start + 1, endsAt), endsAt + 1)
   }
 
@@ -342,7 +342,7 @@ class FileCrawler(file : File) {
 
     val myId = flat.substring(start, i)
     if (myId.isEmpty)
-      throw ParseError(toPair(start, lineStarts) + ": error: identifier expected")
+      throw ParseError(toPair(start, lineStarts).toString + ": error: identifier expected")
     return (myId, i)
   }
 
@@ -365,26 +365,26 @@ class FileCrawler(file : File) {
       try {
         uri = new URI(string.trim)
       } catch {
-        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + exc.getMessage)
+        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts).toString + ": error: " + exc.getMessage)
       }
-      return (None, uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
+      return (None, uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts).toString + ": error: %namespace statement does not end with a dot", false))
 
     }
     // A namespace alias declaration
     else {
       val (alias, positionAfter) = crawlIdentifier(i)        // read the identifier (alias)
       i = positionAfter
-      i = 1 + expectNext(i, "=", toPair(start, lineStarts) + ": error: %namespace statement does not have '='", false)
-      i = expectNext(i, "\"", toPair(start, lineStarts) + ": error: %namespace statement does not have a definiens", false)
+      i = 1 + expectNext(i, "=", toPair(start, lineStarts).toString + ": error: %namespace statement does not have '='", false)
+      i = expectNext(i, "\"", toPair(start, lineStarts).toString + ": error: %namespace statement does not have a definiens", false)
 
       val (string, positionAfterString) = crawlString(i)         // read the URI
       var uri : URI = null
       try {
         uri = new URI(string.trim)
       } catch {
-        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + exc.getMessage)
+        case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts).toString + ": error: " + exc.getMessage)
       }
-      return (Some(alias), uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
+      return (Some(alias), uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts).toString + ": error: %namespace statement does not end with a dot", false))
     }
   }
 
@@ -401,7 +401,7 @@ class FileCrawler(file : File) {
     var i = start + "%{".length
     i = flat.indexOf("}%", i) //TODO handle nested comments
     if (i == -1)
-      throw ParseError(toPair(start, lineStarts) + ": error: comment does not close")
+      throw ParseError(toPair(start, lineStarts).toString + ": error: comment does not close")
       return i + "}%".length
   }
 
@@ -415,7 +415,7 @@ class FileCrawler(file : File) {
   {
     var endsAt : Int = flat.indexOf("*%", start)    // position of the final *
     if (endsAt == -1)
-      throw ParseError(toPair(start, lineStarts) + ": error: comment does not close")
+      throw ParseError(toPair(start, lineStarts).toString + ": error: comment does not close")
     endsAt += 1                                     // position of the final %
     val properties = LinkedHashMap[String, String] ()
 
@@ -443,10 +443,10 @@ class FileCrawler(file : File) {
     try {
         for (line <- commentLines.drop(firstPropertyLine).map(_.trim)) {
             if (!line.startsWith("@"))
-                throw ParseError(toPair(start, lineStarts) + ": error: key-value properties (starting with '@') must be grouped at the end of the comment")
+                throw ParseError(toPair(start, lineStarts).toString + ": error: key-value properties (starting with '@') must be grouped at the end of the comment")
             val keyValue = line.drop(1).trim
             if (keyValue.isEmpty)
-                throw ParseError(toPair(start, lineStarts) + ": error: empty key in @-starting property")
+                throw ParseError(toPair(start, lineStarts).toString + ": error: empty key in @-starting property")
             var i = 0
             var c = keyValue.codePointAt(i)
             while (!Character.isWhitespace(c) && i < keyValue.length) {
@@ -500,7 +500,7 @@ class FileCrawler(file : File) {
     val children = new ListBuffer[AssignmentBlock] ()
     var domain : Option[URI] = None
     if (i + "%struct".length + 2 >= flat.length)
-      throw ParseError(toPair(i, lineStarts) + ": error: %struct statement does not end")
+      throw ParseError(toPair(i, lineStarts).toString + ": error: %struct statement does not end")
     i += "%struct".length
     i = skipws(i)
     if (flat.startsWith("%implicit", i))
@@ -524,14 +524,14 @@ class FileCrawler(file : File) {
       if (flat.codePointAt(i) == '{') {
         // If the structure is defined via a list of assignments
         if (domain.isEmpty)
-          throw ParseError(toPair(start, lineStarts) + ": error: structure is defined via a list of assignments, but its domain is not specified")
+          throw ParseError(toPair(start, lineStarts).toString + ": error: structure is defined via a list of assignments, but its domain is not specified")
         i = crawlLinkBody(i, parentURI / structureName, children, new LinkedHashSet[URI](), currentNS, prefixes, false)
       }
       else if (!isIdentifierPartCharacter(flat.codePointAt(i)))
-        throw ParseError(toPair(i, lineStarts) + ": error: morphism or assignment list expected after '='")
+        throw ParseError(toPair(i, lineStarts).toString + ": error: morphism or assignment list expected after '='")
     }
     else if (domain.isEmpty)
-      throw ParseError(toPair(start, lineStarts) + ": error: structure has no definiens and its domain is not specified")
+      throw ParseError(toPair(start, lineStarts).toString + ": error: structure has no definiens and its domain is not specified")
 
 
     val endsAt = skipUntilDot(i) - 1       // skip over %open statement
@@ -553,7 +553,7 @@ class FileCrawler(file : File) {
     val constantName = cstName.replaceAll("\\Q.\\E", "/")
     i = positionAfter
 
-    i = expectNext(i, ":=", toPair(i, lineStarts) + ": error: ':=' expected")
+    i = expectNext(i, ":=", toPair(i, lineStarts).toString + ": error: ':=' expected")
     i += ":=".length
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
@@ -571,14 +571,14 @@ class FileCrawler(file : File) {
   {
     var i = start
     if (i + "%struct".length + 2 >= flat.length)
-      throw ParseError(toPair(i, lineStarts) + ": error: %struct assignment does not end")
+      throw ParseError(toPair(i, lineStarts).toString + ": error: %struct assignment does not end")
     i += "%struct".length    // jump over %struct
     i = skipwscomments(i)
     val (strName, positionAfter) = crawlIdentifier(i)  // read structure name
     val structureName = strName.replaceAll("\\Q.\\E", "/")
     i = positionAfter
 
-    i = expectNext(i, ":=", toPair(i, lineStarts) + ": error: ':=' expected")
+    i = expectNext(i, ":=", toPair(i, lineStarts).toString + ": error: ':=' expected")
     i += ":=".length
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
@@ -618,7 +618,7 @@ class FileCrawler(file : File) {
       }
       else if (flat.startsWith("%meta", i)) {
         if (i + "%meta".length + 2 >= flat.length)
-          throw ParseError(toPair(i, lineStarts) + ": error: %meta statement does not end")
+          throw ParseError(toPair(i, lineStarts).toString + ": error: %meta statement does not end")
         i += "%meta".length
         i = skipws(i)
         val (metaTheoryName, positionAfter) = crawlIdentifier(i)    // read meta theory name
@@ -628,7 +628,7 @@ class FileCrawler(file : File) {
       }
       else if (flat.startsWith("%include", i)) {
         if (i + "%include".length + 2 >= flat.length)
-          throw ParseError(toPair(i, lineStarts) + ": error: %include statement does not end")
+          throw ParseError(toPair(i, lineStarts).toString + ": error: %include statement does not end")
         i += "%include".length
         i = skipws(i)
         val (importName, positionAfter) = crawlIdentifier(i)    // read import name
@@ -653,7 +653,7 @@ class FileCrawler(file : File) {
       else if (flat.codePointAt(i) == '}')
         return i + 1
       else
-        throw ParseError(toPair(i, lineStarts) + ": error: unknown declaration in signature body")
+        throw ParseError(toPair(i, lineStarts).toString + ": error: unknown declaration in signature body")
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
     }
@@ -673,15 +673,15 @@ class FileCrawler(file : File) {
     val (sigName, positionAfter) = crawlIdentifier(i)
     val uri = moduleToAbsoluteURI(i, sigName, currentNS, prefixes)
     i = positionAfter   // jump over identifier
-    i = expectNext(i, "=",  toPair(start, lineStarts) + ": error: signature does not have '=' after its name")
+    i = expectNext(i, "=",  toPair(start, lineStarts).toString + ": error: signature does not have '=' after its name")
     i += 1    // jump over "="
-    i = expectNext(i, "{",  toPair(start, lineStarts) + ": error: signature does not have an initial '{'")
+    i = expectNext(i, "{",  toPair(start, lineStarts).toString + ": error: signature does not have an initial '{'")
 
     var children = new ListBuffer[DeclBlock] ()
     var deps = LinkedHashSet[URI] ()
     i = crawlSigBody(i, uri, children, deps, currentNS, prefixes)    // read the { body } of the signature
 
-    val endsAt = expectNext(i, ".", toPair(start, lineStarts) + ": error: signature does not end with a dot")
+    val endsAt = expectNext(i, ".", toPair(start, lineStarts).toString + ": error: signature does not end with a dot")
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
     return (new SigBlock(uri, url, sigName, children, deps, position), endsAt + 1)
@@ -706,7 +706,7 @@ class FileCrawler(file : File) {
     while (i < flat.length) {
       if (flat.startsWith("%include", i)) {
         if (i + "%include".length + 2 >= flat.length)
-          throw ParseError(toPair(i, lineStarts) + ": error: %include statement does not end")
+          throw ParseError(toPair(i, lineStarts).toString + ": error: %include statement does not end")
         i += "%include".length    // jump over %include
         i = skipws(i)
         val (importName, positionAfter) = crawlIdentifier(i)    // read import name
@@ -740,7 +740,7 @@ class FileCrawler(file : File) {
       else if (flat.codePointAt(i) == '}')
         return i + 1
       else
-        throw ParseError(toPair(i, lineStarts) + ": error: unknown declaration in link body")
+        throw ParseError(toPair(i, lineStarts).toString + ": error: unknown declaration in link body")
       keepComment = None          // reset the last semantic comment stored
       i = skipwscomments(i)       // check whether there is a new semantic comment
     }
@@ -796,7 +796,7 @@ class FileCrawler(file : File) {
     val uri = moduleToAbsoluteURI(i, viewName, currentNS, prefixes)
     i = positionAfter   // jump over name
 
-    i = expectNext(i, ":", toPair(start, lineStarts) + ": error: view does not have ':' after its name")
+    i = expectNext(i, ":", toPair(start, lineStarts).toString + ": error: view does not have ':' after its name")
     i += 1    // jump over ":"
 
     i = skipwscomments(i)
@@ -806,21 +806,21 @@ class FileCrawler(file : File) {
     deps += viewDomainURI
     i = positionAfterDomain   // jump over domain
 
-    i = "->".length + expectNext(i, "->", toPair(start, lineStarts) + ": error: view does not have '->' between domain and codomain")
+    i = "->".length + expectNext(i, "->", toPair(start, lineStarts).toString + ": error: view does not have '->' between domain and codomain")
 
     i = skipwscomments(i)
 
     val (viewCodomain, positionAfterCodomain) = crawlSignatureUnion(i, currentNS, prefixes)    // read view codomain
-    deps ++= viewCodomain.toTraversable
+    deps ++= viewCodomain
     i = positionAfterCodomain     // jump over codomain
 
-    i = expectNext(i, "=", toPair(start, lineStarts) + ": error: view does not have '=' after its name")
+    i = expectNext(i, "=", toPair(start, lineStarts).toString + ": error: view does not have '=' after its name")
     i += 1     // jump over "="
-    i = expectNext(i, "{", toPair(start, lineStarts) + ": error: view does not have an initial '{'")
+    i = expectNext(i, "{", toPair(start, lineStarts).toString + ": error: view does not have an initial '{'")
 
     i = crawlLinkBody(i, uri, children, deps, currentNS, prefixes, true) // read the { body } of the view
 
-    i = expectNext(i, ".", toPair(start, lineStarts) + ": error: view does not end with a dot")
+    i = expectNext(i, ".", toPair(start, lineStarts).toString + ": error: view does not end with a dot")
     val endsAt = i
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
@@ -850,13 +850,13 @@ class FileCrawler(file : File) {
     // If it has no prefix, it belongs to the current namespace, so simply prepend the current namespace URI
     if (j == -1) {
       if (currentNS == None)
-        throw ParseError(toPair(start, lineStarts) + ": error: cannot compute an absolute URI for this module " + moduleName + " since no current namespace is defined")
+        throw ParseError(toPair(start, lineStarts).toString + ": error: cannot compute an absolute URI for this module " + moduleName + " since no current namespace is defined")
       return currentNS.get ? relativeURI
     }
     // If it has a prefix, it belongs to a different namespace, which must have been declared before in the document
     val prefix : String = relativeURI.substring(0, j)
     if (!prefixes.contains(prefix))                      // check if the alias is known
-      throw ParseError(toPair(start, lineStarts) + ": error: " + prefix + " is not a valid namespace alias")
+      throw ParseError(toPair(start, lineStarts).toString + ": error: " + prefix + " is not a valid namespace alias")
     val realURI = prefixes.get(prefix).get
     return new URI(realURI.toString() + relativeURI.substring(j))
   }

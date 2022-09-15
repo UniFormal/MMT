@@ -126,9 +126,9 @@ class MutableRuleSet extends RuleSet {
    def add(r : Rule*) = r.foreach(rules += _)
 
    /* Its construction and use corresponds to algebraic theories. */
-   def declares(rs: Rule*) {rs foreach {rules += _}}
-   def imports(rss: RuleSet*) {rss foreach {rules ++= _.getAll}}
-   def shadow(rs: Rule*) {rs foreach {rules -= _}}
+   def declares(rs: Rule*): Unit = {rs foreach {rules += _}}
+   def imports(rss: RuleSet*): Unit = {rss foreach {rules ++= _.getAll}}
+   def shadow(rs: Rule*): Unit = {rs foreach {rules -= _}}
 
    def getAll = rules
 }

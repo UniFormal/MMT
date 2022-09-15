@@ -9,7 +9,7 @@ import info.kwarc.mmt.lf.hollight.HOLLight
 class Plugin extends frontend.Plugin {
    val theory = LF.theoryPath
    val dependencies = Nil
-   override def start(args: List[String]) {
+   override def start(args: List[String]): Unit = {
       val em = controller.extman
       // content enhancers
       em.addExtension(new NotationGenerator)

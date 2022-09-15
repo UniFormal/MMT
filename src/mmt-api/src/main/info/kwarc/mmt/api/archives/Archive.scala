@@ -41,6 +41,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
   val id = properties("id")
+  def classpath = utils.splitAtWhitespace(properties.getOrElse("classpath",""))
   val narrationBase = properties.get("narration-base").map(utils.URI(_)).getOrElse(FileURI(root))
   /** the NamespaceMap built from the ns and ns-prefix properties */
   val ns = properties.get("ns").map(s => Path.parse(
@@ -75,7 +76,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
   val narrationBackend = new ArchiveNarrationStorage(this, "desc")
 
-  def load(p: Path)(implicit controller: Controller) {
+  def load(p: Path)(implicit controller: Controller): Unit = {
     p match {
       case doc: DPath =>
          narrationBackend.load(doc)
@@ -93,11 +94,11 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   protected val custom: ArchiveCustomization = {
     properties.get("customization") match {
       case None => new DefaultCustomization
-      case Some(c) => java.lang.Class.forName(c).asInstanceOf[java.lang.Class[ArchiveCustomization]].newInstance
+      case Some(c) => java.lang.Class.forName(c).asInstanceOf[java.lang.Class[ArchiveCustomization]].getDeclaredConstructor().newInstance()
     }
   }
 
-  protected def deleteFile(f: File) {
+  protected def deleteFile(f: File): Unit = {
     log("deleting " + f)
     f.delete
   }
@@ -128,7 +129,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
         val results = if (parallel) children.par flatMap recurse else children flatMap recurse
-        val result = onDir(Current(inFile, in), results.toList)
+        val result = onDir(Current(inFile, in), results.iterator.to(List))
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
@@ -157,7 +158,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     * Kinda hacky; can be used to get all Modules residing in this archive somewhat quickly
     * @return
     */
-  @deprecated("inefficient and brittle; use getModules for this","")
+  @deprecated("MMT_TODO: inefficient and brittle; use getModules for this", since="forever")
   lazy val allContent : List[MPath] = {
     //TODO if it weren't for nested theories, we could simply use controller.getAs(classOf[Document], DPath(narrationBase)).getModules(controller.globalLookup)
     log("Reading Content " + id)
@@ -220,7 +221,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     handles.toList
   }
 
-  def readRelational(in: FilePath, controller: Controller, kd: String) {
+  def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
     log("Reading archive " + id)
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>

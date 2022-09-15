@@ -167,7 +167,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   /** tries to get some json form a given URL */
   private def get_json(url: URI) : Option[JSON] = {
     log(s"fetching $url")
-    val attempt = Try(io.Source.fromURL(url.toString))
+    val attempt = Try(io.Source.fromURL(url.toString)("ISO-8859-1"))
     if (attempt.isFailure) None else Some(attempt.get.toBuffer.mkString).map(JSON.parse)
   }
   private def getAvailablePage(page : Int) : List[String] = {
@@ -226,7 +226,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
 
 
   /** installs a list of new entries at once by cloning them from the server */
-  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true) {
+  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true): Unit = {
     var visits: List[LMHHubEntry] = Nil
     entries.foreach({
       case (id, version) =>

@@ -215,7 +215,13 @@ trait SolverAlgorithms {self: Solver =>
            case Some(t) => check(Subtyping(stack, t, tp))
          }
        // note that OMLs do not have a generally-defined type
-       case l: OMLIT => check(Subtyping(stack, l.rt.synType, tp))
+       /* case l: OMLIT =>
+          check(Subtyping(stack, l.rt.synType, tp))
+          We could use the above code here, but that would be equivalent to checking by inference, which is the default anyway.
+          By not having a case here, the default case below will call rules,
+          which allows for typing rules to hook in and succeed more generously,
+          e.g., to allow an integer literal as a natural number.
+       */
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
@@ -335,7 +341,6 @@ trait SolverAlgorithms {self: Solver =>
       }
       // solve an unknown
       val jS = j.copy(tm1 = tm1S, tm2 = tm2S)
-      Solver.breakAfter(139)
       val solved = solveEquality(jS,Nil) || solveEquality(jS.swap,Nil)
       if (solved) return true
 
@@ -346,7 +351,7 @@ trait SolverAlgorithms {self: Solver =>
          val contOpt = rule(this)(tm1S,tm2S,tpOpt)
          contOpt match {
            case Some(cont) =>
-             return cont.apply
+             return cont.apply()
            case None =>
              history += "rule not applicable"
          }
@@ -390,7 +395,7 @@ trait SolverAlgorithms {self: Solver =>
       }
    }
 
-  private def isDirectlySolvable(j: Equality)(implicit stack: Stack) = {
+  def isDirectlySolvable(j: Equality)(implicit stack: Stack) = {
     j.tm1 match {
       case Unknown(_,args) => isDistinctVarList(args).isDefined
       case _ => false
@@ -708,7 +713,8 @@ trait SolverAlgorithms {self: Solver =>
       val msg = "proving " + presentObj(context) + " |-- _  ::  " + presentObj(conc)
       history += msg
       val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
-      controller.extman.get(classOf[AutomatedProver]) foreach {prover =>
+      val provers = controller.extman.get(classOf[AutomatedProver]) sortWith {(p1, p2) =>p1.priority > p2.priority }
+      provers foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {
             val p = proof.getOrElse(UnknownTerm())
@@ -755,7 +761,7 @@ trait SolverAlgorithms {self: Solver =>
     * this subsumes substituting for solved unknowns before simplifier expands defined variables
     */
   private def simplify(t : Obj, expDef: Boolean, fullRec: Boolean)(implicit stack: Stack, history: History): t.ThisType = {
-      val su = SimplificationUnit(constantContext ++ solution ++ stack.context, expDef, fullRec,Some(this)).diesWith(checkingUnit)
+      val su = SimplificationUnit(constantContext ++ solution ++ stack.context, expDef, expDef, fullRec,Some(this)).diesWith(checkingUnit)
       // TODO even when called with expDef=false, the rule Beta may expand defined function symbols; it's unclear if this is desirable, especially when fullRec=true
       val tS = controller.simplifier(t, su, rules)
       if (tS != t)
@@ -777,7 +783,7 @@ trait SolverAlgorithms {self: Solver =>
      if (checkingUnit.isKilled) {
        return tm
      }
-     history += "trying to simplify " + presentObj(tm) 
+     history += "trying to simplify " + presentObj(tm)
      val tmS = tm match {
        case OMS(p) =>
          val d = getDef(p)

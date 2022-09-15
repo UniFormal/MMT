@@ -40,7 +40,7 @@ object RealizedValue {
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */
 case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends SimplificationRule(synOp) {
   /** basic type-checking */
-  override def init {
+  override def init: Unit = {
      semOp.init
      if (synTp.arity != semTp.arity)
        throw ImplementationError("syntactic and semantic arity are not equal")

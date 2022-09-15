@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
+// twiesing 23-08-2022: Remove deprecated method call
 package tiscaf
 
 import scala.collection.{ mutable => mute }
@@ -52,7 +54,7 @@ private class HConnData {
     tail = new Array[Byte](0)
     acceptedTotalLength = 0L
     header = None
-    parMap.clear
+    parMap.clear()
     appLet = None
     octetStream = None
     parts = None
@@ -120,7 +122,7 @@ private class HAcceptor(
           warning("Header too long")
           in.reqState = HReqState.IsInvalid
         } else {
-          in.header = Some(new HReqHeader(new String(in.tail.take(shift), "ISO-8859-1") split ("\r\n")))
+          in.header = Some(new HReqHeader(new String(in.tail.take(shift), "ISO-8859-1").split("\r\n").toIndexedSeq))
           in.tail = in.tail.slice(shift + 4, in.tail.length)
 
           in.header.get.reqType match {

@@ -3,6 +3,7 @@ package info.kwarc.mmt.stex
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.{BrowserExtension, DocumentExtension, FragmentExtension, OMDocExtension, STeXExtension}
@@ -76,7 +77,14 @@ class STeXServer extends ServerExtension("sTeX") {
     controller.backend.getArchives.filter{a =>
       a.properties.get("format").contains("stex")
     }.foreach(_.readRelational(Nil, controller, "rel"))
+
+    controller.extman.get(classOf[Presenter], "html").foreach {p =>
+      controller.extman.removeExtension(p)
+    }
+    controller.extman.addExtension(htmlpres)
   }
+
+  lazy val htmlpres = new MMTsTeXPresenter(texPresenter,xhtmlPresenter)
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
@@ -108,28 +116,18 @@ class STeXServer extends ServerExtension("sTeX") {
           case _ =>
         })
     }
-    ServerResponse("Unknown request: " + request.path.mkString("/"),"text/plain")
+    ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs,"text/plain")
     //ServerResponse(ret.toString, "application/xhtml+xml")
   } catch {
     case ret:ErrorReturn => ret.toResponse
-    case t : NonLocalReturnControl[Any] =>
+    case t : NonLocalReturnControl[Any@unchecked] =>
       throw t
     case t : Throwable =>
       throw t
   }
 
 
-  def doHeader(doc : HTMLNode) = {
-    val head = doc.get("head")()().head
-    val body = doc.get("body")()().head
-    val headstring = MMTSystem.getResourceAsString("/mmt-web/stex/htmlfragments/header.xml")
-    doc.addBefore(headstring,head)
-    head.delete
-    val nhead = doc.get("head")()().head
-
-    extensions.foreach(_.doHeader(nhead,body))
-    nhead
-  }
+  def doHeader(doc : HTMLNode) = {}
 
   def getState : ParsingState = {
     val rules = extensions.flatMap(_.rules)
@@ -139,7 +137,7 @@ class STeXServer extends ServerExtension("sTeX") {
   def emptydoc = {
     val rules = extensions.flatMap(_.rules)
     val state = new ParsingState(controller,rules)
-    val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/emptydoc.xhtml"))(state)
+    val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/stex/emptydoc.xhtml"))(state)
     doHeader(doc)
     (doc,doc.get("div")()("body").head)
   }

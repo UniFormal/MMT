@@ -15,7 +15,7 @@ sealed abstract class WindowAction extends Action {
   * concrete syntax: window window:STRING close
   */
 case class WindowClose(window: String) extends WindowAction {
-  def apply() {winman.deleteWindow(window)}
+  def apply(): Unit = {winman.deleteWindow(window)}
   def toParseString = s"window $window close"
 }
 object WindowCloseCompanion extends ActionCompanion("close a window with a given ID", "window") {
@@ -29,7 +29,7 @@ object WindowCloseCompanion extends ActionCompanion("close a window with a given
   * concrete syntax: window window:STRING position x:INT y:INT
   */
 case class WindowPosition(window: String, x: Int, y: Int) extends WindowAction {
-  def apply() {winman.getWindow(window).setLocation(x, y)}
+  def apply(): Unit = {winman.getWindow(window).setLocation(x, y)}
   def toParseString = s"window $window position $x $y"
 }
 object WindowPositionCompanion extends ActionCompanion("position a window with a given ID", "window"){
@@ -40,7 +40,7 @@ object WindowPositionCompanion extends ActionCompanion("position a window with a
 
 /** show the GUI window */
 case object GUIOn extends WindowAction {
-  def apply() {winman.openBrowser}
+  def apply(): Unit = {winman.openBrowser}
   def toParseString: String = "gui on"
 }
 object GUIOnCompanion extends ObjectActionCompanion(GUIOn, "show the GUI window", "gui on")
@@ -48,7 +48,7 @@ object GUIOnCompanion extends ObjectActionCompanion(GUIOn, "show the GUI window"
 
 /** hides the GUI window */
 case object GUIOff extends WindowAction {
-  def apply() {winman.closeBrowser}
+  def apply(): Unit = {winman.closeBrowser}
   def toParseString: String = "gui off"
 }
 object GUIOffCompanion extends ObjectActionCompanion(GUIOff, "hide the GUI window", "gui off")

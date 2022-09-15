@@ -205,10 +205,12 @@ button.component-toggle, button.generated-toggle {
    border: solid 1px black;
    margin-left: 2px;
    float: right;
+   pointer-events: all;
 }
 
 button.component-toggle {
    background-color: blue;
+   pointer-events: all;
 }
 
 button.generated-toggle, div.constant.generated {

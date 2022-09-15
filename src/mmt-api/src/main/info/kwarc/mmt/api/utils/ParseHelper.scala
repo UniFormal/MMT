@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 
+import scala.collection.mutable
 import scala.util.parsing.combinator.{PackratParsers, Parsers, RegexParsers}
 import scala.util.parsing.input.{Position, Reader}
 
@@ -38,7 +39,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
    private var poffset: Int = 0
    private var line : Int = 0
    private var column : Int = 0
-   private def advancePositionBy(c: Char) {
+   private def advancePositionBy(c: Char): Unit = {
       poffset += 1
       column += 1
       if (c == '\n') {
@@ -64,20 +65,21 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
          if (!empty && head == '\n') {
             current += 1
          }
+         advancePositionBy(c)
          c = '\n'
       }
       advancePositionBy(c)
       c
    }
    def tail: this.type = {
-      next
+      next()
       this
    }
    def trim: this.type = {
       while (!empty && head.isWhitespace) next()
       this
    }
-   def drop(s: String) {
+   def drop(s: String): Unit = {
       if (StringSlice(input, poffset).startsWith(s)) {
          current += s.length
          s.foreach {c => advancePositionBy(c)}
@@ -86,13 +88,19 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
    }
    def takeWhile(test: Char => Boolean): String = {
       val sb = new StringBuilder
-      while (test(head)) sb += next()
+      while ({
+         val testchar = if (head == '\r' && input.isDefinedAt(current+1) && input(current+1) == '\n') '\n' else head
+         test(testchar)
+      }) sb += next()
       sb.toString()
    }
 
    def takeWhileSafe(test: Char => Boolean): String = {
       val sb = new StringBuilder
-      while (!empty && test(head)) sb += next()
+      while (!empty && {
+         val testchar = if (head == '\r' && input.isDefinedAt(current+1) && input(current+1) == '\n') '\n' else head
+         test(testchar)
+      }) sb += next()
       sb.toString()
    }
 
@@ -131,44 +139,48 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
     * @return the found string (excluding the until), and false iff end of input reached
     */
    def takeUntilChar(until: Char, exceptAfter: Char): (String,Boolean) = {
-      var seen = ""
+      val seen = new mutable.StringBuilder()
       while (!empty && head != until) {
          if (head == exceptAfter) {
-            seen += head
-               next
+            seen.addOne(head)
+               next()
          }
-         seen += head
-         next
+         seen.addOne(head)
+         next()
       }
       if (empty) {
-         (seen, false)
+         (seen.mkString, false)
       }
       else {
-         next
-         (seen,true)
+         next()
+         (seen.mkString,true)
       }
    }
 
    /** return all characters until a certain string is encountered outside well-nested brackets */
    def takeUntilString(until: String, brackets: List[BracketPair]): String = {
-      var seen = ""
+      val seen = new mutable.StringBuilder()
       while (true) {
         val r = remainder
         if (empty) {
           error("expected a closing bracket, found of file")
         } else if (r.startsWith(until)) {
           drop(until)
-          return seen
+          return seen.mkString
         } else {brackets.find(bp => r.startsWith(bp.open)) match {
           case Some(bp) =>
             drop(bp.open)
             val s = takeUntilString(bp.close, brackets)
-            if (!bp.ignore) seen += bp.open + s + bp.close
+            if (!bp.ignore) {
+               seen ++= bp.open
+               seen ++= s
+               seen ++= bp.close
+            }
           case None =>
-            seen += next
+            seen.addOne(next())
         }}
       }
-      return seen // impossible
+      seen.mkString // impossible
    }
 
    // Reader Instance

@@ -26,7 +26,7 @@ class CachingReportHandler(override val id: String, val maxSize: Int = 10000) ex
     synchronized {
       theCache.enqueue(entry)
       while(theCache.length > maxSize){
-        theCache.dequeue
+        theCache.dequeue()
       }
     }
   }

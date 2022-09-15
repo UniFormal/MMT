@@ -22,7 +22,7 @@ case object MMTLegal extends PrintAction {
 object MMTLegalCompanion extends ObjectActionCompanion(MMTLegal, "show legal notices", "show notices")
 
 case object MMTInfo extends PrintAction {
-  def apply() {
+  def apply(): Unit = {
     respond(s"MMT Version     : ${MMTSystem.version}")
     respond(s"Run Style       : ${MMTSystem.runStyle}")
     MMTSystem.buildTime foreach {s =>
@@ -39,7 +39,7 @@ case object MMTInfo extends PrintAction {
 object MMTInfoCompanion extends ObjectActionCompanion(MMTInfo, "show mmt system information", "show mmt")
 
 case object MMTVersion extends PrintAction {
-  def apply() {
+  def apply(): Unit = {
     respond(MMTSystem.version)
   }
   def toParseString = "show version"
@@ -48,7 +48,7 @@ object MMTVersionCompanion extends ObjectActionCompanion(MMTVersion, "show mmt v
 
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object ClearConsole extends PrintAction {
-  def apply() {
+  def apply(): Unit = {
     System.out.print("\u001b[H\u001b[2J")
     System.out.flush()
   }
@@ -59,7 +59,7 @@ object ClearConsoleCompanion extends ObjectActionCompanion(ClearConsole, "clears
 
 /** print all loaded knowledge items to STDOUT in text syntax */
 case object PrintAll extends PrintAction {
-  def apply() {
+  def apply(): Unit = {
     respond("\n" + controller.library.toString)
   }
   def toParseString = "show knowledge"
@@ -68,7 +68,7 @@ object PrintAllCompanion extends ObjectActionCompanion(PrintAll, "print all load
 
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends PrintAction {
-  def apply() {
+  def apply(): Unit = {
     respond("\n" + controller.library.getModules.map(_.toNode).mkString("\n"))
   }
   def toParseString = "show xml"
@@ -77,7 +77,7 @@ object PrintAllXMLCompanion extends ObjectActionCompanion(PrintAllXML, "print al
 
 /** print all configuration entries to STDOUT */
 case object PrintConfig extends PrintAction {
-  def apply() {
+  def apply(): Unit = {
     respond(controller.getConfigString())
   }
   def toParseString = "show config"
@@ -121,7 +121,7 @@ case class HelpAction(topic: String) extends PrintAction {
   }
 
 
-  def apply() {
+  def apply(): Unit = {
     val topicActual = topic.trim
     // try and get a string that represents help
     getDynamicHelp(topicActual).getOrElse(getHelpText(topicActual).getOrElse(getActionHelp(topicActual).getOrElse(""))) match {

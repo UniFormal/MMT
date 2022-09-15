@@ -9,8 +9,8 @@ import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExpo
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
 object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
@@ -21,7 +21,7 @@ object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
     controller.extman.addExtension(new PathGraphExporter)
   }
 
-  def run {
+  def run(): Unit = {
     // FR: systems are loaded ODK plugin, see file Config/Actions.scala, only warmup is needed
     // load the (default) configuration
     // hl("mitm use")
@@ -39,6 +39,6 @@ object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
     singular.call(tt)
     
     println(trace.toString(t => controller.presenter.asString(t)))
-    sys.exit
+    sys.exit()
   }
 }

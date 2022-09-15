@@ -15,7 +15,7 @@ case class NotApplicable(message: String = "") extends Error(message)
 /** An abstraction over physical storage units that hold MMT content */
 abstract class Storage {
   /** implementing classes should call this to load an OMDoc XML stream (which this method will close afterwards) */
-  protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
+  protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller): Unit = {
     val ps = new ParsingStream(u, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", reader)
     controller.report("storage", "found by " + toString + " at URL " + u)
     try {
@@ -39,12 +39,12 @@ abstract class Storage {
     *
     * a storage may add more/additional content than necessary, e.g., the containing file/theory or a dependency closure
     */
-  def load(path: Path)(implicit controller: Controller)
+  def load(path: Path)(implicit controller: Controller): Unit
 
   /** dereferences a path to a fragment of an already loaded StructuralElement and adds only that fragment
    *  empty by default, storages that can retrieve individual fragments should override this
    */
-  def loadFragment(neededPath: Path, existingPath: Path)(implicit controller: Controller) {
+  def loadFragment(neededPath: Path, existingPath: Path)(implicit controller: Controller): Unit = {
     throw NotApplicable("")
   }
 
@@ -52,10 +52,10 @@ abstract class Storage {
   // def query(q: ???): Iterator[Path]
 
   /** called to reset this class, override to forget all cached information, e.g., files loaded from disk */
-  def clear {}
+  def clear: Unit = {}
 
   /** called to release all held resources before forgetting this class, override as needed */
-  def destroy {}
+  def destroy: Unit = {}
 }
 
 /** a Storage that retrieves repository URIs from the local working copy */
@@ -67,7 +67,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
    * @param uri the logical URI
    * @param suffix the physical location
    */
-  def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
+  def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller): Unit = {
     val folder = base / suffix
     val entries = folder.children.filter(x => x.isDirectory || (x.getExtension contains "omdoc"))
     val prefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
@@ -77,7 +77,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
     loadXML(uri, DPath(uri), reader)
   }
 
-  def load(path: Path)(implicit controller: Controller) {
+  def load(path: Path)(implicit controller: Controller): Unit = {
     val uri = path.doc.uri
     val suffix = getSuffix(localBase, uri)
     val target = base / suffix
@@ -90,6 +90,9 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
   }
 }
 
+private[backend] abstract class ArchiveNarrationStorageEI(val a: Archive, val nBase: URI)
+  extends LocalCopy(nBase.schemeNull, nBase.authorityNull, nBase.pathAsString, a / narration)
+
 /**Ï
  * like [[LocalCopy]] but optimized for [[Archive]]s
  *
@@ -97,9 +100,9 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
  * @param a the archive
  * @param folderName file name of folder descriptions in source folder (without .html ending)
  */
-class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase = a.narrationBase}
-      with LocalCopy(nBase.schemeNull, nBase.authorityNull, nBase.pathAsString, a / narration) {
-   override def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
+class ArchiveNarrationStorage(a: Archive, folderName: String)
+  extends ArchiveNarrationStorageEI(a, a.narrationBase) {
+   override def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller): Unit = {
       val narrFolder = base / suffix
       val entries = narrFolder.children.filter(x => x.isDirectory || (x.getExtension contains "omdoc"))
       val prefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
@@ -134,7 +137,7 @@ trait RealizationStorage {
       _loader.get
   }
   /** the only way to unload classes is to let them and the class loader be garbage-collected; so this method creates a fresh copy of the class loader */
-  def resetLoader {
+  def resetLoader: Unit = {
     _loader = Some(getLoader)
   }
   /**
@@ -188,7 +191,7 @@ trait RealizationStorage {
 class RealizationArchive(val files: List[File], parent : Unit => Option[RealizationArchive]) extends Storage with RealizationStorage {
   override def toString = "realization archive for " + files.mkString(", ")
 
-  override def clear {
+  override def clear: Unit = {
     resetLoader
   }
 
@@ -212,7 +215,7 @@ class RealizationArchive(val files: List[File], parent : Unit => Option[Realizat
       throw  GeneralError("could not create class loader for " + files.toString).setCausedBy(e)
   }
 
-  def load(path: Path)(implicit controller: Controller) {
+  def load(path: Path)(implicit controller: Controller): Unit = {
     val mp = path match {
       case mp: MPath => mp
       case GlobalName(mp1, _) => mp1
@@ -237,7 +240,7 @@ class RealizationArchive(val files: List[File], parent : Unit => Option[Realizat
 
 /** loads a rule from the default classpath */
 object DefaultRealizationLoader extends Storage with RealizationStorage {
-  def load(path: Path)(implicit controller: Controller) {
+  def load(path: Path)(implicit controller: Controller): Unit = {
     throw NotApplicable("can only load rules")
   }
   def getLoader: ClassLoader = this.getClass.getClassLoader
@@ -247,7 +250,7 @@ object DefaultRealizationLoader extends Storage with RealizationStorage {
 case class LocalSystem(base: URI) extends Storage {
   val localBase = URI(Some("file"), None, Nil, abs = true, None, None)
 
-  def load(path: Path)(implicit controller: Controller) {
+  def load(path: Path)(implicit controller: Controller): Unit = {
     val uri = base.resolve(path.doc.uri)
     val _ = getSuffix(localBase, uri)
     val file = new java.io.File(uri.toJava)

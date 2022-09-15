@@ -27,7 +27,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
     * @param e the structural element to look for constants in
     * @param f the continuation function
     */
-   def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
+   def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = {
       val path = e.path
       e match {
          case t: Module =>

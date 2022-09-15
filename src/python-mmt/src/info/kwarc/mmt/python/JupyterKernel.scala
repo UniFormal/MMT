@@ -7,7 +7,7 @@ import web._
 import frontend._
 import presentation._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 case class PythonParamDict (map: List[(String,Any)]){
@@ -32,7 +32,7 @@ trait JupyterKernelPython {
   def makePWidget(kind: String, args: PythonParamDict): WidgetPython
 
   def Text(args: PythonParamDict): Text
-  def display(widgets: List[WidgetPython])
+  def display(widgets: List[WidgetPython]): Unit
   override def toString : String
 }
 
@@ -50,7 +50,7 @@ trait WidgetPython {
   def observe(callback: (JupyterKernelPython,java.util.HashMap[String,Any]) => Unit, key: String) : WidgetPython
   def on_click(callback: (JupyterKernelPython,WidgetPython) => Unit) : WidgetPython
   def display: WidgetPython
-  def close
+  def close: Unit
   def toString: String
 }
 
@@ -63,14 +63,14 @@ object  Widget {
 
 class JupyterKernel extends Extension {
   private var repl: REPLServer = null
-  private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
+  private lazy val presenter = new InNotebookHTMLPresenter(new PresentationMathMLPresenter)
   private val logFile = utils.File("mmt-jupyter-kernel").addExtension("log")
   logFile.createNewFile()
   private val errorCont = new MultipleErrorHandler(List(new ErrorWriter(logFile), ErrorThrower))
 
   override def logPrefix: String = "jupyter"
   
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     super.start(args)
     initOther(presenter)
     val extman = controller.extman
@@ -182,7 +182,7 @@ class JupyterKernel extends Extension {
 
       val result = try {
         // parse the user context
-        val ctx = userInput.mapValues(session.parseTerm(_))
+        val ctx = userInput.view.mapValues(session.parseTerm(_))
         // build a substiution
         val subst = Substitution(ctx.toList.map(lt => Sub(lt._1, lt._2)):_*)
 

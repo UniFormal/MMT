@@ -7,7 +7,7 @@ import parser._
 /**
  * A RealizedType couples a syntactic type (a [[Term]]) with a semantic type (a PER on the universe of Scala values).
  */
-case class RealizedType(synType: Term, semType: SemanticType) extends uom.SimplifierRule {self =>
+case class RealizedType(synType: Term, semType: SemanticType) extends SimplifierRule {self =>
    def head = synType.head match {
       case Some(h: GlobalName) => h
       case _ => throw ImplementationError("syntactic type must have head")

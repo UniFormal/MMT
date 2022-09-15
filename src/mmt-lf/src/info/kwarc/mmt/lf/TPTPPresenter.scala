@@ -74,7 +74,7 @@ object TPTPObjectPresenter extends ObjectPresenter {
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {o match {
       case t: Term => rh(termToTPTP(t).toString)
       case c: Context => c.map {case VarDecl(x,_,t,d,_) =>
-         Var(x.toPath) + tmOptToTPTP(t, ":") + tmOptToTPTP(d, "=")
+         Var(x.toPath).toString + tmOptToTPTP(t, ":") + tmOptToTPTP(d, "=")
       }.mkString(",")
       case s: Substitution => apply(s.asContext, origin)
    }}
@@ -103,9 +103,9 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
       }
    }
 
-   protected def doName(p: GlobalName)(implicit rh : RenderingHandler) {apply(OMS(p),None)}
+   protected def doName(p: GlobalName)(implicit rh : RenderingHandler): Unit = {apply(OMS(p),None)}
 
-   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {e match {
+   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler): Unit = {e match {
       case d: Document =>
          d.getDeclarations.foreach {i => apply(i)}
       case r: DRef =>

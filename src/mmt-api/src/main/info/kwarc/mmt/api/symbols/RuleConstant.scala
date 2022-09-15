@@ -42,7 +42,7 @@ object RuleConstant {
 class RuleConstantInterpreter(controller: frontend.Controller) {
    /** computes the definiens of a rule constant by creating the rule
     */
-   def createRule(rc: RuleConstant) {
+   def createRule(rc: RuleConstant): Unit = {
       val rl = rc.tp.getOrElse {
         return
       }

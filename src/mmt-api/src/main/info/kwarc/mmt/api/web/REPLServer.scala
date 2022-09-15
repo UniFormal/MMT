@@ -36,7 +36,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
   }
 
   /** closes the current container element, e.g., a theory */
-  def parseElementEnd {
+  def parseElementEnd: Unit = {
     currentScope match {
       case IsMod(m,_) =>
         val newScope = if (m.name.length > 1) IsMod(m ^, LocalName.empty) else IsDoc(m ^^)
@@ -67,7 +67,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
     val term = cr.term
 
     // simplify it and extract the types
-    val termS = interpreter.simplifier(term, SimplificationUnit(context, true, true))
+    val termS = interpreter.simplifier(term, SimplificationUnit(context, true, true, true))
     val df = Some(termS)
     val tp = cr.solution.flatMap(_.getO(CheckingUnit.unknownType).flatMap(_.df))
 
@@ -94,7 +94,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
   /** simplifies a term in the current context */
   def simplifyTerm(t: Term, scopeOpt: Option[HasParentInfo]): Term = {
     val context = Context(getMPath(scopeOpt))
-    interpreter.simplifier(t, SimplificationUnit(context, true, true))
+    interpreter.simplifier(t, SimplificationUnit(context, true,true, true))
   }
 }
 
@@ -264,7 +264,7 @@ class REPLServer extends ServerExtension("repl") {
     s
   }
 
-  private def deleteSession(s: REPLSession) {
+  private def deleteSession(s: REPLSession): Unit = {
     controller.delete(s.doc.path)
     sessions = sessions.filterNot(_.id == s.id)
   }

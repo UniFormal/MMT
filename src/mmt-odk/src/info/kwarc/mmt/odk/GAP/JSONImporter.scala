@@ -89,9 +89,9 @@ class GAPJSONImporter extends Importer {
       case e: utils.ExtractError =>
         println("utils.ExtractError")
         println(e.msg)
-        sys.exit
+        sys.exit()
     }
-    log(all.length + " Objects parsed.")
+    log(s"${all.length} Objects parsed.")
     log("Converting...")
     all foreach (po => {
       val done = dones.get(po)
@@ -120,12 +120,12 @@ class GAPJSONImporter extends Importer {
     if (duplicates.nonEmpty) return BuildResult.empty
 
     val conv = new Translator(controller, bf, index,this)
-    log(newvalues.length + " Objects parsed.")
+    log(s"${newvalues.length} Objects parsed.")
     conv(newvalues)
     BuildResult.empty
   }
 
-  private def parse(obj : JSONObject) {
+  private def parse(obj : JSONObject): Unit = {
     val givenname = obj.getAsString("name")
 
     val tp = obj.getAsString("type")

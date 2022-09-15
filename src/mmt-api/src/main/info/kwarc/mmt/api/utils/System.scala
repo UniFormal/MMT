@@ -144,7 +144,7 @@ object MMTSystem {
         val jarPath = myPath.getPath.substring(5, myPath.getPath.indexOf("!"))
 
         // open the jar and find all files in it
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         val entries = new JarFile(URLDecoder.decode(jarPath, "UTF-8")).entries.asScala.map(e => "/" + e.getName)
 
         // find all the resources within the given path, then remove the prefix

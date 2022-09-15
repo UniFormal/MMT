@@ -50,7 +50,7 @@ class Document(val path: DPath, val level: DocumentLevel = FileLevel, val conten
   def getDeclarations: List[NarrativeElement] = items
 
   /* used by DefaultMutability for add, delete, etc. */
-  protected def setDeclarations(nes: List[NarrativeElement]) {
+  protected def setDeclarations(nes: List[NarrativeElement]): Unit = {
     items = nes
   }
 
@@ -101,7 +101,7 @@ class Document(val path: DPath, val level: DocumentLevel = FileLevel, val conten
   def toNode: Elem = if (root) <omdoc base={path.toPath}>{getMetaDataNode}{items.map(_.toNode)}</omdoc>
     else <omdoc name={name.toPath}>{getMetaDataNode}{items.map(_.toNode)}</omdoc>
 
-  override def toNode(rh: presentation.RenderingHandler) {
+  override def toNode(rh: presentation.RenderingHandler): Unit = {
     rh( s"""<omdoc base="${path.toPath}" level="${level.toXML}">""")
     rh(getMetaDataNode)
     items.foreach { i =>

@@ -406,7 +406,7 @@ class ConceptServer extends ServerExtension("concepts") {
         td { a("./?" + al.from.mmturi.toString) {text {al.from.mmturi.toString} } }
         td { a("./?" + al.to.mmturi.toString) {text {al.to.mmturi.toString} } }
         td {text {al match {
-          case ArgumentAlignment(_,_,_,args) => args.map(p => p._1 + "=>" + p._2).mkString(", ")
+          case ArgumentAlignment(_,_,_,args) => args.map(p => s"${p._1}=>${p._2}").mkString(", ")
           case _ => "Simple"
         }}}
         td {text { if (al.invertible) "yes" else "no"}}
