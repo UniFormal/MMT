@@ -48,7 +48,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 //   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
 //       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
 //
-Global / scalaVersion := "2.13.8"
+Global / scalaVersion := "2.13.4"
 Global / scalacOptions := Seq(
   "-feature",
   "-language:postfixOps", "-language:implicitConversions", "-language:reflectiveCalls", "-language:existentials",
