@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.archives
 
+import dotty.tools.io.File
 import info.kwarc.mmt.api._
 import frontend._
 
@@ -100,7 +101,8 @@ object Dot {
     }
 
     writeln("}")
-    reflect.io.File(name + ".dot").writeAll(w.result())
+    File(name + ".dot").writeAll(w.result())
+    //reflect.io.File(name + ".dot").writeAll(w.result())
   }
 
   def dependencyNodeName[A](d : A) : String = d match {

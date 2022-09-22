@@ -4,7 +4,7 @@ package info.kwarc.mmt.twelf
 
 import java.io.File
 import scala.collection.mutable.{ArraySeq, LinkedHashMap, HashSet, LinkedHashSet, ListBuffer}
-
+import URI._
 
 /** Crawl a file */
 object FileCrawler {
@@ -30,7 +30,7 @@ class FileCrawler(file : File) {
   private var flat  : String = ""
 
   /** array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
-  private implicit var lineStarts = new Array[(Int, Int)](0)
+  private implicit var lineStarts: Array[(Int, Int)] = new Array[(Int, Int)](0)
 
   /** list of parsing errors in the file */
   private var errors : List[ParseError] = Nil
@@ -433,8 +433,8 @@ class FileCrawler(file : File) {
       if (commentLines.slice(1, firstPropertyLine).mkString("\n").trim.nonEmpty) {
         // Remove initial and final empty lines
         val longCommentLines = commentLines.slice(1, firstPropertyLine)
-        val firstNonEmptyLine = longCommentLines.indexWhere(_.trim.nonEmpty)
-        val lastNonEmptyLine = longCommentLines.lastIndexWhere(_.trim.nonEmpty)
+        val firstNonEmptyLine = longCommentLines.indexWhere(a => a.trim.nonEmpty)
+        val lastNonEmptyLine = longCommentLines.lastIndexWhere(a => a.trim.nonEmpty)
         properties += (("long", longCommentLines.slice(firstNonEmptyLine, lastNonEmptyLine + 1).mkString("\n")))
       }
 

@@ -3,12 +3,11 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import objects._
 import uom._
-import tools.nsc._
-import interpreter.shell.ILoop
+import dotty.tools.repl.{ReplDriver, State}
 
 //TODO obsolete
 //should be redone with a clean step-based/interactive object simplifier
-class InteractiveSimplifier(controller : Controller, intp : ILoop) {
+class InteractiveSimplifier(controller : Controller, intp : ReplDriver) {
   private var uom = controller.simplifier
   var uomLog: List[(SimplifierState,Term,Rule)] = Nil //TODO corresponding code in RuleBasedSimplifier is broken
   def current = uomLog.head
@@ -18,7 +17,7 @@ class InteractiveSimplifier(controller : Controller, intp : ILoop) {
   def result = current._2
 
   def set(s : String): Unit = {
-    intp.interpret("if (uom\"" + s + "\" != null) \"Success\"")
+    intp.run("if (uom\"" + s + "\" != null) \"Success\"")(intp.initialState)
     //uomLog = uom.simplificationLog.reverse.filter(p => p._1 != null)
     topTerm = current._1.t
     println("Loaded Problem " + render(topTerm))

@@ -57,6 +57,7 @@ Global / scalacOptions := Seq(
   "-language:existentials",
 
   "-deprecation", // turn on deprecation warnings
+  "-Ytasty-reader",
 
   // turn down the severity of specific warnings
   //"-Wconf:msg=early initializers are deprecated*:i",                 // Info all "early initializers are deprecated" (need to fix in scala3)
@@ -82,10 +83,14 @@ Test / testOptions  += Tests.Argument("-oI")
 // DEPENDENCIES
 // =================================
 
-def scala_library : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-library" % scalaVersion.value
-def scala_compiler : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-def parser_combinators : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.2.0-M1"
-def scala_xml : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "2.0.0-M3"
+def scala_library : Def.SettingsDefinition = libraryDependencies += //"org.scala-lang" % "scala-library" % scalaVersion.value
+  "org.scala-lang" %% "scala3-library" % "3.0.0" cross CrossVersion.for2_13Use3
+
+def scala_compiler : Def.SettingsDefinition = libraryDependencies += //"org.scala-lang" % "scala-compiler" % scalaVersion.value
+  "org.scala-lang" %% "scala3-compiler" % "3.0.0" cross CrossVersion.for2_13Use3
+
+def parser_combinators : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
+def scala_xml : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
 def xz : Def.SettingsDefinition = libraryDependencies +=  "org.tukaani" % "xz" % "1.8"
 def parallel_collections : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.0"
 
@@ -99,7 +104,7 @@ def akka_http = libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-core" % "10.2.10",
   "com.typesafe.akka" %% "akka-actor-typed" % "2.7.0-M1"
 )
-def scalatest : Def.SettingsDefinition = Test / libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test"
+def scalatest = /*Test / */ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test"
 def java8compat : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
 def lsp4j = libraryDependencies ++= Seq(
   "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
@@ -153,7 +158,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test",
+  scalatest,
   fork := true,
   assembly / test := {},
   assembly / assemblyMergeStrategy := {
