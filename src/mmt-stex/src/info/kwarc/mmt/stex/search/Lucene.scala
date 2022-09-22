@@ -3,7 +3,8 @@ package info.kwarc.mmt.stex.search
 import info.kwarc.mmt.api.Path
 import info.kwarc.mmt.api.archives.{Archive, Dim}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.{File, JSONArray, JSONObject, JSONString}
+import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import org.apache.lucene.analysis.standard.StandardAnalyzer
 import org.apache.lucene.document.{Field, FieldType, StringField, TextField, Document => LuceneDocument}
 import org.apache.lucene.index._
@@ -14,6 +15,7 @@ import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.util.BytesRef
 
 import scala.collection.mutable
+import scala.util.Try
 
 class SearchDocument(private[search] val file : File,sourcefile:File,archive:Archive,uri:Path) {
 
@@ -63,6 +65,7 @@ object Lucene {
   def embedd(s : String) : Array[Float] = ???
   def write(sd : SearchDocument) = {
     sd.file.mkdirs()
+    sd.file.descendants.foreach(_.delete())
     val dir = FSDirectory.open(sd.file.toJava.toPath)
     val config = new IndexWriterConfig(analyzer)
     val writer = new IndexWriter(dir,config)
@@ -83,7 +86,13 @@ class Searcher(controller:Controller) {
       }.distinct.flatMap{d =>
         if (d.children.exists(_.name.startsWith("segments"))) {
           val dir = FSDirectory.open(d.toJava.toPath)
-          Some(DirectoryReader.open(dir))
+          try {
+            /*Try(*/ Some(DirectoryReader.open(dir)) //).toOption.flatten
+          } catch {
+            case _ : IndexFormatTooOldException =>
+              print("")
+              None
+          }
         } else None
       }
     } else Nil
@@ -105,6 +114,7 @@ class Searcher(controller:Controller) {
     var qs = ""
     types match {
       case Nil => qs = "(text: " + s + ") OR (title: " + s + ")"
+      case List("title") => qs = "(title: " + s + ")"
       case ls =>
         qs = ls.map(f => "(type: \"" + f + "\")").mkString("("," OR ",")")
         qs += " AND ((text: " + s + ") OR (title: " + s + "))"
@@ -126,5 +136,25 @@ class Searcher(controller:Controller) {
 case class SearchResult(score:Float,docs:List[(Float,LuceneDocument)]) {
   lazy val archive = docs.head._2.get("archive")
   lazy val sourcefile = docs.head._2.get("sourcefile")
-  lazy val fragments = docs.map(d => (d._2.get("type"),d._2.get("source")))
+  lazy val fragments = docs.map(d => (d._2.get("type"),if (d._2.getFields("title").nonEmpty) d._2.get("title") else "",d._2.get("source")))
+}
+
+class SearchServer extends ServerExtension("stexsearch") {
+  lazy val searcher = new Searcher(controller)
+  override def apply(request: ServerRequest): ServerResponse = {
+    val types = request.parsedQuery("types").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
+    val query = request.parsedQuery("query").getOrElse {
+      return ServerResponse.JsonResponse(JSONArray())
+    }
+    val results = searcher.search(query, 10, types)
+    ServerResponse.JsonResponse(JSONArray(
+      results.map(sr => JSONObject(
+        ("archive", JSONString(sr.archive)),
+        ("sourcefile", JSONString(sr.sourcefile)),
+        ("title", JSONString(sr.fragments.head._2)),
+        ("html", JSONString(sr.fragments.head._3))
+      ))
+        : _*))
+
+  }
 }

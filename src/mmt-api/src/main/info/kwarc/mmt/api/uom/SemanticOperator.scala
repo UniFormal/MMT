@@ -11,11 +11,11 @@ abstract class SemanticOperator(val tp: SemOpType) extends SemanticObject {
   private var types = List(tp)
   def getTypes = types
   lazy val arity = tp.arity
-  protected def alsoHasType(t: SemOpType) {
+  protected def alsoHasType(t: SemOpType): Unit = {
       types ::= t
   }
   /** basic type checking */
-  override def init {
+  override def init: Unit = {
     if (types.exists(_.arity != arity))
       throw ImplementationError("types of semantic operator do not have the same arity")
   }

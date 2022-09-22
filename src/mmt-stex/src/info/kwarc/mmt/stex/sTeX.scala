@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking.History
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.HasMetaData
+import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardDouble, StandardInt, StandardNat, StandardPositive, StandardRat, StandardString}
 import info.kwarc.mmt.api.utils.{URI, XMLEscaping}
@@ -18,8 +19,56 @@ import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import scala.xml._
 import objects._
 
+sealed trait STeXHOAS {
+  def toTerm : Term
+
+  def apply(head: Term, args: List[Term]): Term
+
+  def apply(head: Term, vd:VarDecl,bd:Term): Term
+}
+object STeXHOAS {
+  def fromTerm(tm : Obj) = tm match {
+    case OMA(OMS(STeX.meta_hoas),List(OMS(a),OMS(l))) =>
+      Some(SimpleHOAS(HOAS(a,l)))
+    case OMA(OMS(STeX.meta_hoas), List(
+    OMA(OMS(STeX.meta_hoas), List(OMS(a1), OMS(l1))),
+    OMA(OMS(STeX.meta_hoas), List(OMS(a2), OMS(l2))))) =>
+      Some(NestedHOAS(HOAS(a1,l1),HOAS(a2,l2)))
+    case _ => None
+  }
+}
+case class SimpleHOAS(inner:HOAS) extends STeXHOAS {
+  override def toTerm: Term = STeX.meta_hoas(OMS(inner.apply),OMS(inner.bind))
+
+  def apply(head: Term, args: List[Term]): Term =
+    args.foldLeft(head)((f,a) => inner.apply(f,a))
+
+  def apply(head: Term, vd: VarDecl, bd: Term): Term =
+    inner.apply(head,OMBIND(OMS(inner.bind),Context(vd),bd))
+
+}
+case class NestedHOAS(obj:HOAS,meta:HOAS) extends STeXHOAS{
+  override def toTerm: Term = STeX.meta_hoas(
+    STeX.meta_hoas(OMS(obj.apply),OMS(obj.bind)),
+    STeX.meta_hoas(OMS(meta.apply),OMS(meta.bind))
+  )
+  def apply(head: Term, args: List[Term]): Term = ???
+
+  def apply(head: Term, vd: VarDecl, bd: Term): Term = ???
+}
+
 
 object OMDocHTML {
+  def setHOAS(se : HasMetaData,hoas:STeXHOAS) = {
+    se.metadata.update(STeX.meta_hoas,hoas.toTerm)
+  }
+  def getHOAS(se: HasMetaData) = {
+    se.metadata.get(STeX.meta_hoas) match {
+      case List(a) =>
+        STeXHOAS.fromTerm(a.value)
+      case _ => None
+    }
+  }
 
   def getNotations(s : GlobalName)(implicit controller:Controller) = {
     val ret = controller.depstore.queryList(s,-NotationExtractor.notation)
@@ -29,7 +78,42 @@ object OMDocHTML {
     }.flatten
   }
 
-  def getRuleInfo(tm : Term)(implicit controller:Controller,context:Context) : Option[(List[Int],Option[String],String)] = tm match {
+  def getRuler(tm: Term)(implicit controller: Controller, context: Context): Option[HasMetaData] = tm match {
+    case OMS(p) => p.name match {
+      case LocalName(_ :: ComplexStep(ip) :: n) =>
+        getRuler(OMS(ip ? n))
+      case LocalName(s :: rest) if rest.nonEmpty =>
+        controller.getO(p.module ? s) match {
+          case Some(s: Structure) => s.tp match {
+            case Some(OMPMOD(mod, _)) =>
+              getRuler(OMS(mod ? rest))
+            case _ => controller.getO(p) match {
+              case Some(d: Declaration) if d.path != p => getRuler(OMS(d.path))
+              case Some(d) => Some(d)
+              case _ => None
+            }
+          }
+          case _ => controller.getO(p) match {
+            case Some(d: Declaration) if d.path != p => getRuler(OMS(d.path))
+            case Some(d) => Some(d)
+            case _ => None
+          }
+        }
+      case _ => controller.getO(p) match {
+        case Some(d: Declaration) if d.path != p => getRuler(OMS(d.path))
+        case Some(d) => Some(d)
+        case _ => None
+      }
+    }
+    case OMV(n) =>
+      context.findLast(_.name == n)
+    case Getfield(t, f) => getOriginal(t, f).flatMap(c => getRuler(c.toTerm))
+    case _ => None
+  }
+
+  def getRuleInfo(tm : Term)(implicit controller:Controller,context:Context) : Option[(List[Int],Option[String],String)] =
+    getRuler(tm).map(r => (OMDocHTML.getReorder(r),OMDocHTML.getAssoctype(r),OMDocHTML.getArity(r).getOrElse("")))
+  /*tm match {
     case OMS(p) => p.name match {
       case LocalName(_ :: ComplexStep(ip) :: n) =>
         getRuleInfo(OMS(ip?n))
@@ -61,7 +145,7 @@ object OMDocHTML {
       vd.map(v => (OMDocHTML.getReorder(v),OMDocHTML.getAssoctype(v),OMDocHTML.getArity(v).getOrElse("")))
     case Getfield(t,f) => getOriginal(t,f).flatMap(c => getRuleInfo(c.toTerm))
     case _ => None
-  }
+  }*/
 
   def getOriginal(tm : Term, fieldname : LocalName)(implicit controller:Controller,context:Context) : Option[Constant] = tm match {
     case OMV(n) => context.findLast(_.name == n).flatMap { vd =>
@@ -372,6 +456,7 @@ object STeX {
   val meta_arity = mmtmeta_path ? "arity"
   val meta_assoctype = mmtmeta_path ? "assoctype"
   val meta_reorder = mmtmeta_path ? "reorder"
+  val meta_hoas = mmtmeta_path ? "hoas"
 
   val meta_quantification = mmtmeta_path ? "quantification"
   val meta_qforall = mmtmeta_path ? "universal"

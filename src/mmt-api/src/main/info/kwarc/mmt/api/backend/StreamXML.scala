@@ -19,13 +19,13 @@ import scala.io.Source
 class SourceFromReader(r: java.io.Reader) extends Source {
    val iter = new Iterator[Char] {
       private var lastRead: Option[Char] = null
-      private def readOne {
+      private def readOne: Unit = {
          if (lastRead == null) {
             val c = r.read
             lastRead = if (c == -1) None else Some(c.toChar)
          }
       }
-      def next = {
+      def next() = {
          readOne
          val c = lastRead.get
          lastRead = null
@@ -72,7 +72,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       val errorCont = cont.errorCont
       val parser = new ConsParser(ps.parentInfo, new SourceFromReader(ps.stream), cont)
       try {
-         parser.nextch
+         parser.nextch()
          parser.document()
       } catch {
          case e: Error => errorCont << e
@@ -114,7 +114,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       
       /** add to controller and call the passed continuations */
       private class addAndCont(streamed: Boolean) extends StructureParserContinuations(cont.errorCont) {
-        override def onElement(se: StructuralElement) {
+        override def onElement(se: StructuralElement): Unit = {
            try {
               controller.add(se)
               cont.onElement(se)
@@ -132,7 +132,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
              }
            }
         }
-        override def onElementEnd(se: ContainerElement[_]) {
+        override def onElementEnd(se: ContainerElement[_]): Unit = {
           // if we're streaming, we'll call this manually later
           if (!streamed) {
             controller.endAdd(se)
@@ -147,7 +147,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       /** parse the top element, which must be an UnparsedContainer
        *  streamedCont will replace it with a ParsedContainer without calling end-of-element continuations
        */
-      private def parseHead {
+      private def parseHead: Unit = {
          // pop the top element and obtain the node read so far
          val uc @ UnparsedContainer(_) = openTags.head
          openTags = openTags.tail
@@ -173,7 +173,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
 
       // called when an opening tag is encountered
       // invariant: possibly parse the top element; push exactly one element onto the stack
-      override def elemStart(pos: Int, pre: String, label: String, attrs: MetaData, scope: NamespaceBinding) {
+      override def elemStart(pos: Int, pre: String, label: String, attrs: MetaData, scope: NamespaceBinding): Unit = {
          // if this is the first non-shape-relevant child of an unparsed container, parse the container  
          openTags.headOption match {
            case Some(uc: UnparsedContainer) if !(shapeRelevant contains label) =>

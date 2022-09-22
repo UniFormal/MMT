@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.web
 
 import java.util.Calendar
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
@@ -11,6 +10,7 @@ import info.kwarc.mmt.api.utils._
 import ServerResponse._
 import info.kwarc.mmt.api.frontend.actions.{Action, GetAction}
 import info.kwarc.mmt.api.objects.Context
+import info.kwarc.mmt.api.presentation.PresentationMathMLPresenter
 
 import scala.util.Try
 
@@ -65,7 +65,7 @@ abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtens
 class FileServer extends ServerExtension("files") {
   private var rootO: Option[File] = None
   /** expects one argument - the root directory from which to serve files */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     args.headOption.map {h => rootO = Some(File(controller.getHome resolve h))}
   }
   def apply(request: ServerRequest): ServerResponse = {
@@ -308,9 +308,9 @@ class QueryServer extends ServerExtension("query") {
 /** HTTP frontend to the [[Search]] class */
 class SearchServer extends ServerExtension("search") {
   private lazy val search = new Search(controller)
-  private val mmlpres = new presentation.MathMLPresenter
+  private val mmlpres = new PresentationMathMLPresenter
 
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     mmlpres.init(controller)
   }
 
@@ -461,11 +461,11 @@ class MessageHandler extends ServerExtension("content") {
 class ActionServer extends ServerExtension("action") {
   private lazy val logCache = new RecordingHandler(logPrefix)
 
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     report.addHandler(logCache)
   }
 
-  override def destroy {
+  override def destroy: Unit = {
     report.removeHandler(logPrefix)
   }
 
@@ -475,7 +475,7 @@ class ActionServer extends ServerExtension("action") {
     if (act == Exit) {
       // special case for sending a response when exiting
       new Thread {
-        override def run {
+        override def run: Unit = {
           Thread.sleep(100)
           controller.handle(act)
         }
@@ -537,7 +537,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
       "</comment>"
     val archive = "/archives/meta/inf/config/OAF/discussions/"
     val root = File(System.getProperty("user.dir")).up.up.up.up
-    val f = root + archive + user + end + ".xml"
+    val f = root.toString + archive + user + end + ".xml"
     val folder = File(f)
     try {
       write(folder, resp)
@@ -556,7 +556,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     File.Writer(f)
   }
 
-  def write(f: File, s: String) {
+  def write(f: File, s: String): Unit = {
     val fw = Writer(f)
     fw.write(s)
     fw.close

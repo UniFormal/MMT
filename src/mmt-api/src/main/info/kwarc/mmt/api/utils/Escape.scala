@@ -56,7 +56,7 @@ abstract class Escaping {
   protected lazy val escapedChars = usePlainEscapeVal ::: useCustomEscapeVal.map(_._1)
 
   /** check invariant that guarantees invertibility of escaping (not guaranteed if the default functions are overridden) */
-  def check {
+  def check: Unit = {
     useCustomEscapeVal foreach {case (c,s) =>
       if (s == "")
         throw Error("empty custom escape")
@@ -77,7 +77,7 @@ abstract class Escaping {
          c.toString
        else
          useCustomEscapeVal.find(_._1 == c).map(_._2).getOrElse {defaultEscape(c)}
-       escapeChar + e
+       s"${escapeChar}${e}"
      }
   }
   def apply(s: String): String = s flatMap {c => apply(c)}
@@ -145,7 +145,7 @@ object XMLEscaping extends Escaping {
         val e = useCustomEscape.find(_._1 == c).map(_._2).getOrElse {
           "#" + c.toInt.toString
         }
-      escapeChar + e + ";"
+      s"${escapeChar}${e};"
     }
   }
   override def unapply(s: String): String = {

@@ -16,6 +16,7 @@
  *  ****************************************************************************
  */
 // twiesing 18-09-2018: Remove call to deprecated methods
+// twiesing 22-08-2022: Remove deprecated procedure syntax
 package tiscaf
 
 import scala.util._
@@ -95,21 +96,21 @@ trait HLet {
   //------------------------ few helpers --------------------
 
   /** Answers with an error response with the given code and message. */
-  protected def err(status: HStatus.Value, msg: String, tk: HTalk) = new let.ErrLet(status, msg) act (tk)
+  protected def err(status: HStatus.Value, msg: String, tk: HTalk): Unit = new let.ErrLet(status, msg) act (tk)
 
   /** Answers with an error response with the given code. */
-  protected def err(status: HStatus.Value, tk: HTalk) = new let.ErrLet(status) act (tk)
+  protected def err(status: HStatus.Value, tk: HTalk): Unit = new let.ErrLet(status) act (tk)
 
   /** Answers with an 404 error message. */
   protected def e404(tk: HTalk) = err(HStatus.NotFound, tk)
 
   /** Redirects the client to the given URI. */
-  protected def redirect(uriPath: String, tk: HTalk) = new let.RedirectLet(uriPath) act (tk)
+  protected def redirect(uriPath: String, tk: HTalk): Unit = new let.RedirectLet(uriPath) act (tk)
 
   /** Redirects the client to the given URI and adds the sessions ID to
    *  the URI parameters.
    */
-  protected def sessRedirect(uriPath: String, tk: HTalk) {
+  protected def sessRedirect(uriPath: String, tk: HTalk): Unit = {
     val parts = uriPath.split("\\?", 2)
     val url = parts(0) + ";" + tk.ses.idKey + "=" + tk.ses.id + {
       if (parts.size == 2) "?" + parts(1)
@@ -123,7 +124,7 @@ class Suspended[T] {
   private[tiscaf] val p = Promise[T]()
 
   /** Resumes the computation with the given value and returns immediately */
-  def resume(value: T) {
+  def resume(value: T): Unit = {
     p.complete(Success(value))
   }
 }
@@ -143,7 +144,7 @@ trait HSuspendable {
 
   /** This method is called whenever the `suspend` method is called.
    *  Implementer may choose how to store the suspended computation. */
-  protected def onSuspend[T: ru.TypeTag](promise: Suspended[T])
+  protected def onSuspend[T: ru.TypeTag](promise: Suspended[T]): Unit
 
   //------------------------ few helpers --------------------
 
@@ -168,6 +169,6 @@ trait HSimpleLet extends HLet {
     act(talk)
   }
 
-  def act(talk: HTalk)
+  def act(talk: HTalk): Unit
 
 }

@@ -313,7 +313,7 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     //Ret(vd.name.toString,Some(region))
   }
 
-  def buildFile(f: String) {
+  def buildFile(f: String): Unit = {
     val file = File(f)
     val errorCont = new ErrorHandler {
       override protected def addError(e: Error): Unit = {}
@@ -426,8 +426,8 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
     val T = controller.getTheory(Path.parseM(TPath, nsMap))
     val RToS = controller.getAs(classOf[View], Path.parseM(RToSPath, nsMap))
 
-    val newModulePath = T.path.parent ? (T.path.name + "Generalized")
-    val generatedMorphismPath = T.path.parent ? (T.path.name + "GeneralizedMorphism")
+    val newModulePath = T.path.parent ? (T.path.name.toString + "Generalized")
+    val generatedMorphismPath = T.path.parent ? (T.path.name.toString + "GeneralizedMorphism")
 
     val (invertedTheory, generatedMorphism) = LFLinkInverter.invertLink(
       R,

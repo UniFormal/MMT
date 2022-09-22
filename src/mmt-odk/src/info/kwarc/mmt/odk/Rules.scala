@@ -337,11 +337,11 @@ class SubtypeGenerator extends ChangeListener {
     }
   }
 
-  override def onAdd(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {
     onCheck(e)
   }
 
-  override def onDelete(e: StructuralElement) {
+  override def onDelete(e: StructuralElement): Unit = {
     getGeneratedRule(e.path).foreach { r => rulePath(r).foreach(controller.delete) }
   }
 
@@ -351,7 +351,7 @@ class SubtypeGenerator extends ChangeListener {
         val rule = new SubtypeJudgRule(tm1,tm2,Some(c.path))
         val ruleConst = RuleConstant(c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
         ruleConst.setOrigin(GeneratedFrom(c.path, this))
-        log(c.name + " ~~> " + present(tm1) + " <: " + present(tm2))
+        log(c.name.toString + " ~~> " + present(tm1) + " <: " + present(tm2))
         controller add ruleConst
       case _ =>
     }

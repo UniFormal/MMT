@@ -53,7 +53,7 @@ class InstanceElaborator extends ChangeListener {
   /** uses expandTheory to turn the type of a [[symbols.Constant]] into ComplexTheory(cont) ^ subs1 ^ ... ^ subsn
    *  and uses that to generate one [[ElaboratedConstant]] for each variable in cont
    */
-  override def onAdd(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {
       e match {
          case c: Constant =>
             c.tp foreach {tp =>
@@ -84,11 +84,11 @@ class InstanceElaborator extends ChangeListener {
 class ElaboratedConstant(instance: Constant, vd: VarDecl, subss: List[Substitution]) extends
        LazyConstant(instance.home, instance.name / vd.name) {
    _not = vd.not
-   def onAccessTp {
+   def onAccessTp: Unit = {
       _tp = vd.tp map {tp => subss.foldLeft(tp) {case (sofar, next) => sofar ^? next}}
    }
-   def onAccessDf {
+   def onAccessDf: Unit = {
       _df = vd.df map {df => subss.foldLeft(df) {case (sofar, next) => sofar ^? next}}
    }
-   def onAccessOther {}
+   def onAccessOther: Unit = {}
 }

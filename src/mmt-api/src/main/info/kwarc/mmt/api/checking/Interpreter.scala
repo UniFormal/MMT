@@ -92,10 +92,10 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, override val 
     val ce = new CheckingEnvironment(simplifier, errorCont, RelationHandler.ignore, ps)
     try {
       val cont = new StructureParserContinuations(errorCont) {
-        override def onElement(se: StructuralElement) {
+        override def onElement(se: StructuralElement): Unit = {
           checker.applyElementBegin(se)(ce)
         }
-        override def onElementEnd(se: ContainerElement[_]) {
+        override def onElementEnd(se: ContainerElement[_]): Unit = {
           checker.applyElementEnd(se)(ce)
         }
       }

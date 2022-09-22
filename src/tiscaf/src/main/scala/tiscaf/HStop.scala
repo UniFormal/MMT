@@ -23,7 +23,7 @@ import java.net.Socket
 
 final class HStop(host: String, port : Int) {
 
-  def stop {
+  def stop: Unit = {
     val s = new Socket(host, port)
     s.getOutputStream.write("stop".getBytes("ISO-8859-1"))
     s.close

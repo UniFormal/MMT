@@ -177,15 +177,9 @@ object OMDocExtension extends DocumentExtension {
                 <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath="  + path}>{
                   d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
                     case OMFOREIGN(node) => node
-                    case _ => <span>{d.path.toString}</span>
-                  }).getOrElse(<span>{d.path.toString}</span>)
+                    case _ => ""
+                  }).getOrElse("")
                   }</div>
-                /*<div><a href={"/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath="  + path} style="pointer-events:all;color:blue">{
-                  d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
-                    case OMFOREIGN(node) => node
-                    case _ => <span>{d.path.toString}</span>
-                  }).getOrElse(<span>{d.path.toString}</span>)
-                }</a></div>*/
                 ,iref))
             case _ =>
           }

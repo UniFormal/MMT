@@ -7,12 +7,12 @@ import info.kwarc.mmt.api.presentation.{ConsoleWriter, RenderingHandler, StringB
 
 /** represents the final post-processing phase, which outputs concrete syntax */
 abstract class Output {
-  def make(controller: Controller)
+  def make(controller: Controller): Unit
 }
 
 /** prints to STDOUT */
 case class Print(pres: MakeConcrete) extends Output {
-  def make(controller: Controller) {
+  def make(controller: Controller): Unit = {
     pres.make(controller, ConsoleWriter)
     ConsoleWriter("\n")
   }
@@ -22,25 +22,25 @@ case class Print(pres: MakeConcrete) extends Output {
 
 /** writes to a file */
 case class ToFile(pres: MakeConcrete, file: java.io.File) extends Output {
-  def make(controller: Controller) {
+  def make(controller: Controller): Unit = {
     val rb = new presentation.FileWriter(file)
     pres.make(controller, rb)
     rb.done
   }
 
-  override def toString: String = pres + " write " + file
+  override def toString: String = pres.toString + " write " + file
 }
 
 /** displays content in a window */
 case class ToWindow(pres: MakeConcrete, window: String) extends Output {
-  def make(controller: Controller) {
+  def make(controller: Controller): Unit = {
     val rb = new StringBuilder
     pres.make(controller, rb)
     val res = rb.get
     controller.winman.getWindow(window).set(res)
   }
 
-  override def toString: String = pres + " window " + window
+  override def toString: String = pres.toString + " window " + window
 }
 
 /** produces the result and throws it away
@@ -54,7 +54,7 @@ case class Respond(pres: MakeConcrete) extends Output {
     rb.get
   }
 
-  def make(controller: Controller) {
+  def make(controller: Controller): Unit = {
     get(controller)
   }
 
@@ -90,7 +90,7 @@ case class Component(p: Path, comp: ComponentKey) extends MakeAbstract {
       throw ParseError("component name " + comp + " illegal for element " + o)
     }
   }
-  override def toString: String = p + " component " + comp
+  override def toString: String = p.toString + " component " + comp
 }
 
 /** retrieves the closure of a knowledge item */
@@ -103,7 +103,7 @@ case class Closure(p: Path) extends MakeAbstract {
       new Document(doc, FolderLevel, inititems = clp)
   }
 
-  override def toString = p + " closure"
+  override def toString = p.toString + " closure"
 }
 
 /** retrieves the elaboration of an instance */
@@ -115,14 +115,14 @@ case class Elaboration(p: Path) extends MakeAbstract {
     }
   }
 
-  override def toString: String = p + " elaboration"
+  override def toString: String = p.toString + " elaboration"
 }
 
 
 
 /** takes a content element and renders it using notations */
 case class Present(c: MakeAbstract, param: String) extends MakeConcrete {
-  def make(controller: Controller, rb: RenderingHandler) {
+  def make(controller: Controller, rb: RenderingHandler): Unit = {
     val presenter = controller.extman.get(classOf[presentation.Presenter], param).getOrElse {
       throw PresentationError("no presenter found: " + param)
     }
@@ -132,7 +132,7 @@ case class Present(c: MakeAbstract, param: String) extends MakeConcrete {
     }
   }
 
-  override def toString: String = c + " present " + param
+  override def toString: String = c.toString + " present " + param
 }
 
 /** represents the first post-processing phase
@@ -141,12 +141,12 @@ case class Present(c: MakeAbstract, param: String) extends MakeConcrete {
   */
 abstract class MakeConcrete {
   /** takes a Controller, executes the rendering and passes it to a RenderingHandler */
-  def make(controller: Controller, rb: RenderingHandler)
+  def make(controller: Controller, rb: RenderingHandler): Unit
 }
 
 /** retrieves all relational elements about a certain path and renders them as XML */
 case class Deps(path: Path) extends MakeConcrete {
-  def make(controller: Controller, rb: RenderingHandler) {
+  def make(controller: Controller, rb: RenderingHandler): Unit = {
     rb.elem("mmtabox", "xmlns" -> "http://omdoc.org/abox") {
       (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
         (d: ontology.RelationalElement) => if (path <= d.path) rb(d.toNode)

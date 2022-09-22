@@ -39,10 +39,10 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     */
   def baseURI: URI = URI(s"http://$host:$port/")
 
-  def handleMessage(s: String) {
+  def handleMessage(s: String): Unit = {
     log(s)
   }
-  def handleError(t: Throwable) {
+  def handleError(t: Throwable): Unit = {
     val e = GeneralError("error in underlying server").setCausedBy(t)
     log(e)
   }

@@ -24,7 +24,7 @@ class MitMComputationServer extends Extension with Actions {
     * @param hostname
     * @param port
     */
-  def startServer(hostname: String, port: Int) {
+  def startServer(hostname: String, port: Int): Unit = {
     if(scscpServer.nonEmpty){ throw new Exception("can not have multiple scscp servers")}
 
     try {
@@ -61,7 +61,7 @@ class MitMComputationServer extends Extension with Actions {
     scscpServer.foreach(_.quit(None))
   }
 
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
 
     // add all the action companions
     controller.extman.addExtension(SCSCPInfoActionCompanion)
@@ -79,7 +79,7 @@ class MitMComputationServer extends Extension with Actions {
     */
   }
 
-  override def destroy {
+  override def destroy: Unit = {
     // stop the server (if any)
     stopServer()
 

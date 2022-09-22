@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.parser.SourceRef
 import collection.immutable.{HashMap}
 
 /** used by [[MMTStructureSimplifier]] */
-@MMT_TODO("needs review")
+@deprecated("MMT_TODO: needs review", since="forever")
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 
 /**
@@ -30,7 +30,7 @@ object ElaboratedElement extends ClientProperty[StructuralElement,Int](utils.mmt
   def getDefault(t: StructuralElement) = get(t).getOrElse(0)
   def setInprogress(t: StructuralElement) = put(t, -get(t).getOrElse(1).abs)
   def isInprogress(t: StructuralElement) = getDefault(t) < 0
-  def setPartially(t: StructuralElement) = put(t, get(t).getOrElse(1).signum * 2)
+  def setPartially(t: StructuralElement) = put(t, get(t).getOrElse(1).sign * 2)
   def isPartially(t : StructuralElement): Boolean = getDefault(t).abs >= 2
   def setFully(t: StructuralElement) = put(t,3)
   def isFully(t : StructuralElement) : Boolean = getDefault(t).abs >= 3
@@ -55,12 +55,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   override def logPrefix = "structure-simplifier"
 
   // for efficiency, we use variants where the parent and its rules are already known; the main interface methods just defer to them
-  def applyChecked(s: StructuralElement)(implicit env: SimplificationEnvironment) {applyWithParent(s, None, None)}
-  def applyElementBegin(s: StructuralElement)(implicit env: SimplificationEnvironment) {applyElementBeginWithParent(s, None, None)}
+  def applyChecked(s: StructuralElement)(implicit env: SimplificationEnvironment): Unit = {applyWithParent(s, None, None)}
+  def applyElementBegin(s: StructuralElement)(implicit env: SimplificationEnvironment): Unit = {applyElementBeginWithParent(s, None, None)}
   
   // internal and external flattening of s
   // equivalent to calling applyElementBegin and (if applicable) applyElementEnd
-  private def applyWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+  private def applyWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment): Unit = {
     if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s)) {
       return
     }
@@ -73,7 +73,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
   
   // internal and external flattening of s except for (in the case of container elements) those parts performed in applyElementEnd
-  private def applyElementBeginWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+  private def applyElementBeginWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment): Unit = {
     if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s))
       return
     log("flattening " + s.path)
@@ -140,7 +140,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
   }
 
-  def applyElementEnd(s: ContainerElement[_])(implicit env: SimplificationEnvironment) {
+  def applyElementEnd(s: ContainerElement[_])(implicit env: SimplificationEnvironment): Unit = {
     if (ElaboratedElement.isFully(s))
       return
     log("finalize flattening of " + s.path)
@@ -159,7 +159,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     env.task.reportProgress(Elaborated(s))
   }
 
-  @MMT_TODO("needs to be reviewed")
+  @deprecated("MMT_TODO: needs to be reviewed", since="forever")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret
@@ -179,12 +179,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
 
   /** elaborates the definition into a context and adds the corresponding declarations */
-  private def flattenDefinition(mod: ModuleOrLink, rulesOpt: Option[RuleSet] = None) {
+  private def flattenDefinition(mod: ModuleOrLink, rulesOpt: Option[RuleSet] = None): Unit = {
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
     val at = new RepeatedAdd(AtBegin)
-    def add(d: Declaration) {
+    def add(d: Declaration): Unit = {
       d.setOrigin(ElaborationOfDefinition)
       controller.add(d, at.getNextFor(d))
       log("flattening yields " + d.path)
@@ -262,9 +262,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   /**
    * flattens a derived module by calling the respective [[ModuleLevelFeature]] and adding all generated modules 
    */
-  private def flattenDerivedModule(dm: DerivedModule, rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+  private def flattenDerivedModule(dm: DerivedModule, rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment): Unit = {
      controller.extman.get(classOf[ModuleLevelFeature], dm.feature) match {
-       case None => Nil
+       case None => /*Nil*/
        case Some(sf) =>
           val elab = sf.modules(dm, rulesO, env)
           val docO = dm.parentDoc
@@ -288,7 +288,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
    *  
    *  this method recurses into apply for dependency closure
    */
-  private def flattenExternally(dOrig: Declaration, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+  private def flattenExternally(dOrig: Declaration, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment): Unit = {
     if (ElaboratedElement.isFully(dOrig))
       return
     val parent = parentO getOrElse {
@@ -560,7 +560,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
  // TODO change management does not propagate to other theories yet
 
   /** deletes all declarations that were added by elaborating se */
-  override def onDelete(se: StructuralElement) {
+  override def onDelete(se: StructuralElement): Unit = {
      if (! ElaboratedElement.isPartially(se))
        return
      se match {
@@ -589,14 +589,14 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      }
   }
   /** re-elaborates if old element was */
-  override def onUpdate(old: StructuralElement, nw: StructuralElement) {
+  override def onUpdate(old: StructuralElement, nw: StructuralElement): Unit = {
     onDelete(old)
     if (ElaboratedElement.isPartially(old))
       apply(nw)
   }
 
   /** recursively mark fully elaborated parents to be only partially elaborated */
-  private def markParentUnelaborated(c: StructuralElement) {
+  private def markParentUnelaborated(c: StructuralElement): Unit = {
     val parent = c.parent match {
       case cp : ContentPath => controller.get(cp)
       case _ => return
@@ -615,7 +615,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
   
   /** change management */
-  override def onAdd(c: StructuralElement) {
+  override def onAdd(c: StructuralElement): Unit = {
     // no need to act if the elaborator added this itself
     c.getOrigin match {
       case ElaborationOf(_) | ElaborationOfDefinition => return

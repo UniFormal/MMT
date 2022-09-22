@@ -26,7 +26,7 @@ abstract class RelationGraphExporter extends StructurePresenter {
   private def getGraphviz = graphviz orElse controller.getEnvVar("GraphViz") getOrElse("dot")
 
   /** expects one argument: the path to graphviz; alternatively set variable GraphViz */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     super.start(args)
     val gv = getFromFirstArgOrEnvvar(args, "GraphViz")
     if (gv.nonEmpty)
@@ -41,7 +41,7 @@ abstract class RelationGraphExporter extends StructurePresenter {
   // controller.depstore.querySet(container, Transitive(+Declares) * HasType(???))
 
   /** contains at least all elements of the document */
-  def apply(se: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
+  def apply(se: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler): Unit = {
     val dg = buildGraph(se)
     val dot = new DotToSVG(File(getGraphviz))
     val svg = try {

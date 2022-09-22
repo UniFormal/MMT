@@ -34,7 +34,7 @@ class SearchPane(controller: Controller) extends JPanel {
    //private val scrollResults = new JScrollPane(results)
    add(new JScrollPane(resultTree), BorderLayout.CENTER)
 
-   private def search {
+   private def search: Unit = {
       val mws = controller.extman.get(classOf[MathWebSearch]).headOption.getOrElse(throw ParseError("no mws defined"))
       val q = queryText.getText
       val format = formatText.getText

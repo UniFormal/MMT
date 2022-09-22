@@ -21,18 +21,18 @@ trait HasMetaData {
 class MetaData {
    protected var data: List[MetaDatum] = Nil
    /** add metadata item, order of insertion is preserved */
-   def add(newdata: MetaDatum*) {data = data ::: newdata.toList}
-   def delete(key: GlobalName) {
+   def add(newdata: MetaDatum*): Unit = {data = data ::: newdata.toList}
+   def delete(key: GlobalName): Unit = {
       data = data.filter(md => md.key != key)
    }
-   def update(md: MetaDatum) {
+   def update(md: MetaDatum): Unit = {
       update(md.key, md.value)
    }
-   def update(key: GlobalName, values: Obj*) {
+   def update(key: GlobalName, values: Obj*): Unit = {
       delete(key)
       values foreach  { value => add(MetaDatum(key, value))}
    }
-   def update(key: GlobalName, value: URI) {
+   def update(key: GlobalName, value: URI): Unit = {
       delete(key)
       add(Link(key, value))
    }

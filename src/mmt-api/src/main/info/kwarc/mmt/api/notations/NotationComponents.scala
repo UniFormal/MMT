@@ -129,7 +129,7 @@ object LocalNotationInfo {
  * @param replace determines if new notations replace or extend existing ones  
  */
 case class LocalNotationInfo(argument: Int, role: LocalNotationInfo.Role, replace: Boolean) {
-  override def toString = argument + role.toString + (if (replace) "!" else "")
+  override def toString = s"${argument}${role.toString}${if (replace) "!" else ""}"
   def *(remap: Int => Int) = copy(argument = remap(argument))
 }
 
@@ -309,7 +309,7 @@ case class FractionMarker(above: List[Marker], below: List[Marker], line: Boolea
 }
 trait PresentationMarkerWrappingMarkerList {
   def content: List[Marker]
-  def foreach(f: Marker => Unit) {content foreach f}
+  def foreach(f: Marker => Unit): Unit = {content foreach f}
 }
 /** a marker based on mathml mtd elements, representing table cells */
 case class TdMarker(content : List[Marker]) extends PresentationMarker {

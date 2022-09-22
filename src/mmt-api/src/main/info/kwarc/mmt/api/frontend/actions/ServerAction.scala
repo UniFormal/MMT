@@ -25,7 +25,7 @@ case object ServerInfoAction extends ServerAction with ResponsiveAction {
 object ServerInfoActionCompanion extends ObjectActionCompanion(ServerInfoAction, "get information about the currently running server", "show server")
 
 case class ServerOn(port: Int = 8080, bindHost : String = "127.0.0.1") extends ServerAction {
-  def apply() {
+  def apply(): Unit = {
     controller.server match {
       case Some(serv) => logError("server already started on  " + serv.bindHost + ":" + serv.port)
       case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
@@ -48,7 +48,7 @@ object ServerOnCompanion extends ActionCompanion("start up the HTTP server", "se
 }
 
 case object ServerOff extends ServerAction {
-  def apply() {
+  def apply(): Unit = {
     controller.server match {
       case Some(serv) =>
         serv.stop

@@ -17,7 +17,7 @@ import scala.concurrent.Future
 
 object EditActions {
   /** replaces a part of the text, first and last are inclusive */
-  def overwriteText(textArea: TextArea, first: Int, last: Int, withText: String) {
+  def overwriteText(textArea: TextArea, first: Int, last: Int, withText: String): Unit = {
     textArea.setSelection(new Selection.Range(first,last+1))
     textArea.setSelectedText(withText) 
   }
@@ -27,7 +27,7 @@ object EditActions {
  *  these functions should be bound to actions in actions.xml, which can then be bound to keystrokes etc.
  */ 
 class EditActions(mmtplugin: MMTPlugin) {
-  def introduceHole(view: JEditView) {
+  def introduceHole(view: JEditView): Unit = {
     val editPane = view.getEditPane
     val textArea = editPane.getTextArea
     val buffer = editPane.getBuffer
@@ -50,7 +50,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     *
     * @param replace if true, replace selected asset; otherwise, show popup
     */
-  def showNormalization(view: JEditView, replace: Boolean) {
+  def showNormalization(view: JEditView, replace: Boolean): Unit = {
     val (as, selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
     as match {
       case oa: JObjAsset =>
@@ -93,7 +93,7 @@ class EditActions(mmtplugin: MMTPlugin) {
                   val results = vf.find(mp, to).map(presentView) //.mkString("\n\n")
                   "From: " + mp.toString + "\nTo: " + to + "\n" + {
                     if (results.isEmpty) "No results found :("
-                    else results.length + " Results found:\n\n" + results.mkString("\n\n")
+                    else s"${results.length} Results found:\n\n" + results.mkString("\n\n")
                   }
                 } catch {
                   case NotDone => NotDone.toString // Should not happen
@@ -114,7 +114,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     } ::: v.getDeclarations.collect {
       case c : FinalConstant if c.df.isDefined =>
         "  " + c.name + " = " + (c.df match {
-          case Some(OMS(p)) => p.module.name + "?" + p.name
+          case Some(OMS(p)) => p.module.name.toString + "?" + p.name
           case Some(t) => t.toStr(true)
         })
     }).mkString("\n")
@@ -147,11 +147,11 @@ import java.awt.{Color,FlowLayout}
 class TextareaPopup(textArea: TextArea, offset: Int, text: String) extends JFrame() {
    private val contentArea = new JTextArea()
    private val closeButton = Swing.Button("X"){dispose}
-   def set(content: String) {
+   def set(content: String): Unit = {
       contentArea.setText(content)
       pack()
    }
-   def setLocationRelativeToOffset(deltax: Int, deltay: Int) {
+   def setLocationRelativeToOffset(deltax: Int, deltay: Int): Unit = {
      val p = textArea.offsetToXY(offset)
      SwingUtilities.convertPointToScreen(p, textArea.getPainter)
      setLocation(p.getX.toInt + deltax, p.getY.toInt + deltay)
@@ -174,10 +174,10 @@ class ScrollTextareaPopup(textArea: TextArea, offset: Int, text: String) extends
   // private val panel = new JPanel()
   private val scroll = new JScrollPane(contentArea,22,32)
   private val closeButton = Swing.Button("X"){dispose}
-  private def set(content: String) {
+  private def set(content: String): Unit = {
     contentArea.setText(content)
   }
-  def setLocationRelativeToOffset(deltax: Int, deltay: Int) {
+  def setLocationRelativeToOffset(deltax: Int, deltay: Int): Unit = {
     val p = textArea.offsetToXY(offset)
     SwingUtilities.convertPointToScreen(p, textArea.getPainter)
     setLocation(p.getX.toInt + deltax, p.getY.toInt + deltay)

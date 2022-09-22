@@ -16,10 +16,10 @@ abstract class Annotator[A](val key: GlobalName) {
   /** convert from objects to A when reading from metadata */
   def toObject(a: A): Obj
   def get(e: HasMetaData) : Option[A] = e.metadata.getValues(key).headOption.map(fromObject)
-  def update(e: HasMetaData, value: A) {
+  def update(e: HasMetaData, value: A): Unit = {
      e.metadata.add(new MetaDatum(key, toObject(value)))
   }
-  def delete(e: HasMetaData) {
+  def delete(e: HasMetaData): Unit = {
      e.metadata.delete(key)
   }
 }

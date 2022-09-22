@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.ontology.{AlignmentsServer, ConceptReference, LogicalR
 import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.presentation.HTMLAttributes.toggleTarget
 import info.kwarc.mmt.api.{AbstractObjectContainer, CPath, ComponentKey, ContentPath, DPath, DeclarationComponent, GlobalName, MPath, NotationComponentKey, StructuralElement, metadata, ontology, presentation}
-import info.kwarc.mmt.api.presentation.{HTMLAttributes, HTMLPresenter, PresentationContext, RenderingHandler}
+import info.kwarc.mmt.api.presentation.{ContentMathMLPresenter, HTMLAttributes, HTMLPresenter, PresentationContext, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, Structure}
 import info.kwarc.mmt.api.utils.{HTML, mmt, xml}
 import info.kwarc.mmt.api.utils.xml.{closeTag, namespace, openTag}
@@ -46,7 +46,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
     case o => o
   }
 
-  override def doDeclaration(d: Declaration) {
+  override def doDeclaration(d: Declaration): Unit = {
     d match {
       case c: Constant if c.rl.contains("notation") || c.rl.contains("symboldoc") => return
       case _ =>
@@ -77,10 +77,10 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
           case _ => d.feature
         }} + " ")}
         doName(d)
-        def toggleComp(comp: ComponentKey) {
+        def toggleComp(comp: ComponentKey): Unit = {
           toggle(compRow(comp), comp.toString.replace("-", " "))
         }
-        def toggle(key: String, label: String) {
+        def toggle(key: String, label: String): Unit = {
           button(compToggle, attributes = List(toggleTarget -> key)) {text(label)}
         }
         if (aliases.nonEmpty)
@@ -94,7 +94,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
           toggle("tags", "tags")
         if (d.metadata.getAll.nonEmpty)
           toggle("metadata", "metadata")
-        d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
+        d.getComponents.reverseIterator.foreach {case DeclarationComponent(comp, tc) =>
           if (tc.isDefined)
             toggleComp(comp)
         }
@@ -209,7 +209,7 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
               k => div("tag") {text(k.toPath)}
             }}}
         }
-        def doKey(k: GlobalName) {
+        def doKey(k: GlobalName): Unit = {
           td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
         }
         d.metadata.getAll.foreach {
@@ -274,7 +274,7 @@ class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
     case _ => super.doDefault(o)
   }
 
-  override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+  override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler): Unit = {
     implicit val pc = preparePresentation(o, origin)
     doInfToplevel(o) {
       recurse(o)
@@ -316,7 +316,7 @@ class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
       body
       pc.out(closeTag("mrow"))
       pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-      pc.out(o.toCML.toString)
+      pc.out(ContentMathMLPresenter(o).toString)
       pc.out(closeTag("annotation-xml"))
       pc.out(closeTag("semantics"))
       pc.out(closeTag("math"))

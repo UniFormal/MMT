@@ -23,14 +23,14 @@ class ServerResponse {
   private var status : (Int, String) = (200, "OK")
   /** statusCode (HTTP response code) for this message */
   def statusCode : Int = status._1
-  def statusCode_=(code : Int) {
+  def statusCode_=(code : Int): Unit = {
     // set statusCode and matching text
     val newText = ServerResponse.statusCodes.getOrElse(code, "")
     status = (code, newText)
   }
   /** the status text (HTTP Status Text) for this response code */
   def statusText: String = status._2
-  def statusText_=(txt : String) {
+  def statusText_=(txt : String): Unit = {
     status = (statusCode, txt)
   }
 
@@ -43,7 +43,7 @@ class ServerResponse {
     headers("Content-Type") = s"$tp; charset=utf8"
   }
   /** sets a CORS header matching to a request */
-  def setCORSFor(request : ServerRequest) {
+  def setCORSFor(request : ServerRequest): Unit = {
     val origin = request.headers.getOrElse("Origin", "*")
     headers("Access-Control-Allow-Origin") = origin
     headers("Access-Control-Allow-Methods") = "POST, GET, OPTIONS"
@@ -56,15 +56,15 @@ class ServerResponse {
   /** the ouput is either an array or read directly from an input stream */
   def output = outputStream
   /** sets the output to an array of bytes */
-  def output_= (ary : Array[Byte]) {
+  def output_= (ary : Array[Byte]): Unit = {
     outputStream = Left(ary)
   }
   /** sets the output to text */
-  def output_=(txt : String) {
+  def output_=(txt : String): Unit = {
     outputStream = Left(txt.getBytes("utf-8"))
   }
   /** sets the output to an InputStream */
-  def output_=(io: InputStream) {
+  def output_=(io: InputStream): Unit = {
     outputStream = Right(io)
   }
 }

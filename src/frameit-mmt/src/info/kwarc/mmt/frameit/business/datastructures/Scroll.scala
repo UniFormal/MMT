@@ -184,8 +184,8 @@ sealed case class Scroll(
 
     this.copy(
       meta = meta.map(verbalize),
-      requiredFacts = requiredFacts.map(verbalizeFact),
-      acquiredFacts = acquiredFacts.map(verbalizeFact)
+      requiredFacts = requiredFacts.map(f => {val ret = verbalizeFact(f); ret.additionalContext = context; ret}),
+      acquiredFacts = acquiredFacts.map(f => {val ret = verbalizeFact(f); ret.additionalContext = context; ret})
     )
   }
 }

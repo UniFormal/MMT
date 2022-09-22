@@ -129,14 +129,14 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Stop the web server */
-  def destroy {
+  def destroy: Unit = {
       server.stop
-      bkgCrawler.interrupt
-      bkgEliminator.interrupt
-      locations.clear
-      urlToDocument.clear
-      uriToNamedBlock.clear
-      uriToModulesDeclared.clear
+      bkgCrawler.interrupt()
+      bkgEliminator.interrupt()
+      locations.clear()
+      urlToDocument.clear()
+      uriToNamedBlock.clear()
+      uriToModulesDeclared.clear()
   }
 
 
@@ -216,7 +216,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
           throw FileOpenError("error: file cannot be opened")
         try {
           val source = scala.io.Source.fromFile(document, "utf-8")
-          val lines = source.getLines.toArray                          // get all lines from the file
+          val lines = source.getLines().toArray                          // get all lines from the file
           source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
           return lines.mkString("\n")
         } catch {
@@ -239,12 +239,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
             throw FileOpenError("error: file cannot be opened")
           try {
             val source = scala.io.Source.fromFile(doc, "utf-8")
-            val lines = source.getLines.toArray.slice(pos._1._1, pos._2._1 + 1)      // get the desired lines from the file
+            val lines = source.getLines().toArray.slice(pos._1._1, pos._2._1 + 1)      // get the desired lines from the file
             //log(Time + lines.mkString("\n"))
             source.asInstanceOf[scala.io.BufferedSource].close       // close the file, since scala.io.Source doesn't close it
             return lines.mkString("\n").drop(pos._1._2).dropRight(lines.last.length - pos._2._2 - 1)
           } catch {
-            case e : Throwable => throw FileOpenError(e + "error: file cannot be opened or the encoding is not UTF-8")
+            case e : Throwable => throw FileOpenError(e.toString + "error: file cannot be opened or the encoding is not UTF-8")
           }
         }
         else
@@ -375,7 +375,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   /** Write the Omdoc skeleton to a file with the same name as the original and in the same folder, but with extension .omdocsk
     * @param stringUrl the URL of the .elf file to be converted.
     * @throws CatalogError(s) if the URL is not OK or not crawled already */
-  def writeOmdocToFile(stringUrl : String) {
+  def writeOmdocToFile(stringUrl : String): Unit = {
     val realUrl : String = java.net.URLDecoder.decode(stringUrl, "UTF-8")
     val document = new File(realUrl)
     if (document == null)
@@ -404,7 +404,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     try {
       out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile),"UTF8"));
     } catch {
-      case e : Throwable => { log(Time + outFile + ": error: cannot write to file"); System.exit(3) }
+      case e : Throwable => { log(Time.toString + outFile + ": error: cannot write to file"); System.exit(3) }
     }
     out.write(toWrite)
     out.close
@@ -415,11 +415,11 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Add an inclusion pattern to the storage */
-  def addInclusion(pattern : String) {
+  def addInclusion(pattern : String): Unit = {
     if (pattern == "")
-      log(Time + "error: empty inclusion patern")
+      log(Time.toString + "error: empty inclusion patern")
     else {
-      log(Time + "New inclusion pattern: " + pattern)
+      log(Time.toString + "New inclusion pattern: " + pattern)
       inclusions += pattern
       processedInclusions += quotePattern(pattern)
     }
@@ -427,11 +427,11 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Add an exclusion pattern to the storage */
-  def addExclusion(pattern : String) {
+  def addExclusion(pattern : String): Unit = {
     if (pattern == "")
-      log(Time + "error: empty exclusion patern")
+      log(Time.toString + "error: empty exclusion patern")
     else {
-      log(Time + "New exclusion pattern: " + pattern)
+      log(Time.toString + "New exclusion pattern: " + pattern)
       exclusions += pattern
       processedExclusions += quotePattern(pattern)
     }
@@ -443,7 +443,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     * If the location is an ancestor of an already watched location, then it is added and the already watched location is removed.
     * @param locationName the (absolute or relative) address of the location on disk
     * @throws InexistentLocation if the file/folder does not exist or cannot be read */
-  def addStringLocation(locationName : String) {
+  def addStringLocation(locationName : String): Unit = {
     val location = new File(locationName)
     if (location == null || !location.canRead)
       throw InexistentLocation(getOriginalPath(location) + ": error: location does not exist or cannot be read")
@@ -451,19 +451,19 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     val path : String = getPath(location)
 
     if (!isLegalLocation(location.getName, location.isDirectory))
-      log(Time + getOriginalPath(location) + ": warning: location is ignored because it does not match the given patterns")
+      log(Time.toString + getOriginalPath(location) + ": warning: location is ignored because it does not match the given patterns")
     else {
       // Check whether the location is already watched via an ancestor
       if (locations.exists(f => path.startsWith(getPath(f))))
-        log(Time + "Location already watched: " + getOriginalPath(location))
+        log(Time.toString + "Location already watched: " + getOriginalPath(location))
       else {
-        log(Time + "New location: " + getOriginalPath(location))
+        log(Time.toString + "New location: " + getOriginalPath(location))
         // Delete descendants from the watch list
         for (f <- locations)
           if (getPath(f).startsWith(path)) {
-            log(Time + "Location deleted: " + getOriginalPath(f))
+            log(Time.toString + "Location deleted: " + getOriginalPath(f))
             locations -= f
-            log(Time + getOriginalPath(f) + ": uncrawling...")
+            log(Time.toString + getOriginalPath(f) + ": uncrawling...")
             uncrawl(getPath(f))
           }
         locations += location
@@ -476,7 +476,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
   /** Delete from watch list a location given by its string address.
     * @param locationName the (absolute or relative) address of the location on disk
     * @throws InexistentLocation if the location is not in the watch list */
-  def deleteStringLocation(locationName : String) {
+  def deleteStringLocation(locationName : String): Unit = {
     val location = new File(locationName)
     if (location == null || !location.canRead)
       throw InexistentLocation(getOriginalPath(location) + ": error: location does not exist or cannot be read, hence it cannot be deleted")
@@ -484,7 +484,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
     if (locations contains location) {
         locations -= location
         uncrawl(getPath(location))
-        log(Time + "Location deleted: " + getOriginalPath(location))
+        log(Time.toString + "Location deleted: " + getOriginalPath(location))
     }
     else throw InexistentLocation(getOriginalPath(location) + ": error: location is not in the watch list, hence it cannot be deleted")
   }
@@ -494,21 +494,21 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 
   /** Crawl through all stored locations, ignoring (but logging) errors */
-  def crawlAll {
+  def crawlAll: Unit = {
     locations.foreach(crawl)
   }
 
 
   /** Clear the storage */
-  def uncrawlAll {
+  def uncrawlAll: Unit = {
     locations.map(getPath).foreach(uncrawl)
   }
 
 
   /** Delete all the hash entries associated with a specific file or folder
     * @param location the file or folder URL, as a string */
-  def uncrawl(url: String) { ConflictGuard.synchronized {
-    val crawledFiles = urlToDocument.filterKeys(_.toString.startsWith(url)) // the file itself, or all files in the given folder
+  def uncrawl(url: String): Unit = { ConflictGuard.synchronized {
+    val crawledFiles = urlToDocument.view.filterKeys(_.toString.startsWith(url)) // the file itself, or all files in the given folder
     for ((url, doc) <- crawledFiles) {
       doc.modules.foreach(m => {
         m match {
@@ -533,9 +533,9 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
   /** Crawl through a specific file or folder
     * @param location the file or folder descriptor */
-  def crawl(location: File) { ConflictGuard.synchronized {
+  def crawl(location: File): Unit = { ConflictGuard.synchronized {
     if (!location.canRead) {
-      log(Time + getOriginalPath(location) + ": error: file/folder does not exist or cannot be read")
+      log(Time.toString + getOriginalPath(location) + ": error: file/folder does not exist or cannot be read")
       return
     }
     val locationName = location.getName    // name without the path
@@ -550,12 +550,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
             fileList = location.listFiles()
           } catch {
             case e : SecurityException => {
-              log(Time + getOriginalPath(location) + ": error: folder cannot be read")
+              log(Time.toString + getOriginalPath(location) + ": error: folder cannot be read")
               return
             }
           }
           if (fileList == null) {
-            log(Time + getOriginalPath(location) + ": error: folder cannot be read")
+            log(Time.toString + getOriginalPath(location) + ": error: folder cannot be read")
             return
           }
 
@@ -571,7 +571,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
         if (location.lastModified == urlToDocument(path).lastModified)
           return    // the file was NOT modified after the last crawl
         else {           // remove the file from the hashes first
-          log(Time + getOriginalPath(location) + ": uncrawling...")
+          log(Time.toString + getOriginalPath(location) + ": uncrawling...")
           uncrawl(path.toString)
         }
       }
@@ -585,11 +585,11 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
           try {
               document = FileCrawler(location)          // <-------------------- the actual parsing --------------------
               // prepend the timestamp and file path to each error
-              document.errors = document.errors.map(x => ParseError(Time + getOriginalPath(location) + ":" + x))
+              document.errors = document.errors.map(x => ParseError(Time.toString + getOriginalPath(location) + ":" + x))
           } catch {
               case ParseError(s) => {
                 if (document == null) {    // then store an empty Document with this error
-                    val theError = ParseError(Time + getOriginalPath(location) + ":" + s)
+                    val theError = ParseError(Time.toString + getOriginalPath(location) + ":" + s)
                     document = new Document(new URI(Catalog.getPath(location)), None, new ListBuffer(), new LinkedHashMap(), new LinkedHashSet(), List(theError))
                 }
               }
@@ -602,12 +602,12 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
           for (m <- document.modules) {
             if (uriToNamedBlock.isDefinedAt(m.uri))
-              throw CatalogError(m.pos + ": error: the uri of this module (" + m.uri + ") has already been encountered at " + getPosition(m.uri.toString))
+              throw CatalogError(m.pos.toString + ": error: the uri of this module (" + m.uri + ") has already been encountered at " + getPosition(m.uri.toString))
             m match {
               case SigBlock(_,_,_,children,_,_)  => for (c <- children) if (uriToNamedBlock.isDefinedAt(c.uri))
-                throw CatalogError(c.pos + ": error: the uri of this declaration (" + c.uri + ") has already been encountered at " + getPosition(c.uri.toString))
+                throw CatalogError(c.pos.toString + ": error: the uri of this declaration (" + c.uri + ") has already been encountered at " + getPosition(c.uri.toString))
               case ViewBlock(_,_,_,children,_,_,_,_)  => for (c <- children) if (uriToNamedBlock.isDefinedAt(c.uri))
-                throw CatalogError(c.pos + ": error: the uri of this assignment (" + c.uri + ") has already been encountered at " + getPosition(c.uri.toString))
+                throw CatalogError(c.pos.toString + ": error: the uri of this assignment (" + c.uri + ") has already been encountered at " + getPosition(c.uri.toString))
             }
           }
 
@@ -630,13 +630,13 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
           // Print the parsing errors; if there are none, print "OK"
           if (document.errors.isEmpty)
-                log(Time + getOriginalPath(location) + ": OK")
+                log(Time.toString + getOriginalPath(location) + ": OK")
           else
                 document.errors.foreach(e => log(e.toString))
         } catch {
-          case FileOpenError(s) => log(Time + getOriginalPath(location) + ":" + s)
-          case CatalogError(s) => log(Time + getOriginalPath(location) + ":" + s)
-          //case e : Exception => log(Time + getOriginalPath(location) + ": error: " + e)
+          case FileOpenError(s) => log(Time.toString + getOriginalPath(location) + ":" + s)
+          case CatalogError(s) => log(Time.toString + getOriginalPath(location) + ":" + s)
+          //case e : Exception => log(Time.toString + getOriginalPath(location) + ": error: " + e)
         }
       }
     }
@@ -672,7 +672,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
 
 /** A thread that checks for updated files and crawls them every crawlingInterval seconds */
 class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends Thread {
-  override def run {
+  override def run: Unit = {
     while(true && !isInterrupted()) {
         try {
             Thread.sleep(crawlingInterval * 1000)
@@ -686,7 +686,7 @@ class BackgroundCrawler(val catalog: Catalog, val crawlingInterval: Int) extends
 
 /** A thread that checks for deleted files every deletingInterval seconds and eliminates them from the hashes */
 class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) extends Thread {
-  override def run {
+  override def run: Unit = {
     while(true && !isInterrupted()) {
       try {
           Thread.sleep(deletingInterval * 1000)
@@ -696,7 +696,7 @@ class BackgroundEliminator(val catalog: Catalog, val deletingInterval: Int) exte
       for (url <- catalog.urlToDocument.keySet) {
         val file = new File(URLDecoder.decode(url.toString, "UTF-8"))  // get the file handle from its disk address
         if (!file.exists) {
-          catalog.log(Time + Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
+          catalog.log(Time.toString + Catalog.getOriginalPath(file) + ": cannot find file. Uncrawling...")
           catalog.uncrawl(url.toString)
         }
       }

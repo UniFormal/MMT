@@ -46,7 +46,7 @@ case class MyList[A](l: List[A]) {
   def quotient[B](f: A => B): List[(B, List[A])] = {
     var in: List[(B, A)] = l.map(x => (f(x), x))
     var out: List[(B, List[A])] = Nil
-    def add(e: (B, A), found: List[(B, List[A])], todo: List[(B, List[A])]) {
+    def add(e: (B, A), found: List[(B, List[A])], todo: List[(B, List[A])]): Unit = {
       todo match {
         case Nil => out ::=(e._1, List(e._2))
         case hd :: tl => if (hd._1 == e._1)

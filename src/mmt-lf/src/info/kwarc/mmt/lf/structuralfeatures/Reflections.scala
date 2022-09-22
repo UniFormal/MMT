@@ -26,7 +26,7 @@ class Reflections extends StructuralFeature(ReflectionsUtil.feature) with Refere
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     val (_, _, indCtx, indParams, context) = getContent(dd)
     checkParams(indCtx, indParams, Context(dd.parent)++context, env)
   }

@@ -70,7 +70,7 @@ abstract class Test(val archivepath: String,
   } catch {
     case e: api.Error =>
       println(e.toStringLong)
-      sys.exit
+      sys.exit()
   }
 
   def hl(s: String): Unit = controller.handleLine(s)

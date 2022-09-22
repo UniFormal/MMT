@@ -15,11 +15,11 @@ import objects.Conversions._
 
 /** variant of CheckingEnvironment that carries around more structure */
 case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: ObjectChecker, rules: RuleSet, current: Path, var timeout: Int = 0) {
-  def pCont(q: Path) {
+  def pCont(q: Path): Unit = {
     ce.reCont(RefersTo(q, current))
   }
 
-  def errorCont(e: Error) {
+  def errorCont(e: Error): Unit = {
     ce.errorCont(e)
   }
 
@@ -54,11 +54,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   /* the entry points
    * invariant for container elements: applyElementBegin + apply on every child + applyElementEnd <=> apply 
    */
-  def apply(e: StructuralElement)(implicit ce: CheckingEnvironment) {
+  def apply(e: StructuralElement)(implicit ce: CheckingEnvironment): Unit = {
     applyWithTimeout(e, None)
   }
   /** generalization of apply to allow for a timeout for generated type checking tasks */
-  def applyWithTimeout(e: StructuralElement, t : Option[Int])(implicit ce: CheckingEnvironment) {
+  def applyWithTimeout(e: StructuralElement, t : Option[Int])(implicit ce: CheckingEnvironment): Unit = {
     if (! e.isGenerated) {
       val (context,env) = prepareCheck(e)
       t.foreach {env.timeout = _}
@@ -66,7 +66,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
-  def applyElementBegin(e: StructuralElement)(implicit ce: CheckingEnvironment) {
+  def applyElementBegin(e: StructuralElement)(implicit ce: CheckingEnvironment): Unit = {
     if (! e.isGenerated) {
       val (context,env) = prepareCheck(e)
       e match {
@@ -77,7 +77,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
-  def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment) {
+  def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment): Unit = {
     if (! e.isGenerated) {
       val (context,env) = prepareCheck(e)
       checkElementEnd(context, e)(env)
@@ -85,7 +85,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   /** called after checking an element */
-  private def elementChecked(e: StructuralElement)(implicit env: ExtendedCheckingEnvironment) {
+  private def elementChecked(e: StructuralElement)(implicit env: ExtendedCheckingEnvironment): Unit = {
     if (!env.ce.task.isKilled) {
       e match {
         case e: ContainerElement[_] =>
@@ -99,7 +99,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
-  @MMT_TODO("unclear what happens here")
+  @deprecated("MMT_TODO: unclear what happens here", since="forever")
   def elabContext(th : Theory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
@@ -129,7 +129,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param streamed true if a later call of checkElementEnd on this element or its parent is expected; all checks performed in checkElementEnd are skipped
     */
   // e will be marked as checked (independent of whether there are errors)
-  private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
+  private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment): Unit = {
     implicit val ce = env.ce
     val path = e.path
     log("checking " + path)//+ " using the following rules: " + env.rules.toString)
@@ -276,7 +276,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           (ParseResult(pr.unknown, pr.free, tR), valid)
         }
         /* shared code for checking a type */
-        def checkInhabitable(pr: ParseResult) {
+        def checkInhabitable(pr: ParseResult): Unit = {
             val j = Inhabitable(Stack(pr.free), pr.term)
             val cu = CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j).diesWith(env.ce.task)
             if (env.timeout != 0)
@@ -401,7 +401,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   // ***** ContainerElements *****
 
   /** auxiliary method of check */
-  private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
+  private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment): Unit = {
     UncheckedElement.set(e)
     e.getPrimitiveDeclarations foreach {d => UncheckedElement.set(d)}
     val path = e.path
@@ -508,7 +508,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   /** auxiliary method of check */
-  private def checkElementEnd(context: Context, e: ContainerElement[_])(implicit env: ExtendedCheckingEnvironment) {
+  private def checkElementEnd(context: Context, e: ContainerElement[_])(implicit env: ExtendedCheckingEnvironment): Unit = {
     log("checking end of " + e.path )
     val ce = env.ce
     e match {
@@ -549,7 +549,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
     // check all the narrative structure (at the end to allow forward references)
     val (contextI, envI) = prepareCheckExtendContext(context, env, controller.getExtraInnerContext(e))
-    def doDoc(ne: NarrativeElement) {
+    def doDoc(ne: NarrativeElement): Unit = {
       ne match {
         case doc: Document => doc.getDeclarations foreach doDoc
         case r: NRef =>
@@ -568,7 +568,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     elementChecked(e)
   }
   
-  private def checkTotalTop(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment) {
+  private def checkTotalTop(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment): Unit = {
     val unmappedNames = checkTotal(mod, thyTerm)
     val total = unmappedNames.isEmpty
     if (!total) {
@@ -640,7 +640,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   // *****
 
   /** auxiliary function for setting the analyzed dimension after checking a module expression */
-  private def setAnalyzed(cpath: CPath, t: Term) {
+  private def setAnalyzed(cpath: CPath, t: Term): Unit = {
     controller.globalLookup.getComponent(cpath) match {
       case tc: TermContainer => tc.analyzed = t
       case _ =>
@@ -728,7 +728,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       result.term
   }
   /** like checkTheory but reports an error if the theory is absent */
-  private def checkTheory(cpath: CPath, elem: StructuralElement, context: Context, tO: Option[Term])(implicit env: ExtendedCheckingEnvironment) {tO match {
+  private def checkTheory(cpath: CPath, elem: StructuralElement, context: Context, tO: Option[Term])(implicit env: ExtendedCheckingEnvironment): Unit = {tO match {
     case Some(t) =>
       checkTheory(Some(cpath), context, t)
     case None =>
@@ -883,7 +883,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             //TODO wrap in implicit morphism?
             OMS(pathR).from(s)
           case Some(_) =>
-            env.errorCont(InvalidObject(s, path + " does not refer to constant"))
+            env.errorCont(InvalidObject(s, path.toString + " does not refer to constant"))
             s
           case None =>
             // error was thrown above already 

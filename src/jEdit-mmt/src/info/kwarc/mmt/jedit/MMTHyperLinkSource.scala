@@ -13,7 +13,7 @@ import sidekick._
 /** implements the action for clicking on a hyperlink provided by [[MMTHyperlinkSource]] */
 class MMTHyperlink(start: Int, end: Int, startLine: Int, path: Path, ref: Option[SourceRef])
    extends AbstractHyperlink(start, end, startLine, path.toPath) {
-   def click(view: View) {
+   def click(view: View): Unit = {
       ref foreach {r => MMTHyperlink.navigateTo(view, r)}
    }
 }
@@ -31,7 +31,7 @@ object MMTHyperlink {
       }
    }
    /** navigates to a SourceRef in a jedit view */
-   def navigateTo(view: View, ref: SourceRef) {
+   def navigateTo(view: View, ref: SourceRef): Unit = {
       ref match {
         case SourceRef(FileURI(file), region) =>
            var buffer = jEdit.getBuffer(file.toString)
@@ -50,7 +50,7 @@ object MMTHyperlink {
 class MMTHyperlinkSource extends HyperlinkSource {
    val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
    val controller = mmt.controller
-   private def log(msg : => String) {controller.report("jedit-link", msg)}
+   private def log(msg : => String): Unit = {controller.report("jedit-link", msg)}
    private var currentLink : Hyperlink = null
    def getHyperlink(buffer: Buffer, caretPosition: Int) : Hyperlink = try {
       // return a previously found link if it is still applicable

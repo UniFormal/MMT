@@ -20,7 +20,7 @@ import javax.swing.ImageIcon
  *  Currently it allows highlighting certain characters by painting over the ones painted by jEdit.
  */
 class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MMTTextAreaExtension(editPane) {
-   private def log(msg: String) {controller.report("jedit-painter", msg)}
+   private def log(msg: String): Unit = {controller.report("jedit-painter", msg)}
    private val painter = textArea.getPainter
 
   import java.awt.{Point,Color}
@@ -45,7 +45,7 @@ class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MM
     Character.NON_SPACING_MARK -> Token.KEYWORD3
   )
 
-  override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+  override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int): Unit = {
     if (editPane.getBuffer.getMode.getName != "mmt") return
     // the current default font
     val font = painter.getFont
@@ -72,7 +72,7 @@ class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MM
          None
     }
     /** paints other character 'c' at 'startPoint' using 'style' */
-    def paintChar(offset: Int, startPoint: Point, style: SyntaxStyle, c: Char) {
+    def paintChar(offset: Int, startPoint: Point, style: SyntaxStyle, c: Char): Unit = {
        /* We have to erase the text painted by jEdit. We can only do that by painting a rectangle over it.
         * To avoid undoing an intended background color and because we cannot look up the color of a pixel,
         * we have to reimplement some low level functionality of the TextAreaPainter.
@@ -167,7 +167,7 @@ class MMTTextHighlighting(controller: Controller, editPane: EditPane) extends MM
 
 /** shows tooltips such as type inference (separate from the other TextAreaExtension so that it can be put on a different layer) */
 class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaExtension {
-   private def log(msg: String) {controller.report("tooltips", msg)}
+   private def log(msg: String): Unit = {controller.report("tooltips", msg)}
    private val textArea = editPane.getTextArea
    private val view = editPane.getView
    
@@ -205,7 +205,7 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
                   vd.tp match {
                     case None => null
                     case Some(tp) =>
-                      vd.name + ": " + asString(tp)
+                      vd.name.toString + ": " + asString(tp)
                   }
                 case OMA(OMID(p), args) =>
                   val opWithImplicits = args.takeWhile(a => parser.SourceRef.get(a).isEmpty)

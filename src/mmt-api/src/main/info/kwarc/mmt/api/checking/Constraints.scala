@@ -73,13 +73,13 @@ class History(var steps: List[HistoryEntry]) {
    /** shortcut for adding a Comment leaf */
    def +(s: => String) : History = this + new Comment(() => s)
    /** appends a child to the leaf */
-   def +=(e: HistoryEntry) {steps ::= IndentedHistoryEntry(e,inc)}
+   def +=(e: HistoryEntry): Unit = {steps ::= IndentedHistoryEntry(e,inc)}
    /** appends another history to the leaf */
-   def +=(h: History) {steps :::= h.steps.map(e => IndentedHistoryEntry(e, inc))}
+   def +=(h: History): Unit = {steps :::= h.steps.map(e => IndentedHistoryEntry(e, inc))}
    /** appends a child to the leaf */
-   def +=(s: => String) {this += Comment(() => s)}
+   def +=(s: => String): Unit = {this += Comment(() => s)}
    /** pre: that is extension of this, post: this == that */
-   def mergeIn(that: History) {
+   def mergeIn(that: History): Unit = {
      steps :::= that.steps.take(that.steps.length-this.steps.length)
    }
    /** creates a copy of the history that can be passed when branching */
@@ -126,7 +126,7 @@ class History(var steps: List[HistoryEntry]) {
 
 /** a history that ignores all messages */
 object NoHistory extends History(Nil) {
-   override def +=(e: HistoryEntry) {}
+   override def +=(e: HistoryEntry): Unit = {}
    override def +(e: HistoryEntry) = this
    override def branch = this
    override def narrowDownError = this

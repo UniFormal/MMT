@@ -12,7 +12,7 @@ abstract class ExternalImporter extends Importer {
   val toolName: String
 
   /** the wrapper method to implement */
-  def runExternalTool(bf: BuildTask, outFile: File)
+  def runExternalTool(bf: BuildTask, outFile: File): Unit
 
   /**
     * Compile an external file to OMDoc
@@ -24,7 +24,7 @@ abstract class ExternalImporter extends Importer {
     outFile.up.mkdirs()
     outFile.delete()
     runExternalTool(bf, outFile)
-    def error(msg: String) {
+    def error(msg: String): Unit = {
       val ref = SourceRef(FileURI(bf.inFile), parser.SourceRegion.none)
       val e = CompilerError(key, ref, List(msg), Level.Error)
       bf.errorCont(e)

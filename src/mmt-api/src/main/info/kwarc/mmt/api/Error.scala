@@ -61,7 +61,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
       </error>
 
   def toHTML: String = HTML.build { h => import h._
-    def trace(t: Throwable) {
+    def trace(t: Throwable): Unit = {
       div("stacktrace") {
         Stacktrace.asStringList(t).foreach { s =>
           div("stacktraceline") {
@@ -102,7 +102,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
             }
             case e: Throwable => div {
               text {
-                e.getClass + " : " + e.getMessage
+                e.getClass.toString + " : " + e.getMessage
               }
               trace(e)
             }
@@ -306,7 +306,7 @@ abstract class ErrorHandler {
     *
     * This should be called exactly once on every error, usually in the order in which they are found.
     */
-  def apply(e: Error) {
+  def apply(e: Error): Unit = {
     if (e.level > Level.Warning) {
       newErrors = true
     }
@@ -314,12 +314,12 @@ abstract class ErrorHandler {
   }
 
   /** convenience for apply */
-  def <<(e: Error) {
+  def <<(e: Error): Unit = {
     apply(e)
   }
 
   /** evaluates a command with this class as the exception handler */
-  def catchIn(a: => Unit) {
+  def catchIn(a: => Unit): Unit = {
     try {
       a
     } catch {
@@ -327,7 +327,7 @@ abstract class ErrorHandler {
     }
   }
 
-  protected def addError(e: Error)
+  protected def addError(e: Error): Unit
 }
 
 
@@ -361,16 +361,16 @@ abstract class OpenCloseHandler extends ErrorHandler {
 
 /** combines the actions of multiple handlers */
 class MultipleErrorHandler(val handlers: List[ErrorHandler]) extends OpenCloseHandler {
-  def addError(e: Error) {
+  def addError(e: Error): Unit = {
     handlers.foreach(_.apply(e))
   }
-  def open {
+  def open: Unit = {
     handlers.foreach {
       case h: OpenCloseHandler => h.open
       case _ =>
     }
   }
-  def close {
+  def close: Unit = {
     handlers.foreach {
       case h: OpenCloseHandler => h.open
       case _ =>
@@ -398,13 +398,13 @@ object MultipleErrorHandler {
 /** stores errors in a list */
 class ErrorContainer extends ErrorHandler {
   private var errors: List[Error] = Nil
-  protected def addError(e: Error) {
+  protected def addError(e: Error): Unit = {
     this.synchronized {
       errors ::= e
     }
   }
   def isEmpty: Boolean = errors.isEmpty
-  override def reset() {
+  override def reset: Unit = {
     errors = Nil
     super.reset
   }
@@ -419,17 +419,17 @@ class ErrorContainer extends ErrorHandler {
 class ErrorWriter(fileName: File) extends OpenCloseHandler {
   private var file: StandardPrintWriter = null
 
-  protected def addError(e: Error) {
+  protected def addError(e: Error): Unit = {
     if (file == null) open
     file.write(new PrettyPrinter(240, 2).format(e.toNode) + "\n")
   }
 
-  def open {
+  def open: Unit = {
     file = File.Writer(fileName)
     file.write("<errors>\n")
   }
   /** closes the file */
-  def close {
+  def close: Unit = {
     file.write("</errors>\n")
     file.close()
   }
@@ -437,14 +437,14 @@ class ErrorWriter(fileName: File) extends OpenCloseHandler {
 
 /** reports errors */
 class ErrorLogger(val report: frontend.Report) extends ErrorHandler {
-  protected def addError(e: Error) {
+  protected def addError(e: Error): Unit = {
     report(e)
   }
 }
 
 /** throws errors */
 object ErrorThrower extends ErrorHandler {
-  protected def addError(e: Error) {
+  protected def addError(e: Error): Unit = {
     throw e
   }
 }

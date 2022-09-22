@@ -12,7 +12,7 @@ class PragmaticRefiner(pragTypes : Set[PragmaticChangeType]) {
     val matches = new mutable.HashSet[(PragmaticChange,Set[Int])]()
 
     val changes = diff.changes.zipWithIndex.toSet
-    changes.subsets foreach {indexedChSet =>
+    changes.subsets() foreach {indexedChSet =>
       // have to explicitly state more generic type due to
       // Set being invariant in its type parameter
       val chSet : Set[ContentChange] = indexedChSet.map(_._1)

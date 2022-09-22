@@ -13,7 +13,7 @@ class GUIFrame(wm: WindowManager) extends JFrame("MMT") {
    private val panel = new GUIPanel(wm.controller)
    add(panel)
    addWindowListener(new WindowAdapter {
-      override def windowClosed(e: WindowEvent) {wm.closeBrowser}
+      override def windowClosed(e: WindowEvent): Unit = {wm.closeBrowser}
    })
    setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
    pack()

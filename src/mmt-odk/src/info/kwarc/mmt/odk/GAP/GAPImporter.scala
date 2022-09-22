@@ -13,7 +13,7 @@ class GAPImporter extends Importer {
   val sysImporter = new GAPJSONImporter
   override val logPrefix = "gapimporter"
 
-  override def init(controller : Controller) {
+  override def init(controller : Controller): Unit = {
     this.controller = controller
     report = controller.report
     // initOther(docImporter)

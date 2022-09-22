@@ -435,7 +435,7 @@ object HTMLParser {
     def node = try {
       XML.loadString(state.present(this,forcenamespace=true).trim)
     } catch {
-      case o =>
+      case o: Throwable =>
         println(o.toString)
         throw o
     }
@@ -556,7 +556,7 @@ object HTMLParser {
             if (close) state.openclose(n) else state.open(n)
           }
         case c =>
-          var txt = c + in.takeWhileSafe(_ != '<')
+          var txt = s"${c}${in.takeWhileSafe(_ != '<')}"
           val endWS = txt.lastOption.exists(_.isWhitespace)
           txt = if (txt.trim == empty.toString) empty.toString else txt.trim/*Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
             print("")

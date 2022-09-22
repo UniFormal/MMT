@@ -13,7 +13,7 @@ object TestException extends HServer with App {
     def resolve(req: HReqData) = Some(exnLet)
 
     object exnLet extends HSimpleLet {
-      def act(talk: HTalk) {
+      def act(talk: HTalk): Unit = {
         throw new Exception("plop")
       }
     }

@@ -34,7 +34,7 @@ object SOMB2 {
     case OMBINDC(f,ctx,scopes) =>
       var nctx = Context.empty
       val ret = (f,scopes.map {
-        case OMA(OMS(STeX.meta_quantification),args : List[OMV]) =>
+        case OMA(OMS(STeX.meta_quantification),args : List[OMV@unchecked]) =>
           SCtx(args.map(v => {val vd = ctx(v.name); nctx = nctx ++ vd; vd} ))
         case t => STerm(t)
       })
@@ -58,7 +58,7 @@ object SOMB {
     case OMBIND(OMS(STeX.apply),ctx,OMA(f,scopes)) =>
       var nctx = Context.empty
       val ret = (f,scopes.map {
-        case OMA(OMS(STeX.meta_quantification),args : List[OMV]) =>
+        case OMA(OMS(STeX.meta_quantification),args : List[OMV@unchecked]) =>
           SCtx(args.map(v => {val vd = ctx(v.name); nctx = nctx ++ vd; vd} ))
         case t => STerm(t)
       })

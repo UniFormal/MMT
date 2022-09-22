@@ -34,7 +34,7 @@ abstract class Translator {self =>
 
    def applyVarDecl(context: Context, vd: VarDecl) = {
      def tr(t: Term) = vd match {
-       case IncludeVarDecl(_) => applyModule(context,t)
+       case IncludeVarDecl(_,_,_) => applyModule(context,t)
        case _ => applyPlain(context, t)
      }
      vd.copy(tp = vd.tp map tr, df = vd.df map tr)

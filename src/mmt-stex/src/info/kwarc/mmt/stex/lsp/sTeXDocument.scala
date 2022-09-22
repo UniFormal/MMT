@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
+import info.kwarc.mmt.stex.parsing.stex.HasAnnotations
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml.{HTMLDefiniendum, HTMLParser, HTMLTopLevelTerm, HasHead, SemanticState}
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXParseError, TeXError}
@@ -26,9 +27,11 @@ case class STeXLSPErrorHandler(eh : api.Error => Unit, cont: (Double,String) => 
 
 class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
 
+  print("")
   lazy val archive = file.flatMap(f => server.controller.backend.resolvePhysical(f).map(_._1))
   lazy val relfile = archive.map(a => (a / info.kwarc.mmt.api.archives.source).relativize(file.get))
 
+  private val thisdoc = this
   def params(progress : String => Unit) = new Params {
     private var files: List[String] = Nil
     private def prefix(pre:Option[String],s:String) : String = pre match {
@@ -52,9 +55,9 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       files = files.tail
       files.headOption.foreach(progress)
     }
-    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,doctext,uri,e),(_,_) => {})
+    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,thisdoc,uri,e),(_,_) => {})
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
-      val (off1,off2,p) = LSPDocument.fullLine(files.head._2-1,doctext)
+      val (off1,off2,p) = _doctext.fullLine(files.head._2-1)
       val reg = SourceRegion(SourcePosition(off1,files.head._2,0),SourcePosition(off2,files.head._2,p))
       eh(TeXError(uri,msg,stacktrace,reg))
     }
@@ -79,7 +82,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       (target,archive,relfile) match {
         case (Some(t),Some(a),Some(f)) =>
           client.log("Building [" + a.id + "] " + f)
-          val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,doctext, uri, e), update)
+          val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,this, uri, e), update)
           try {
             eh.open
             t.build(a, BuildChanged(), f.toFilePath, Some(eh))
@@ -92,6 +95,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
         case _ =>
           client.log("Building None!")
       }
+      quickparse
       ((),"Done")
     }
   }
@@ -103,7 +107,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
         Future { server.safely {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
             val pars = params(update(0,_))
-            val html = RusTeX.parse(f, pars,List("c_stex_module_"))
+            val html = RusTeX.parseString(f,doctext ,pars,List("c_stex_module_"))
             update(0, "Parsing HTML... (2/2)")
             this.synchronized {
               val newhtml = HTMLParser(html)(parsingstate(pars.eh))
@@ -156,41 +160,48 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
           val msg = new HTMLUpdateMessage
           msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + uri // uri
           this.client.client.updateHTML(msg)
+          quickparse
         }}
       case _ =>
     }
   }
 
   override val timercount: Int = 0
-  override def onChange(annotations: List[(Delta, Annotation)]): Unit = {}
-  override def onUpdate(changes: List[Delta]): Unit = try this.synchronized { server.parser.synchronized {
-    Annotations.clear
-    client.resetErrors(uri)
-    import info.kwarc.mmt.stex.parsing._
-    val ret = server.parser(doctext,file.getOrElse(File(uri)),archive)
-    ret.foreach(_.iterate{ elem =>
-      elem.errors.foreach { e =>
-        val start = LSPDocument.toLC(elem.startoffset,doctext)
-        val end = LSPDocument.toLC(elem.endoffset,doctext)
-        client.documentErrors(server.controller,doctext,uri,SourceError(uri,SourceRef(URI(uri),
-          SourceRegion(
-            SourcePosition(elem.startoffset,start._1,start._2),
-            SourcePosition(elem.endoffset,end._1,end._2)
-          )),e.shortMsg,if (e.extraMessage != "") List(e.extraMessage) else Nil,e.level)
-        )
-      }
-      elem match {
-        case t : HasAnnotations =>
-          t.doAnnotations(this)
-        case _ =>
-      }
-    })
-    super.onUpdate(changes)
-    if (timercount > 0) Annotations.notifyOnChange(client.client)
-  }} catch {
-    case e : Throwable =>
+  override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
+    Annotations.notifyOnChange(client.client)
+  }
+  def quickparse = try this.synchronized {
+    server.parser.synchronized {
+      Annotations.clear
+      import info.kwarc.mmt.stex.parsing._
+      val ret = server.parser(_doctext, file.getOrElse(File(uri)), archive)
+      ret.foreach(_.iterate { elem =>
+        elem.errors.foreach { e =>
+          val start = _doctext.toLC(elem.startoffset)
+          val end = _doctext.toLC(elem.endoffset)
+          client.documentErrors(server.controller, this, uri, SourceError(uri, SourceRef(URI(uri),
+            SourceRegion(
+              SourcePosition(elem.startoffset, start._1, start._2),
+              SourcePosition(elem.endoffset, end._1, end._2)
+            )), e.shortMsg, if (e.extraMessage != "") List(e.extraMessage) else Nil, e.level)
+          )
+        }
+        elem match {
+          case t: HasAnnotations =>
+            t.doAnnotations(this)
+          case _ =>
+        }
+      })
+      super.onUpdate(Nil)
+    }
+  } catch {
+    case e: Throwable =>
       e.printStackTrace()
       print("")
+  }
+  override def onUpdate(changes: List[Delta]): Unit = {
+    client.resetErrors(uri)
+    quickparse
   }
 
 }

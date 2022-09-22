@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.utils.URI
 
 class Plugin extends Extension {
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     controller.extman.addExtension(new SingularImporter)
     controller.extman.addExtension(new SingularSystem)
   }

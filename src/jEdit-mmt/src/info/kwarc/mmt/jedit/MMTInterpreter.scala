@@ -32,7 +32,7 @@ class MMTInterpreter extends console.Shell("mmt-interpreter") {
   val tmap = mutable.HashMap.empty[String, Int]
 
   //Default message
-  override def printInfoMessage (output: Output) {
+  override def printInfoMessage (output: Output): Unit = {
      output.print(null, """This is the MMT Interpreter.
 
 For help, type '!help'.
@@ -45,10 +45,10 @@ For help, type '!help'.
   }
 
   //Nothing to do here...
-  override def stop (console: Console) {}
+  override def stop (console: Console): Unit = {}
 
   //Overrides prompt
-  override def printPrompt(console : Console, output : Output){
+  override def printPrompt(console : Console, output : Output): Unit ={
     output.writeAttrs(
       ConsolePane.colorAttributes(new java.awt.Color(10, 170, 10)),
       "MMTinterp>")
@@ -249,7 +249,7 @@ Non-commands are MMT code.
    mtname      : Metatheory name
    tname       : Theory to include
    */
-  def addDeclaration(buffer : Buffer, theoryName : String, declaration : String, mtname : String, tname : String) {
+  def addDeclaration(buffer : Buffer, theoryName : String, declaration : String, mtname : String, tname : String): Unit = {
 
     val tpattern = ("""(?s).*theory """ +
       theoryName + """(.*?)=\n(.*?)""" + Reader.GS.toChar.toString).r

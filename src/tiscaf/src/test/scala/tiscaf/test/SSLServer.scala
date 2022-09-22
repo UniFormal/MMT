@@ -26,7 +26,7 @@ object SSLServer extends App with HServer {
 
   object simpleApp extends HApp {
     def resolve(req: HReqData) = Some(new HSimpleLet {
-      def act(talk: HTalk) {
+      def act(talk: HTalk): Unit = {
         talk.setContentLength(6 + talk.req.uriPath.length)
           .write("path: " + talk.req.uriPath)
       }

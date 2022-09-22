@@ -112,7 +112,7 @@ object Library {
 //    }
   }
 
-  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {
+  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit): Unit = {
     val print = new java.io.PrintWriter(f)
     try {
       op(print)

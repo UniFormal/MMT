@@ -20,7 +20,7 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
 
   private def view = jEdit.getActiveView()
 
-  private def init {
+  private def init: Unit = {
     val insUS = Swing.Button("O", tooltip = "Inserts object delimiter (US)") {
        Inserter.insertUSorTab(view.getTextArea())
     }

@@ -21,7 +21,7 @@ trait UsesSCSCP extends VRESystem {
   private var location: SCSCPLocation = null
   
   /** get the location of the scscp server from the MMT configuration */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     super.start(args)
     val entry = controller.getConfig.getForeignEntries("mitm").find(_.key == id)
     location = entry match {

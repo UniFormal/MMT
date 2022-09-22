@@ -32,7 +32,7 @@ object BackwardPiElimination extends BackwardSearch {
    val head = Pi.path
    override val priority = 3
    
-   private def log(s: => String) {} // = println(s)
+   private def log(s: => String): Unit = {} // = println(s)
 
    private object UnnamedArgument {
       def unapply(vd: VarDecl) = vd match {
@@ -111,7 +111,7 @@ object BackwardPiElimination extends BackwardSearch {
               sgs ::= sg
               args ::= {() => sg.proof}
         }
-        Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseMap(a => a())))
+        Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseIterator.map(a => a()).toList))
    }
    def apply(prover: Searcher, g: Goal): List[ApplicableTactic] = {
       log("backward Pi elimination on goal " + prover.presentObj(g.conc))
@@ -201,7 +201,7 @@ object BackwardPiElimination extends BackwardSearch {
 
 object ForwardPiElimination extends ForwardSearch {
    val head = Pi.path
-   def generate(prover: Searcher, interactive: Boolean) {
+   def generate(prover: Searcher, interactive: Boolean): Unit = {
       // apply all symbols
       prover.facts.getConstantAtoms foreach {case a =>
          if (interactive || a.rl == Some("ForwardRule"))
@@ -211,12 +211,12 @@ object ForwardPiElimination extends ForwardSearch {
       applyVarAtoms(prover.goal, prover.facts)
    }
    /** recursively applies all variables to create new facts */
-   private def applyVarAtoms(g: Goal, facts: Facts) {
+   private def applyVarAtoms(g: Goal, facts: Facts): Unit = {
       g.varAtoms.foreach {case a => applyAtom(g, a, facts)}
       g.getAlternatives.foreach {_.subgoals.foreach {sg => applyVarAtoms(sg, facts)}}
    }
    /** applies one atom (symbol or variable) to all known facts */
-   private def applyAtom(g: Goal, atom: Atom, facts: Facts) {
+   private def applyAtom(g: Goal, atom: Atom, facts: Facts): Unit = {
       val (bindings, scope) = FunType.unapply(atom.tp).get
       // params: leading named arguments
       val (paramlist, neededArgs) = bindings.span(_._1.isDefined)
@@ -245,7 +245,7 @@ object ForwardPiElimination extends ForwardSearch {
        * @param neededArgs the arguments still needed (initially all arguments other than parameters)
        */
       def apply(g: Goal, parameters: Context, foundArgs: List[(Option[LocalName],Term)],
-                                             neededArgs: List[(Option[LocalName],Term)]) {
+                                             neededArgs: List[(Option[LocalName],Term)]): Unit = {
          // the values of the found named arguments as a substitution
          // TODO DM says this rule causes GC-related resource limit overruns
          val foundSubs = foundArgs.collect {case (Some(x),a) => x/a}

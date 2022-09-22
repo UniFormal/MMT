@@ -70,7 +70,7 @@ class MMTGutterAnnotations(mmt: MMTPlugin, editPane: EditPane) extends MMTTextAr
     * @param y The y co-ordinate of the top of the line's bounding box
     */
   // called on every visible line every time we scroll or edit
-  override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+  override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int): Unit = {
     val fontcolor = java.awt.Color.GRAY
     //find annotations
     val annotations = getAnnotations(startOffset, endOffset)

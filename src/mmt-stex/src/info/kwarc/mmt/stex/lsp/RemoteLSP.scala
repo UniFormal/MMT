@@ -50,15 +50,6 @@ class RemoteLSP extends STeXExtension {
         ("deps",JSONArray(a.dependencies.map(JSONString):_*)),
         ("git",JSONString("https://gl.mathhub.info/" + a.id + ".git"))
       )):_*)))
-    /*  Some(ServerResponse.JsonResponse(testRemote))
-    case Some("allarchfiles") if request.query == "Narf/Foo/Bar" =>
-      Some(ServerResponse.JsonResponse(JSONArray(dimensions.map(d => JSONObject(("dim",JSONString(d.toString)),("files",JSONArray(
-        List("a.txt","a/b.txt","c.txt","d/e/f.txt").map(JSONString):_*
-      )))):_*)))
-    case Some("allarchfiles") if request.query == "Narf/meta-inf" =>
-      Some(ServerResponse.JsonResponse(JSONArray(dimensions.map(d => JSONObject(("dim",JSONString(d.toString)),("files",JSONArray(
-        List("meta.txt","lib/meta.txt","src/meta.txt").map(JSONString):_*
-      )))):_*))) */
     case Some("allarchfiles") if request.query.nonEmpty =>
       controller.backend.getArchive(request.query) match {
         case Some(a) =>
@@ -71,9 +62,18 @@ class RemoteLSP extends STeXExtension {
         case _ => Some(ServerResponse.JsonResponse(JSONArray()))
       }
     case Some("archfile") if request.parsedQuery.contains("arch") && request.parsedQuery.contains("dim") && request.parsedQuery.contains("file") =>
-      val archmain = controller.backend.getArchive(request.parsedQuery("arch").get).getOrElse { return None}
+      val archmain = controller.backend.getArchive(request.parsedQuery("arch").get).getOrElse { return Some(
+        ServerResponse("Malformed archfile request: " + request.path.mkString("/") + "\n" +
+          request.parsedQuery("arch"), "text/plain")
+      )}
       val file = (archmain / RedirectableDimension(request.parsedQuery("dim").get)) / request.parsedQuery("file").get
-      if (file <= archmain.root) Some(ServerResponse.FileResponse(file)) else None
+      if (archmain.root <= file) Some(ServerResponse.FileResponse(file)) else Some(
+        ServerResponse("Malformed archfile request: " + request.path.mkString("/") + "\n" +
+          archmain.id + " at " + archmain.root + "\n" + request.parsedQuery("dim") + "\n" + file.toString, "text/plain")
+      )
+    case Some("archfile") =>
+      Some(ServerResponse("Malformed archfile request: " + request.path.mkString("/") + "\n" +
+        request.query + "\n" + request.parsedQuery.pairs.mkString("\n"), "text/plain"))
     case Some("search") =>
       val archs = request.parsedQuery("skiparchs").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
       val types = request.parsedQuery("types").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
@@ -85,7 +85,7 @@ class RemoteLSP extends STeXExtension {
         results.map(sr => JSONObject(
           ("archive",JSONString(sr.archive)),
           ("sourcefile",JSONString(sr.sourcefile)),
-          ("html",JSONString(sr.fragments.collectFirst{case p if p._1 != "title" => p._2}.getOrElse(sr.fragments.head._2)))
+          ("html", JSONString(sr.fragments.head._3))
         ))
         :_*)))
     case _ => None

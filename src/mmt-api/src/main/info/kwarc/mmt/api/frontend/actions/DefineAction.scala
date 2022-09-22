@@ -95,7 +95,7 @@ trait DefineActionHandling {
   }
 
   /** runs a given definition */
-  def runDefinition(file: Option[File], name: String) {
+  def runDefinition(file: Option[File], name: String): Unit = {
     state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
       case Some(Defined(_, _, actions)) =>
         actions foreach (f => handle(f))

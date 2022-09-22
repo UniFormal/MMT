@@ -83,6 +83,14 @@ object NatLiterals extends RepresentedRealizedType(OMS(STeX.nat),StandardNat)
 trait BindingRule extends Rule {
   def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
 }
+case class SubstRule(in:GlobalName,out:GlobalName) extends Rule
+object SubstitutionRule extends ParametricRule {
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(a),OMS(b)) => SubstRule(a,b)
+    case _ =>
+      ???
+  }
+}
 
 object InformalBindingRule extends BindingRule {
   def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context] = tm match {

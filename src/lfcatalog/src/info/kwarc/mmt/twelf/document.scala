@@ -48,7 +48,7 @@ class Position(a: Int, b: Int, c: Int, d: Int) {
   def _2 = (c,d)
 
   /** Format: startline.startcol-endline.endcol */
-  override def toString = a + "." + b + "-" + c + "." + d
+  override def toString = s"${a}.${b}-${c}.${d}"
 }
 
 

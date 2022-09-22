@@ -21,7 +21,7 @@ class MathMLPresenter extends PresentationMathMLPresenter {}
 class PresentationMathMLPresenter extends NotationBasedPresenter {
 
    /** generalized apply method that takes a callback function to determine the css class of a subterm */
-   def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler) {
+   def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler): Unit = {
       val pc = preparePresentation(o, origin)
       implicit val pcS = pc.copy(style = Some(style))
       doToplevel(o) {
@@ -40,7 +40,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
       }
       ret
    }
-   override def doIdentifier(p: ContentPath)(implicit pc : PresentationContext) {
+   override def doIdentifier(p: ContentPath)(implicit pc : PresentationContext): Unit = {
       val primaryName = controller.getO(p) match {
          case Some(d: Declaration) =>
            val (pn,_) = d.primaryNameAndAliases
@@ -55,7 +55,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
         pc.html.text(parts.mkString("/"))
       }
    }
-   override def doVariable(n: LocalName)(implicit pc : PresentationContext) {
+   override def doVariable(n: LocalName)(implicit pc : PresentationContext): Unit = {
       val vdAtt = pc.context.find(_.decl.name == n) match {
          case None => Nil
          case Some(vd) => List(varref -> vd.declpos.toString)
@@ -64,7 +64,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
         super.doVariable(n)
       }
    }
-   override def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
+   override def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext): Unit = {
       val symAtt = l.synType match {
         case OMID(p) => List(symref -> p.toPath)
         case _ => Nil
@@ -73,12 +73,12 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
         super.doLiteral(l)
       }
    }
-   override def doOperator(s: String)(implicit pc : PresentationContext) {
+   override def doOperator(s: String)(implicit pc : PresentationContext): Unit = {
       pc.html.mo {
         super.doOperator(s)
       }
    }
-   override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
+   override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext): Unit = {
       val mo = d.text match {
          case " " => element("mspace", ("width" -> ".2em") :: (symref -> p.toPath) :: mathmlattribs, "")
          case t   => element("mo", (symref -> p.toPath) :: mathmlattribs, t)
@@ -96,11 +96,11 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
       } else
          pc.out(mo)
    }
-   override def doSpace(level: Int)(implicit pc : PresentationContext) {
+   override def doSpace(level: Int)(implicit pc : PresentationContext): Unit = {
       val ms = element("mspace", List(("width", "." + (2*level).toString + "em")), "")
       pc.out(ms)
    }
-   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext): Unit = {
       val nsAtts = List("xmlns" -> namespace("mathml"))
       val mmtAtts = pc.owner match {
          case None => Nil
@@ -120,39 +120,39 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
     * wraps brackets around argument
     * @param brackets None/Some(true)/Some(false) for no/hidden/shown brackets
     */
-   protected def wrapBrackets(brackets: Option[Boolean], body: => Unit)(implicit pc: PresentationContext) {
+   protected def wrapBrackets(brackets: Option[Boolean], body: => Unit)(implicit pc: PresentationContext): Unit = {
       pc.out(openTag("mrow", mathmlattribs))
       brackets foreach {b => pc.out(bracket(b, true))}
       body
       brackets foreach {b => pc.out(bracket(b, false))}
       pc.out(closeTag("mrow"))
    }
-   override def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+   override def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext): Unit = {
       wrapBrackets(Some(false), body)
    }
-   override def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+   override def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext): Unit = {
       wrapBrackets(None, body)
    }
-   override def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+   override def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext): Unit = {
       wrapBrackets(Some(true), body)
    }
-   private def doOptional(group: String, body: => Unit)(implicit pc: PresentationContext) {
+   private def doOptional(group: String, body: => Unit)(implicit pc: PresentationContext): Unit = {
       pc.out(openTag("mrow", List(("class", s"$group ${hidden(group)}"))))
       body
       pc.out(closeTag("mrow"))
    }
-   override def doImplicit(body: => Unit)(implicit pc: PresentationContext) {
+   override def doImplicit(body: => Unit)(implicit pc: PresentationContext): Unit = {
       doOptional(implicitarg, body)
    }
-   override def doInferredType(body: => Unit)(implicit pc: PresentationContext) {
+   override def doInferredType(body: => Unit)(implicit pc: PresentationContext): Unit = {
       doOptional(reconstructedtype, body)
    }
 
    /** wraps continuations in mrow to make sure they produce a single element */
    private def R(c: Cont)(implicit pc: PresentationContext) = pc.html.mrow {c()}
-   override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
+   override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext): Unit = {
       import pc.html._
-      def underover(mbp: Cont) {
+      def underover(mbp: Cont): Unit = {
          (under, over) match {
             case (Some(u), Some(o)) => munderover {mbp(); R(u); R(o)}
             case (Some(u), None)    => munder     {mbp(); R(u)}
@@ -160,7 +160,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
             case (None,None)        => mbp()
          }
       }
-      def subsup() {
+      def subsup(): Unit = {
          (sub, sup) match {
             case (Some(b), Some(p)) => pc.html.msubsup {main; R(b); R(p)}
             case (Some(b), None)    => pc.html.msub    {main; R(b)}
@@ -170,7 +170,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
       }
       underover {subsup _}
    }
-   override def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
+   override def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext): Unit = {
       pc.html.mfrac {
          pc.html.mrow(attributes = List("linethickness" -> (if (line) "" else "0px"))) {
             above foreach {a => a()}
@@ -181,7 +181,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
       }
    }
 
-   override def doTd(ms : List[Cont])(implicit pc: PresentationContext) {
+   override def doTd(ms : List[Cont])(implicit pc: PresentationContext): Unit = {
      pc.html.td {
        pc.html.mrow {
          ms foreach {a => a()}
@@ -189,18 +189,18 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
      }
    }
 
-   override def doTr(ms : List[Cont])(implicit pc: PresentationContext) {
+   override def doTr(ms : List[Cont])(implicit pc: PresentationContext): Unit = {
      pc.html.tr {
        ms foreach {a => a()}
      }
    }
 
-   override def doTable(ms : List[Cont])(implicit pc: PresentationContext) {
+   override def doTable(ms : List[Cont])(implicit pc: PresentationContext): Unit = {
      pc.html.table {
        ms foreach {a => a()}
      }
    }
-   override def doSqrt(args : List[Cont])(implicit pc: PresentationContext) {
+   override def doSqrt(args : List[Cont])(implicit pc: PresentationContext): Unit = {
      pc.html.msqrt {
        pc.html.mrow {
          args foreach{a => a()}
@@ -208,7 +208,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
      }
    }
 
-   override def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext) {
+   override def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext): Unit = {
      if(root != Nil){
        pc.html.mroot{
          pc.html.mrow {
@@ -220,34 +220,34 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
      else doSqrt(base)
    }
 
-   override def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
+   override def doNumberMarker(arg : Delim)(implicit pc: PresentationContext): Unit = {
      pc.html.mn {
        pc.out(arg.s)
      }
    }
 
-   override def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+   override def doIdenMarker(arg : Delim)(implicit pc: PresentationContext): Unit = {
      pc.html.mi {
        pc.out(arg.s)
      }
    }
 
-   override def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
+   override def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext): Unit ={
      pc.html.merror{
      args foreach{m => m()}
      }
    }
 
-   override def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext){
+   override def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext): Unit ={
      pc.html.mphantom{
      args foreach {a => a()}
      }
    }
-   override def doGlyphMarker(arg : Delim, alt : String = "Failed to load")(implicit pc:PresentationContext){
+   override def doGlyphMarker(arg : Delim, alt : String = "Failed to load")(implicit pc:PresentationContext): Unit ={
       pc.html.mglyph(attributes = List("src" -> arg.s, "alt"->alt) ) {}
    }
 
-   override def doLabelMarker(args : List[Cont], label : String) (implicit pc:PresentationContext) {
+   override def doLabelMarker(args : List[Cont], label : String) (implicit pc:PresentationContext): Unit = {
      pc.html.mlabel{
        pc.html.mtext{
          pc.out(label)
@@ -258,7 +258,7 @@ class PresentationMathMLPresenter extends NotationBasedPresenter {
      }
    }
 
-   override def doTextMarker(text : Delim)(implicit pc: PresentationContext){
+   override def doTextMarker(text : Delim)(implicit pc: PresentationContext): Unit ={
      pc.html.mtext{
        pc.out(text.s)
      }
@@ -329,7 +329,7 @@ object ContentMathMLPresenter {
 
 /** presents objects as Parallel Markup (Content + Presentation) MathML */
 class ParallelMathMLPresenter extends PresentationMathMLPresenter {
-  override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+  override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext): Unit = {
     val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
     val mmtAtts = pc.owner match {
       case None => Nil

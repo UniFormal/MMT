@@ -27,7 +27,7 @@ class InstanceOfTheory(env: RuntimeEnvironment, val theory: Theory) extends
     }
   }
 
-  def set(p: GlobalName, t: Term) {
+  def set(p: GlobalName, t: Term): Unit = {
       val name = p.toLocalName
       getO(name) match {
         case Some(c: Constant) =>

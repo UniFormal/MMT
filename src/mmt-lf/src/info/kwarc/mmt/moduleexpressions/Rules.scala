@@ -229,7 +229,7 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
                }
                true
             case _ =>
-               solver.error(n + " does not refer to mappable declaration in " + from)
+               solver.error(n.toString + " does not refer to mappable declaration in " + from)
          }
          if (! mayhold)
             return false

@@ -8,7 +8,7 @@ import objects._
 /** This class can be used to conveniently apply the same operation to all terms in a structural element */
 class StructureTrffaverser(controller: Controller) {
     /** applies f to all Terms in s */
-    def apply(s: StructuralElement)(implicit f: (CPath,TermContainer) => Unit) {s match {
+    def apply(s: StructuralElement)(implicit f: (CPath,TermContainer) => Unit): Unit = {s match {
        case d: Document =>
           d.getModules(controller.globalLookup)
        //case m: DefinedModule =>

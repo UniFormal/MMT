@@ -111,8 +111,8 @@ sealed abstract class FormalAlignment extends URIAlignment {
   def invertible: Boolean = false
 
   def toTerm: Term = to match {
-    case LogicalReference(t: GlobalName) ⇒ OMS(t)
-    case LogicalReference(t: MPath)      ⇒ OMMOD(t)
+    case LogicalReference(t: GlobalName) => OMS(t)
+    case LogicalReference(t: MPath)      => OMMOD(t)
   }
   
   def ->(that: Alignment): Alignment = {
@@ -174,7 +174,7 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, overrid
 
   override def toString = from.toString + " " + to.toString +
     " direction=" + (if (invertible) """"both"""" else """"forward"""") +
-    props.filter(x ⇒ x._1 != "direction").map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    props.filter(x => x._1 != "direction").map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
 case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, override val invertible: Boolean,
@@ -182,11 +182,11 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, overr
   def toJSON = (JSONString("Argument"), JSONObject(List(
     (JSONString("from"), JSONString(from.toString)),
     (JSONString("to"), JSONString(to.toString)),
-    (JSONString("args"), JSONArray(arguments.map(p ⇒ JSONArray(JSONInt(p._1), JSONInt(p._2))):_*))
+    (JSONString("args"), JSONArray(arguments.map(p => JSONArray(JSONInt(p._1), JSONInt(p._2))):_*))
   )))
 
   override def reverse = {
-    val ret = if (invertible) ArgumentAlignment(to, from, true, arguments.map(p ⇒ (p._2, p._1))) else
+    val ret = if (invertible) ArgumentAlignment(to, from, true, arguments.map(p => (p._2, p._1))) else
       InformalAlignment(to, from)
     ret.isGenerated = true
     ret
@@ -194,9 +194,9 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, overr
 
   override def toString = from.toString + " " + to.toString +
     " direction=" + (if (invertible) """"both"""" else """"forward"""") +
-    " " + """arguments="""" + arguments.map(p ⇒ "(" + p._1 + "," + p._2 + ")").mkString("") +
+    " " + """arguments="""" + arguments.map(p => "(" + p._1 + "," + p._2 + ")").mkString("") +
     """"""" +
-    props.filter(x ⇒ !(List("direction", "arguments") contains x._1)).map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    props.filter(x => !(List("direction", "arguments") contains x._1)).map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 
   private def combine(args: List[(Int,Int)]): List[(Int,Int)] = arguments.map(p => {
     val p2 = args.find(q => p._2==q._1)
@@ -241,7 +241,7 @@ case class InformalAlignment(from: URIReference, to: URIReference) extends URIAl
   }
 
   override def toString = from.toString + " " + to.toString +
-    props.map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
+    props.map(p => " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 
   def ->(that: Alignment): Alignment = {
     require(to == that.from)

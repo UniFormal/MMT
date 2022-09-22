@@ -7,8 +7,8 @@ object MathHubTest extends MagicTest("mathhub") {
   override val serverport = Some(9000)
   override val gotoshell = true
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
@@ -19,7 +19,7 @@ object MathHubTest extends MagicTest("mathhub") {
     controller.extman.addExtension(new PathGraphExporter)
   }
 
-  def run: Unit = {
+  def run(): Unit = {
     hl("extension info.kwarc.mmt.mathhub.Server")
   }
 }

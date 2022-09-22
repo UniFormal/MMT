@@ -39,7 +39,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
    private var poffset: Int = 0
    private var line : Int = 0
    private var column : Int = 0
-   private def advancePositionBy(c: Char) {
+   private def advancePositionBy(c: Char): Unit = {
       poffset += 1
       column += 1
       if (c == '\n') {
@@ -72,14 +72,14 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
       c
    }
    def tail: this.type = {
-      next
+      next()
       this
    }
    def trim: this.type = {
       while (!empty && head.isWhitespace) next()
       this
    }
-   def drop(s: String) {
+   def drop(s: String): Unit = {
       if (StringSlice(input, poffset).startsWith(s)) {
          current += s.length
          s.foreach {c => advancePositionBy(c)}
@@ -143,16 +143,16 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
       while (!empty && head != until) {
          if (head == exceptAfter) {
             seen.addOne(head)
-               next
+               next()
          }
          seen.addOne(head)
-         next
+         next()
       }
       if (empty) {
          (seen.mkString, false)
       }
       else {
-         next
+         next()
          (seen.mkString,true)
       }
    }
@@ -177,7 +177,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
                seen ++= bp.close
             }
           case None =>
-            seen.addOne(next)
+            seen.addOne(next())
         }}
       }
       seen.mkString // impossible

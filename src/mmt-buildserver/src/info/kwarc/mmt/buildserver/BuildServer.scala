@@ -79,6 +79,10 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
   override def destroy: Unit = GitUpdateActionCompanion.destroy
 
   override def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
+    case ls if ls.headOption.contains(":buildserver") =>
+      apply(ServerRequest(request.method,request.headers,request.session,request.path.tail,request.query,request.body))
+    case ls if ls.headOption.contains("script") || ls.headOption.contains("css") =>
+      ServerResponse.ResourceResponse(ls.mkString("/"))
     case List("clear") =>
       //clear()
       State.synchronized {
@@ -161,20 +165,27 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           commit.diffs.foreach {
             case Delete(p) =>
               log("Delete [" + a.archive.id + "] " + p)
-              FileDeps.delete(a.archive,(a.archive / source) / p)
+              FileDeps.delete(a.archive,a.archive.root / p)
               None
             case c@(Change(_)|Add(_)) =>
               log("Update [" + a.archive.id + "] " + c.path)
+              val path = a.archive.root / c.path
               configs.collectFirst{
-                case cf if cf.applies(a.archive,(a.archive / source) / c.path).isDefined =>
-                  val bt = cf.applies(a.archive,(a.archive / source) / c.path).get
+                case cf if (a.archive / source) <= path && cf.applies(a.archive,path).isDefined =>
+                  val bt = cf.applies(a.archive,path).get
                   log("Using " + bt.key)
-                  controller.handleLine("build " + a.archive.id + " " + bt.key + " " + c.path)
+                  controller.handleLine("build " + a.archive.id + " " + bt.key + " " + (a.archive / source).relativize(path).toString)
               }
           }
         case _ =>
           None
       }
+    }
+    State.synchronized {
+      for (elem <- State.failed) {
+        State.toqueue ::= new QueuedTask(elem._1.originalTarget,elem._2,elem._1.task)
+      }
+      State.failed = Nil
     }
   }
 
@@ -269,7 +280,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
             println("???")
         }
       } catch {
-        case e: JSONError =>
+        case _: JSONError | _: java.lang.StringIndexOutOfBoundsException =>
       } else {
         jsonfile.up.mkdirs()
         jsonfile.createNewFile()

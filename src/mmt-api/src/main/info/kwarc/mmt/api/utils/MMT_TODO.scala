@@ -5,5 +5,5 @@ package info.kwarc.mmt.api.utils
   * This allows us to mark a part of the code as needing review and/or re-work
   * @param message
   */
-class MMT_TODO(message: String) extends scala.deprecated(message, since="forever")
-// class MMT_TODO(message: String) extends scala.annotation.StaticAnnotation
+@deprecated("Use @deprecated(s\"MMT_TODO: $message\", since=\"forever\" instead)", since="2022-08-28")
+final class MMT_TODO(message: String) extends scala.deprecated("MMT_TODO: " + message, since="forever")

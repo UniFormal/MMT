@@ -3,7 +3,7 @@ import sbt.Keys.{scalacOptions, _}
 
 import scala.io.Source
 
-utils in ThisBuild := Utils((baseDirectory in src).value)
+ThisBuild / utils := Utils((src / baseDirectory).value)
 
 // If in doubt, always use utils.root or the other File properties on utils to construct
 // paths!
@@ -13,7 +13,7 @@ utils in ThisBuild := Utils((baseDirectory in src).value)
 // =================================
 // META-DATA and Versioning
 // =================================
-version in ThisBuild := {
+ThisBuild / version := {
   Source.fromFile(baseDirectory.value / "mmt-api/resources/versioning/system.txt").getLines.mkString.trim
 }
 
@@ -35,7 +35,7 @@ packageOptions in Global ++= Seq(
 )
 
 
-organization in ThisBuild := "info.kwarc.mmt"
+ThisBuild / organization := "info.kwarc.mmt"
 lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 
 // =================================
@@ -48,19 +48,32 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 //   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
 //       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
 //
-scalaVersion in Global := "2.13.4"
-scalacOptions in Global := Seq(
-  "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
+Global / scalaVersion := "2.13.4"
+Global / scalacOptions := Seq(
+  "-feature",
+  "-language:postfixOps", "-language:implicitConversions", "-language:reflectiveCalls", "-language:existentials",
+
+  "-deprecation", // turn on deprecation warnings
+
+  // turn down the severity of specific warnings
+  "-Wconf:msg=early initializers are deprecated*:i",                 // Info all "early initializers are deprecated" (need to fix in scala3)
+  "-Wconf:cat=other-match-analysis:i",                               // Info all "non-exhaustive match" warnings
+  "-Wconf:msg=Exhaustivity analysis reached max recursion depth*:s", // Disable "Exhaustivity analysis reached max recursion depth"
+
+  "-Wconf:msg=.*MMT_TODO.*:i",                                        // Info all the MMT_TODOs
+  // "-Wconf:msg=.*MMT_TODO.*:s",                                     // to temporarily disable
+
+  // "-Xno-patmat-analysis", // to temporarily disable
   // "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems // does not exist anymore since scala 2.13.*
   "-sourcepath", baseDirectory.value.getAbsolutePath // make sure that all scaladoc source paths are relative
 )
 
-parallelExecution in Global := false
-javaOptions in Global ++= Seq("-Xmx2g")
+Global / parallelExecution := false
+Global / javaOptions ++= Seq("-Xmx2g")
 
 publish := {}
-fork in Test := true
-testOptions in Test += Tests.Argument("-oI")
+Test / fork := true
+Test / testOptions  += Tests.Argument("-oI")
 
 // =================================
 // DEPLOY TASKS
@@ -74,21 +87,21 @@ val testSetup = TaskKey[Unit]("testSetup", "tests the MMT :setup command")
 // =================================
 // DOCUMENTATION TASKS
 // =================================
-scalacOptions in(ScalaUnidoc, unidoc) ++=
+ScalaUnidoc / unidoc / scalacOptions  ++=
   "-diagrams" +:
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl({
-      val repo = System.getenv("TRAVIS_REPO_SLUG")
+      val repo = System.getenv("GITHUB_REPOSITORY")
       s"https://github.com/${if (repo != null) repo else "UniFormal/MMT"}/blob/master/src€{FILE_PATH}.scala"
     })
-target in(ScalaUnidoc, unidoc) := file("../apidoc")
+ScalaUnidoc / unidoc / target := file("../apidoc")
 
 lazy val cleandoc = taskKey[Unit]("remove api documentation.")
 cleandoc := Utils.delRecursive(streams.value.log, file("../apidoc"))
 
 lazy val apidoc = taskKey[Unit]("generate post processed api documentation.")
 apidoc := Unit
-apidoc := apidoc.dependsOn(cleandoc, unidoc in Compile in src).value
+apidoc := apidoc.dependsOn(cleandoc, src / Compile / unidoc ).value
 
 // =================================
 // SHARED SETTINGS
@@ -100,10 +113,10 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.3" % "test",
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test",
   fork := true,
-  test in assembly := {},
-  assemblyMergeStrategy in assembly := {
+  assembly / test := {},
+  assembly / assemblyMergeStrategy := {
     case PathList("META-INF","services", _*) => MergeStrategy.first
     case
       PathList("rootdoc.txt") | // 2 versions from from scala jars
@@ -114,15 +127,15 @@ def commonSettings(nameStr: String) = Seq(
     case _ => MergeStrategy.first
   },
   // errors for assembly only
-  logLevel in assembly := Level.Error
+  assembly / logLevel := Level.Error
 )
 
 /** settings reused by MMT projects */
 def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
-  scalaSource in Compile := baseDirectory.value / "src",
+  Compile / scalaSource := baseDirectory.value / "src",
 
-  scalaSource in Test := baseDirectory.value / "test" / "scala",
-  resourceDirectory in Compile := baseDirectory.value / "resources",
+  Test / scalaSource := baseDirectory.value / "test" / "scala",
+  Compile / resourceDirectory := baseDirectory.value / "resources",
 
   unmanagedBase := baseDirectory.value / "lib",
 
@@ -160,10 +173,10 @@ lazy val src = (project in file(".")).
     jedit, intellij,buildserver
   ).
   settings(
-    unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
+    ScalaUnidoc / unidoc / unidocProjectFilter := excludedProjects.toFilter,
     // add the test folder to the test sources
     // but don't actually run any of them
-    scalaSource in Test := baseDirectory.value / "test",
+    Test / scalaSource := baseDirectory.value / "test",
     test := {}
   )
 
@@ -176,19 +189,19 @@ lazy val mmt = (project in file("mmt")).
     exportJars := false,
     publish := {},
     deploy := Def.taskDyn {
-      val jar = (assembly in Compile).value
+      val jar = (Compile / assembly).value
       val u = utils.value
       Def.task {
         Utils.deployTo(u.deploy / "mmt.jar")(jar)
       }
     }.value,
-    assemblyExcludedJars in assembly := {
-      val cp = (fullClasspath in assembly).value
+    assembly / assemblyExcludedJars := {
+      val cp = (assembly / fullClasspath).value
       cp filter { j => jeditJars.contains(j.data.getName) }
     },
-    mainClass in Compile := Some(mmtMainClass),
-    connectInput in run := true,
-    mainClass in assembly := Some(mmtMainClass)
+    Compile / mainClass := Some(mmtMainClass),
+    run / connectInput := true,
+    assembly / mainClass := Some(mmtMainClass)
   )
 
 
@@ -213,10 +226,10 @@ lazy val api = (project in file("mmt-api")).
   dependsOn(tiscaf).
   dependsOn(lfcatalog).
   settings(
-    scalacOptions in Compile ++= Seq("-language:existentials"),
-    scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile ++= apiJars(utils.value),
-    unmanagedJars in Test ++= apiJars(utils.value),
+    Compile / scalacOptions ++= Seq("-language:existentials"),
+    Compile / scalaSource := baseDirectory.value / "src" / "main",
+    Compile / unmanagedJars ++= apiJars(utils.value),
+    Test / unmanagedJars ++= apiJars(utils.value),
     libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-sparqlbuilder" % "4.1.0-M1",
     libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-repository-sail" % "4.1.0-M1",
     libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-sail-memory" % "4.1.0-M1",
@@ -253,9 +266,9 @@ lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(api, lf).
   settings(commonSettings("jEdit-mmt"): _*).
   settings(
-    scalaSource in Compile := baseDirectory.value / "src",
-    resourceDirectory in Compile := baseDirectory.value / "src/resources",
-    unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
+    Compile / scalaSource := baseDirectory.value / "src",
+    Compile / resourceDirectory := baseDirectory.value / "src/resources",
+    Compile / unmanagedJars ++= jeditJars map (baseDirectory.value / "lib" / _),
     deploy := Utils.deployPackage("main/MMTPlugin.jar").value,
     install := utils.value.installJEditJars
   )
@@ -270,9 +283,9 @@ lazy val buildserver = (project in file("mmt-buildserver")).
   dependsOn(api, lf, stex).
   settings(mmtProjectsSettings("mmt-buildserver"): _*).
   settings(
-    unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
-    unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
-    unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",
+    Compile / unmanagedJars += utils.value.lib.toJava / "jgit.jar",
+    Compile / unmanagedJars += utils.value.lib.toJava / "slf4j.jar",
+    Test / unmanagedJars += utils.value.lib.toJava / "jgit.jar",
   )
 /*.
   settings(
@@ -291,8 +304,8 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(
     libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
     libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
-    libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
-    libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
+    //libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
+    //libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
     libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.46.v20220331",
     libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
   )
@@ -336,7 +349,7 @@ lazy val glf = (project in file("mmt-glf")).
 lazy val python = (project in file("python-mmt")).
   dependsOn(api, odk).
   settings(mmtProjectsSettings("python-mmt"): _*).
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
+  settings(Compile / unmanagedJars += baseDirectory.value / "lib" / "py4j0.10.7.jar")
 
 // graph optimization. Maintainer: Michael Banken
 lazy val got = (project in file("mmt-got")).
@@ -367,7 +380,7 @@ lazy val concepts = (project in file("concept-browser")).
     libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),
-    unmanagedJars in Compile += utils.value.lib.toJava / "scala-xml.jar"
+    Compile / unmanagedJars += utils.value.lib.toJava / "scala-xml.jar"
   )
 
 // =================================
@@ -379,7 +392,7 @@ lazy val owl = (project in file("mmt-owl")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-owl"): _*).
   settings(
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "owlapi-bin.jar"
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "owlapi-bin.jar"
   )
 
 // plugin for reading Mizar. Originally developed by Mihnea
@@ -421,19 +434,19 @@ lazy val frameit = (project in file("frameit-mmt"))
       "io.circe" %% "circe-parser"  % circeVersion,
     ),
 
-    scalacOptions in Compile ++= Seq(
+    Compile / scalacOptions ++= Seq(
      // "-Xplugin-require:macroparadise"
       "-Ymacro-annotations"
     ),
 
     deploy := Def.taskDyn {
-      val jar = (assembly in Compile).value
+      val jar = (Compile / assembly).value
       Def.task {
         Utils.deployTo(utils.value.deploy / "frameit.jar")(jar)
       }
     }.value,
-    mainClass in Compile  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
-    mainClass in assembly := Some("info.kwarc.mmt.frameit.communication.server.Server")
+    Compile / mainClass  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
+    assembly / mainClass := Some("info.kwarc.mmt.frameit.communication.server.Server")
   )
 	
 
@@ -458,12 +471,12 @@ lazy val metamath = (project in file("mmt-metamath")).
 lazy val isabelle_root =
 System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
 lazy val isabelle_jars =
-  if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "Pure.jar")
+  if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "isabelle.jar")
 lazy val isabelle =
   (project in file(if (isabelle_root == "") "mmt-isabelle/dummy" else "mmt-isabelle")).
     dependsOn(api, lf).
     settings(mmtProjectsSettings("mmt-isabelle"): _*).
-    settings(unmanagedJars in Compile ++= isabelle_jars)
+    settings(Compile / unmanagedJars ++= isabelle_jars)
 
 // plugin for reading TPS
 lazy val tps = (project in file("mmt-tps")).
@@ -488,24 +501,24 @@ lazy val stex = (project in file("mmt-stex")).
     libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
     libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30",
 
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
-    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
-    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
-    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
-    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
-    unmanagedJars in Test += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
+    Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
+    Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
+    Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
+    Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
 
-      /*unmanagedJars in Compile += utils.value.lib.toJava / "jgit.jar",
-      unmanagedJars in Compile += utils.value.lib.toJava / "slf4j.jar",
-      unmanagedJars in Test += utils.value.lib.toJava / "jgit.jar",*/
+      /*Compile / unmanagedJars += utils.value.lib.toJava / "jgit.jar",
+      Compile / unmanagedJars += utils.value.lib.toJava / "slf4j.jar",
+      Test / unmanagedJars += utils.value.lib.toJava / "jgit.jar",*/
     /*libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),*/
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "RusTeX.jar"
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "RusTeX.jar"
   )
 
 
@@ -519,7 +532,7 @@ lazy val oeis = (project in file("mmt-oeis")).
   dependsOn(planetary).
   settings(mmtProjectsSettings("mmt-oeis"): _*).
   settings(
-    unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
+    Compile / unmanagedJars += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
 
 // =================================
@@ -530,8 +543,8 @@ lazy val oeis = (project in file("mmt-oeis")).
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
-    scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
-    scalaSource in Compile := baseDirectory.value / "src/main/scala",
+    Compile / scalacOptions ++= Seq("-language:reflectiveCalls"),
+    Compile / scalaSource := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
       //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.30" % "test",
@@ -545,16 +558,16 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   dependsOn(tiscaf).
   settings(commonSettings("lfcatalog")).
   settings(
-    scalaSource in Compile := baseDirectory.value / "src",
+    Compile / scalaSource := baseDirectory.value / "src",
     publishTo := Some(Resolver.file("file", utils.value.deploy.toJava / " main")),
     deployLFCatalog := Def.taskDyn {
-      val jar = (assembly in Compile).value
+      val jar = (Compile / assembly).value
       val u = utils.value
       Def.task {
         Utils.deployTo(u.deploy / "lfcatalog" / "lfcatalog.jar")(jar)
       }
     }.value,
-    unmanagedJars in Compile += utils.value.lib.toJava / "scala-xml.jar"
+    Compile / unmanagedJars += utils.value.lib.toJava / "scala-xml.jar"
   )
 
 // =================================

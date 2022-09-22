@@ -31,7 +31,7 @@ abstract class StructureTransformer[ET <: ExpressionTransformer] extends Extensi
   protected val exprTrans = new scala.collection.mutable.HashMap[(MPath,MPath),ExpressionTransformer]
 
   /** central method for adding a declaration to the controller */
-  protected def registerDeclaration(d: Declaration, dT: Declaration) {
+  protected def registerDeclaration(d: Declaration, dT: Declaration): Unit = {
     controller.add(dT)
   }
 
@@ -51,13 +51,13 @@ abstract class StructureTransformer[ET <: ExpressionTransformer] extends Extensi
   }
 
   /** translates a path and builds the desired theory */
-  def applyModule(mp: MPath) {
-    if (mp == from) return to // optimization
+  def applyModule(mp: MPath): Unit = {
+    if (mp == from) return /*to*/ // optimization
     val m = controller.getAs(classOf[Module],mp)
     applyModule(m)
   }
 
-  def applyModule(module: Module) {
+  def applyModule(module: Module): Unit = {
     if (module.path == from) return // monomorphic base becomes polymorphic base
     translatedModules.get(module.path).foreach {return} // already translated
     // skip modules that do not depend on from
@@ -88,7 +88,7 @@ abstract class StructureTransformer[ET <: ExpressionTransformer] extends Extensi
   }
 
   // called on every Declaration
-  def applyDeclaration(in: Module,out: Module,d: Declaration,ae: ET) {
+  def applyDeclaration(in: Module,out: Module,d: Declaration,ae: ET): Unit = {
     d match {
       case c: Constant =>
         applyConstant(in,out,c,ae)
@@ -98,12 +98,12 @@ abstract class StructureTransformer[ET <: ExpressionTransformer] extends Extensi
   }
 
   // called for every Constant, factored out for easy overriding
-  def applyConstant(in: Module,out: Module,c: Constant,ae: ET) {
+  def applyConstant(in: Module,out: Module,c: Constant,ae: ET): Unit = {
     val cT = c.translate(out.toTerm,LocalName.empty,ae,Context.empty)
     registerDeclaration(c,cT)
   }
   // called for every Structure, factored out for easy overriding
-  def applyStructure(in: Module,out: Module, s: Structure,ae: ET) {
+  def applyStructure(in: Module,out: Module, s: Structure,ae: ET): Unit = {
     val sT = s.translate(out.toTerm,LocalName.empty,ae,Context.empty)
     registerDeclaration(s,sT)
   }
@@ -148,12 +148,12 @@ class PolymorphifyStructure(val from: MPath, term: GlobalName, val to: MPath, tp
     }
   }
 
-  override def applyModule(module: Module) {
+  override def applyModule(module: Module): Unit = {
     if (metaPaths contains module.path) return // meta-theory remains unchanged
     super.applyModule(module)
   }
 
-  override def applyConstant(in:Module, out: Module, c: Constant, ae: PolimorphifyExpr) {
+  override def applyConstant(in:Module, out: Module, c: Constant, ae: PolimorphifyExpr): Unit = {
     // avoid needlessly polymorphifying auxiliary constants
     val polymorphify = c.tp.exists(_.paths contains term) || c.df.exists(_.paths contains term)
     if (polymorphify) {

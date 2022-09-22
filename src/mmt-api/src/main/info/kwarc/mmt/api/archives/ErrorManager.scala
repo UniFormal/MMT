@@ -145,7 +145,7 @@ class ErrorManager extends Extension with Logger {self =>
     *
     * @param a the archive
     */
-  def loadAllErrors(a: Archive, removeUnknowns: Boolean) {
+  def loadAllErrors(a: Archive, removeUnknowns: Boolean): Unit = {
     errorMaps ::= new ErrorMap(a)
     a.traverse[Unit](errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false))({
       case Current(_, FilePath(target :: path)) =>
@@ -163,7 +163,7 @@ class ErrorManager extends Extension with Logger {self =>
     * @param target the build target
     * @param fpath  the file
     */
-  def loadErrors(a: Archive, target: String, fpath: FilePath, source: Option[File]) {
+  def loadErrors(a: Archive, target: String, fpath: FilePath, source: Option[File]): Unit = {
     val f = a / errors / target / fpath
     val bes = ErrorReader.getBuildErrors(f, level, Some((s: String) => log(s))).
       map(e => BuildError(a, target, fpath.toFile.stripExtension.toFilePath, e.updateSource(source)))
@@ -171,7 +171,7 @@ class ErrorManager extends Extension with Logger {self =>
     em.put((target, fpath.segments), bes)
   }
 
-  def loadErrors(a: Archive, target: String, fpath: FilePath, removeUnknowns: Boolean) {
+  def loadErrors(a: Archive, target: String, fpath: FilePath, removeUnknowns: Boolean): Unit = {
     val optBt = controller.extman.getOrAddExtensionOrExporter(classOf[TraversingBuildTarget], target)
     optBt match {
       case None =>
@@ -210,7 +210,7 @@ class ErrorManager extends Extension with Logger {self =>
   }
 
   /** registers a [[ChangeListener]] and a [[ServerExtension]] */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     val opts = List(
       OptionDescr("level", "", StringArg, "error level to pick"),
       OptionDescr("clean-unknown-sources", "", NoArg, "clean output files of for missing sources"))
@@ -221,7 +221,7 @@ class ErrorManager extends Extension with Logger {self =>
     controller.backend.getArchives.foreach { a => loadAllErrors(a, m.isDefinedAt("clean-unknown-sources")) }
   }
 
-  override def destroy {
+  override def destroy: Unit = {
     controller.extman.removeExtension(serve)
     controller.extman.removeExtension(cl)
   }
@@ -229,17 +229,17 @@ class ErrorManager extends Extension with Logger {self =>
   /** adds/deletes [[ErrorMap]]s for each opened/closed [[Archive]] */
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
-    override def onArchiveOpen(a: Archive) {
+    override def onArchiveOpen(a: Archive): Unit = {
       loadAllErrors(a, removeUnknowns = false)
     }
 
     /** deletes the [[ErrorMap]] */
-    override def onArchiveClose(a: Archive) {
+    override def onArchiveClose(a: Archive): Unit = {
       errorMaps = errorMaps.filter(_.archive != a)
     }
 
     /** reloads the errors */
-    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath, res: BuildResult) {
+    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath, res: BuildResult): Unit = {
       val errPath = if ((a / t.inDim / p).isDirectory)
         p / ".err"
       else
@@ -285,7 +285,7 @@ class ErrorManager extends Extension with Logger {self =>
         val idx = Table.columns.indexOf(field)
         assert(idx >= 0)
         val l: List[String] = result.map(be => be.toStrList(idx)).toList.sorted
-        val g = l.groupBy(identity).mapValues(_.length).toList.sortBy(_._2).reverse
+        val g = l.groupBy(identity).view.mapValues(_.length).toList.sortBy(_._2).reverse
         JSONArray(g.take(limit).map { case (s, i) =>
           JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
         }: _*)

@@ -27,22 +27,37 @@ object TeXError {
 
 
 object RusTeX {
-  import info.kwarc.rustex.Bridge
+  import info.kwarc.rustex.RusTeXBridge
   private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
 
   def initializeBridge(f : => File): Unit = this.synchronized {
-    if (!Bridge.initialized()) {
+    if (!RusTeXBridge.initialized) {
       val path = f
       /*val file = path / Bridge.library_filename()
       if (!file.exists()) {
         File.download(URI(github_rustex_prefix + Bridge.library_filename()),file)
       }*/
-      Bridge.initialize(path.toString)
+      RusTeXBridge.initialize(path.toString)
     }
   }
   def parse(f : File,p:Params,memories:List[String] = Nil) = {
-    if (Bridge.initialized()) this.synchronized { Bridge.parse(f.toString,p,memories) } else ""
+    if (RusTeXBridge.initialized) this.synchronized {
+      val sb = RusTeXBridge.mainBridge
+      sb.setMemories(memories)
+      sb.setParams(p)
+      sb.parse(f.toString)
+    } else ""
   }
+
+  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil) = {
+    if (RusTeXBridge.initialized) this.synchronized {
+      val sb = RusTeXBridge.mainBridge
+      sb.setMemories(memories)
+      sb.setParams(p)
+      sb.parseString(f.toString,text)
+    } else ""
+  }
+
 
 }
 
@@ -94,13 +109,11 @@ trait XHTMLParser extends TraversingBuildTarget {
       def file_open(s: String): Unit = {
         files ::= s
         self.log(s,Some("rustex-file"))
-        if (s.contains("MathHub/smglom") && s.contains(".en.tex")) {
+       /* if (s.contains("MathHub/smglom") && s.contains(".en.tex")) {
           println(s.trim)
-        }
+        }*/
       }
-      def file_close(): Unit = if (files.isEmpty) {
-        print("")
-      } else {
+      def file_close(): Unit = if (files.nonEmpty) {
         self.log(files.head,Some("rustex-file-close"))
         files = files.tail
       }
@@ -115,7 +128,7 @@ trait XHTMLParser extends TraversingBuildTarget {
     val doc = try { controller.library.synchronized {
       HTMLParser(outFile.setExtension("shtml"))(state)
     }} catch {
-      case e =>
+      case e: Throwable =>
         e.printStackTrace()
         throw e
     }
@@ -272,7 +285,7 @@ object PdfLatex {
       pdffile.setExtension("blg"),
       pdffile.setExtension("fdb_latexmk"),
       pdffile.setExtension("fls"),
-      pdffile.setExtension("sref"),
+      //pdffile.setExtension("sref"),
       pdffile.setExtension("sms"),
       File(pdffile.stripExtension.toString + ".run.xml"),
       File(pdffile.stripExtension.toString + ".synctex.gz"),

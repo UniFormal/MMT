@@ -32,7 +32,7 @@ object MMTExtractor extends RelationalExtractor {
 
 
    /** apply a continuation function to every relational element of a StructuralElement */
-   def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
+   def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = {
       val path = e.path
       e match {
          case d: Document =>
@@ -134,7 +134,7 @@ object MMTExtractor extends RelationalExtractor {
    }
    
    /** extract all dependencies of object containers */
-   private def doDependencies(path: Path, oc: ObjContainer[_])(implicit f: RelationalElement => Unit) {
+   private def doDependencies(path: Path, oc: ObjContainer[_])(implicit f: RelationalElement => Unit): Unit = {
      oc.dependsOn foreach {p =>
        val r = DependsOn(path, p)
        f(r)

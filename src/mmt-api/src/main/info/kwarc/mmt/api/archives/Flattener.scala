@@ -10,13 +10,13 @@ import libraries._
 
 class FlatExporter extends Exporter {
    def key = "flat"
-   def exportDocument(doc : Document, bf: BuildTask) {}
-   def exportView(view : View, bf: BuildTask) {
+   def exportDocument(doc : Document, bf: BuildTask): Unit = {}
+   def exportView(view : View, bf: BuildTask): Unit = {
       // TODO
    }
-   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
+   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {}
 
-   def exportTheory(thy : Theory, bf: BuildTask) {
+   def exportTheory(thy : Theory, bf: BuildTask): Unit = {
       val me = controller.simplifier
       me(thy)
       val node = thy.toNodeElab

@@ -143,7 +143,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     val doc = getDoc(cat.document)
     controller.add(MRef(doc.path,th.path))
 
-    if (cat.gap != "") println(th.path + " ~> " + cat.gap)
+    if (cat.gap != "") println(th.path.toString + " ~> " + cat.gap)
 
     controller.add(PlainInclude(axth.path, th.path))
     controller.add(PlainInclude(structh.path, th.path))
