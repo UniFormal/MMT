@@ -76,6 +76,43 @@ Test / fork := true
 Test / testOptions  += Tests.Argument("-oI")
 
 // =================================
+// DEPENDENCIES
+// =================================
+
+def scala_library : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-library" % scalaVersion.value
+def scala_compiler : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+def parser_combinators : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.2.0-M1"
+def scala_xml : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "2.0.0-M3"
+def xz : Def.SettingsDefinition = libraryDependencies +=  "org.tukaani" % "xz" % "1.8"
+def parallel_collections : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.0"
+
+def api_deps = {
+  Seq(scala_library,scala_compiler,parser_combinators,
+    scala_xml,xz,parallel_collections
+  )
+}
+
+def akka_http = libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-http-core" % "10.2.10",
+  "com.typesafe.akka" %% "akka-actor-typed" % "2.7.0-M1"
+)
+def scalatest : Def.SettingsDefinition = libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test"
+def java8compat : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
+def lsp4j = libraryDependencies ++= Seq(
+  "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
+  "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
+  "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.46.v20220331",
+)
+def jgit : Def.SettingsDefinition = libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r"
+def slf4j = libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30"
+def py4j = libraryDependencies += "net.sf.py4j" % "py4j" % "0.10.7"
+def jline = "org.jline" % "jline" % "3.18.0"
+def lucene = libraryDependencies ++= Seq(
+  "org.apache.lucene" % "lucene-queryparser" % "9.2.0",
+  "org.apache.lucene" % "lucene-grouping" % "9.2.0"
+)
+
+// =================================
 // DEPLOY TASKS
 // =================================
 
@@ -113,7 +150,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test",
+  // libraryDependencies += scalatest,
   fork := true,
   assembly / test := {},
   assembly / assemblyMergeStrategy := {
@@ -154,7 +191,6 @@ import VersionSpecificProject._
 lazy val excludedProjects = {
   Exclusions()
     .java7(repl, odk)
-    .java9(concepts)
 }
 
 // =================================
@@ -168,8 +204,8 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
-    tiscaf, lfcatalog,
+    lf, owl, mizar, /*frameit,*/ mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
+    /*tiscaf,*/ lfcatalog,
     jedit, intellij,buildserver
   ).
   settings(
@@ -183,7 +219,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp, buildserver).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, mathhub, python, intellij, coq, glf, lsp, buildserver).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -211,37 +247,25 @@ lazy val mmt = (project in file("mmt")).
 
 // MMT is split into multiple subprojects to that are managed independently.
 
-def apiJars(u: Utils) = Seq(
-  "scala-compiler.jar",
-  "scala-library.jar",
-  "scala-parser-combinators.jar",
-  "scala-xml.jar",
-  "xz.jar",
-  "scala-parallel-collections.jar",
-).map(u.lib.toJava / _)
+
 
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
-  dependsOn(tiscaf).
+  //dependsOn(tiscaf).
   dependsOn(lfcatalog).
   settings(
     Compile / scalacOptions ++= Seq("-language:existentials"),
-    Compile / scalaSource := baseDirectory.value / "src" / "main",
-    Compile / unmanagedJars ++= apiJars(utils.value),
-    Test / unmanagedJars ++= apiJars(utils.value),
-  )
+    Compile / scalaSource := baseDirectory.value / "src" / "main"
+  ).settings(api_deps:_*).settings(akka_http)
 
 
 // Some foundation-specific extensions. Maintainer: Florian
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api % "compile -> compile; test -> test").
-  dependsOn(tiscaf).
+  //dependsOn(tiscaf).
   dependsOn(lfcatalog).
-  settings(mmtProjectsSettings("mmt-lf"): _*).
-  settings(
-    //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "1.2.0-M1" % "test",
-  )
+  settings(mmtProjectsSettings("mmt-lf"): _*)
 
 // =================================
 // MMT Projects: plugins for using MMT in other applications
@@ -278,11 +302,7 @@ lazy val intellij = (project in file("intellij-mmt")).
 lazy val buildserver = (project in file("mmt-buildserver")).
   dependsOn(api, lf, stex).
   settings(mmtProjectsSettings("mmt-buildserver"): _*).
-  settings(
-    Compile / unmanagedJars += utils.value.lib.toJava / "jgit.jar",
-    Compile / unmanagedJars += utils.value.lib.toJava / "slf4j.jar",
-    Test / unmanagedJars += utils.value.lib.toJava / "jgit.jar",
-  )
+  settings(jgit,slf4j)
 /*.
   settings(
     libraryDependencies ++= Seq(
@@ -297,24 +317,8 @@ lazy val coq = (project in file("mmt-coq")).
 lazy val lsp = (project in file("mmt-lsp")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lsp"): _*).
-  settings(
-    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
-    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
-    //libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
-    //libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
-    libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.46.v20220331",
-    libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
-  )
-/*
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j-websocket.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "javax-websocket.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar") */
+  settings(lsp4j,java8compat)
+
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
@@ -345,7 +349,7 @@ lazy val glf = (project in file("mmt-glf")).
 lazy val python = (project in file("python-mmt")).
   dependsOn(api, odk).
   settings(mmtProjectsSettings("python-mmt"): _*).
-  settings(Compile / unmanagedJars += baseDirectory.value / "lib" / "py4j0.10.7.jar")
+  settings(py4j)
 
 // graph optimization. Maintainer: Michael Banken
 lazy val got = (project in file("mmt-got")).
@@ -361,22 +365,7 @@ lazy val repl = (project in file("mmt-repl")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-repl")).
   settings(
-    libraryDependencies ++= Seq(
-      "org.jline" % "jline" % "3.18.0"
-    )
-  )
-
-// alignment-based concept browser. Maintainer: Dennis
-lazy val concepts = (project in file("concept-browser")).
-  dependsOn(api).
-  dependsOn(tiscaf).
-  dependsOn(lfcatalog).
-  settings(mmtProjectsSettings("concept-browser"): _*).
-  settings(
-    libraryDependencies ++= Seq(
-      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
-    ),
-    Compile / unmanagedJars += utils.value.lib.toJava / "scala-xml.jar"
+    libraryDependencies ++= Seq(jline)
   )
 
 // =================================
@@ -400,6 +389,7 @@ lazy val mizar = (project in file("mmt-mizar")).
 // use of MMT in the frameit system, here for ease of deployment but not part of the main mmt target
 // reponsible: Navid
 // finch is an HTTP server library (https://github.com/finagle/finch), a FrameIT dependency
+/*
 val finchVersion = "0.32.1"
 // Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
 val circeVersion = "0.13.0"
@@ -444,6 +434,7 @@ lazy val frameit = (project in file("frameit-mmt"))
     Compile / mainClass  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
     assembly / mainClass := Some("info.kwarc.mmt.frameit.communication.server.Server")
   )
+*/
 	
 
 // plugin for mathscheme-related functionality. Obsolete
@@ -494,19 +485,18 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api,odk,lsp).
   settings(
     mmtProjectsSettings("mmt-stex"),
-    libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",
-    libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30",
+    jgit,slf4j,lucene,
 
-    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
+    /*
     Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
-    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
-    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
     Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
+
+     */
 
       /*Compile / unmanagedJars += utils.value.lib.toJava / "jgit.jar",
       Compile / unmanagedJars += utils.value.lib.toJava / "slf4j.jar",
@@ -527,31 +517,28 @@ lazy val openmath = (project in file("mmt-openmath")).
 lazy val oeis = (project in file("mmt-oeis")).
   dependsOn(planetary).
   settings(mmtProjectsSettings("mmt-oeis"): _*).
-  settings(
-    Compile / unmanagedJars += utils.value.lib.toJava / "scala-parser-combinators.jar"
-  )
+  settings(parser_combinators)
 
 // =================================
 // DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
 
 // this is a dependency of MMT that is copied into the MMT repository for convenience; it only has to be rebuilt when updated (which rarely happens)
+/*
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
     Compile / scalacOptions ++= Seq("-language:reflectiveCalls"),
     Compile / scalaSource := baseDirectory.value / "src/main/scala",
-    libraryDependencies ++= Seq(
-      //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
-      "org.slf4j" % "slf4j-simple" % "1.7.30" % "test",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value
-    ),
+    scala_compiler,
     test := {} // disable tests for tiscaf
   )
+ */
 
 // this is a dependency of Twelf if used in conjunction with the module system; it is automatically started when using the Twelf importer
+
 lazy val lfcatalog = (project in file("lfcatalog")).
-  dependsOn(tiscaf).
+  //dependsOn(tiscaf).
   settings(commonSettings("lfcatalog")).
   settings(
     Compile / scalaSource := baseDirectory.value / "src",
@@ -563,8 +550,9 @@ lazy val lfcatalog = (project in file("lfcatalog")).
         Utils.deployTo(u.deploy / "lfcatalog" / "lfcatalog.jar")(jar)
       }
     }.value,
-    Compile / unmanagedJars += utils.value.lib.toJava / "scala-xml.jar"
+    scala_xml
   )
+
 
 // =================================
 // deleted projects that are still accessible in the history

@@ -12,6 +12,7 @@ import ServerResponse._
 
 /** Represents an implementation for servers */
 trait ServerImplementation {
+  def bindHost : String
   /** the name of this server */
   val serverName : String
   /** the address this server should listen to */
@@ -27,7 +28,7 @@ trait ServerImplementation {
 }
 
 /** An HTTP RESTful server. */
-class Server(val port: Int, val host: String, controller: Controller) extends TiscafServerImplementation with Logger {
+class Server(val port: Int, val host: String, controller: Controller) extends AkkaServerImplementation/*TiscafServerImplementation*/ with Logger {
   val serverName : String = "MMT HTTP Server"
   val listenAddress : String = host
   val listenPort : Int = port

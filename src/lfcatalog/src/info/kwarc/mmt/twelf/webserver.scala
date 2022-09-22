@@ -1,7 +1,9 @@
 package info.kwarc.mmt.twelf
-
+/*
 import tiscaf._
 import tiscaf.let._
+
+ */
 
 import java.io._
 import java.net._
@@ -17,6 +19,11 @@ import scala.xml._
 /** An HTTP RESTful server.
   * @param catalog the main controller and storage
   * @param port the port on which the server runs */
+class WebServer(catalog : Catalog, port : Int) {
+  def start = ???
+  def stop = ???
+}
+/*
 class WebServer(catalog : Catalog, port : Int) extends HServer {
 
   // log all the things
@@ -355,3 +362,6 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     }
   }
 }
+
+
+ */

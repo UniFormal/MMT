@@ -19,7 +19,7 @@ object Utils {
     * packages the compiled binaries and copies to deploy
     */
   def deployMathHub(target: File): Def.Initialize[Task[Unit]] =
-    packageBin in Compile map { jar => Utils.deployTo(target)(jar) }
+    Compile/packageBin map { jar => Utils.deployTo(target)(jar) }
 
   /*
    * copies files to deploy folder
@@ -34,7 +34,7 @@ object Utils {
     * packages the compiled binaries and copies to deploy
     */
   def deployPackage(name: String): Def.Initialize[Task[Unit]] = Def.taskDyn {
-    val jarFile = (packageBin in Compile).value
+    val jarFile = (Compile/packageBin).value
     Def.task {
       Utils.deployTo(utils.value.deploy / name)(jarFile)
     }
