@@ -48,7 +48,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 //   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
 //       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
 //
-Global / scalaVersion := "2.13.4"
+Global / scalaVersion := "2.13.5"
 Global / scalacOptions := Seq(
   "-feature",
   "-language:postfixOps", "-language:implicitConversions", "-language:reflectiveCalls", "-language:existentials",
@@ -81,10 +81,10 @@ Test / testOptions  += Tests.Argument("-oI")
 
 def scala_library : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-library" % scalaVersion.value
 def scala_compiler : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-def parser_combinators : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.2.0-M1"
-def scala_xml : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "2.0.0-M3"
+def parser_combinators : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators_2.13" % "1.2.0-M1"
+def scala_xml : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml_2.13" % "2.0.0-M3"
 def xz : Def.SettingsDefinition = libraryDependencies +=  "org.tukaani" % "xz" % "1.8"
-def parallel_collections : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.0"
+def parallel_collections : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections_2.13" % "1.0.0"
 
 def api_deps = {
   Seq(scala_library,scala_compiler,parser_combinators,
@@ -93,11 +93,11 @@ def api_deps = {
 }
 
 def akka_http = libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-http-core" % "10.2.10",
-  "com.typesafe.akka" %% "akka-actor-typed" % "2.7.0-M1"
+  "com.typesafe.akka" %% "akka-http-core_2.13" % "10.2.10",
+  "com.typesafe.akka" %% "akka-actor-typed_2.13" % "2.7.0-M1"
 )
 def scalatest : Def.SettingsDefinition = libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test"
-def java8compat : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
+def java8compat : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-java8-compat_2.13" % "1.0.2"
 def lsp4j = libraryDependencies ++= Seq(
   "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
   "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",

@@ -8,3 +8,6 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0") // for building a fat j
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "5.2.4") // for developing in eclipse (untested)
 
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.1")
+
+
+addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.4.2")

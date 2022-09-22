@@ -20,6 +20,6 @@ package object archives
   val relational : ArchiveDimension = RedirectableDimension("relational")
   val notational : ArchiveDimension = RedirectableDimension("notations")
   val errors     : ArchiveDimension = RedirectableDimension("errors")
-  val export     : ArchiveDimension = RedirectableDimension("export")
+  val `export`     : ArchiveDimension = RedirectableDimension("export")
   val flat       : ArchiveDimension = RedirectableDimension("flat")
 }

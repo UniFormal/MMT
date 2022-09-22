@@ -450,10 +450,10 @@ object PresentationMarker {
                sofar = newHead :: sofar.tail
             case Delim("/") =>
                if (sofar.isEmpty) sofar ::= Delim(" ")
-               val enum = sofar.head
+               val `enum` = sofar.head
                val (denom, rest) = splitOffOne(others)
                left = rest
-               val newHead = FractionMarker(List(enum), List(denom), true)
+               val newHead = FractionMarker(List(`enum`), List(denom), true)
                sofar = newHead :: sofar.tail
             case Delim("[&") =>
               get_until(List("&]"), others, true) match {

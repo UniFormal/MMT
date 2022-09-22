@@ -372,9 +372,9 @@ object File {
     try {
       var bytes = new Array[Byte](100000)
       var len = -1
-      val enum = mar.entries
-      while (enum.hasMoreElements) {
-        val entry = enum.nextElement
+      val `enum` = mar.entries
+      while (`enum`.hasMoreElements) {
+        val entry = `enum`.nextElement
         var relPath = stringToList(entry.getName, "/")
         if (skipRootDir && relPath.length > 1)
           relPath = relPath.tail
