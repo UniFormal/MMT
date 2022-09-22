@@ -51,16 +51,19 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 Global / scalaVersion := "2.13.5"
 Global / scalacOptions := Seq(
   "-feature",
-  "-language:postfixOps", "-language:implicitConversions", "-language:reflectiveCalls", "-language:existentials",
+  "-language:postfixOps",
+  "-language:implicitConversions",
+  "-language:reflectiveCalls",
+  "-language:existentials",
 
   "-deprecation", // turn on deprecation warnings
 
   // turn down the severity of specific warnings
-  "-Wconf:msg=early initializers are deprecated*:i",                 // Info all "early initializers are deprecated" (need to fix in scala3)
-  "-Wconf:cat=other-match-analysis:i",                               // Info all "non-exhaustive match" warnings
-  "-Wconf:msg=Exhaustivity analysis reached max recursion depth*:s", // Disable "Exhaustivity analysis reached max recursion depth"
+  //"-Wconf:msg=early initializers are deprecated*:i",                 // Info all "early initializers are deprecated" (need to fix in scala3)
+  //"-Wconf:cat=other-match-analysis:i",                               // Info all "non-exhaustive match" warnings
+  //"-Wconf:msg=Exhaustivity analysis reached max recursion depth*:s", // Disable "Exhaustivity analysis reached max recursion depth"
 
-  "-Wconf:msg=.*MMT_TODO.*:i",                                        // Info all the MMT_TODOs
+  //"-Wconf:msg=.*MMT_TODO.*:i",                                        // Info all the MMT_TODOs
   // "-Wconf:msg=.*MMT_TODO.*:s",                                     // to temporarily disable
 
   // "-Xno-patmat-analysis", // to temporarily disable
@@ -81,10 +84,10 @@ Test / testOptions  += Tests.Argument("-oI")
 
 def scala_library : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-library" % scalaVersion.value
 def scala_compiler : Def.SettingsDefinition = libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-def parser_combinators : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators_2.13" % "1.2.0-M1"
-def scala_xml : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml_2.13" % "2.0.0-M3"
+def parser_combinators : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.2.0-M1"
+def scala_xml : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "2.0.0-M3"
 def xz : Def.SettingsDefinition = libraryDependencies +=  "org.tukaani" % "xz" % "1.8"
-def parallel_collections : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections_2.13" % "1.0.0"
+def parallel_collections : Def.SettingsDefinition = libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.0"
 
 def api_deps = {
   Seq(scala_library,scala_compiler,parser_combinators,
@@ -93,11 +96,11 @@ def api_deps = {
 }
 
 def akka_http = libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-http-core_2.13" % "10.2.10",
-  "com.typesafe.akka" %% "akka-actor-typed_2.13" % "2.7.0-M1"
+  "com.typesafe.akka" %% "akka-http-core" % "10.2.10",
+  "com.typesafe.akka" %% "akka-actor-typed" % "2.7.0-M1"
 )
-def scalatest : Def.SettingsDefinition = libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test"
-def java8compat : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-java8-compat_2.13" % "1.0.2"
+def scalatest : Def.SettingsDefinition = Test / libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test"
+def java8compat : Def.SettingsDefinition = libraryDependencies +=  "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
 def lsp4j = libraryDependencies ++= Seq(
   "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
   "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
@@ -150,7 +153,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  // libraryDependencies += scalatest,
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.12" % "test",
   fork := true,
   assembly / test := {},
   assembly / assemblyMergeStrategy := {

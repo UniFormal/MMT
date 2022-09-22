@@ -141,7 +141,7 @@ object StructuralFeatureUtils {
         case None => throw GeneralError("found empty include")
       }
     }
-    val consts:List[Constant] = decls.flatMap { d: Declaration =>
+    val consts:List[Constant] = decls.flatMap { (d: Declaration) =>
       d match {
         case c: Constant => List (c)
         case PlainInclude(from, to) => getFromInclusion(from)

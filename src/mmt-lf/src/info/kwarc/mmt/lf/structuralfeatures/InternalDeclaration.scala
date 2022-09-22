@@ -345,7 +345,7 @@ sealed abstract class InternalDeclaration {
   }
 
   def toString(termPresenter:Option[Term=>String] = None) = {
-    def pre(t: Term):String = {termPresenter.getOrElse({tm:Term => present(tm, true)})(t)}
+    def pre(t: Term):String = {termPresenter.getOrElse({(tm:Term) => present(tm, true)})(t)}
     val Type = if (isTypeLevel) "Typelevel" else if (isConstructor) "Constructor" else "Outgoing termlevel"
     Type+"("+ name+": "+pre(tp)+(if(df != None) " = "+pre(df.get) else "")+")"
   }

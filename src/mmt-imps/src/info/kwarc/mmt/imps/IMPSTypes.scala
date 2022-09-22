@@ -1349,7 +1349,7 @@ object DFLanguage extends Comp[DFLanguage] {
 case class DFRenamer(nm : Name, ps : Option[ArgPairs], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 {
   def toFunction : String => String = {
-    if (ps.isDefined) { x : String => applyRenaming(x,ps.get.ps) } else { identity }
+    if (ps.isDefined) { (x : String) => applyRenaming(x,ps.get.ps) } else { identity }
   }
 
   def applyRenaming(in : String, res : List[ArgRenamerPair]) : String = {

@@ -1326,7 +1326,7 @@ class IMPSImportTask(val controller  : Controller,
           assert(rn.isDefined)
           throw ImplementationError("Unhandled renamer present.")// I don't think this actually happens
         } else {
-          n : Int => (s : String) => s + "_" + n.toString
+          (n : Int) => (s : String) => s + "_" + n.toString
         }
 
         val fxd : List[Theory] = if (fixed.isDefined) {

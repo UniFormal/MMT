@@ -74,7 +74,7 @@ class RuleBasedExecutor() extends Executor {
         case const : Constant => buildRules.filter(r => const.tp match{
           case Some(c: Term) => r.applicable(c)
           case None => false
-        }) flatMap {r: RulePreprocessor=> r(const)}
+        }) flatMap {(r: RulePreprocessor)=> r(const)}
         case otherwise => None
       //}
     }

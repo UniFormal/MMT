@@ -129,7 +129,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
   
   def induct(tpls: List[GlobalName], defTpls: List[TypeLevel], dd: GlobalName, tm: VarDecl) : Term = {
     val maps : List[(GlobalName, Term => Term)] = tpls map {tpl => 
-      (tpl, {t:Term => defTpls.find(_.name.last == tpl.name.last).get.applyTo(t)(dd)})
+      (tpl, {(t:Term) => defTpls.find(_.name.last == tpl.name.last).get.applyTo(t)(dd)})
     }
     tm.tp match {
       case Some(OMS(tpl)) if tpls.contains(tpl) => utils.listmap(maps, tpl).getOrElse(throw ImplementationError("map: "+maps.toString()))(tm.toTerm)

@@ -162,7 +162,7 @@ object Haskell extends FuncLang[String] {
     *  if the key is not found, i.e. there is no conflict, it's just an identity map
     */
    private def fixConflict(s : String, m : scala.collection.mutable.HashMap[String,String]) : String = {
-      m.applyOrElse(s, {x : String => x})
+      m.applyOrElse(s, {(x : String) => x})
    }
    def fix(s : String) : String = {
      fixNative(fixConflict(s,fixMap))

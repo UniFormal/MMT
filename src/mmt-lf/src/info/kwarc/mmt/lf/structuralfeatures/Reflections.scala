@@ -43,7 +43,7 @@ class Reflections extends StructuralFeature(ReflectionsUtil.feature) with Refere
 
     val declsPre = readInternalDeclarations(consts, controller, Some(context))(dd.path)
     val subst = indCtx zip indParams map {case (vd, param) => Sub(vd.name, param)}
-    val tr = OMSReplacer({p:GlobalName => if (p.module == indDefPath) Some(OMS(dd.modulePath ? p.name)) else None})
+    val tr = OMSReplacer({(p:GlobalName) => if (p.module == indDefPath) Some(OMS(dd.modulePath ? p.name)) else None})
     val decls = declsPre map (_.translate(ApplySubs(subst)).translate(TraversingTranslator(tr)))
     
     structuralfeatures.InductiveTypes.elaborateDeclarations(context, decls, controller, Some({c => log(defaultPresenter(c)(controller))}))(dd.path)

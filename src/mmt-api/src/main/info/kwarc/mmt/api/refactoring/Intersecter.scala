@@ -699,7 +699,7 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
       controller.extman.addExtension(preproc)
     }
     controller.extman.addExtension(viewFinder, List(a.id))
-    val theories = a.allContent.flatMap({p:MPath => try {controller.get(p) match { case dt : Theory => Some(p) case _ => None}} catch {case e : Exception => None}})
+    val theories = a.allContent.flatMap({(p:MPath) => try {controller.get(p) match { case dt : Theory => Some(p) case _ => None}} catch {case e : Exception => None}})
     while(!viewFinder.isInitialized) {
       Thread.sleep(500)
     }

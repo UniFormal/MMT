@@ -150,13 +150,13 @@ object LinkInverter {
 			.getBuilder
 			// Add generalized declarations
 			.addNewSymbols(linkInversionResult.invertedTheory.map(decl => {
-			x: MPath => decl
+			(x: MPath) => decl
 		})).asNewTheory(newModulePath.parent, newModulePath.name, R.meta)
 
 		val generatedMorphism = ModuleCreator
 			.getBuilder
 			.addNewSymbols(linkInversionResult.generatedMorphism.map(decl => {
-				x: MPath => decl
+				(x: MPath) => decl
 			})).asNewView(
 			newMorphismPath.parent,
 			newMorphismPath.name,

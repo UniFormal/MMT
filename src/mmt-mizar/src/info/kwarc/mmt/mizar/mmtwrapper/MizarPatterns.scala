@@ -101,7 +101,7 @@ object MizarPatternInstance {
   def argsWellTyped(body: Term)(implicit args: List[Term]): Term = {
     val argNumI = args.length
     val x = OMV(argsVarName)
-    Lambda(x.name, nTerms(argNumI), Lambda(LocalName(argsWellTypedName), Sequence((0 until argNumI).toList.map({ ind: Int =>
+    Lambda(x.name, nTerms(argNumI), Lambda(LocalName(argsWellTypedName), Sequence((0 until argNumI).toList.map({ (ind: Int) =>
       proof(is(Index(x, OMI(ind)), Apply(Index(Sequence(args map (lambdaBindArgs(_)(args))), OMI(ind)), x)))
     })), body))
   }

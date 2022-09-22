@@ -55,7 +55,7 @@ object MizarStructure {
     def replaceSlashesLN(n: LocalName) = n.steps.tail.foldLeft(LocalName(List(n.steps.head)))((nm, step) => PatternUtils.pseudoSlash(nm, LocalName(step)))
     val rep = OMSReplacer(gn => Some(OMS(gn.module ? replaceSlashesLN(gn.name))))
     val tr = {
-      c: Constant =>
+      (c: Constant) =>
         val List(tpO: Option[Term], dfO: Option[Term]) = List(c.tp, c.df).map(_.map(rep.toTranslator()(Context.empty, _)))
         Constant(c.home, replaceSlashesLN(c.name), c.alias, tpO, dfO, c.rl, c.notC)
     }

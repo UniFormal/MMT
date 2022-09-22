@@ -177,7 +177,7 @@ class JSONURLIterator[T](url: String, extra: T, label_key: String, data_key: Str
         getJSON
       }
   }
-  def getLeaf: Option[((JSONObject, T), String)] = getJSON.map { jo: JSONObject =>
+  def getLeaf: Option[((JSONObject, T), String)] = getJSON.map { (jo: JSONObject) =>
     ((jo, extra), jo.getAsString(label_key))
   }
 }

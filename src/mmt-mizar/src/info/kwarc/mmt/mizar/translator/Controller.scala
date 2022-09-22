@@ -54,7 +54,7 @@ object TranslationController extends frontend.Logger {
     this.checkConstants = checkConstants; this.typecheckContent = typecheckContent
   }
 
-  private var processDependency: String => Unit = { m: String => }
+  private var processDependency: String => Unit = { (m: String) => }
   def setProcessDependency(processDependency: String => Unit): Unit = { this.processDependency = processDependency }
   def processDependencyTheory(mpath: MPath) = {
     lazy val aid = mpath.name.toString.toLowerCase

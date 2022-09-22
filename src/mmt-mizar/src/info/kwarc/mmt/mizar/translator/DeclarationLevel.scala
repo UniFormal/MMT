@@ -478,7 +478,7 @@ object statementTranslator {
     defContext.addLocalBindingVars(vars)
     val (claimFreeVars, proofFreeVars) = translate_Proved_Claim(choice_Statement.prfClaim)
 
-    val chosenObjectDecls = vars.map {vd: VarDecl =>
+    val chosenObjectDecls = vars.map {(vd: VarDecl) =>
       val name = makeNewSimpleGlobalName(vd.name.toString).name
       implicit val notC = makeNotationCont(vd.name.head.toString, 0, 0)
       makeConstantInContext(name, vd.tp, None)
@@ -595,11 +595,11 @@ object definitionTranslator {
     implicit val declarationPath = strDef._pat.globalPatternName
     val nots@strNot::aggrNot::forgNot::strictNot::selNots = strDef._pat::_aggrFuncPat::_forgetfulFuncPat::_strFuncPat::_selectorFuncPat map(translate_Pattern(_)) map(t=> (t._1.name, t._2))
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit defContext: => DefinitionContext) : List[VarDecl] = field_Segments._fieldSegments flatMap {
-      field_Segment: Field_Segment =>
+      (field_Segment: Field_Segment) =>
       // we pass a definition context with no variables, since we don't want them to be translated to terms of the form x..i, as is required for instances,
       // but instead want them to remain as they are, since the original argument context will be passed on and used instead here
 			val tp = translate_Type(field_Segment._tp)(DefinitionContext.empty(), selectors)
-      field_Segment._selectors._loci.reverse map { selector: Selector =>
+      field_Segment._selectors._loci.reverse map { (selector: Selector) =>
         val selName = OMV(selector.spelling)//translate_Locus(selector._loci)
         val sel = (selector.nr, selName % tp)
         selectors ::= sel
@@ -777,7 +777,7 @@ object clusterTranslator {
       val (f, _, fparams) = translate_Referencing_Pattern(_firstPat)
       val (g, _, gparams) = translate_Referencing_Pattern(_sndPat)
       val (c, d) = (ApplyGeneral(f, fparams), ApplyGeneral(g, gparams))
-      val compatibility: Term = defContext.corr_conds.find(_._cond.kind == syntax.compatibility().kind).map({comp: Correctness_Condition =>
+      val compatibility: Term = defContext.corr_conds.find(_._cond.kind == syntax.compatibility().kind).map({(comp: Correctness_Condition) =>
         val (aL, bL) = translatedLociEqns.unzip
         val List(a, b) = List(aL, bL) map(Sequence(_))
         translate_reg_correctness_condition(comp._just, "identify", translatedLociEqns.length, None, None, None, None, Some(List(a, b, c, d)))
@@ -790,7 +790,7 @@ object clusterTranslator {
       val name = makeNewGlobalName("reduce", num.toString).name
       val predecessor = translate_Term(_predecessor)
       val successor = translate_Term(_successor)
-      val reducibility: Term = defContext.corr_conds.find(_._cond.kind == syntax.reducibility().kind).map({comp: Correctness_Condition =>
+      val reducibility: Term = defContext.corr_conds.find(_._cond.kind == syntax.reducibility().kind).map({(comp: Correctness_Condition) =>
         translate_reg_correctness_condition(comp._just, "reduce", 0, None, None, None, None, Some(List(predecessor, successor)))
       }).get
       mmtwrapper.Reduction(name, defContext.args map(_.tp.get), predecessor, successor, reducibility)

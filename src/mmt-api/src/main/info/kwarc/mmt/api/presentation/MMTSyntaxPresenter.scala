@@ -74,7 +74,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
     var isAtStartOfLine = true
 
-    str: String => {
+    (str: String) => {
       if (isAtStartOfLine && str.nonEmpty) {
         rh.write(indentationString)
         isAtStartOfLine = false
