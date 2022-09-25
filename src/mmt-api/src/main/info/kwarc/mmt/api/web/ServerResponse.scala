@@ -111,8 +111,8 @@ object ServerResponse {
   }
 
   /** creates a response from a file etc
-   *  @param extension file extension (only used to guess a content type)
-   */
+    *  @param extension file extension (only used to guess a content type)
+    */
   def anyDataResponse(in: InputStream, extension: Option[String]): ServerResponse = {
     // start with an empty response
     val resp = new ServerResponse
@@ -155,7 +155,7 @@ object ServerResponse {
     */
   def fromXML(content: scala.xml.Node, statusCode : Int = statusCodeOK) : ServerResponse = apply(content.toString, "application/xml", statusCode)
 
-   /**
+  /**
     * Convenience method to send application/json back to the client
     * @param content JSON object to send back to the user
     * @param statusCode statusCode of the message

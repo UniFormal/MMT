@@ -154,7 +154,6 @@ import VersionSpecificProject._
 lazy val excludedProjects = {
   Exclusions()
     .java7(repl, odk)
-    .java9(concepts)
 }
 
 // =================================
@@ -168,8 +167,8 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
-    tiscaf, lfcatalog,
+    lf, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
+    mmtserver, lfcatalog,
     jedit, intellij,buildserver
   ).
   settings(
@@ -183,7 +182,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp, buildserver).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, mmtserver, mathhub, python, intellij, coq, glf, lsp, buildserver).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -223,20 +222,21 @@ def apiJars(u: Utils) = Seq(
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
-  dependsOn(tiscaf).
+  dependsOn(mmtserver).
   dependsOn(lfcatalog).
   settings(
     Compile / scalacOptions ++= Seq("-language:existentials"),
     Compile / scalaSource := baseDirectory.value / "src" / "main",
     Compile / unmanagedJars ++= apiJars(utils.value),
     Test / unmanagedJars ++= apiJars(utils.value),
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
   )
 
 
 // Some foundation-specific extensions. Maintainer: Florian
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api % "compile -> compile; test -> test").
-  dependsOn(tiscaf).
+  dependsOn(mmtserver).
   dependsOn(lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
@@ -364,19 +364,6 @@ lazy val repl = (project in file("mmt-repl")).
     libraryDependencies ++= Seq(
       "org.jline" % "jline" % "3.18.0"
     )
-  )
-
-// alignment-based concept browser. Maintainer: Dennis
-lazy val concepts = (project in file("concept-browser")).
-  dependsOn(api).
-  dependsOn(tiscaf).
-  dependsOn(lfcatalog).
-  settings(mmtProjectsSettings("concept-browser"): _*).
-  settings(
-    libraryDependencies ++= Seq(
-      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
-    ),
-    Compile / unmanagedJars += utils.value.lib.toJava / "scala-xml.jar"
   )
 
 // =================================
@@ -535,7 +522,20 @@ lazy val oeis = (project in file("mmt-oeis")).
 // DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
 
+lazy val mmtserver = (project in file("server")).
+  settings(commonSettings("server"): _*).
+  settings(
+    Compile / scalaSource := baseDirectory.value / "src",
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-http-core" % "10.2.10",
+      "com.typesafe.akka" %% "akka-actor-typed" % "2.7.0-M1",
+      "com.typesafe.akka" %% "akka-stream" % "2.7.0-M1",
+    ),
+    test := {} // disable tests for tiscaf
+  )
+
 // this is a dependency of MMT that is copied into the MMT repository for convenience; it only has to be rebuilt when updated (which rarely happens)
+/*
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
@@ -549,9 +549,11 @@ lazy val tiscaf = (project in file("tiscaf")).
     test := {} // disable tests for tiscaf
   )
 
+ */
+
 // this is a dependency of Twelf if used in conjunction with the module system; it is automatically started when using the Twelf importer
 lazy val lfcatalog = (project in file("lfcatalog")).
-  dependsOn(tiscaf).
+  dependsOn(mmtserver).
   settings(commonSettings("lfcatalog")).
   settings(
     Compile / scalaSource := baseDirectory.value / "src",

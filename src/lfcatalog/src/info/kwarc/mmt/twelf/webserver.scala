@@ -1,11 +1,11 @@
 package info.kwarc.mmt.twelf
 
-import tiscaf._
-import tiscaf.let._
+
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import info.kwarc.mmt.server.AkkaServer
 
 import java.io._
 import java.net._
-
 import scala.xml._
 
 /*
@@ -17,7 +17,8 @@ import scala.xml._
 /** An HTTP RESTful server.
   * @param catalog the main controller and storage
   * @param port the port on which the server runs */
-class WebServer(catalog : Catalog, port : Int) extends HServer {
+class WebServer(catalog : Catalog, port : Int) extends AkkaServer {
+  override protected def process(request: HttpRequest): HttpResponse = ???
 
   // log all the things
   override def error(msg: String, t: Throwable) = catalog.log(msg)
@@ -79,7 +80,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   }
 */
   protected def ports = Set(port)    // port to listen to
-  protected def apps  = List(new RequestHandler) // the request handler
+  protected def apps  = Nil //List(new RequestHandler) // the request handler
   protected def talkPoolSize = 4
   protected def talkQueueSize = Int.MaxValue
   protected def selectorPoolSize = 2
@@ -104,7 +105,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
      case other => other
   }
 
-
+/*
   /** Request handler */
   protected class RequestHandler extends HApp {
     //override def buffered = true
@@ -354,4 +355,6 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
             .write(out)
     }
   }
+
+ */
 }

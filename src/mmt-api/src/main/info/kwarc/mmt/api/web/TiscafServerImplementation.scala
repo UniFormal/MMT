@@ -1,5 +1,5 @@
 package info.kwarc.mmt.api.web
-
+/*
 import info.kwarc.mmt.api._
 import utils._
 
@@ -156,4 +156,4 @@ object ServerTiscafAdapter {
     HStatus.strings.find(_._2._1 == code.toString).map(_._1).get
   }
 }
-
+*/

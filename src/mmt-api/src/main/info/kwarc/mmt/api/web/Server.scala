@@ -27,8 +27,8 @@ trait ServerImplementation {
 }
 
 /** An HTTP RESTful server. */
-class Server(val port: Int, val host: String, controller: Controller) extends TiscafServerImplementation with Logger {
-  val serverName : String = "MMT HTTP Server"
+class Server(val port: Int, val host: String, controller: Controller) extends AkkaServerImplementation with Logger {
+  val serverName : String = "MMTHTTPServer"
   val listenAddress : String = host
   val listenPort : Int = port
 
