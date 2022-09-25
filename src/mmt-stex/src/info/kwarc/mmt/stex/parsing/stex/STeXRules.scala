@@ -412,8 +412,9 @@ class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
           name = Some(s.drop(5))
         case s if s.trim.startsWith("type=") =>
         case s if s.trim.startsWith("id=") =>
+        case s if s.trim.startsWith("for=") =>
         case _ =>
-          throw LaTeXParseError("Unknow key " + s.trim)
+          throw LaTeXParseError("Unknown key " + s.trim)
       }
     }
     val (_,nch) = readArg
