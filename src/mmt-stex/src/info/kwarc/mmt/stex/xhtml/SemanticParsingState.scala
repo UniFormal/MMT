@@ -213,8 +213,11 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 ret.copyFrom(tm)
                 ret
               case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty =>
-                val ret = if (rest.isEmpty) tms.init.init.foldRight(SOMA(f, tms.last, tms.init.last))((a, r) => SOMA(f, a, r))
-                else tms.init.foldRight(SOMA(f, tms.last :: rest :_*))((a, r) => SOMA(f, a, r))
+                val ret = if (rest.isEmpty) {
+                  SOMA(f,tms.head)
+                } else SOMA(f,tms.head :: rest :_*)
+                //val ret = if (rest.isEmpty) tms.init.init.foldRight(SOMA(f, tms.last, tms.init.last))((a, r) => SOMA(f, a, r))
+                //else tms.init.foldRight(SOMA(f, tms.last :: rest :_*))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
                 ret
               case _ =>
