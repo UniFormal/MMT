@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex.xhtml
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{AddError, ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
@@ -212,13 +213,63 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 val ret = tms.init.init.foldRight(SOMA(f, tms.init.last, tms.last))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
                 ret
-              case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty =>
+              case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty && (tms ::: rest).length >= 2 =>
+                /*val ret = if (rest.isEmpty) {
+                  SOMA(f,tms.head)
+                } else SOMA(f,tms.head :: rest :_*)*/
                 val ret = if (rest.isEmpty) tms.init.init.foldRight(SOMA(f, tms.last, tms.init.last))((a, r) => SOMA(f, a, r))
                 else tms.init.foldRight(SOMA(f, tms.last :: rest :_*))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
                 ret
               case _ =>
                 val ret = SOMA(f, reordered :_*)
+                ret.copyFrom(tm)
+                ret
+            }
+
+          case Some("binl") =>
+            reordered match {
+              case IsSeq(Nil, OMV(v), rest) =>
+                val fcont = getVariableContext ::: cont
+                val x = Context.pickFresh(fcont, LocalName("foldleftx"))._1
+                val y = Context.pickFresh(fcont, LocalName("foldlefty"))._1
+                val tp = fcont.findLast(_.name == v) match {
+                  case Some(v) if v.tp.isDefined =>
+                    v.tp match {
+                      case Some(STeX.flatseq.tp(t)) => t
+                      case _ =>
+                        val vn = getUnknownTp
+                        names._1.unknowns = names._1.unknowns ::: vn :: Nil
+                        makeUnknown(vn)
+                    }
+                  case _ =>
+                    val vn = getUnknownTp
+                    names._1.unknowns = names._1.unknowns ::: vn :: Nil
+                    makeUnknown(vn)
+                }
+                val nf = traverse(f)
+                val ret = if (rest.isEmpty) STeX.seqfoldleft(STeX.seqhead(OMV(v)), STeX.seqtail(OMV(v)), x, tp, y, tp, SOMA(nf, OMV(x), OMV(y)))
+                else STeX.seqfoldleft(SOMA(nf, STeX.seqhead(OMV(v)) :: rest: _*), STeX.seqtail(OMV(v)), x, tp, y, tp, SOMA(nf, OMV(x), OMV(y)))
+                ret.copyFrom(tm)
+                ret
+              case IsSeq(Nil, STeX.flatseq(tms), Nil) if tms.length >= 2 =>
+                val ret = tms.tail.tail.foldLeft(SOMA(f, tms.tail.head, tms.head))((r, a) => SOMA(f, a, r))
+                ret.copyFrom(tm)
+                ret
+              case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty && (tms ::: rest).length >= 2 =>
+                /*val ret = if (rest.isEmpty) {
+                  SOMA(f,tms.head)
+                } else SOMA(f,tms.head :: rest :_*)*/
+                val ret = if (rest.isEmpty) tms.tail.tail.foldLeft(SOMA(f, tms.head, tms.tail.head))((r, a) => SOMA(f, a, r))
+                else tms.tail.foldLeft(SOMA(f, tms.head :: rest: _*))((r, a) => SOMA(f, a, r))
+                ret.copyFrom(tm)
+                ret
+              case IsSeq(List(a),STeX.flatseq(List(t)),Nil) =>
+                val ret = SOMA(f,a,t)
+                ret.copyFrom(tm)
+                ret
+              case _ =>
+                val ret = SOMA(f, reordered: _*)
                 ret.copyFrom(tm)
                 ret
             }
@@ -382,7 +433,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
               }
             case o =>
               //println("urgh")
-              o
+              Traverser(this,o)
           }
           ret.copyFrom(b)
           ret
@@ -654,6 +705,10 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
           case _ =>
         }
       }
+    case e : info.kwarc.mmt.api.Error =>
+      eh(e)
+    case e : Throwable =>
+      eh.apply(new api.Error(e.getMessage){}.setCausedBy(e))
   }
 
   // Search Stuff

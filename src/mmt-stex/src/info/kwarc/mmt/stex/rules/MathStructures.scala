@@ -1119,9 +1119,12 @@ object ModuleType {
     }
     val dones : mutable.HashMap[(MPath,List[Term]),SimpleModule] = mutable.HashMap.empty
     def get(ip : MPath, iargs : List[Term]) : SimpleModule = dones.getOrElseUpdate((ip,iargs),{
-      val th = lookup.getO(ip) match {
+      val th = try{lookup.getO(ip) match {
         case Some(t : Theory) => t
         case _ => throw RecordError("Not a theory: " + ip)
+      }} catch {
+        case nf:NotFound =>
+          throw RecordError("Not found: " + ip)
       }
       def names = th.getConstants.filter(_.rl.contains("stexsymbol")).map(_.path)
       new SimpleModule(th,iargs,{ names },ln => getD(ln))
