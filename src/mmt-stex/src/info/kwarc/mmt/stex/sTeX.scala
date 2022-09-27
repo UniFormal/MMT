@@ -166,10 +166,14 @@ object OMDocHTML {
       case c : Constant =>
         c.tp match {
           case Some(ModelsOf(OMPMOD(mp,as))) =>
-            ModuleType(mp,as,controller.library).getOrig(fieldname)(controller.library,new History(Nil)) match {
-              //Try(controller.library.get(mod,fieldname)).toOption match {
-              case Some(c : Constant) => Some(c)
-              case _ => None
+            try {
+              ModuleType(mp, as, controller.library).getOrig(fieldname)(controller.library, new History(Nil)) match {
+                //Try(controller.library.get(mod,fieldname)).toOption match {
+                case Some(c: Constant) => Some(c)
+                case _ => None
+              }
+            } catch {
+              case RecordError(_) => None
             }
           case _ => None
         }

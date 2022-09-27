@@ -2,10 +2,10 @@ package info.kwarc.mmt.stex.parsing.stex
 
 import info.kwarc.mmt.api.{GlobalName, Level, LocalName, MPath, Path}
 import info.kwarc.mmt.lsp.SyncedDocUnparsed
-import info.kwarc.mmt.stex.parsing.stex.STeXRules.{AssignRule, RenameDeclRule}
+import info.kwarc.mmt.stex.parsing.stex.STeXRules.{AssignRule, DonotCopyRule, RenameDeclRule}
 import info.kwarc.mmt.stex.parsing.{Environment, EnvironmentRule, Group, LaTeXParseError, LaTeXParserState, MacroApplication, MacroRule, PlainMacro, PlainText, TeXRule, TeXTokenLike}
 
-case class ModuleRule(dict : DictionaryModule) extends TeXRule {
+case class ModuleRule(dict : DictionaryModule,isimport:Boolean) extends TeXRule {
   val name = "Module " + dict.path
 }
 
@@ -412,8 +412,9 @@ class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
           name = Some(s.drop(5))
         case s if s.trim.startsWith("type=") =>
         case s if s.trim.startsWith("id=") =>
+        case s if s.trim.startsWith("for=") =>
         case _ =>
-          throw LaTeXParseError("Unknow key " + s.trim)
+          throw LaTeXParseError("Unknown key " + s.trim)
       }
     }
     val (_,nch) = readArg
@@ -575,6 +576,7 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
     val ret = dict.openModule(make(mp,module))
     state.addRule(RenameDeclRule(dict))
     state.addRule(AssignRule(dict))
+    state.addRule(DonotCopyRule(dict))
     ret
   }
 }
