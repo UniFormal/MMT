@@ -35,8 +35,18 @@ class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
   val langs = mutable.HashMap.empty[String,DictionaryModule]
 
 }
-
+case class MetaTheoryRule(mp : MPath) extends TeXRule {
+  val name = "meta theory rule"
+}
 class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
+
+  def defaultMeta(implicit state:LaTeXParserState) = {
+    state.getRules.collectFirst {
+      case MetaTheoryRule(mp) => mp
+    }.getOrElse{
+      Path.parseM("http://mathhub.info/sTeX/meta?Metatheory")
+    }
+  }
 
   implicit val ec : ExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool(1000))
 
@@ -349,7 +359,7 @@ case class NotationInfo(syminfo:SymdeclInfo,prec:List[Int],id:String,notation:Li
 
 object STeXRules {
 
-  val defaultMeta = Path.parseM("http://mathhub.info/sTeX/meta?Metatheory")
+  //val defaultMeta = Path.parseM("http://mathhub.info/sTeX/meta?Metatheory")
 
   def allRules(dict:Dictionary) = List(
     ModuleRule(dict),UseModuleRule(dict),NotationRule(dict),mmtrule,
@@ -357,11 +367,11 @@ object STeXRules {
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
     VarDefRule(dict),VarInstanceRule(dict),UseStructureRule(dict),
     patchdefinitionrule,patchassertionrule,stexinline,stexcode,nstexcode,texcode,ProofEnv("sproof"),
-    MMTInterfaceRule(dict)
+    MMTInterfaceRule(dict),SetMetaTheoryRule(dict)
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),new SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
-    ExtStructureRule(dict),TextSymDeclRule(dict),
+    ExtStructureRule(dict),TextSymDeclRule(dict),MMTDef(dict),
     AssertionRule(dict),InlineAssertionRule(dict),InstanceRule(dict),
     CopymoduleRule(dict),InterpretmoduleRule(dict),RealizationRule(dict)
   )
@@ -673,6 +683,47 @@ object STeXRules {
         ret
       }
     }
+  }
+
+  case class SetMetaTheoryRule(dict:Dictionary) extends MacroRule {
+    val name = "setmetatheory"
+
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+      var children: List[TeXTokenLike] = Nil
+      val (optargs, ch) = readOptArg
+      children = ch
+      val (n, ch2) = readArg
+      val a = optargs match {
+        case List(List(pt: PlainText)) => pt.str
+        case _ => ""
+      }
+      children = children ::: ch2
+      val path = n match {
+        case gr: Group =>
+          gr.content match {
+            case List(t: PlainText) => t.str
+            case _ => {
+              plain.addError("Malformed Argument")
+              return plain
+            }
+          }
+        case _ =>
+          plain.addError("Missing Argument")
+          return plain
+      }
+      val mp = dict.resolveMPath(a, path)
+      state.addRule(MetaTheoryRule(mp))
+      new MacroApplication(plain,children,this) with HasAnnotations {
+        override def doAnnotations(in: sTeXDocument): Unit = {
+          val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, mp.toString, true)
+          a.addCodeLens(mp.toString, "", Nil, startoffset, endoffset)
+          a.setSemanticHighlightingClass(0)
+        }
+      }
+    }
+  }
+  case class MMTDef(_dict:Dictionary) extends SymDefRule(_dict) {
+    override val name = "mmtdef"
   }
 
   case class TextSymDeclRule(override val dict: Dictionary) extends SymDefRule(dict) {
@@ -1115,7 +1166,7 @@ object STeXRules {
         case _ =>
           throw LaTeXParseError("{name} expected after \\begin{smodule}")
       }
-      var meta : Option[MPath] = Some(defaultMeta)
+      var meta : Option[MPath] = Some(dict.defaultMeta)
       var lang = dict.getLanguage
       var sig = ""
       var title:String = ""
@@ -1195,7 +1246,7 @@ object STeXRules {
       val (optargs,ch) = readOptArg
       children = ch
       var name = ""
-      var meta : Option[MPath] = Some(defaultMeta)
+      var meta : Option[MPath] = Some(dict.defaultMeta)
       var lang = dict.getLanguage
       var sig = ""
       var title:String = ""
