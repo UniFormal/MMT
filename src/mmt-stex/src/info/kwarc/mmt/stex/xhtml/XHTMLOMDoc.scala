@@ -1244,7 +1244,7 @@ case class HTMLCopyModule(orig : HTMLParser.HTMLNode,istotal:Boolean) extends OM
       state.add(struct)
       moduleassignments.foreach {
         case (mp,cp) =>
-          val s = Include(t.sighome.get,mp,Nil,Some(cp match {
+          val s = Include(struct.toTerm,mp,Nil,Some(cp match {
             case s : GlobalName => OMS(s)
             case m : MPath =>
               OMIDENT(OMMOD(m))
@@ -1304,7 +1304,7 @@ case class HTMLRealization(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) w
       state.add(struct)
       moduleassignments.foreach {
         case (mp,cp) =>
-          val s = Include(t.sighome.get,mp,Nil,Some(cp match {
+          val s = Include(struct.toTerm,mp,Nil,Some(cp match {
             case s : GlobalName => OMS(s)
             case m : MPath =>
               OMIDENT(OMMOD(m))

@@ -74,7 +74,7 @@ object OMDocExtension extends DocumentExtension {
   }
 
   override lazy val rules = List(
-    UnknownPropertyRule,
+    //UnknownPropertyRule,
     MathMLRule,
     FeatureRule,
     SimpleHTMLRule("feature:structure",HTMLStructureFeature),

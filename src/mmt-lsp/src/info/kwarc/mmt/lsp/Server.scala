@@ -161,7 +161,7 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
           d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
           (e.level,e.shortMsg + ems.mkString("\n","\n",""))
         case iu:Invalid =>
-          val ref = iu.sourceRef.getOrElse{iu match {
+          val ref = iu match {
             case iu: InvalidUnit =>
               iu.unit.component.map {
                 c =>
@@ -169,9 +169,11 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
                     controller.getO(c.parent).flatMap(SourceRef.get).getOrElse(SourceRef.anonymous(""))
                   }
               }.getOrElse(SourceRef.anonymous(""))
+            case ie: InvalidElement =>
+              SourceRef.get(ie.elem).getOrElse(SourceRef.anonymous(""))
             case iu: InvalidObject =>
               iu.sourceRef.getOrElse(SourceRef.anonymous(""))
-          }}
+          }
           val start = ref.region.start.offset
           val end = ref.region.end.offset + 1
           val (sl,sc) = doc._doctext.toLC(start)
