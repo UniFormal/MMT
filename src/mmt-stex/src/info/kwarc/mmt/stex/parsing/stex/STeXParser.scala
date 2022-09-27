@@ -17,16 +17,16 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class MutList(var ls : List[DictionaryModule] = Nil)
-class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
+class DictionaryModule(val macr:TeXModuleLike,val meta:Option[DictionaryModule]) extends RuleContainer {
   val path = macr.mp
   var archive : Option[Archive] = None
   var file : Option[File] = None
   var lang:String = ""
   var imports : List[(DictionaryModule,Boolean)] = Nil
-  var exportrules : List[TeXRule] = List(ModuleRule(this))
+  var exportrules : List[TeXRule] = Nil //List(ModuleRule(this,false))
   def getRules(lang:String,dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
     dones.ls ::= this
-    val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(_._1.getRules(lang,dones))
+    val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(m => ModuleRule(m._1,true) :: m._1.getRules(lang,dones))
     langs.get(lang) match {
       case Some(m) => m.exportrules ::: r
       case _ => r
@@ -171,6 +171,16 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
     }
   }
   def openModule[A <:TeXModuleLike](macr:A)(implicit state: LaTeXParserState) = {
+    val meta = macr match {
+      case tmm: TeXModuleMacro =>
+        tmm.meta match {
+          case Some(m) =>
+            all_modules.get(m)
+          case _ => None
+        }
+      case _ => None
+    }
+
     val mod = if (macr.sig != "") {
       val language = getLanguage
       all_modules.getOrElse(macr.mp,{
@@ -187,35 +197,23 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         all_modules.get(macr.mp) match {
           case None =>
             macr.addError("No module " + macr.mp.toString + " found", Some("In file " + sigfile))
-            new DictionaryModule(macr)
+            new DictionaryModule(macr,meta)
           case Some(m) =>
-            val n = new DictionaryModule(macr)
+            val n = new DictionaryModule(macr,meta)
             n.imports ::= (m,true)
             m.langs(language) = n
             n.rules = m.getRules(language)
             n
         }
       })
-    } else new DictionaryModule(macr)
+    } else new DictionaryModule(macr,meta)
+    mod.exportrules = meta.toList.flatMap(_.getRules(getLanguage))
+    mod.rules = mod.exportrules ::: mod.rules
     current_file.foreach(f => mod.file = Some(f))
     current_archive.foreach(a => mod.archive = Some(a))
     current_modules ::= mod
     state.rules ::= mod
     mod.rules = parser.moduleRules ::: mod.rules
-    macr match {
-      case tmm: TeXModuleMacro =>
-        tmm.meta match {
-          case Some(m) =>
-            all_modules.get(m) match {
-              case Some(mt) =>
-                mod.imports ::= (mt,false)
-                mod.rules = mod.rules ::: mt.rules
-              case _ =>
-            }
-          case _ =>
-        }
-      case _ =>
-    }
     macr
   }
   def closeModule(implicit state: LaTeXParserState) = current_modules.headOption match {
@@ -303,7 +301,9 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
   def addimport(ima: ImportModuleApp)(implicit state: LaTeXParserState): ImportModuleApp = {
     val mod = all_modules.get(ima.mp) match {
       case Some(mod) =>
-        if (state.getRules.contains(ModuleRule(mod))) {
+        if (state.getRules.contains(ModuleRule(mod,true)) ||
+          (state.getRules.contains(ModuleRule(mod,_)) && ima.isusemodule)
+        ) {
           ima.addError("Redundant Import",None,Level.Info)
         }
         mod
@@ -311,11 +311,11 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         requireModule(ima.mp,ima.archivestring,ima.path)
     }
     if (ima.isusemodule) {
-      state.rules.headOption.foreach(r => r.rules = mod.getRules(getLanguage) ::: r.rules)
+      state.rules.headOption.foreach(r => r.rules = ModuleRule(mod,false) :: mod.getRules(getLanguage) ::: r.rules)
     } else current_modules.headOption match {
       case Some(m) =>
         m.imports ::= (mod, !ima.isusemodule)
-        m.rules = mod.getRules(getLanguage) ::: m.rules
+        m.rules = ModuleRule(mod,true) :: mod.getRules(getLanguage) ::: m.rules
       case None =>
         throw LaTeXParseError("Only allowed in module")
     }
@@ -554,6 +554,45 @@ object STeXRules {
       ret
     }
   }
+  case class DonotCopyRule(dict:Dictionary) extends MacroRule with InStructureRule {
+    val name = "donotcopy"
+
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+      val (domtk, ch) = readArg
+      val path = domtk match {
+        case gr: Group =>
+          gr.content match {
+            case List(t: PlainText) => t.str
+            case _ => {
+              plain.addError("Malformed Argument")
+              return plain
+            }
+          }
+        case _ =>
+          plain.addError("Missing Argument")
+          return plain
+      }
+      val mp = dict.resolveMPath(None, path)
+      val mod = dict.all_modules.getOrElse(mp,{
+        plain.addError("Module not found: " + mp)
+        return plain
+      })
+      dict.getModule.macr match {
+        case bg: StructureModuleBegin =>
+          mod.getRules(dict.getLanguage).foreach {
+            case sd: SemanticMacro =>
+              val ret = bg.domfields.foreach {
+                case sm if sm.syminfo.path == sd.syminfo.path =>
+                  addToField(sm, isassigned = true)
+                case _ =>
+              }
+            case _ =>
+          }
+        case _ =>
+      }
+      new MacroApplication(plain,ch,this)
+    }
+  }
 
   case class AssignRule(dict: Dictionary) extends MacroRule with InStructureRule with SymRefRuleLike {
     val name = "assign"
@@ -712,6 +751,9 @@ object STeXRules {
           return plain
       }
       val mp = dict.resolveMPath(a, path)
+      dict.all_modules.getOrElse(mp,{
+        dict.requireModule(mp,a,path)
+      })
       state.addRule(MetaTheoryRule(mp))
       new MacroApplication(plain,children,this) with HasAnnotations {
         override def doAnnotations(in: sTeXDocument): Unit = {

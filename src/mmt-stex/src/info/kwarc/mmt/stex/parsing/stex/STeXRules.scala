@@ -2,10 +2,10 @@ package info.kwarc.mmt.stex.parsing.stex
 
 import info.kwarc.mmt.api.{GlobalName, Level, LocalName, MPath, Path}
 import info.kwarc.mmt.lsp.SyncedDocUnparsed
-import info.kwarc.mmt.stex.parsing.stex.STeXRules.{AssignRule, RenameDeclRule}
+import info.kwarc.mmt.stex.parsing.stex.STeXRules.{AssignRule, DonotCopyRule, RenameDeclRule}
 import info.kwarc.mmt.stex.parsing.{Environment, EnvironmentRule, Group, LaTeXParseError, LaTeXParserState, MacroApplication, MacroRule, PlainMacro, PlainText, TeXRule, TeXTokenLike}
 
-case class ModuleRule(dict : DictionaryModule) extends TeXRule {
+case class ModuleRule(dict : DictionaryModule,isimport:Boolean) extends TeXRule {
   val name = "Module " + dict.path
 }
 
@@ -576,6 +576,7 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
     val ret = dict.openModule(make(mp,module))
     state.addRule(RenameDeclRule(dict))
     state.addRule(AssignRule(dict))
+    state.addRule(DonotCopyRule(dict))
     ret
   }
 }

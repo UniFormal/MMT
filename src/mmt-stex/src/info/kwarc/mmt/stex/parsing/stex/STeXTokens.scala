@@ -20,8 +20,11 @@ class StructureModuleBegin(pm:PlainMacro, mp:MPath, val dom:DictionaryModule, ch
   extends TeXModuleLike(pm,mp,ch,rl) {
   val sig = ""
   val fields = mutable.HashMap.empty[SemanticMacro,(Option[LocalName],String,Boolean)]
-  lazy val domfields = dom.getRules("").collect {
-    case sm : SemanticMacro => sm
+  lazy val domfields = {
+    val meta = dom.meta.toList.flatMap(_.getRules(""))
+    dom.getRules("").collect {
+      case sm : SemanticMacro if !meta.contains(sm) => sm
+    }
   }
 }
 case class MMTInterfaceBegin(pm:PlainMacro,mmtpath:MPath,stexpath:MPath,ch:List[TeXTokenLike],rl:MMTInterfaceRule)
