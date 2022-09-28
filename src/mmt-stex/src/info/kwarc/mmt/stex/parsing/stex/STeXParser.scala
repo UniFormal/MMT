@@ -623,7 +623,7 @@ object STeXRules {
   case class RenameDeclRule(dict: Dictionary) extends MacroRule with InStructureRule with SymRefRuleLike {
     val name = "renamedecl"
 
-    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       var children: List[TeXTokenLike] = Nil
       val (maybename,ch1) = readOptArg
       children = ch1
@@ -638,11 +638,11 @@ object STeXRules {
         }
       }
 
-      val (domtk,ch2) = readArg
+      val (domtk,ch2) = readSafeArg("\\renamedecl")
       children = children ::: ch2
       val target = getTarget(domtk)
 
-      val (macronamestr,ch3) = readArg
+      val (macronamestr,ch3) = readSafeArg("\\renamedecl")
       children = children ::: ch3
       val macroname = macronamestr match {
         case g:Group =>

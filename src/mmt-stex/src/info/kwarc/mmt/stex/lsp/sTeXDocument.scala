@@ -55,7 +55,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       files = files.tail
       files.headOption.foreach(progress)
     }
-    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,thisdoc,uri,e),(_,_) => {})
+    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,thisdoc,uri,e),(_,s) => progress(s))
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
       val (off1,off2,p) = _doctext.fullLine(files.head._2-1)
       val reg = SourceRegion(SourcePosition(off1,files.head._2,0),SourcePosition(off2,files.head._2,p))
@@ -106,7 +106,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       case Some(f) =>
         Future { server.safely {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
-            val pars = params(update(0,_))
+            val pars = params(s => update(0,s))
             val html = RusTeX.parseString(f,doctext ,pars,List("c_stex_module_"))
             update(0, "Parsing HTML... (2/2)")
             this.synchronized {

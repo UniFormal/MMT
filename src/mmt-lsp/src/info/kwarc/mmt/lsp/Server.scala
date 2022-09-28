@@ -353,6 +353,7 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
     }) } catch {
       case t: Throwable =>
         finishProgress(token, "")
+        client.logError(t.getMessage + "\n" + t.getStackTrace.mkString("\n"))
         throw t
     }
     finishProgress(token, end)

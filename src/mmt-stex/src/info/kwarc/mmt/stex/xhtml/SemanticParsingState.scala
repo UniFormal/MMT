@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPM
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
 import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType, SubstRule}
 import info.kwarc.mmt.stex.search.SearchDocument
 import info.kwarc.mmt.stex.{NestedHOAS, OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STeXHOAS, STerm, SimpleHOAS}
@@ -695,6 +696,11 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
   private lazy val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore,new MMTTask {})
 
   def check(se : StructuralElement) = try {
+    eh match {
+      case STeXLSPErrorHandler(_,cont) =>
+        cont(0.5,"Checking " + se.path.toString)
+      case _ =>
+    }
     checker(se)(ce)
   } catch {
     case g:GetError =>
