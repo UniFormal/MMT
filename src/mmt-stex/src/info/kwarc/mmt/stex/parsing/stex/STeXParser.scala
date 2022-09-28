@@ -1257,17 +1257,19 @@ object STeXRules {
     }
   }
 
-  case class UseStructureRule(dict: Dictionary) extends EnvironmentRule("usestructure") {
-    override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
-    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+  case class UseStructureRule(dict: Dictionary) extends MacroRule {
+    val name = "usestructure"
+
+    //override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       val (structArg, children) = readArg
       val struct = structArg match {
         case g: Group =>
           g.content match {
             case List(pt: PlainText) => pt.str
-            case _ => throw LaTeXParseError("Could not determine structure name forusestructure", lvl = Level.Warning)
+            case _ => throw LaTeXParseError("Could not determine structure name for \\usestructure", lvl = Level.Warning)
           }
-        case _ => throw LaTeXParseError("mathstructure name for usestructure expected")
+        case _ => throw LaTeXParseError("mathstructure name for \\usestructure expected")
       }
       val module = state.macrorules.collectFirst {
         case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
@@ -1278,9 +1280,36 @@ object STeXRules {
           throw LaTeXParseError("No mathstructure" + struct + " found")
       }
       module.getRules("").foreach(state.addRule(_))
-      new MacroApplication(begin.plain,begin.children ::: children,this)
+      new MacroApplication(plain, children, this) with HasAnnotations {
+        override def doAnnotations(in: sTeXDocument): Unit = {
+          val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, symbolname = "import")
+          //a.addInlay(im.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = im.endoffset,padleft = true)
+          val pma = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Module, symbolname = "import")
+          pma.setSemanticHighlightingClass(0)
+          a.addCodeLens(module.path.toString, "", Nil, startoffset, endoffset)
+          //dict.all_modules.get(module.).foreach { mod =>
+            module.file.foreach(f => a.setDeclaration(f.toURI.toString, module.macr.startoffset, module.macr.endoffset))
+            module.macr match {
+              case tmm: TeXModuleMacro =>
+                tmm.deprecation match {
+                  case "" =>
+                  case dep =>
+                    pma.setSemanticHighlightingClass(0, List(0))
+                    val start = in._doctext.toLC(startoffset)
+                    val end = in._doctext.toLC(endoffset)
+                    in.client.documentErrors(dict.controller, in, in.uri, SourceError(in.uri, SourceRef(URI(in.uri),
+                      SourceRegion(
+                        SourcePosition(startoffset, start._1, start._2),
+                        SourcePosition(endoffset, end._1, end._2)
+                      )), module.path.toString + " is deprecated", List("Use " + dep + " instead"), Level.Warning)
+                    )
+                }
+              case _ =>
+            }
+          }
+        }
+      }
     }
-  }
 
   case class ProblemRule(dict : Dictionary) extends EnvironmentRule("sproblem") {
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
