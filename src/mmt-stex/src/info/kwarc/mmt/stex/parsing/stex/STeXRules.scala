@@ -413,6 +413,7 @@ class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
         case s if s.trim.startsWith("type=") =>
         case s if s.trim.startsWith("id=") =>
         case s if s.trim.startsWith("for=") =>
+        case s if s.trim.startsWith("judgment=") =>
         case _ =>
           throw LaTeXParseError("Unknown key " + s.trim)
       }
@@ -467,6 +468,7 @@ class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name)
         case s if s.trim.startsWith("id=") =>
         case s if s.trim.startsWith("title=") =>
         case s if s.trim.startsWith("for=") =>
+        case s if s.trim.startsWith("judgment=") =>
         case _ =>
           throw LaTeXParseError("Unknow key " + s.trim)
       }

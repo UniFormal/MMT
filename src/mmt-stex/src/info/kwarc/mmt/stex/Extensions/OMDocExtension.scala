@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.api.{DefComponent, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDoctitle, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationOpComponent, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLProofFrame, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofbody, HTMLSProofsketch, HTMLSProofstep, HTMLSProoftitle, HTMLSProofyield, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSolution, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarSeqEnd, HTMLVarSeqStart, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
+import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDoctitle, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLJudgment, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationOpComponent, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLPremise, HTMLProblem, HTMLProofFrame, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofbody, HTMLSProofsketch, HTMLSProofstep, HTMLSProoftitle, HTMLSProofyield, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSolution, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarSeqEnd, HTMLVarSeqStart, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
 
 object OMDocExtension extends DocumentExtension {
 
@@ -126,6 +126,7 @@ object OMDocExtension extends DocumentExtension {
     SimpleHTMLRule("definition",HTMLSDefinition),
     SimpleHTMLRule("example",HTMLSExample),
     SimpleHTMLRule("assertion",HTMLSAssertion),
+    SimpleHTMLRule("judgment",HTMLJudgment),
     SimpleHTMLRule("sproof",HTMLSProof),
     SimpleHTMLRule("spfstep",HTMLSProofstep),
     SimpleHTMLRule("spfyield",HTMLSProofyield),
@@ -140,6 +141,7 @@ object OMDocExtension extends DocumentExtension {
     SimpleHTMLRule("definiendum",HTMLDefiniendum),
     SimpleHTMLRule("from",HTMLFromComponent),
     SimpleHTMLRule("to",HTMLToComponent),
+    SimpleHTMLRule("premise",HTMLPremise),
 
     SimpleHTMLRule("vardecl",HTMLVarDecl),
     SimpleHTMLRule("varseq",HTMLVarSeqDecl),

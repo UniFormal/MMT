@@ -80,6 +80,25 @@ trait UsesPatterns extends SingleTermBasedCheckingRule {
 object StringLiterals extends RepresentedRealizedType(OMS(STeX.string),StandardString)
 object NatLiterals extends RepresentedRealizedType(OMS(STeX.nat),StandardNat)
 
+class StatementBinderRule(val sym:GlobalName) extends Rule
+object AssPremiseRule extends ParametricRule {
+  case class Premise(_sym:GlobalName) extends StatementBinderRule(_sym)
+
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(a)) => Premise(a) // new AbbrevRule(a,OMS(b)) //
+    case _ =>
+      ???
+  }
+}
+object DefiPremiseRule extends ParametricRule {
+  case class Premise(_sym:GlobalName) extends StatementBinderRule(_sym)
+
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(a)) => Premise(a) // new AbbrevRule(a,OMS(b)) //
+    case _ =>
+      ???
+  }
+}
 trait BindingRule extends Rule {
   def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
 }
