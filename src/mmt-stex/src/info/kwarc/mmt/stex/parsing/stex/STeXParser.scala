@@ -933,7 +933,7 @@ object STeXRules {
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          throw LaTeXParseError("No mathstructure" + struct + " found")
+          throw LaTeXParseError("No mathstructure " + struct + " found")
       }
 
       val (_, nch4) = readArg
@@ -1006,7 +1006,7 @@ object STeXRules {
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          throw LaTeXParseError("No mathstructure" + struct + " found")
+          throw LaTeXParseError("No mathstructure " + struct + " found")
       }
 
       val (notation, nch4) = readArg
@@ -1177,7 +1177,7 @@ object STeXRules {
             }.flatten match {
               case Some(mod) => Some(mod)
               case _ =>
-                ret.addError("No mathstructure" + struct + " found")
+                ret.addError("No mathstructure " + struct + " found")
                 None
             }
           }
@@ -1236,6 +1236,7 @@ object STeXRules {
           case s if s.trim.startsWith("creators=") =>
           case s if s.trim.startsWith("contributors=") =>
           case s if s.trim.startsWith("deprecate=") =>
+          case s if s.trim.startsWith("id=") =>
           case s if s.trim.startsWith("ns=") => // TODO
           case s if s.trim.startsWith("srccite=") =>
             deprecation = s.trim.drop(10).trim
@@ -1277,7 +1278,7 @@ object STeXRules {
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          throw LaTeXParseError("No mathstructure" + struct + " found")
+          throw LaTeXParseError("No mathstructure " + struct + " found")
       }
       module.getRules("").foreach(state.addRule(_))
       new MacroApplication(plain, children, this) with HasAnnotations {
