@@ -208,22 +208,15 @@ case class VarStructureFieldApp(pl:PlainMacro,rl:VarInstanceFieldRule,ch:List[Te
 case class SymdeclApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:SymDeclRuleLike,
                       syminfo:SymdeclInfo) extends MacroApplication(pl,ch,rl)
   with SymDeclLike with SemanticMacro with HasAnnotations {
+  val dict = rl.dict
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Function,symbolname = syminfo.path.toString)
     val pma = in.Annotations.add(pl,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant)
     pma.setSemanticHighlightingClass(1)
     //a.addInlay(im.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = im.endoffset,padleft = true)
     a.addCodeLens(syminfo.path.toString,"",Nil,startoffset,endoffset)
-    if (syminfo.local) {
-      pma.setSemanticHighlightingClass(1,List(0))
-      val start = in._doctext.toLC(startoffset)
-      val end = in._doctext.toLC(endoffset)
-      in.client.documentErrors(rl.dict.controller,in,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
-        SourceRegion(
-          SourcePosition(startoffset,start._1,start._2),
-          SourcePosition(endoffset,end._1,end._2)
-        )),"key \"local\" is deprecated",List("Please use a variable instead"),Level.Warning)
-      )
+    if (!syminfo.isDocumented) {
+      this.addError("Symbol is not documented",Some("Consider adding an {sdefinition} or {sparagraph}[type=symdoc] for this symbol"),Level.Info)
     }
   }
 }
@@ -231,27 +224,21 @@ case class SymdeclApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:SymDeclRuleLike,
 case class SymdefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.SymDefRule,
                      syminfo:SymdeclInfo,notinfo:NotationInfo) extends MacroApplication(pl,ch,rl)
   with SymDeclLike with NotationLike with SetNotationLike with SemanticMacro with HasAnnotations {
+  val dict = rl.dict
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Function,symbolname = syminfo.path.toString)
     val pma = in.Annotations.add(pl,pl.startoffset,pl.endoffset - pl.startoffset,SymbolKind.Constant)
     pma.setSemanticHighlightingClass(1)
     //a.addInlay(im.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = im.endoffset,padleft = true)
     a.addCodeLens(syminfo.path.toString + "#" + notinfo.id,"",Nil,startoffset,endoffset)
-    if (syminfo.local) {
-      pma.setSemanticHighlightingClass(1,List(0))
-      val start = in._doctext.toLC(startoffset)
-      val end = in._doctext.toLC(endoffset)
-      in.client.documentErrors(rl.dict.controller,in,in.uri,SourceError(in.uri,SourceRef(URI(in.uri),
-        SourceRegion(
-          SourcePosition(startoffset,start._1,start._2),
-          SourcePosition(endoffset,end._1,end._2)
-        )),"key \"local\" is deprecated",List("Please use a variable instead"),Level.Warning)
-      )
+    if (!syminfo.isDocumented) {
+      this.addError("Symbol is not documented", Some("Consider adding an {sdefinition} or {sparagraph}[type=symdoc] for this symbol"), Level.Info)
     }
   }
 }
 case class VardefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarDefRule,macroname:String,_name:String,args:String,assoctype:String,file:String,end:Int,defd:Boolean) extends MacroApplication(pl,ch,rl)
   with VariableRule with HasAnnotations {
+  val dict = rl.dict
   override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),args,assoctype,false,file,plain.startoffset,end,defd)
   override def doAnnotations(in: sTeXDocument): Unit = {
     //val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Function,symbolname = syminfo.path.toString)
@@ -262,6 +249,7 @@ case class VardefApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarDefRule
 
 case class InstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.InstanceRule,macroname:String,path:GlobalName,module:DictionaryModule,file:String,end:Int)
   extends MacroApplication(pl,ch,rl) with InstanceFieldRule with HasAnnotations {
+  val dict = rl.dict
   val syminfo:SymdeclInfo = SymdeclInfo(macroname,path,"","",false,file,pl.startoffset,end,false)
 
   override def doAnnotations(in: sTeXDocument): Unit = {
@@ -273,6 +261,7 @@ case class InstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.Instance
 }
 case class VarInstanceApp(pl:PlainMacro,ch:List[TeXTokenLike],rl:STeXRules.VarInstanceRule,macroname:String,_name:String,module:DictionaryModule,file:String,end:Int)
   extends MacroApplication(pl,ch,rl) with VarInstanceFieldRule with HasAnnotations {
+  val dict = rl.dict
   override val syminfo: SymdeclInfo = SymdeclInfo(macroname,Path.parseS("var://foo?foo?" + _name),"","",false,file,plain.startoffset,end,false)
 
   override def doAnnotations(in: sTeXDocument): Unit = {

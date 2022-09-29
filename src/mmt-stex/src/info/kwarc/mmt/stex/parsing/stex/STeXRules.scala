@@ -182,6 +182,7 @@ trait NotationRuleLike extends MacroRule {
 
 
 trait SymRefRuleLike extends MacroRule {
+  val dict: Dictionary
   def doAlternatives(ls : List[GlobalName]) = if (ls.length > 1) {
     class mutvar(val path : GlobalName) { var string = path.module.name.toString + "?" + path.name}
     val retstrings = ls.distinct.map(new mutvar(_))
@@ -217,7 +218,7 @@ trait SymRefRuleLike extends MacroRule {
         }
       case _ => throw LaTeXParseError("Name for \\symdef expected")
     }
-    val rn = resolveName(namestr)
+    val rn = dict.resolveName(namestr)
     rn match {
       case (None,_) =>
         throw LaTeXParseError("Could not find symbol named " + namestr, lvl = Level.Warning)
@@ -225,40 +226,7 @@ trait SymRefRuleLike extends MacroRule {
         (r,nametk,doAlternatives(r.path :: ls),children)
     }
   }
-  def resolveName(namestr:String)(implicit state: LaTeXParserState) = {
-    val rules = state.macrorules
-    namestr.split('?') match {
-      case Array(s) => rules.collectFirst {
-        case m: SemanticMacro if m.name == s => m.syminfo
-      } match {
-        case Some(si) =>
-          val candidates = rules.collect {
-            case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
-          }.filterNot(_ == si).map(_.path).distinct
-          (Some(si), candidates)
-        case _ =>
-          val candidates =rules.collect {
-            case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
-          }.distinct
-          candidates match {
-            case List(a) => (Some(a), Nil)
-            case Nil => (None, Nil)
-            case h :: tail => (Some(h), tail.map(_.path))
-          }
-      }
-      case Array(m,n) =>
-        rules.collect {
-          case sm: SemanticMacro if sm.syminfo.path.module.toString.endsWith(m) &&
-            sm.syminfo.path.name.toString == n => sm.syminfo
-        }.distinct match {
-          case List(a) => (Some(a), Nil)
-          case Nil => (None, Nil)
-          case h :: tail => (Some(h), tail.map(_.path))
-        }
-      case _ =>
-        throw LaTeXParseError("Too many '?' in symbol identifier",lvl = Level.Warning)
-    }
-  }
+
 }
 
 trait SemanticMacro extends MacroRule with SymRefRuleLike {
@@ -401,7 +369,7 @@ trait VarInstanceFieldRule extends InstanceRuleLike {
     parseField(plain)((pl, ch, sd,nt) => VarStructureFieldApp(pl, this, ch, sd,nt))
 }
 
-class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
+class InlineStatementRule(val name:String,val dict:Dictionary) extends MacroRule {
   override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
     val (optargs, ch) = readOptArg
     var name: Option[String] = None
@@ -422,7 +390,9 @@ class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
     name match {
       case Some(name) =>
         val gn = dict.getGlobalName(name)
+        val self = this
         val ret = new InlineStatement(plain,ch:::nch,this) with SemanticMacro {
+          val dict = self.dict
           override val syminfo: SymdeclInfo =
             SymdeclInfo(gn.toString, gn, "", "", false, dict.getFile, plain.startoffset, children.last.endoffset,false)
         }
@@ -434,7 +404,7 @@ class InlineStatementRule(val name:String,dict:Dictionary) extends MacroRule {
     }
   }
 }
-class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name) {
+class StatementRule(_name:String,val dict:Dictionary) extends EnvironmentRule(_name) {
   override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = {
     env.begin match {
       case bs : BeginStatement =>
@@ -443,7 +413,9 @@ class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name)
             new Statement(bs, env.end, env.children, this) {}
           case Some(name) =>
             val gn = dict.getGlobalName(name)
+            val self = this
             val ret = new Statement(bs,env.end,env.children,this) with SemanticMacro {
+              val dict = self.dict
               override val syminfo: SymdeclInfo =
                 SymdeclInfo(gn.toString,gn,"","",false,dict.getFile,env.children.head.startoffset,children.last.endoffset,false)
             }
@@ -455,6 +427,8 @@ class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name)
       case _ => env
     }
   }
+
+  protected def doFor(s:String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {}
 
   override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
     val (optargs, ch) = readOptArg
@@ -468,6 +442,7 @@ class StatementRule(_name:String,dict:Dictionary) extends EnvironmentRule(_name)
         case s if s.trim.startsWith("id=") =>
         case s if s.trim.startsWith("title=") =>
         case s if s.trim.startsWith("for=") =>
+          s.drop(4).split(',').foreach(st => doFor(st.trim))
         case s if s.trim.startsWith("judgment=") =>
         case _ =>
           throw LaTeXParseError("Unknow key " + s.trim)
@@ -484,7 +459,7 @@ case class MathStructureMacro(
                                symbolpath:GlobalName,
                                ch:List[TeXTokenLike],
                                rl : STeXRules.MathStructureRule,
-                               file:String
+                               file:String,dict:Dictionary
                              ) extends TeXModuleLike(pm,mpi,ch,rl) with TeXRule with SemanticMacro {
   val sig = ""
   override lazy val name = "mathstructure " + mpi.toString
@@ -515,8 +490,10 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
               }
             }
             dict.closeModule
+            val self = this
             bg.fields.foreach { case (sm, (Some(newname), macroname, ass)) =>
               val macr = new SemanticMacro {
+                val dict = self.dict
                 val syminfo = SymdeclInfo(macroname, dict.getGlobalName(newname.toPath), sm.syminfo.args, sm.syminfo.assoctype, false, dict.getFile, bg.startoffset, env.endoffset,ass)
               }
               dict.getModule.exportrules ::= macr

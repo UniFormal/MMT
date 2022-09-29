@@ -176,6 +176,11 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       import info.kwarc.mmt.stex.parsing._
       val ret = server.parser(_doctext, file.getOrElse(File(uri)), archive)
       ret.foreach(_.iterate { elem =>
+        elem match {
+          case t: HasAnnotations =>
+            t.doAnnotations(this)
+          case _ =>
+        }
         elem.errors.foreach { e =>
           val start = _doctext.toLC(elem.startoffset)
           val end = _doctext.toLC(elem.endoffset)
@@ -185,11 +190,6 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
               SourcePosition(elem.endoffset, end._1, end._2)
             )), e.shortMsg, if (e.extraMessage != "") List(e.extraMessage) else Nil, e.level)
           )
-        }
-        elem match {
-          case t: HasAnnotations =>
-            t.doAnnotations(this)
-          case _ =>
         }
       })
       super.onUpdate(Nil)

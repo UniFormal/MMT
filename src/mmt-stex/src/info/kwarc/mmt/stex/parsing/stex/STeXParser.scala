@@ -39,6 +39,40 @@ case class MetaTheoryRule(mp : MPath) extends TeXRule {
   val name = "meta theory rule"
 }
 class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
+  def resolveName(namestr: String)(implicit state: LaTeXParserState) = {
+    val rules = state.macrorules
+    namestr.split('?') match {
+      case Array(s) => rules.collectFirst {
+        case m: SemanticMacro if m.name == s => m.syminfo
+      } match {
+        case Some(si) =>
+          val candidates = rules.collect {
+            case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
+          }.filterNot(_ == si).map(_.path).distinct
+          (Some(si), candidates)
+        case _ =>
+          val candidates = rules.collect {
+            case m: SemanticMacro if m.syminfo.path.name.toString == s => m.syminfo
+          }.distinct
+          candidates match {
+            case List(a) => (Some(a), Nil)
+            case Nil => (None, Nil)
+            case h :: tail => (Some(h), tail.map(_.path))
+          }
+      }
+      case Array(m, n) =>
+        rules.collect {
+          case sm: SemanticMacro if sm.syminfo.path.module.toString.endsWith(m) &&
+            sm.syminfo.path.name.toString == n => sm.syminfo
+        }.distinct match {
+          case List(a) => (Some(a), Nil)
+          case Nil => (None, Nil)
+          case h :: tail => (Some(h), tail.map(_.path))
+        }
+      case _ =>
+        throw LaTeXParseError("Too many '?' in symbol identifier", lvl = Level.Warning)
+    }
+  }
 
   def defaultMeta(implicit state:LaTeXParserState) = {
     state.getRules.collectFirst {
@@ -354,6 +388,7 @@ class STeXSuperficialParser(controller:Controller) {
 
 case class SymdeclInfo(macroname:String,path:GlobalName,args:String,assoctype:String,local:Boolean,file:String,start:Int,end:Int,defined:Boolean) {
   def arity = args.length
+  var isDocumented = false
 }
 case class NotationInfo(syminfo:SymdeclInfo,prec:List[Int],id:String,notation:List[TeXTokenLike],opnotation:Option[List[TeXTokenLike]])
 
@@ -367,12 +402,13 @@ object STeXRules {
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
     VarDefRule(dict),VarInstanceRule(dict),UseStructureRule(dict),
     patchdefinitionrule,patchassertionrule,stexinline,stexcode,nstexcode,texcode,ProofEnv("sproof"),
-    MMTInterfaceRule(dict),SetMetaTheoryRule(dict)
+    MMTInterfaceRule(dict),SetMetaTheoryRule(dict),
+    DefinitionRule(dict), SParagraphRule(dict),AssertionRule(dict),InlineAssertionRule(dict)
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),new SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
     ExtStructureRule(dict),TextSymDeclRule(dict),MMTDef(dict),
-    AssertionRule(dict),InlineAssertionRule(dict),InstanceRule(dict),
+    InstanceRule(dict),
     CopymoduleRule(dict),InterpretmoduleRule(dict),RealizationRule(dict)
   )
 
@@ -511,6 +547,7 @@ object STeXRules {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
       val (info,ntk,alt,ch) = parseSym
+      info.isDocumented = true
       val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch ::: ch2,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
@@ -527,6 +564,7 @@ object STeXRules {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
       val (info,ntk,alt,ch) = parseSym
+      info.isDocumented = true
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
@@ -1032,8 +1070,26 @@ object STeXRules {
     override val isusemodule: Boolean = true
   }
 
-  case class InlineAssertionRule(dict:Dictionary) extends InlineStatementRule("inlineass",dict)
-  case class AssertionRule(dict:Dictionary) extends StatementRule("sassertion",dict)
+  case class InlineAssertionRule(_dict:Dictionary) extends InlineStatementRule("inlineass",_dict)
+  case class AssertionRule(_dict:Dictionary) extends StatementRule("sassertion",_dict)
+  case class DefinitionRule(_dict:Dictionary) extends StatementRule("sdefinition",_dict) {
+    override protected def doFor(s: String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
+      dict.resolveName(s) match {
+        case (Some(sd),_) =>
+          sd.isDocumented = true
+        case _ =>
+      }
+    }
+  }
+  case class SParagraphRule(_dict: Dictionary) extends StatementRule("sdefinition", _dict) {
+    override protected def doFor(s: String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
+      dict.resolveName(s) match {
+        case (Some(sd), _) =>
+          sd.isDocumented = true
+        case _ =>
+      }
+    }
+  }
 
   case class CopymoduleRule(dict:Dictionary) extends EnvironmentRule("copymodule") with StructureLikeRule {
 
@@ -1135,7 +1191,7 @@ object STeXRules {
       }
       val mp = dict.getMPath(name + "-structure")
       val sympath = dict.getGlobalName(name)
-      val macr = MathStructureMacro(begin.plain,mp,maybename,sympath,begin.children ::: children,this,dict.getFile)
+      val macr = MathStructureMacro(begin.plain,mp,maybename,sympath,begin.children ::: children,this,dict.getFile,dict)
       dict.getModuleOpt match {
         case Some(mod) =>
           mod.exportrules ::= macr
@@ -1156,7 +1212,7 @@ object STeXRules {
       super.parse(begin) match {
         case m : MathStructureMacro =>
           val (args, children) = readArg
-          val ret = MathStructureMacro(m.pm,m.mpi,m.macroname,m.symbolpath,m.ch ::: children,this,m.file)
+          val ret = MathStructureMacro(m.pm,m.mpi,m.macroname,m.symbolpath,m.ch ::: children,this,m.file,dict)
           val exts = args match {
             case g: Group =>
               g.content.filterNot(_.isInstanceOf[Comment]) match {
