@@ -172,6 +172,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
   }
 
   private var current_archive: Option[Archive] = None
+  def getCurrentArchive = current_archive
   private var current_file: Option[File] = None
   private var current_modules : List[DictionaryModule] = Nil
   val all_modules = mutable.HashMap.empty[MPath,DictionaryModule]
@@ -582,6 +583,7 @@ object STeXRules {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
       val (info,ntk,alt,ch) = parseSym
+      info.isDocumented = true
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
@@ -610,7 +612,7 @@ object STeXRules {
           plain.addError("Missing Argument")
           return plain
       }
-      val mp = dict.resolveMPath(None, path)
+      val mp = dict.resolveMPath(dict.getCurrentArchive, path)
       val mod = dict.all_modules.getOrElse(mp,{
         plain.addError("Module not found: " + mp)
         return plain
