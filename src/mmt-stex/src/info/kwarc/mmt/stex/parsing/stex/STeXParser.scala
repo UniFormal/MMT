@@ -215,6 +215,14 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         }
       case _ => None
     }
+    def makenew = {
+      val m = new DictionaryModule(macr,meta)
+      m.exportrules = meta.toList.flatMap(_.getRules(getLanguage))
+      m.rules = m.exportrules ::: m.rules
+      current_file.foreach(f => m.file = Some(f))
+      current_archive.foreach(a => m.archive = Some(a))
+      m
+    }
 
     val mod = if (macr.sig != "") {
       val language = getLanguage
@@ -232,20 +240,16 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         all_modules.get(macr.mp) match {
           case None =>
             macr.addError("No module " + macr.mp.toString + " found", Some("In file " + sigfile))
-            new DictionaryModule(macr,meta)
+            makenew
           case Some(m) =>
-            val n = new DictionaryModule(macr,meta)
+            val n = makenew
             n.imports ::= (m,true)
             m.langs(language) = n
             n.rules = m.getRules(language)
             n
         }
       })
-    } else new DictionaryModule(macr,meta)
-    mod.exportrules = meta.toList.flatMap(_.getRules(getLanguage))
-    mod.rules = mod.exportrules ::: mod.rules
-    current_file.foreach(f => mod.file = Some(f))
-    current_archive.foreach(a => mod.archive = Some(a))
+    } else makenew
     current_modules ::= mod
     state.rules ::= mod
     mod.rules = parser.moduleRules ::: mod.rules
@@ -1211,7 +1215,7 @@ object STeXRules {
     override val name: String = "extstructure"
 
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
-      super.parse(begin) match {
+      super[MathStructureRule].parse(begin) match {
         case m : MathStructureMacro =>
           val (args, children) = readArg
           val ret = MathStructureMacro(m.pm,m.mpi,m.macroname,m.symbolpath,m.ch ::: children,this,m.file,dict)
@@ -1336,7 +1340,8 @@ object STeXRules {
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          throw LaTeXParseError("No mathstructure " + struct + " found")
+          val all_structures = state.macrorules.collect{ case m : MathStructureMacro => m}
+          throw LaTeXParseError("No mathstructure " + struct + " found" + all_structures.isEmpty)
       }
       module.getRules("").foreach(state.addRule(_))
       new MacroApplication(plain, children, this) with HasAnnotations {
