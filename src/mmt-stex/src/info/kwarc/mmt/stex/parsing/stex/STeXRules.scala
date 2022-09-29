@@ -428,7 +428,13 @@ class StatementRule(_name:String,val dict:Dictionary) extends EnvironmentRule(_n
     }
   }
 
-  protected def doFor(s:String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {}
+  protected def doFor(s:String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {
+    dict.resolveName(s) match {
+      case (Some(sd), _) =>
+        sd.isDocumented = true
+      case _ =>
+    }
+  }
 
   override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
     val (optargs, ch) = readOptArg

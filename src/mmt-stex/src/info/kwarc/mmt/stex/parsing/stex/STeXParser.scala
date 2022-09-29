@@ -972,7 +972,7 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\instantiate expected")
       }
       val module = state.macrorules.collectFirst {
-        case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
@@ -1045,7 +1045,7 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\varinstantiate expected")
       }
       val module = state.macrorules.collectFirst {
-        case m:MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+        case m:MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
@@ -1078,24 +1078,8 @@ object STeXRules {
 
   case class InlineAssertionRule(_dict:Dictionary) extends InlineStatementRule("inlineass",_dict)
   case class AssertionRule(_dict:Dictionary) extends StatementRule("sassertion",_dict)
-  case class DefinitionRule(_dict:Dictionary) extends StatementRule("sdefinition",_dict) {
-    override protected def doFor(s: String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
-      dict.resolveName(s) match {
-        case (Some(sd),_) =>
-          sd.isDocumented = true
-        case _ =>
-      }
-    }
-  }
-  case class SParagraphRule(_dict: Dictionary) extends StatementRule("sdefinition", _dict) {
-    override protected def doFor(s: String)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
-      dict.resolveName(s) match {
-        case (Some(sd), _) =>
-          sd.isDocumented = true
-        case _ =>
-      }
-    }
-  }
+  case class DefinitionRule(_dict:Dictionary) extends StatementRule("sdefinition",_dict)
+  case class SParagraphRule(_dict: Dictionary) extends StatementRule("sdefinition", _dict)
 
   case class CopymoduleRule(dict:Dictionary) extends EnvironmentRule("copymodule") with StructureLikeRule {
 
@@ -1234,7 +1218,7 @@ object STeXRules {
           }
           val modules = exts.flatMap { struct =>
             state.macrorules.collectFirst {
-              case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+              case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
                 dict.all_modules.get(m.mpi)
             }.flatten match {
               case Some(mod) => Some(mod)
@@ -1335,7 +1319,7 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\usestructure expected")
       }
       val module = state.macrorules.collectFirst {
-        case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
