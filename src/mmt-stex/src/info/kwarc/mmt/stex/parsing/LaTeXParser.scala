@@ -51,7 +51,9 @@ object SuperficialLaTeXParser {
     ret.reverse
   }
   def readOne(break:Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state:LaTeXParserState): TeXTokenLike = {
-    if (in.empty) throw LaTeXParseError("Unexpected end of file")
+    if (in.empty) {
+      throw LaTeXParseError("Unexpected end of file")
+    }
     in.first match {
       case '\\' => readMacro
       case '{' => readGroup
@@ -258,25 +260,26 @@ object LaTeXRules {
   val explsyntaxoff = new SimpleMacroRule("ExplSyntaxOff") {
     override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = state.letters = state.letters.filterNot(c => c == '_' || c == ':')
   }
-  val dmathend = new SimpleMacroRule("]") {
+  class MathEnd(s: String) extends SimpleMacroRule(s) {
     override def after(ma: SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Unit = {
       state.closegroup
       super.after(ma)
     }
   }
-  val dmathstart = new MacroRule {
-    val name = "["
+  val dmathend = new MathEnd("]")
+  val pmathend = new MathEnd(")")
+  class MathStart(val name:String,end:MathEnd) extends MacroRule {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): Math = {
       import SuperficialLaTeXParser._
       state.opengroup
       state.inmath = true
-      var children:List[TeXTokenLike] = Nil
+      var children: List[TeXTokenLike] = Nil
       try {
-        while ({
+        while ( {
           val next = readOne()
           children ::= next
           next match {
-            case ma : SimpleMacroApplication if ma.rule == dmathend =>
+            case ma: SimpleMacroApplication if ma.rule == end =>
               false
             case _ => true
           }
@@ -284,9 +287,11 @@ object LaTeXRules {
       } finally {
         state.inmath = false
       }
-      Math(children.tail.reverse,new MacroApplication(plain,Nil,this),children.head)
+      Math(children.tail.reverse, new MacroApplication(plain, Nil, this), children.head)
     }
   }
+  val dmathstart = new MathStart("[",dmathend)
+  val pmathstart = new MathStart("(",pmathend)
   val eqnarray = new EnvironmentRule("eqnarray") with MathEnvRule
   val eqnarray_star = new EnvironmentRule("eqnarray*") with MathEnvRule
   val array = new EnvironmentRule("array") with MathEnvRule
@@ -357,7 +362,7 @@ object LaTeXRules {
     makeatother,
     explsyntaxon,
     explsyntaxoff,
-    dmathstart, dmathend, ensuremath,
+    dmathstart, dmathend, ensuremath,pmathstart,pmathend,
     begin,end,
     _def,edef,let,
     array,array_star,eqnarray,eqnarray_star,align,align_star,displaynd,displaytableau,displaytableau_star,textnd,cboxnd,tableau,

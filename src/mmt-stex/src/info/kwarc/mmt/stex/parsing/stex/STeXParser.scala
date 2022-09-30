@@ -1199,41 +1199,76 @@ object STeXRules {
     override val name: String = "extstructure"
 
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
-      super[MathStructureRule].parse(begin) match {
-        case m : MathStructureMacro =>
-          val (args, children) = readArg
-          val ret = MathStructureMacro(m.pm,m.mpi,m.macroname,m.symbolpath,m.ch ::: children,this,m.file,dict)
-          val exts = args match {
-            case g: Group =>
-              g.content.filterNot(_.isInstanceOf[Comment]) match {
-                case List(pt:PlainText) =>
-                  pt.str.split(',').map(_.trim)
-                case _ =>
-                  ret.addError("Expected mathstructures to extend")
-                  return ret
-              }
+      var children: List[TeXTokenLike] = Nil
+      val (n, ch) = readArg
+      children = ch
+      val maybename = n match {
+        case gr: Group =>
+          gr.content match {
+            case List(t: PlainText) => t.str
+            case _ =>
+              throw LaTeXParseError("Name expected")
+          }
+        case _ =>
+          throw LaTeXParseError("Name expected")
+      }
+      val (iexts, chext) = readArg
+      children = children ::: chext
+
+      val (optargs, ch2) = readOptArg
+      children = children ::: ch2
+      var name = maybename
+      optargs.foreach { l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s if s.trim.startsWith("name=") =>
+            name = s.drop(5).trim
+          case _ =>
+            throw LaTeXParseError("Unknown key:" + s.drop(5).trim)
+        }
+      }
+      val mp = dict.getMPath(name + "-structure")
+      val sympath = dict.getGlobalName(name)
+      val macr = MathStructureMacro(begin.plain, mp, maybename, sympath, begin.children ::: children, this, dict.getFile, dict)
+      dict.getModuleOpt match {
+        case Some(mod) =>
+          mod.exportrules ::= macr
+          mod.rules ::= macr
+        case _ =>
+      }
+      //if (deprecation != "") macr.addError("Deprecated: Use " + deprecation + " instead",lvl=Level.Warning)
+      val ret = safely(macr) {
+        dict.openModule(macr)
+      }
+      val exts = iexts match {
+        case g: Group =>
+          g.content.filterNot(_.isInstanceOf[Comment]) match {
+            case List(pt: PlainText) =>
+              pt.str.split(',').map(_.trim)
             case _ =>
               ret.addError("Expected mathstructures to extend")
               return ret
           }
-          val modules = exts.flatMap { struct =>
-            state.macrorules.collectFirst {
-              case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
-                dict.all_modules.get(m.mpi)
-            }.flatten match {
-              case Some(mod) => Some(mod)
-              case _ =>
-                ret.addError("No mathstructure " + struct + " found")
-                None
-            }
-          }
-          modules.foreach{mod =>
-            dict.addimport(ImportModuleApp(begin.plain,mod.path,Nil,ImportModuleRule(dict),"","",false,None))
-          }
-          ret
-        case o => o
+        case _ =>
+          ret.addError("Expected mathstructures to extend")
+          return ret
+      }
+      val modules = exts.flatMap { struct =>
+        state.macrorules.collectFirst {
+          case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
+            dict.all_modules.get(m.mpi)
+        }.flatten match {
+          case Some(mod) => Some(mod)
+          case _ =>
+            ret.addError("No mathstructure " + struct + " found")
+            None
+        }
       }
 
+      modules.foreach { mod =>
+        dict.addimport(ImportModuleApp(begin.plain, mod.path, Nil, ImportModuleRule(dict), "", "", false, None))
+      }
+      ret
     }
   }
 

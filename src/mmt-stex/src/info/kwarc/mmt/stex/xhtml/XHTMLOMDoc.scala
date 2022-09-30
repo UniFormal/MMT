@@ -1734,6 +1734,7 @@ case class HTMLSExample(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with
     state.Search.addExample(this)
   }}}}}
 }
+trait ProofEnv extends OMDocHTML
 trait HTMLProofFrame extends OMDocHTML {
   var expanded = true
   var forthm : Option[GlobalName] = None
@@ -1761,7 +1762,7 @@ trait HTMLProofFrame extends OMDocHTML {
     }
   }
 }
-case class HTMLSProof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement {}
+case class HTMLSProof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement with ProofEnv {}
 case class HTMLSProofstep(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame {}
 case class HTMLSProofyield(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   private var in_term = false
@@ -1793,12 +1794,12 @@ case class HTMLSProofyield(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   }
 }
 case class HTMLSProofsketch(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
-case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement {}
+case class HTMLSubproof(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame with HTMLStatement with ProofEnv {}
 case class HTMLSpfcase(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLProofFrame {}
 case class HTMLSpfeq(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with HTMLStatement {}
 
 case class HTMLSProoftitle(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {}
-case class HTMLSProofbody(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+case class HTMLSProofbody(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) with ProofEnv {
   override def onAdd = {
     super.onAdd
     collectAncestor {
