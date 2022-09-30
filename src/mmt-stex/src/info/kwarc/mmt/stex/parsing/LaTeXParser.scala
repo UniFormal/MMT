@@ -100,7 +100,7 @@ object SuperficialLaTeXParser {
     val str = in.takeWhileSafe(c => !break(c) && !state.specialchars.contains(c))
     new PlainText(str,start,in.offset)
   }
-  def readComment(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
+  def readComment(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = if (state.rules.nonEmpty) {
     val start = in.offset
     in.drop("%")
     val str = in.takeWhileSafe(_ != '\n')
@@ -109,6 +109,10 @@ object SuperficialLaTeXParser {
     else if (!in.empty)
       in.drop("\r\n")
     Comment(str,start,in.offset)
+  } else {
+    val start = in.offset
+    in.drop("%")
+    new PlainText("%",start,in.offset)
   }
 }
 
@@ -358,6 +362,7 @@ object LaTeXRules {
     _def,edef,let,
     array,array_star,eqnarray,eqnarray_star,align,align_star,displaynd,displaytableau,displaytableau_star,textnd,cboxnd,tableau,
     capital_displaynd,fignd,text,
-    verbatim,lstlisting,lstinline,inlineverb,verb,iffalse
+    verbatim,lstlisting,lstinline,inlineverb,verb,iffalse,
+    new NoLintRule("url")
   )
 }

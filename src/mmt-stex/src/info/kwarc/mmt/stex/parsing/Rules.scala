@@ -285,3 +285,17 @@ trait DefLikeRule extends MacroRule {
     new SimpleMacroApplication(plain,pre ::: main._2,false,Nil,this)
   }
 }
+
+class NoLintRule(name: String) extends SimpleMacroRule(name, 1) {
+  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+    val inmath = state.inmath
+    val currrules = state.rules
+    try {
+      state.rules = Nil
+      readOptArg
+      super.parse(plain)
+    } finally {
+      state.rules = currrules
+    }
+  }
+}

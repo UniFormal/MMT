@@ -1324,8 +1324,7 @@ object STeXRules {
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          val all_structures = state.macrorules.collect{ case m : MathStructureMacro => m}
-          throw LaTeXParseError("No mathstructure " + struct + " found" + all_structures.isEmpty)
+          throw LaTeXParseError("No mathstructure " + struct + " found")
       }
       module.getRules("").foreach(state.addRule(_))
       new MacroApplication(plain, children, this) with HasAnnotations {
