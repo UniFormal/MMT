@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, 
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.search.Searcher
+import info.kwarc.mmt.stex.xhtml.HTMLParser
 import org.eclipse.jgit.api.Git
 
 import java.io.{FileOutputStream, PrintWriter, StringWriter}
@@ -41,11 +42,19 @@ trait MathHubServer { this : STeXLSPServer =>
       case Some("searchresult") =>
         val i = request.parsedQuery("num").get.toInt
         val (html,body) = server.emptydoc
+        html.get("head")()().head.add(new HTMLParser.HTMLText(body.state,
+          """<link rel="stylesheet" href="/stex/rustex-min.css"></link>"""
+        ))//)
         if (request.parsedQuery("type").contains("local")) {
           body.add(locals(i))
         }
         else {
           body.add(remotes(i))
+        }
+        body.attributes.remove((body.namespace, "style"))
+        html.get("body")()().foreach(_.attributes.remove((body.namespace,"style")))
+        body.get("div")()("paragraph").foreach {par =>
+          par.attributes.remove((par.namespace,"style"))
         }
         Some(ServerResponse.apply(html.toString,"text/html"))
       case _ => None
@@ -126,7 +135,8 @@ trait MathHubServer { this : STeXLSPServer =>
         r.archive = res.archive
         r.sourcefile = res.sourcefile
         r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=local&num=" + SearchResultServer.locals.length
-        SearchResultServer.locals ::= res.fragments.collectFirst{case p if p._1 != "title" => p._3}.getOrElse(res.fragments.head._3)
+        val html = res.fragments.collectFirst{case p if p._1 != "title" => p._3}.getOrElse(res.fragments.head._3)
+        SearchResultServer.locals ::= html
         r.fileuri = (controller.backend.getArchive(res.archive).get / info.kwarc.mmt.api.archives.source / res.sourcefile).toURI.toString
         r
     }
