@@ -60,6 +60,7 @@ class BuildMessage {
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
+  @JsonRequest def openFile(msg:HTMLUpdateMessage): CompletableFuture[Unit]
   @JsonNotification def updateMathHub(): Unit
 }
 final class STeXLSPWebSocket extends SandboxedWebSocket(classOf[STeXClient],classOf[STeXLSPServer]) {
@@ -126,6 +127,41 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      val d = documents.synchronized{documents.getOrElseUpdate(a.file.replace("%3A",":"),newDocument(a.file.replace("%3A",":")))}
      d.buildFull()
    }
+   private def do_manifest(s : String) =
+     s"""
+        |id:$s
+        |ns:http://mathhub.info/$s
+        |narration-base:http://mathhub.info/$s
+        |url-base:http://mathhub.info/$s
+        |format:stex
+        |""".stripMargin
+
+   private def default_stex =
+     """
+       |\documentclass{stex}
+       |\libinput{preamble}
+       |\begin{document}
+       |% A first sTeX document
+       |\end{document}
+       |""".stripMargin
+
+   @JsonNotification("sTeX/initializeArchive")
+   def initializeArchive(a : ArchiveMessage): Unit = safely {
+     mathhub_top.foreach {mh =>
+       val ndir = mh / a.archive
+       (ndir / "META-INF").mkdirs()
+       File.write(ndir / "META-INF" / "MANIFEST.MF",do_manifest(a.archive))
+       (ndir / "lib").mkdirs()
+       File.write(ndir / "lib" / "preamble.en.tex",s"% preamble code for ${a.archive}")
+       (ndir / "source").mkdirs()
+       File.write(ndir / "source" / "helloworld.tex", default_stex)
+       controller.handleLine("mathpath archive " + ndir.toString)
+       client.client.updateMathHub()
+       val um = new HTMLUpdateMessage
+       um.html = (ndir / "source" / "helloworld.tex").toString
+       client.client.openFile(um)
+     }
+   }
 
    @JsonRequest("sTeX/search")
    def search(p : SearchParams) : CompletableFuture[LSPSearchResults] = Completable {
@@ -139,31 +175,8 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    @JsonNotification("sTeX/parseWorkspace")
    def parseWorkspace() : Unit = withProgress(this,"Quickparsing Workspace"){ update =>
-     //Future {
-     var allfiles : List[File] = Nil//List[(Option[Archive],File)] = Nil
-     /*def getFiles(fs : List[(Option[Archive],File)]) : Unit = fs.headOption match {
-       case Some((a,f)) if f.isFile && f.getExtension.contains("tex") =>
-         allfiles ::= ((a,f))
-         getFiles(fs.tail)
-       case Some((Some(a),f)) if f.isDirectory =>
-         getFiles(f.descendants.map(file => (Some(a),file)) ::: fs.tail)
-       case (Some((None,f))) if f.isDirectory =>
-         controller.backend.getArchives.find(_.root == f) match {
-           case Some(a) =>
-             val source = a / info.kwarc.mmt.api.archives.source
-             val lib = a / RedirectableDimension("lib")
-             getFiles((Some(a),source) :: (Some(a),lib) :: fs.tail)
-           case _ =>
-             getFiles(f.children.map((None,_)) ::: fs.tail)
-         }
-       case _ =>
-     }
-     getFiles(workspacefolders.map {f =>
-       val segments = f.segments
-       (controller.backend.getArchives find { a => segments.startsWith(a.root.segments) },f)
-     })*/
+     var allfiles : List[File] = Nil
      allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
-     //documents.synchronized {
        allfiles.zipWithIndex.foreach {
          case (f, i) => //((a, f), i) =>
            update(i.toFloat / allfiles.length.toFloat, "Parsing " + (i + 1) + "/" + allfiles.length + ": " + f.toString)
@@ -184,9 +197,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                  d.init(File.read(f))
              }
            }
-         //parser(f,a)
        }
-     //}
      ((),"Done")
    }
 
@@ -200,10 +211,12 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      this.remoteServer = msg.remote
      controller.handleLine("mathpath archive " + mh.toString)
      controller.handleLine("lmh root " + mh.toString)
-     bootToken.foreach {tk =>
-       updateProgress(tk,0.5,"Initializing RusTeX")
-     }
-     RusTeX.initializeBridge(mh / ".rustex")
+     Future {
+       withProgress(RusTeX,"Initializing RusTeX"){tk =>
+         RusTeX.initializeBridge(mh / ".rustex")
+         ((),"Done.")
+       }
+     }(scala.concurrent.ExecutionContext.global)
      bootToken.foreach {tk =>
        updateProgress(tk,0.5,"Loading relational information")
      }
