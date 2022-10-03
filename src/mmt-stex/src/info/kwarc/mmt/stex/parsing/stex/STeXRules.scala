@@ -448,7 +448,10 @@ class StatementRule(_name:String,val dict:Dictionary) extends EnvironmentRule(_n
         case s if s.trim.startsWith("id=") =>
         case s if s.trim.startsWith("title=") =>
         case s if s.trim.startsWith("for=") =>
-          s.drop(4).split(',').foreach(st => doFor(st.trim))
+          val r = s.drop(4).trim
+          (
+            if (r.headOption.contains('{') && r.lastOption.contains('}')) r.tail.init else r
+          ).split(',').foreach(st => doFor(st.trim))
         case s if s.trim.startsWith("judgment=") =>
         case _ =>
           throw LaTeXParseError("Unknow key " + s.trim)
