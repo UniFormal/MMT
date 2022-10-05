@@ -93,7 +93,7 @@ sealed case class Fact(
       case Some(valueEqFact) => valueEqFact
       case _ => Fact.tryRenderSEquationSystemFact(ref, label, tp = tp, simpleTp = simpleTp, df = df, simpleDf = simpleDf) match {
           case Some(equationSystemFact) => equationSystemFact
-          case _ => SGeneralFact(Some(ref), label, tp, df)
+          case _ => SGeneralFact(Some(ref), label, tp, simpleDf)
       }
     }
   }
