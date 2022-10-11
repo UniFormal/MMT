@@ -286,7 +286,7 @@ object PdfLatex {
       pdffile.setExtension("fdb_latexmk"),
       pdffile.setExtension("fls"),
       //pdffile.setExtension("sref"),
-      pdffile.setExtension("sms"),
+      //pdffile.setExtension("sms"),
       File(pdffile.stripExtension.toString + ".run.xml"),
       File(pdffile.stripExtension.toString + ".synctex.gz"),
       File(pdffile.stripExtension.toString + "-blx.bib")

@@ -52,6 +52,10 @@ object FullsTeXGraph extends ServerExtension("vollki") {
           html = html.replace("USER_MODEL_PLACEHOLDER",user.map(_.f.name).getOrElse(""))
           html = html.replace("LANGUAGE_PLACEHOLDER",language)
           ServerResponse(html, "text/html")
+      case Some("list") =>
+        ServerResponse.JsonResponse(JSONArray(
+          getAll().map(e => JSONObject(("value",JSONString(e.id)),("label",JSONString(e.getTitle(language).toString())))) :_*
+        ))
       case Some("frag") =>
         path.foreach {node =>
           val doc = node.getDocument(language).getOrElse(node.getDocument("en").getOrElse(node.getDocument("").get))

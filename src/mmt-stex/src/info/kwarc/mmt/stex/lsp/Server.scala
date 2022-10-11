@@ -136,7 +136,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
         |format:stex
         |""".stripMargin
 
-   private def default_stex =
+   private val default_stex =
      """
        |\documentclass{stex}
        |\libinput{preamble}
@@ -144,6 +144,44 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        |% A first sTeX document
        |\end{document}
        |""".stripMargin
+
+   private val gitignore = """*.sref
+                             |*.pdf
+                             |*.hd
+                             |*.mw
+                             |*.tst
+                             |*.upa
+                             |*.upb
+                             |*.fls
+                             |*.rel
+                             |*.sms
+                             |*.bbl
+                             |*.blg
+                             |*.out
+                             |*.synctex.gz
+                             |*.run.xml
+                             |*.thm
+                             |*.bak
+                             |*.idx
+                             |*.ind
+                             |*.ilg
+                             |*.log
+                             |*.toc
+                             |*.aux
+                             |auto
+                             |*.nav
+                             |*.snmv
+                             |*.vrb
+                             |*.tmp
+                             |*.glo
+                             |*.gls
+                             |*.deps
+                             |*-blx.bib
+                             |*.bcf
+                             |_region_.tex
+                             |.DS_Store
+                             |*~
+                             |*.fdb_latexmk""".stripMargin
 
    @JsonNotification("sTeX/initializeArchive")
    def initializeArchive(a : ArchiveMessage): Unit = safely {
@@ -155,6 +193,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        File.write(ndir / "lib" / "preamble.en.tex",s"% preamble code for ${a.archive}")
        (ndir / "source").mkdirs()
        File.write(ndir / "source" / "helloworld.tex", default_stex)
+       File.write(ndir / ".gitignore",gitignore)
        controller.handleLine("mathpath archive " + ndir.toString)
        client.client.updateMathHub()
        val um = new HTMLUpdateMessage
