@@ -204,12 +204,12 @@ object OMDocExtension extends DocumentExtension {
     },
     {
       case t : HTMLTopLevelTerm if t.orig.isInstanceOf[HTMLDefiniendum] =>
-        overlay(t, "/:" + server.pathPrefix + "/declheader?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString,
+        overlay(t, ""/*/:" + server.pathPrefix + "/declheader?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString*/,
           "/:" + server.pathPrefix + "/declaration?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString  + "&language=" + getLanguage(t))
     },
     {
       case t : HTMLDefiniendum =>
-        overlay(t, "/:" + server.pathPrefix + "/declheader?" + t.head.toString,
+        overlay(t, ""/*"/:" + server.pathPrefix + "/declheader?" + t.head.toString*/,
           "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
     },
     {case t: HasHead if t.isVisible && !t.isInstanceOf[HTMLDefiniendum] =>

@@ -185,7 +185,7 @@ object DocumentExtension extends STeXExtension {
     targets.foreach{ e =>
       e.classes ::= "group-highlight"
       e.attributes((e.namespace,"data-highlight-parent")) = id
-      e.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
+      if (urlshort.nonEmpty) e.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
       e.attributes((elem.namespace,"data-overlay-link-click")) = urllong
     }
   }
