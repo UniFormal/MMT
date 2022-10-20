@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, URI}
-import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
+import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument, LSPServer}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.parsing.stex.HasAnnotations
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
@@ -158,7 +158,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
             }
           }
           val msg = new HTMLUpdateMessage
-          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + uri // uri
+          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + LSPServer.URItoVSCode(uri) // uri
           this.client.client.updateHTML(msg)
           quickparse
         }}

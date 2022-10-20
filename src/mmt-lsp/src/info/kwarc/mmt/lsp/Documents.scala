@@ -1,5 +1,5 @@
 package info.kwarc.mmt.lsp
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.{File, URI}
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
 
 import scala.collection.mutable
@@ -226,12 +226,7 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:Cl
   def doctext =  _doctext.getText
   val timercount : Int = 0
   lazy val file : Option[File] = {
-    val f = File({
-      val str = uri.drop(7) // stupid windows fix
-      if (str.length > 2 && str(2) == ':') {
-        str.take(2).toUpperCase + str.drop(2)
-      } else str
-    })
+    val f = File(URI(uri).pathAsString)
     if (f.exists()) Some(f) else None
   }
 

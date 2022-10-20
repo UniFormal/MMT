@@ -16,15 +16,15 @@ trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[Cli
 
   override def didOpen(params: DidOpenTextDocumentParams): Unit = {
     val document = params.getTextDocument
-    documents.synchronized{documents.getOrElseUpdate(document.getUri.replace("%3A",":"),{
-      val d = newDocument(document.getUri.replace("%3A",":"))
+    documents.synchronized{documents.getOrElseUpdate(document.getUri,{
+      val d = newDocument(document.getUri)
       d.init(document.getText)
       d
     })}
   }
 
   override def didChange(params: DidChangeTextDocumentParams): Unit = {
-    val uri = params.getTextDocument.getUri.replace("%3A",":")
+    val uri = params.getTextDocument.getUri
     val doc = documents.synchronized{documents.getOrElse(uri,{
       log("Document not found: " + uri)
       return
@@ -80,7 +80,7 @@ trait WithAutocomplete[ClientType <: LSPClient] extends LSPServer[ClientType] {
   def completion(doc : String, line : Int, char : Int) : List[Completion]
 
   override def completion(position: CompletionParams): (Option[List[CompletionItem]], Option[CompletionList]) = {
-    val ls = completion(position.getTextDocument.getUri.replace("%3A",":"),position.getPosition.getLine,position.getPosition.getCharacter)
+    val ls = completion(position.getTextDocument.getUri,position.getPosition.getLine,position.getPosition.getCharacter)
     if (ls.isEmpty) (None,None) else {
       val ret = new CompletionList()
       ret.setItems(ls.map(_.toLSP).asJava)
@@ -127,7 +127,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   def getAnnotations(doc : TextDocumentIdentifier, range: lsp4j.Range) = {
-    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
+    documents.synchronized{documents.get(doc.getUri)} match { // <- for some reason the URI seems escaped here
       case Some(doc:DocumentType@unchecked) =>
         val start = range.getStart
         val end = range.getEnd
@@ -176,7 +176,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   def getAnnotations(doc : TextDocumentIdentifier, pos: lsp4j.Position) = {
-    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
+    documents.synchronized{documents.get(doc.getUri)} match { // <- for some reason the URI seems escaped here
       case Some(doc:DocumentType@unchecked) =>
         val off = doc._doctext.toOffset(pos.getLine,pos.getCharacter)
         (Some(doc),doc.synchronized{ doc.Annotations.getAll.collect{
@@ -186,7 +186,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
     }
   }
   def getAnnotations(doc : TextDocumentIdentifier) = {
-    documents.synchronized{documents.get(doc.getUri.replace("%3A",":"))} match { // <- for some reason the URI seems escaped here
+    documents.synchronized{documents.get(doc.getUri)} match { // <- for some reason the URI seems escaped here
       case Some(doc:DocumentType@unchecked) =>
         (Some(doc),doc.synchronized{ doc.Annotations.getAll})
       case _ => (None,Nil)
@@ -254,7 +254,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   override def semanticTokensFull(params: SemanticTokensParams): SemanticTokens = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
+    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc : DocumentType@unchecked) =>
         doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHighlights) match {
           case Nil =>
@@ -269,7 +269,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   override def hover(params: HoverParams): Hover = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
+    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc : DocumentType@unchecked) =>
         doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHovers) match {
           case Nil =>
@@ -288,7 +288,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   override def foldingRange(params: FoldingRangeRequestParams): List[FoldingRange] = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
+    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc: DocumentType@unchecked) =>
         doc.synchronized {
           val annots = doc.Annotations.getAll
@@ -308,7 +308,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
 
   override def documentSymbol(params: DocumentSymbolParams): List[(Option[SymbolInformation],Option[DocumentSymbol])] = {
-    documents.synchronized{documents.get(params.getTextDocument.getUri.replace("%3A",":"))} match {
+    documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc: DocumentType@unchecked) =>
         doc.synchronized {
           val annots = doc.Annotations.getAll

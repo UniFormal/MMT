@@ -8,7 +8,7 @@ import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, Language
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
 
-import java.net.ServerSocket
+import java.net.{ServerSocket, URLDecoder, URLEncoder}
 import java.util
 import java.util.logging.LogManager
 import java.util.logging.Logger
@@ -24,6 +24,7 @@ import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
 import java.io.{PrintStream, PrintWriter, StringWriter}
+import java.nio.charset.StandardCharsets
 import javax.websocket.{CloseReason, Session}
 import javax.websocket.server.ServerEndpointConfig
 import scala.concurrent.Future
@@ -395,6 +396,11 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def setTrace(params: SetTraceParams): Unit = {}
 }
 
+object LSPServer {
+  def URItoVSCode(s : String) : String = URLEncoder.encode(s.replace("+","%2B"),StandardCharsets.UTF_8)
+  def VSCodeToURI(s : String) : String = URLDecoder.decode(s,StandardCharsets.UTF_8)//s.replace("%3A",":")
+}
+
 class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B]](val server : B,lsp:LSP[A,B,C])
   extends LanguageClientAware
     with LanguageServer
@@ -425,8 +431,6 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   override def getTextDocumentService: TextDocumentService = this
   override def getWorkspaceService: WorkspaceService = this
-
-  private def normalizeUri(s:String) : String = s.replace("%3A",":")
 
   //@JsonNotification("connect")
   override def connect(clientO: LanguageClient): Unit = {
@@ -512,7 +516,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   //@JsonRequest("textDocument/completion")
   override def completion(position: CompletionParams): CompletableFuture[JEither[util.List[CompletionItem], CompletionList]] = Completable {
-    position.getTextDocument.setUri(normalizeUri(position.getTextDocument.getUri))
+    position.getTextDocument.setUri(LSPServer.VSCodeToURI(position.getTextDocument.getUri))
     log("textDocument/completion: " + position.getTextDocument.getUri + " at (" +
       position.getPosition.getLine + "," + position.getPosition.getCharacter + ")"
       ,Some("methodcall"))
@@ -524,7 +528,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   //@JsonRequest("textDocument/hover")
   override def hover(params: HoverParams): CompletableFuture[Hover] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/hover: " + params.getTextDocument.getUri + ":(" + params.getPosition.getLine + "," + params.getPosition.getCharacter + ")",Some("methodcall"))
     server.hover(params)
   }
@@ -533,6 +537,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def signatureHelp(
                      params: SignatureHelpParams
                    ): CompletableFuture[SignatureHelp] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/signatureHelp: " + params.toString,Some("methodcall"))
     server.signatureHelp(params)
   }
@@ -541,6 +546,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def references(
                   params: ReferenceParams
                 ): CompletableFuture[util.List[_ <: Location]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/reference: " + params.toString,Some("methodcall"))
     server.references(params).asJava
   }
@@ -549,13 +555,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def documentHighlight(
                           params: DocumentHighlightParams
                         ): CompletableFuture[util.List[_ <: DocumentHighlight]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/documentHighlight: " + params.toString,Some("methodcall"))
     server.documentHighlights(params).asJava
   }
 
   //@JsonNotification("textDocument/didOpen")
   override def didOpen(params: DidOpenTextDocumentParams): Unit = {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didOpen: " + params.getTextDocument.getUri + " (" + params.getTextDocument.getLanguageId + ")",Some("methodcall"))
     server.didOpen(params)
   }
@@ -564,6 +571,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def didChange(
                  params: DidChangeTextDocumentParams
                ): Unit = {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didChange: " + params.getContentChanges.asScala.map(c =>
       "(" + c.getRange.getStart.getLine + "," + c.getRange.getStart.getCharacter + "),(" +
         c.getRange.getEnd.getLine + "," + c.getRange.getEnd.getCharacter + ")=\"" + c.getText + "\""
@@ -574,6 +582,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   //@JsonNotification("textDocument/didClose")
   override def didClose(params: DidCloseTextDocumentParams): Unit = {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didClose: " + params.toString,Some("methodcall"))
     server.didClose(params)
   }
@@ -581,7 +590,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   //@JsonNotification("textDocument/didSave")
   override def didSave(params: DidSaveTextDocumentParams): Unit = {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didSave: " + params.getTextDocument.getUri,Some("methodcall"))
     server.didSave(params.getTextDocument.getUri)
   }
@@ -591,6 +600,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def definition(
                   params: DefinitionParams
                 ): CompletableFuture[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/definition: " + params.toString,Some("methodcall"))
     toEither{
       val ret = server.definition(params)
@@ -603,6 +613,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def typeDefinition(
                       position: TypeDefinitionParams
                     ): CompletableFuture[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]] = Completable {
+    position.getTextDocument.setUri(LSPServer.VSCodeToURI(position.getTextDocument.getUri))
     log("textDocument/typeDefinition: " + position.toString,Some("methodcall"))
     toEither{
       val ret = server.typeDefinition(position)
@@ -615,11 +626,13 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def implementation(
                       position: ImplementationParams
                     ): CompletableFuture[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]] = Completable {
+    position.getTextDocument.setUri(LSPServer.VSCodeToURI(position.getTextDocument.getUri))
     log("textDocument/implementation: " + position.toString,Some("methodcall"))
     toEither{(Some(server.implementation(position).asJava),None)}.asInstanceOf[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]]
   }
 
   override def declaration(params: DeclarationParams): CompletableFuture[JEither[util.List[_ <: Location], util.List[_ <: LocationLink]]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/implementation: " + params.toString,Some("methodcall"))
     toEither{(Some(server.declaration(params).asJava),None)}.asInstanceOf[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]]
   }
@@ -631,7 +644,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
                       params: DocumentSymbolParams
                     ): CompletableFuture[util.List[JEither[SymbolInformation,DocumentSymbol]]] = Completable {
   //CompletableFuture[JEither[util.List[DocumentSymbol], util.List[SymbolInformation]]] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/documentSymbol: " + params.getTextDocument.getUri,Some("methodcall"))
     val sc = try {
       server.documentSymbol(params)
@@ -650,6 +663,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def formatting(
                   params: DocumentFormattingParams
                 ): CompletableFuture[util.List[_ <: TextEdit]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/formatting: " + params.toString,Some("methodcall"))
     server.formatting(params).asJava
   }
@@ -659,6 +673,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def rename(
               params: RenameParams
             ): CompletableFuture[WorkspaceEdit] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/rename: " + params.toString,Some("methodcall"))
     server.rename(params)
   }
@@ -667,6 +682,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def codeAction(
                   params: CodeActionParams
                 ): CompletableFuture[util.List[JEither[Command,CodeAction]]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/codeAction: " + params.toString,Some("methodcall"))
     server.codeAction(params).map(e => toEither(None.asInstanceOf[Option[Command]],Some(e)).asInstanceOf[JEither[Command,CodeAction]]).asJava
   }
@@ -675,6 +691,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def codeLens(
                 params: CodeLensParams
               ): CompletableFuture[util.List[_ <: CodeLens]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/codeLens: " + params.getTextDocument.getUri,Some("methodcall"))
     server.codeLens(params).asJava
   }
@@ -683,14 +700,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def foldingRange(
                     params: FoldingRangeRequestParams
                   ): CompletableFuture[util.List[FoldingRange]] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/foldingRange: " + params.getTextDocument.getUri,Some("methodcall"))
     server.foldingRange(params).asJava
   }
 
   //@JsonRequest(value = "textDocument/semanticTokens/full")
   override def semanticTokensFull(params: SemanticTokensParams) : CompletableFuture[SemanticTokens] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/semanticTokens/full: " + params.getTextDocument.getUri,Some("methodcall"))
     server.semanticTokensFull(params)
   }
@@ -698,12 +715,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   //@JsonRequest(value = "textDocument/semanticTokens/full/delta", useSegment = false)
   //@ResponseJsonAdapter(classOf[SemanticTokensFullDeltaResponseAdapter])
   override def semanticTokensFullDelta(params: SemanticTokensDeltaParams): CompletableFuture[JEither[SemanticTokens, SemanticTokensDelta]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/semanticTokens/full/delta: " + params.toString,Some("methodcall"))
     toEither(server.semanticTokensFullDelta(params)).asInstanceOf[JEither[SemanticTokens, SemanticTokensDelta]]
   }
 
   //@JsonRequest(value = "textDocument/semanticTokens/range", useSegment = false)
   override def semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture[SemanticTokens] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/semanticTokens/range: " + params.toString,Some("methodcall"))
     server.semanticTokensRange(params)
   }
@@ -713,6 +732,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   }
 
   override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/inlayHint: " + params.getTextDocument.getUri + " Line " + params.getRange.getStart.getLine,Some("methodcall"))
     Completable { server.inlayHint(params).asJava }
   }
