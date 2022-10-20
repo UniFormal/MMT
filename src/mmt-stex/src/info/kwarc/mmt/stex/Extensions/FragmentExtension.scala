@@ -86,7 +86,7 @@ object FragmentExtension extends STeXExtension {
   }
 
   def doDeclHeader(c:Constant) : Elem = {
-    <div style="font-size:small">
+    <div>
       <table><tr><td>
         <font size="+2">{" ☞ "}</font><code>{c.path.toString}</code>
       </td><td>{if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {

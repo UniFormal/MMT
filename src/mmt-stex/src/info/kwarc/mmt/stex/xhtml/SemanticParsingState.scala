@@ -4,7 +4,7 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{AddError, ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, NotFound}
 import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
@@ -45,9 +45,13 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
     v
   }
   def add(se : StructuralElement) = try {controller.library.add(se)} catch {
+    case NotFound(p,f) => error("Not found " + p.toString)
     case AddError(e,msg) => error("Error adding " + e.path.toString + ": " + msg)
   }
-  def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = controller.library.endAdd(ce)
+  def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = try {controller.library.endAdd(ce)} catch {
+    case NotFound(p, f) => error("Not found " + p.toString)
+    case AddError(e, msg) => error("Error adding " + e.path.toString + ": " + msg)
+  }
   def getO(p : Path) = controller.getO(p)
   def update(se : StructuralElement) = controller.library.update(se)
 
