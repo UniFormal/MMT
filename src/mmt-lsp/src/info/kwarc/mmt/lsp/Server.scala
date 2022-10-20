@@ -398,7 +398,12 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
 
 object LSPServer {
   def URItoVSCode(s : String) : String = URLEncoder.encode(s.replace("+","%2B"),StandardCharsets.UTF_8)
-  def VSCodeToURI(s : String) : String = URLDecoder.decode(s,StandardCharsets.UTF_8)//s.replace("%3A",":")
+  def VSCodeToURI(s : String) : String = {
+    val dec = URLDecoder.decode(s,StandardCharsets.UTF_8)
+    if (dec.startsWith("file:///") && dec(9) == ':') {
+      dec.take(8) + dec(8).toUpper + dec.drop(9)
+    } else dec
+  }//s.replace("%3A",":")
 }
 
 class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B]](val server : B,lsp:LSP[A,B,C])
