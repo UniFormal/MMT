@@ -433,7 +433,7 @@ object HTMLParser {
     }
 
     def node = try {
-      XML.loadString(state.present(this,forcenamespace=true).trim)
+      XML.loadString(state.present(this,forcenamespace=true).trim.replace("&nbsp;","&amp;nbsp;"))
     } catch {
       case o: Throwable =>
         println(o.toString)
@@ -476,7 +476,7 @@ object HTMLParser {
   }
 
   def apply(s : String)(implicit state : ParsingState) = {
-    implicit val in = new Unparsed(s,s => throw new STeXError(s,None,None))
+    implicit val in = new Unparsed(s.replace("&amp;nbsp;","&nbsp;"),s => throw new STeXError(s,None,None))
     in.trim
     doHeader
     doNext
