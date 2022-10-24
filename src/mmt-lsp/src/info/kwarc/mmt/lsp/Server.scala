@@ -142,8 +142,15 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
     params.setDiagnostics(Nil.asJava)
     client.publishDiagnostics(params)
   }
-  private var diags : List[Diagnostic] = Nil
-  private var all_errors : List[info.kwarc.mmt.api.Error] = Nil
+  var diags : List[Diagnostic] = Nil
+  var all_errors : List[info.kwarc.mmt.api.Error] = Nil
+
+  def republishErrors() = {
+    val params = new PublishDiagnosticsParams()
+    params.setDiagnostics(diags.asJava)
+    client.publishDiagnostics(params)
+  }
+
   def documentErrors(controller:Controller,doc : LSPDocument[LSPClient,LSPServer[LSPClient]],uri : String,errors : info.kwarc.mmt.api.Error*) = this.synchronized {if (errors.nonEmpty) {
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))

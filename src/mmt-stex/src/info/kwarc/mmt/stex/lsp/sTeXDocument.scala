@@ -25,7 +25,7 @@ case class STeXLSPErrorHandler(eh : api.Error => Unit, cont: (Double,String) => 
   override def close: Unit = {}
 }
 
-class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
+class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],override val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
 
   print("")
   lazy val archive = file.flatMap(f => server.controller.backend.resolvePhysical(f).map(_._1))
@@ -168,7 +168,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
 
   override val timercount: Int = 0
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
-    Annotations.notifyOnChange(client.client)
+    Annotations.notifyOnChange()
   }
   def quickparse = try this.synchronized {
     server.parser.synchronized {

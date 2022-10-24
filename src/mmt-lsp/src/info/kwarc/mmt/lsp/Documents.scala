@@ -221,7 +221,7 @@ class SyncedDocument {
 
 }
 
-class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:ClientWrapper[A],server : B) {
+class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,protected val client:ClientWrapper[A],protected val server : B) {
   val _doctext = new SyncedDocument
   def doctext =  _doctext.getText
   val timercount : Int = 0
@@ -394,11 +394,12 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
 
   object Annotations {
     def clear = _annotations = Nil
-    def notifyOnChange(client:LSPClient) = {
-      client.refreshSemanticTokens()
-      client.refreshCodeLenses()
-      client.refreshInlineValues()
-      client.refreshInlayHints()
+    def notifyOnChange() = {//[A <: LSPClient](client:ClientWrapper[A]) = {
+      client.client.refreshSemanticTokens()
+      client.client.refreshCodeLenses()
+      client.client.refreshInlineValues()
+      client.client.refreshInlayHints()
+      client.republishErrors()
     }
     private var _annotations : List[Annotation] = Nil
     def getAll = _annotations
