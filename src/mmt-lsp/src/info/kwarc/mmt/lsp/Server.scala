@@ -145,8 +145,9 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
   var diags : List[Diagnostic] = Nil
   var all_errors : List[info.kwarc.mmt.api.Error] = Nil
 
-  def republishErrors() = {
+  def republishErrors(uri:String) = {
     val params = new PublishDiagnosticsParams()
+    params.setUri(uri)
     params.setDiagnostics(diags.asJava)
     client.publishDiagnostics(params)
   }

@@ -399,7 +399,7 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
       client.client.refreshCodeLenses()
       client.client.refreshInlineValues()
       client.client.refreshInlayHints()
-      client.republishErrors()
+      client.republishErrors(uri)
     }
     private var _annotations : List[Annotation] = Nil
     def getAll = _annotations
