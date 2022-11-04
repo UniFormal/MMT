@@ -15,6 +15,7 @@ import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
 import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMA, SOMB, STeX, STeXServer, STerm}
 
 import scala.collection.mutable
+import scala.xml.Node
 
 class OMDocHTML(orig : HTMLParser.HTMLNode) extends CustomHTMLNode(orig) {
 
@@ -1810,6 +1811,13 @@ case class HTMLSProofbody(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) wi
 
 case class HTMLFrame(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
   this.classes ::= "frame"
+
+  override def onAdd: Unit = {
+    val ch = this.children
+    val inner = add(<div class="inner-frame"/>)
+    ch.foreach(inner.add)
+    super.onAdd
+  }
 }
 // ---------------------------------------------------------------------------------------------------------------------
 

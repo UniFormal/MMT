@@ -175,13 +175,18 @@ object OMDocExtension extends DocumentExtension {
           controller.backend.resolveLogical(d.path.uri) match {
             case Some((a,ls)) =>
               val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
+              val ipref = <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath=" + path}>
+                {d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
+                  case OMFOREIGN(node) => node
+                  case _ => ""
+                }).getOrElse("")}
+              </div>
               iref.parent.foreach(_.addAfter(
-                <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath="  + path}>{
-                  d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
-                    case OMFOREIGN(node) => node
-                    case _ => ""
-                  }).getOrElse("")
-                  }</div>
+                if (iref.ancestors.exists(_.isInstanceOf[HTMLFrame])) {
+                  <div class="inputref-container">
+                    {ipref}
+                  </div>
+                } else ipref
                 ,iref))
             case _ =>
           }

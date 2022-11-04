@@ -415,6 +415,7 @@ class FullsTeX extends Importer with XHTMLParser {
     try {
       ilog("Building pdflatex " +  bt.inPath + " (first run)")
       val pdffile = buildSingle(bt)
+      bt.outFile.delete()
       if (pdffile.setExtension(".bcf").exists()) {
         ilog("    -       biber " +  bt.inPath)
         Process(Seq("biber",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
@@ -424,8 +425,10 @@ class FullsTeX extends Importer with XHTMLParser {
       }
       ilog("    -    pdflatex " + bt.inPath + " (second run)")
       buildSingle(bt)
+      bt.outFile.delete()
       ilog("    -    pdflatex " + bt.inPath + " (final run)")
       buildSingle(bt)
+      bt.outFile.delete()
       ilog("    -       omdoc " + bt.inPath)
       val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
       val npdffile = (bt.archive / RedirectableDimension("export") / "pdf") / bt.inPath.setExtension("pdf").toString
