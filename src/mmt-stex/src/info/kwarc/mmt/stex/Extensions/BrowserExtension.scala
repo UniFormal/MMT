@@ -98,7 +98,7 @@ object BrowserExtension extends STeXExtension {
               ("label",JSONString(f.name)),
               ("children",iterate(fp / f.name)),
               ("link",doJs(
-                doLink("/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
+                doLink("/:" + server.pathPrefix + "/documentTop?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
                 setCurrentArchive(a.id),
                 setCurrentPath({if (fp.isEmpty) "" else "/"} + fp.toString + "/" + f.name),
                 deactivateButtons
