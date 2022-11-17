@@ -234,14 +234,14 @@ class Goal(val context: Context, private var concVar: Term) {
       }
 
       val goalHighlight = if (Some(this) == current) {
-         addHtmlDiv("X ", "prover-X")
+         addHtmlDiv("X ", "prover-X")()
       } else {
          "  "
       }
 
       def altHighlight(a: Alternative) = if (Some(a) == newAlt) "+ new\n" else "+ \n"
       if (isSolved) {
-         addHtmlDiv(goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc),"prover-solved")
+         addHtmlDiv(goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc),"prover-solved")()
       } else {
          val aS = alternatives.map(a => Searcher.indent(depth + 1) + altHighlight(a) + a.presentHtml(depth + 1))
          val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
@@ -259,7 +259,7 @@ class Goal(val context: Context, private var concVar: Term) {
                }
             }
          } else {
-            lines.map({ l => addHtmlDiv(l, "prover-goal") }).mkString("")
+            lines.map({ l => addHtmlDiv(l, "prover-goal")() }).mkString("")
 
          }
       }

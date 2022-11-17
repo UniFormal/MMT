@@ -30,7 +30,7 @@ trait CheckTester extends BaseTester {
 
       errorBuffer.getAll
     } catch {case e: Exception =>
-      val msg = e.getClass + ": " + e.getMessage
+      val msg = e.getClass.toString + ": " + e.getMessage
       throw testError("Unknown Error occured: " + msg, Some(e))
     }
   }

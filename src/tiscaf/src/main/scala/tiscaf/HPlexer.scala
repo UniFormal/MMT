@@ -15,6 +15,7 @@
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 // twiesing 22-08-2022: Remove syntax deprecations
+// twiesing 23-08-2022: Remove deprecated APIs
 package tiscaf
 
 import java.net.InetSocketAddress
@@ -30,7 +31,7 @@ import javax.net.ssl._
 import sync._
 import scala.concurrent.SyncVar
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 private trait HPlexer extends HLoggable {
 

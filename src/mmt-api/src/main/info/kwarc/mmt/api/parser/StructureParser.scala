@@ -100,13 +100,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val doc = controller.globalLookup.getAs(classOf[Document],dp)
           readInDocument(doc)(state)
           (doc.getDeclarations.lastOption.getOrElse {
-            throw ParseError(dp + " is empty: " + state)
+            throw ParseError(dp.toString + " is empty: " + state)
           },state)
        case IsMod(mp, rd) =>
           val mod = controller.globalLookup.getAs(classOf[ModuleOrLink],mp)
           readInModule(mod, mod.getInnerContext, new Features(Nil,Nil))(state)
           (mod.getDeclarations.lastOption.getOrElse {
-            throw ParseError(mp + " is empty: " + state)
+            throw ParseError(mp.toString + " is empty: " + state)
           }, state)
     }
   }
@@ -1183,7 +1183,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val (name,tp) = instFeat.processHeader(pr.term)
     SourceRef.update(tp, state.makeSourceRef(reg))
     val tpC = TermContainer(pr.copy(term = tp).toTerm)
-    val nc = NotationContainer()
+    val nc = NotationContainer.empty()
     readComponents(context, notationComponentSpec(nc), None)
     Instance(OMMOD(tpath), name, tpC, nc)
   }

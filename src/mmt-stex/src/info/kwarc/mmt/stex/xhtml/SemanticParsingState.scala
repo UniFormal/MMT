@@ -1,16 +1,19 @@
 package info.kwarc.mmt.stex.xhtml
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
+import info.kwarc.mmt.api.{AddError, ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, NotFound}
+import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType}
+import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
+import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType, SubstRule}
 import info.kwarc.mmt.stex.search.SearchDocument
-import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STerm}
+import info.kwarc.mmt.stex.{NestedHOAS, OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STeXHOAS, STerm, SimpleHOAS}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
 
 import scala.annotation.tailrec
@@ -41,8 +44,14 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
     v.metadata.update(ParseResult.unknown,OMS(ParseResult.unknown))
     v
   }
-  def add(se : StructuralElement) = controller.library.add(se)
-  def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = controller.library.endAdd(ce)
+  def add(se : StructuralElement) = try {controller.library.add(se)} catch {
+    case NotFound(p,f) => error("Not found " + p.toString)
+    case AddError(e,msg) => error("Error adding " + e.path.toString + ": " + msg)
+  }
+  def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = try {controller.library.endAdd(ce)} catch {
+    case NotFound(p, f) => error("Not found " + p.toString)
+    case AddError(e, msg) => error("Error adding " + e.path.toString + ": " + msg)
+  }
   def getO(p : Path) = controller.getO(p)
   def update(se : StructuralElement) = controller.library.update(se)
 
@@ -209,13 +218,63 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 val ret = tms.init.init.foldRight(SOMA(f, tms.init.last, tms.last))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
                 ret
-              case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty =>
+              case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty && (tms ::: rest).length >= 2 =>
+                /*val ret = if (rest.isEmpty) {
+                  SOMA(f,tms.head)
+                } else SOMA(f,tms.head :: rest :_*)*/
                 val ret = if (rest.isEmpty) tms.init.init.foldRight(SOMA(f, tms.last, tms.init.last))((a, r) => SOMA(f, a, r))
                 else tms.init.foldRight(SOMA(f, tms.last :: rest :_*))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
                 ret
               case _ =>
                 val ret = SOMA(f, reordered :_*)
+                ret.copyFrom(tm)
+                ret
+            }
+
+          case Some("binl") =>
+            reordered match {
+              case IsSeq(Nil, OMV(v), rest) =>
+                val fcont = getVariableContext ::: cont
+                val x = Context.pickFresh(fcont, LocalName("foldleftx"))._1
+                val y = Context.pickFresh(fcont, LocalName("foldlefty"))._1
+                val tp = fcont.findLast(_.name == v) match {
+                  case Some(v) if v.tp.isDefined =>
+                    v.tp match {
+                      case Some(STeX.flatseq.tp(t)) => t
+                      case _ =>
+                        val vn = getUnknownTp
+                        names._1.unknowns = names._1.unknowns ::: vn :: Nil
+                        makeUnknown(vn)
+                    }
+                  case _ =>
+                    val vn = getUnknownTp
+                    names._1.unknowns = names._1.unknowns ::: vn :: Nil
+                    makeUnknown(vn)
+                }
+                val nf = traverse(f)
+                val ret = if (rest.isEmpty) STeX.seqfoldleft(STeX.seqhead(OMV(v)), STeX.seqtail(OMV(v)), x, tp, y, tp, SOMA(nf, OMV(x), OMV(y)))
+                else STeX.seqfoldleft(SOMA(nf, STeX.seqhead(OMV(v)) :: rest: _*), STeX.seqtail(OMV(v)), x, tp, y, tp, SOMA(nf, OMV(x), OMV(y)))
+                ret.copyFrom(tm)
+                ret
+              case IsSeq(Nil, STeX.flatseq(tms), Nil) if tms.length >= 2 =>
+                val ret = tms.tail.tail.foldLeft(SOMA(f, tms.tail.head, tms.head))((r, a) => SOMA(f, a, r))
+                ret.copyFrom(tm)
+                ret
+              case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty && (tms ::: rest).length >= 2 =>
+                /*val ret = if (rest.isEmpty) {
+                  SOMA(f,tms.head)
+                } else SOMA(f,tms.head :: rest :_*)*/
+                val ret = if (rest.isEmpty) tms.tail.tail.foldLeft(SOMA(f, tms.head, tms.tail.head))((r, a) => SOMA(f, a, r))
+                else tms.tail.foldLeft(SOMA(f, tms.head :: rest: _*))((r, a) => SOMA(f, a, r))
+                ret.copyFrom(tm)
+                ret
+              case IsSeq(List(a),STeX.flatseq(List(t)),Nil) =>
+                val ret = SOMA(f,a,t)
+                ret.copyFrom(tm)
+                ret
+              case _ =>
+                val ret = SOMA(f, reordered: _*)
                 ret.copyFrom(tm)
                 ret
             }
@@ -379,7 +438,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
               }
             case o =>
               //println("urgh")
-              o
+              Traverser(this,o)
           }
           ret.copyFrom(b)
           ret
@@ -421,14 +480,177 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
         case _ => Traverser(this,t)
       }
     }
+    val hoas = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: Unit): Term = t match {
+        case SOMA(head,args) =>
+          OMDocHTML.getRuler(head)(controller,context) match {
+            case None => Traverser(this,t)
+            case Some(md) => OMDocHTML.getHOAS(md) match {
+              case None =>
+                head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        val r = OMA(OMS(o),args.map(a => apply(a, ())))
+                        r.copyFrom(t)
+                        r
+                    }.getOrElse(Traverser(this,t))
+                  case _ =>
+                    Traverser(this,t)
+                }
+              case Some(hoas) =>
+                val r = head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        hoas(OMS(o),args.map(a => apply(a,())))
+                    }.getOrElse(hoas(head,args.map(a => apply(a,()))))
+                  case _ =>
+                    hoas(head,args.map(a => apply(a,())))
+                }
+                r.copyFrom(t)
+                r
+            }
+          }
+        case OMA(head, args) =>
+          OMDocHTML.getRuler(head)(controller, context) match {
+            case None => Traverser(this,t)
+            case Some(md) => OMDocHTML.getHOAS(md) match {
+              case None =>
+                head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        val r = OMA(OMS(o), args.map(a => apply(a, ())))
+                        r.copyFrom(t)
+                        r
+                    }.getOrElse(Traverser(this,t))
+                  case _ =>
+                    Traverser(this,t)
+                }
+              case Some(hoas) =>
+                val r = head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        hoas(OMS(o), args.map(a => apply(a, ())))
+                    }.getOrElse(hoas(head, args.map(a => apply(a, ()))))
+                  case _ =>
+                    hoas(head, args.map(a => apply(a, ())))
+                }
+                r.copyFrom(t)
+                r
+            }
+          }
+        case SOMB(head,List(SCtx(Context(vd)),STerm(bd))) =>
+          OMDocHTML.getRuler(head)(controller, context) match {
+            case None => Traverser(this,t)
+            case Some(md) => OMDocHTML.getHOAS(md) match {
+              case None =>
+                head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        val r = OMBIND(OMS(o), Context(this.traverseObject(vd)),apply(bd,()))
+                        r.copyFrom(t)
+                        r
+                    }.getOrElse(Traverser(this,t))
+                  case _ =>
+                    Traverser(this,t)
+                }
+              case Some(hoas) =>
+                val r = head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        hoas(OMS(o), this.traverseObject(vd),apply(bd,()))
+                    }.getOrElse(hoas(head, this.traverseObject(vd),apply(bd,())))
+                  case _ =>
+                    hoas(head, this.traverseObject(vd),apply(bd,()))
+                }
+                r.copyFrom(t)
+                r
+            }
+          }
+        case OMBIND(head,Context(vd),bd) =>
+          OMDocHTML.getRuler(head)(controller, context) match {
+            case None => Traverser(this,t)
+            case Some(md) => OMDocHTML.getHOAS(md) match {
+              case None =>
+                head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        val r = OMBIND(OMS(o), Context(this.traverseObject(vd)), apply(bd, ()))
+                        r.copyFrom(t)
+                        r
+                    }.getOrElse(Traverser(this,t))
+                  case _ =>
+                    Traverser(this,t)
+                }
+              case Some(hoas) =>
+                val r = head match {
+                  case OMS(s) =>
+                    getRules.get(classOf[SubstRule]).collectFirst {
+                      case SubstRule(`s`, o) =>
+                        hoas(OMS(o), this.traverseObject(vd), apply(bd, ()))
+                    }.getOrElse(hoas(head, this.traverseObject(vd), apply(bd, ())))
+                  case _ =>
+                    hoas(head, this.traverseObject(vd), apply(bd, ()))
+                }
+                r.copyFrom(t)
+                r
+            }
+          }
+        case SOMA(OMS(s), args) =>
+          getRules.get(classOf[SubstRule]).find {
+            case SubstRule(`s`, o) =>
+              return traverse(OMA(OMS(o), args))
+            case _ => false
+          }
+          Traverser(this, t)
+        case SOMB(OMS(s), List(SCtx(ctx), STerm(bd))) =>
+          getRules.get(classOf[SubstRule]).find {
+            case SubstRule(`s`, o) =>
+              return traverse(OMBIND(OMS(o), ctx,bd))
+            case _ => false
+          }
+          Traverser(this, t)
+        case OMS(s) =>
+          getRules.get(classOf[SubstRule]).find {
+            case SubstRule(`s`, o) =>
+              return OMS(o)
+            case _ => false
+          }
+          t
+        case _ => Traverser(this,t)
+      }
+    }
     freeVars(ntm,())
     val next = names.frees.reverse.distinct.foldRight(ntm)((ln, t) => {
       STeX.implicit_binder(Context(ln), t)
     })
-    val ret = traverser(next,(names,true))
+    val ret = hoas(traverser(next,(names,true)),())
     val fin = if (names.unknowns.nonEmpty) OMBIND(OMS(ParseResult.unknown), names.unknowns.distinct.map(VarDecl(_)), ret) else ret
     SourceRef.copy(tm,fin)
     fin
+  }
+
+  def getHOAS:Option[STeXHOAS] = {
+    var all = getRules.getAll.collect {
+      case hn : HOASNotation => SimpleHOAS(hn.hoas)
+      case nhn : NestedHOASNotation => NestedHOAS(nhn.obj,nhn.meta)
+    }
+    all.foreach {
+      case NestedHOAS(_,m) =>
+        all = all.filterNot{
+          case SimpleHOAS(hn) if hn == m => true
+          case NestedHOAS(obj,_) if obj == m => true
+          case _ => false
+        }
+      case _ =>
+    }
+    all.headOption
   }
 
   private def currentParent = {
@@ -478,6 +700,11 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
   private lazy val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore,new MMTTask {})
 
   def check(se : StructuralElement) = try {
+    eh match {
+      case STeXLSPErrorHandler(_,cont) =>
+        cont(0.5,"Checking " + se.path.toString)
+      case _ =>
+    }
     checker(se)(ce)
   } catch {
     case g:GetError =>
@@ -488,6 +715,10 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
           case _ =>
         }
       }
+    case e : info.kwarc.mmt.api.Error =>
+      eh(e)
+    case e : Throwable =>
+      eh.apply(new api.Error(e.getMessage){}.setCausedBy(e))
   }
 
   // Search Stuff

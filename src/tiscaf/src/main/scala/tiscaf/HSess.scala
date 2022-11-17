@@ -16,13 +16,14 @@
  *  ****************************************************************************
  */
 // twiesing 22-08-2022: Remove syntax depreactions
+// twiesing 23-08-2022: Remove use of deprecated APIs
 package tiscaf
 
 import scala.collection.{ mutable => mute }
 
 import sync.Sync
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 // backend map is SynchronizedMap
 final private class HSess(data: HTalkData, resp: HResponse) extends mute.Map[Any, Any] {

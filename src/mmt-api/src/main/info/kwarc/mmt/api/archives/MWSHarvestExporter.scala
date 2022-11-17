@@ -19,7 +19,7 @@ abstract class MWSExporter extends Exporter {
   })
 
   def exportTheory(t: Theory, bf: BuildTask): Unit = {
-    try {controller.simplifier(t)} catch { case _ => /* am besten alles */ }
+    try {controller.simplifier(t)} catch { case _: Throwable => /* am besten alles */ }
 
     rh(xml.header)
 

@@ -86,7 +86,13 @@ class Searcher(controller:Controller) {
       }.distinct.flatMap{d =>
         if (d.children.exists(_.name.startsWith("segments"))) {
           val dir = FSDirectory.open(d.toJava.toPath)
-          Try(Some(DirectoryReader.open(dir))).toOption.flatten
+          try {
+            /*Try(*/ Some(DirectoryReader.open(dir)) //).toOption.flatten
+          } catch {
+            case _ : IndexFormatTooOldException =>
+              print("")
+              None
+          }
         } else None
       }
     } else Nil

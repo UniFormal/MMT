@@ -143,7 +143,7 @@ class MitMComputationTrace(present: Option[Term => String]) {
     steps ::= s
   }
   
-  def toString(present: Term => String) = steps.reverseMap(_.toString(present)).mkString("\n\n")
+  def toString(present: Term => String) = steps.reverseIterator.map(_.toString(present)).mkString("\n\n")
 }
 
 /** dummy for ignoring the trace */

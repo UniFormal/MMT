@@ -91,7 +91,7 @@ class GAPJSONImporter extends Importer {
         println(e.msg)
         sys.exit()
     }
-    log(all.length + " Objects parsed.")
+    log(s"${all.length} Objects parsed.")
     log("Converting...")
     all foreach (po => {
       val done = dones.get(po)
@@ -120,7 +120,7 @@ class GAPJSONImporter extends Importer {
     if (duplicates.nonEmpty) return BuildResult.empty
 
     val conv = new Translator(controller, bf, index,this)
-    log(newvalues.length + " Objects parsed.")
+    log(s"${newvalues.length} Objects parsed.")
     conv(newvalues)
     BuildResult.empty
   }

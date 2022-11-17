@@ -138,7 +138,7 @@ class CoqModule extends StructuralFeature("Module") {
         val tp = arg
         val name = tp match {
           case OMS(Coq.noConf) => oname
-          case ApplySpine(OMS(Coq.confcolon),_) => LocalName(oname + "_impl")
+          case ApplySpine(OMS(Coq.confcolon),_) => LocalName(oname.toString + "_impl")
           case ApplySpine(OMS(Coq.confsubtp),_) => oname
         }
         (name, tp)
@@ -255,7 +255,7 @@ object Modules {
   }
 
   def makeView(dom:AbstractTheory,to:AbstractTheory,parent:ModuleOrLink,source:DerivedDeclaration):View = {
-    val v = View(parent.modulePath.parent,parent.modulePath.name / LocalName(dom.name + "_" + to.name + "_view"),OMMOD(dom.modulePath),OMMOD(to.modulePath),false)
+    val v = View(parent.modulePath.parent,parent.modulePath.name / LocalName(dom.name.toString + "_" + to.name + "_view"),OMMOD(dom.modulePath),OMMOD(to.modulePath),false)
     dom.getPrimitiveDeclarations foreach { d =>
      // TODO
       v add Constant(v.toTerm,d.name,Nil,None,Some(OMS(to.modulePath ? d.name)),None)
@@ -270,7 +270,7 @@ object Modules {
       case _ => throw CoqDependency(sourceURI)
     }
     val tp = ApplySpine(OMS(Coq.confcolon),OMMOD(domain.modulePath))
-    val param = new DerivedDeclaration(target.toTerm,name,"Module",TermContainer(Some(tp)),NotationContainer())
+    val param = new DerivedDeclaration(target.toTerm,name,"Module",TermContainer(Some(tp)),NotationContainer.empty())
     state.controller add param
 
     val repfrom = domain.modulePath.toString

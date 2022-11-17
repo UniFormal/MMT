@@ -25,7 +25,7 @@ class SourceFromReader(r: java.io.Reader) extends Source {
             lastRead = if (c == -1) None else Some(c.toChar)
          }
       }
-      def next = {
+      def next() = {
          readOne
          val c = lastRead.get
          lastRead = null
@@ -72,7 +72,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       val errorCont = cont.errorCont
       val parser = new ConsParser(ps.parentInfo, new SourceFromReader(ps.stream), cont)
       try {
-         parser.nextch
+         parser.nextch()
          parser.document()
       } catch {
          case e: Error => errorCont << e

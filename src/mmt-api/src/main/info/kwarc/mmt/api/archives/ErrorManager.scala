@@ -285,7 +285,7 @@ class ErrorManager extends Extension with Logger {self =>
         val idx = Table.columns.indexOf(field)
         assert(idx >= 0)
         val l: List[String] = result.map(be => be.toStrList(idx)).toList.sorted
-        val g = l.groupBy(identity).mapValues(_.length).toList.sortBy(_._2).reverse
+        val g = l.groupBy(identity).view.mapValues(_.length).toList.sortBy(_._2).reverse
         JSONArray(g.take(limit).map { case (s, i) =>
           JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
         }: _*)

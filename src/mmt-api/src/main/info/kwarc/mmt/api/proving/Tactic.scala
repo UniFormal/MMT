@@ -105,7 +105,7 @@ abstract class ApplicableTactic {
 
 object ApplicableTactic {
    def apply(a: Alternative, l: String) = new ApplicableTactic {
-      def apply = Some(a)
+      def apply() = Some(a)
       val label = l
    }
 }

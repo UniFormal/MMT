@@ -57,7 +57,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
 class DerivedModule(val feature: String, p: DPath, n: LocalName, val meta: Option[MPath], val tpC: TermContainer, val dfC : TermContainer, val notC: NotationContainer)
    extends Module(p,n) with DerivedContentElement {
    def translate(newNS: DPath, newName: LocalName, tl: Translator, con: Context): DerivedModule = {
-     new DerivedModule(feature, newNS, newName, meta, translateTp(tl, con), translateDf(tl, con), notC.copy)
+     new DerivedModule(feature, newNS, newName, meta, translateTp(tl, con), translateDf(tl, con), notC.copy())
    }
 }
 
@@ -69,13 +69,13 @@ class DerivedDeclaration(val home: Term, val name: LocalName, val feature: Strin
   
   def meta = None
   
-  @MMT_TODO("redundant: every DerivedDeclaration is module-like now")
+  @deprecated("MMT_TODO: redundant: every DerivedDeclaration is module-like now", since="forever")
   val module = this // left over from old definition via NestedModule
 
   override def translate(newHome: Term, prefix: LocalName, tl: Translator, con : Context) = {
      val tpT = translateTp(tl, con)
      val dfT = translateDf(tl,con)
-     val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy, dfT)
+     val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy(), dfT)
      val icont = con ++ getInnerContext
      getDeclarations.foreach {d =>
        val dTranslated = d.translate(res.toTerm, LocalName.empty, tl, icont)
@@ -221,7 +221,7 @@ abstract class Elaboration extends ElementContainer[Declaration] {
      * may be overridden for efficiency
      */
     def getDeclarations = {
-      domain.map {n => getO(n).getOrElse {throw ImplementationError(n + " is said to occur in domain of elaboration but retrieval failed")}}
+      domain.map {n => getO(n).getOrElse {throw ImplementationError(n.toString + " is said to occur in domain of elaboration but retrieval failed")}}
     }
     def getMostSpecific(name: LocalName): Option[(Declaration,LocalName)] = {
       domain.reverse.foreach {n =>
@@ -295,7 +295,7 @@ trait ParametricTheoryLike extends StructuralFeature {
     initOther(noLookupPresenter)
   }
   
-  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
+  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name.toString + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
 }
 
 /** helper object */

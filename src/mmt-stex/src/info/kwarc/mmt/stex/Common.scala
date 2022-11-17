@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.{DPath, Error, ErrorHandler, GlobalName, Level, MPath,
 import info.kwarc.mmt.api.informal.{FlexiformalNode, FlexiformalTerm, FlexiformalXML, Informal, Narration}
 import info.kwarc.mmt.api.objects.{OMS, Obj, Term}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.utils.xml
+import info.kwarc.mmt.api.utils.{MMT_TODO, xml}
 
 import scala.xml.{Elem, Node}
 
@@ -127,7 +127,7 @@ object OMDoc {
     }
   }
 
-  @deprecated("needs full revision, should be deleted")
+  @deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
   def parseNarrativeObject(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath,
                                                                   mpath : MPath,
                                                                   errorCont : ErrorHandler,
@@ -145,7 +145,7 @@ object OMDoc {
     }
   }
 
-  @deprecated("needs full revision, should be deleted")
+  @deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
   def rewriteCMP(node : scala.xml.Node, tsref : SourceRef)(implicit mpath : MPath,
                                                            errorCont : ErrorHandler,
                                                            resolveSPath : (Option[String], Option[String], String, MPath, SourceRef) => GlobalName) : scala.xml.Node = node.label match {
@@ -190,7 +190,7 @@ object OMDoc {
     }
   }
 
-  @deprecated("needs full revision, should be deleted")
+  @deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
   def translateCMP(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath, mpath : MPath, errorCont : ErrorHandler) : Term = {
     val sref = parseSourceRef(n, dpath)
     n.label match {

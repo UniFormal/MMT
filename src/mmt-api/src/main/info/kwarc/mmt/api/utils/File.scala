@@ -308,7 +308,7 @@ object File {
   def read(f: File): String = {
     val s = new StringBuilder
     ReadLineWise(f) {l => s.append(l + "\n")}
-    s.result
+    s.result()
   }
 
   /** convenience method to read a file line by line

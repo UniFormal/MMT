@@ -15,6 +15,7 @@
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 // twiesing 22-08-2022: Remove syntax deprecations
+// twiesing 23-08-2022: Remove calls to deprecated APIs
 package tiscaf
 
 object HTree {
@@ -91,5 +92,5 @@ trait HTree { self =>
       nextDir(seq, self).flatMap(_.let)
   }
 
-  final def resolve(uriPath: String): Option[HLet] = resolve(uriPath.split("/"))
+  final def resolve(uriPath: String): Option[HLet] = resolve(uriPath.split("/").toIndexedSeq)
 }

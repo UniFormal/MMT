@@ -367,7 +367,7 @@ case class OMFOREIGN(node : Node) extends Term {
 
 
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
-@MMT_TODO("this should be replaced with the urtheory for semiformal objects")
+@deprecated("MMT_TODO: this should be replaced with the urtheory for semiformal objects", since="forever")
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
    def toStr(implicit shortURIs: Boolean) = toString

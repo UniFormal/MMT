@@ -60,11 +60,6 @@ object HTMLParser {
       }
       nn
     }
-    private var _id = 0
-    /*def generateId = {
-      _id += 1
-      "stexelem" + (_id-1)
-    }*/
 
     protected def onTop(n : HTMLNode) : Option[HTMLNode] = None
 
@@ -433,9 +428,9 @@ object HTMLParser {
     }
 
     def node = try {
-      XML.loadString(state.present(this,forcenamespace=true).trim)
+      XML.loadString(state.present(this,forcenamespace=true).trim.replace("&nbsp;","&amp;nbsp;"))
     } catch {
-      case o =>
+      case o: Throwable =>
         println(o.toString)
         throw o
     }
@@ -476,7 +471,7 @@ object HTMLParser {
   }
 
   def apply(s : String)(implicit state : ParsingState) = {
-    implicit val in = new Unparsed(s,s => throw new STeXError(s,None,None))
+    implicit val in = new Unparsed(s.replace("&amp;nbsp;","&nbsp;"),s => throw new STeXError(s,None,None))
     in.trim
     doHeader
     doNext
@@ -556,7 +551,7 @@ object HTMLParser {
             if (close) state.openclose(n) else state.open(n)
           }
         case c =>
-          var txt = c + in.takeWhileSafe(_ != '<')
+          var txt = s"${c}${in.takeWhileSafe(_ != '<')}"
           val endWS = txt.lastOption.exists(_.isWhitespace)
           txt = if (txt.trim == empty.toString) empty.toString else txt.trim/*Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
             print("")

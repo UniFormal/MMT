@@ -70,10 +70,10 @@ object Run {
                     try {
                         catalog.deleteStringLocation(words(1))
                     } catch {
-                        case InexistentLocation(msg) => println(Time + msg)
+                        case InexistentLocation(msg) => println(Time.toString + msg)
                     }
                 else
-                    println(Time + "error: delete must be followed by a location address")
+                    println(Time.toString + "error: delete must be followed by a location address")
             }
             else if (words(0) == "errors")    // print files with errors
                 println(catalog.urlToDocument.filter(x => !x._2.errors.isEmpty).toSeq.sortBy(_._1.toString).map(_._2.errors).flatten.mkString("\n"))
@@ -81,7 +81,7 @@ object Run {
                 try {
                     catalog.addStringLocation(words(0))
                 } catch {
-                    case InexistentLocation(msg) => println(Time + msg)
+                    case InexistentLocation(msg) => println(Time.toString + msg)
                 }
             }
     }

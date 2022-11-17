@@ -174,7 +174,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     ret
   }
   private def doAssoc(n : HTMLNode,arg : SOMBArg, args:List[(Char,SOMBArg)],owner:String)(implicit pc: PresentationContext,htmlstate : HTMLParser.ParsingState) : Unit = {
-    def doPair(arg1: Unit => Unit,arg2:Unit => Unit) : Unit => Unit = {
+    def doPair(arg1: Unit => Unit, arg2: Unit => Unit) : Unit => Unit = {
       def rec(n : HTMLNode) : Unit = {
         val property = n.attributes.getOrElse((n.namespace,"property"),"")
         val resource = n.attributes.getOrElse((n.namespace,"resource"),"")
@@ -191,9 +191,9 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
               pc.out("<mi>TODO</mi>")
             }
           case _ if property == "stex:argmarker" && resource.endsWith("a") =>
-            arg1()
+            arg1(())
           case _ if property == "stex:argmarker" && resource.endsWith("b") =>
-            arg2()
+            arg2(())
           case _ if property == "stex:argmarker" =>
             val i = resource.head.toString.toInt
             if (args.isDefinedAt(i-1)) {
@@ -244,7 +244,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         pc.out("<mo>)</mo></mrow>")
       case o => (_:Unit) => recurse(o.obj)
     }
-    f()
+    f(())
   }
 
   private def substitute(n : Node,args : List[(Char,SOMBArg)],owner:String)(implicit pc: PresentationContext) : Unit = {

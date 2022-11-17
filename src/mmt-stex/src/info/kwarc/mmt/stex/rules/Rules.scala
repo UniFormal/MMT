@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Conversions.localName2OMV
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardNat, StandardString}
+import info.kwarc.mmt.api.uom.{AbbrevRule, RepresentedRealizedType, Simplifiability, Simplify, StandardNat, StandardString}
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, HTMLRule, OMDocHTML, SemanticState}
 import info.kwarc.mmt.stex.{OMDocHTML, SCtx, SOMA, SOMB, STeX, rules}
 
@@ -80,8 +80,35 @@ trait UsesPatterns extends SingleTermBasedCheckingRule {
 object StringLiterals extends RepresentedRealizedType(OMS(STeX.string),StandardString)
 object NatLiterals extends RepresentedRealizedType(OMS(STeX.nat),StandardNat)
 
+class StatementBinderRule(val sym:GlobalName) extends Rule
+object AssPremiseRule extends ParametricRule {
+  case class Premise(_sym:GlobalName) extends StatementBinderRule(_sym)
+
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(a)) => Premise(a) // new AbbrevRule(a,OMS(b)) //
+    case _ =>
+      ???
+  }
+}
+object DefiPremiseRule extends ParametricRule {
+  case class Premise(_sym:GlobalName) extends StatementBinderRule(_sym)
+
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(a)) => Premise(a) // new AbbrevRule(a,OMS(b)) //
+    case _ =>
+      ???
+  }
+}
 trait BindingRule extends Rule {
   def apply(tm : Term,assoc:Boolean)(implicit state : SemanticState) : Option[Context]
+}
+case class SubstRule(in:GlobalName,out:GlobalName) extends Rule
+object SubstitutionRule extends ParametricRule {
+  def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(a),OMS(b)) => SubstRule(a,b) // new AbbrevRule(a,OMS(b)) //
+    case _ =>
+      ???
+  }
 }
 
 object InformalBindingRule extends BindingRule {

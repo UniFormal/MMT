@@ -635,3 +635,18 @@ object RemoveUnusedPi extends SimplificationRule(Pi.path) {
     case _ => Simplifiability.NoRecurse
   }
 }
+
+/** makes this applicabile to terms of the form operator(head(args)) where both operator and head use LF application */
+trait ApplicableUnderUnaryOperator extends SingleTermBasedCheckingRule {
+  val operator: GlobalName
+  private val ops = List(OMS(Apply.path), OMS(head))
+  override def applicable(tm: Term) = tm match {
+    case Apply(OMS(`operator`), t) => t match {
+      case OMA(f,a) => (f :: a).startsWith(ops)
+      case OMS(p) => head == p
+      case OMBINDC(OMS(p),_,_) => head == p
+      case _ => false
+    }
+    case _ => false
+  }
+}

@@ -68,7 +68,7 @@ object ELPIExporter {
     if (!(s.head.isLetter)) {
       s = "E" + s
     }
-    val nln : LocalName = if (s.head.isLower) { LocalName(s.head.toUpper + "/" + s) } else { LocalName(s) }
+    val nln : LocalName = if (s.head.isLower) { LocalName(s"${s.head.toUpper}/${s}") } else { LocalName(s) }
     nln
   }
 }
@@ -164,7 +164,7 @@ class GeneratedFromHandler(controller : Controller) extends ConstantHandler {
 
 abstract class BaseConstantHandler(handlerName : String) extends ConstantHandler {
   def fail(c: Constant, msg: String): ELPI.Decl = {
-    ELPI.Comment(c.path + ": " + handlerName + ": skipping due to error: " + msg)
+    ELPI.Comment(c.path.toString + ": " + handlerName + ": skipping due to error: " + msg)
   }
 }
 

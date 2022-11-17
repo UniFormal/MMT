@@ -31,7 +31,7 @@ class NotationGenerator extends ChangeListener {
          val (args, scp) = FunType.unapply(tp).getOrElse(return)
          val numTotalArgs = args.length
          if (numTotalArgs == 0 || ! JudgmentTypes.isJudgment(scp)) return
-         val numImplicitArgs = args.prefixLength {case (_, argType) => ! JudgmentTypes.isJudgment(argType)}
+         val numImplicitArgs = args.segmentLength {case (_, argType) => ! JudgmentTypes.isJudgment(argType)}
          log(s"adding notation for ${c.name} ($numImplicitArgs implicit args, $numTotalArgs total args")
          if (notC.parsing.isEmpty) {
             val parseMarkers = SymbolName() ::

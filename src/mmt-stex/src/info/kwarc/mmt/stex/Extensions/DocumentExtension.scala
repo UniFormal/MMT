@@ -21,6 +21,16 @@ object DocumentExtension extends STeXExtension {
         case "" =>
           Some(ServerResponse("Empty Document path","txt"))
         case s =>
+          val ret = doDocument(s)
+          val bd = ret.get("div")()("body").head
+          bd.attributes.remove((bd.namespace,"style"))
+          Some(ServerResponse(ret.toString, "text/html"))
+      }
+    case Some("documentTop") =>
+      request.query match {
+        case "" =>
+          Some(ServerResponse("Empty Document path", "txt"))
+        case s =>
           Some(ServerResponse(doDocument(s).toString, "text/html"))
       }
     case Some("fulldocument") =>
@@ -29,7 +39,7 @@ object DocumentExtension extends STeXExtension {
           Some(ServerResponse("Empty Document path","txt"))
         case s =>
           var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
-          html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/document?" + s)
+          html = html.replace("CONTENT_URL_PLACEHOLDER","/:" + server.pathPrefix + "/documentTop?" + s)
           html = html.replace("BASE_URL_PLACEHOLDER","")
           html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
           Some(ServerResponse(html, "text/html"))
@@ -51,8 +61,6 @@ object DocumentExtension extends STeXExtension {
   }
 
   override def doHeader(head: HTMLNode,body: HTMLNode): Unit = {
-    //head.add(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))
-    //body.add(MMTSystem.getResourceAsString("mmt-web/stex/htmlfragments/overlaymain.xml"))
   }
 
   def getDocument(uri : String) : HTMLNode = {
@@ -187,7 +195,7 @@ object DocumentExtension extends STeXExtension {
     targets.foreach{ e =>
       e.classes ::= "group-highlight"
       e.attributes((e.namespace,"data-highlight-parent")) = id
-      e.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
+      if (urlshort.nonEmpty) e.attributes((elem.namespace,"data-overlay-link-hover")) = urlshort
       e.attributes((elem.namespace,"data-overlay-link-click")) = urllong
     }
   }

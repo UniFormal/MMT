@@ -94,7 +94,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   protected val custom: ArchiveCustomization = {
     properties.get("customization") match {
       case None => new DefaultCustomization
-      case Some(c) => java.lang.Class.forName(c).asInstanceOf[java.lang.Class[ArchiveCustomization]].newInstance
+      case Some(c) => java.lang.Class.forName(c).asInstanceOf[java.lang.Class[ArchiveCustomization]].getDeclaredConstructor().newInstance()
     }
   }
 
@@ -129,7 +129,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
         val results = if (parallel) children.par flatMap recurse else children flatMap recurse
-        val result = onDir(Current(inFile, in), results.toList)
+        val result = onDir(Current(inFile, in), results.iterator.to(List))
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
@@ -158,7 +158,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     * Kinda hacky; can be used to get all Modules residing in this archive somewhat quickly
     * @return
     */
-  @deprecated("inefficient and brittle; use getModules for this","")
+  @deprecated("MMT_TODO: inefficient and brittle; use getModules for this", since="forever")
   lazy val allContent : List[MPath] = {
     //TODO if it weren't for nested theories, we could simply use controller.getAs(classOf[Document], DPath(narrationBase)).getModules(controller.globalLookup)
     log("Reading Content " + id)

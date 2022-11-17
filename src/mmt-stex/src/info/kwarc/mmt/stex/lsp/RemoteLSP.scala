@@ -62,9 +62,18 @@ class RemoteLSP extends STeXExtension {
         case _ => Some(ServerResponse.JsonResponse(JSONArray()))
       }
     case Some("archfile") if request.parsedQuery.contains("arch") && request.parsedQuery.contains("dim") && request.parsedQuery.contains("file") =>
-      val archmain = controller.backend.getArchive(request.parsedQuery("arch").get).getOrElse { return None}
+      val archmain = controller.backend.getArchive(request.parsedQuery("arch").get).getOrElse { return Some(
+        ServerResponse("Malformed archfile request: " + request.path.mkString("/") + "\n" +
+          request.parsedQuery("arch"), "text/plain")
+      )}
       val file = (archmain / RedirectableDimension(request.parsedQuery("dim").get)) / request.parsedQuery("file").get
-      if (file <= archmain.root) Some(ServerResponse.FileResponse(file)) else None
+      if (archmain.root <= file) Some(ServerResponse.FileResponse(file)) else Some(
+        ServerResponse("Malformed archfile request: " + request.path.mkString("/") + "\n" +
+          archmain.id + " at " + archmain.root + "\n" + request.parsedQuery("dim") + "\n" + file.toString, "text/plain")
+      )
+    case Some("archfile") =>
+      Some(ServerResponse("Malformed archfile request: " + request.path.mkString("/") + "\n" +
+        request.query + "\n" + request.parsedQuery.pairs.mkString("\n"), "text/plain"))
     case Some("search") =>
       val archs = request.parsedQuery("skiparchs").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
       val types = request.parsedQuery("types").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList

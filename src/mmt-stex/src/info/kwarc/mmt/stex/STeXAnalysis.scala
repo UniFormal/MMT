@@ -141,7 +141,7 @@ trait STeXAnalysis {
           val os = gExts.find { s =>
             p.setExtension(s).exists
           }
-          if (os.isEmpty) log(inFile + " misses graphics file: " + b)
+          if (os.isEmpty) log(inFile.toString + " misses graphics file: " + b)
           os.toList.map(s => PhysicalDependency(p.setExtension(s)))
         }
 

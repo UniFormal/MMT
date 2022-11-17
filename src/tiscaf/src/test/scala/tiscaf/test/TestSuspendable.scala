@@ -1,8 +1,8 @@
 // twiesing 18-09-2018: Remove call to deprecated methods
+// twiesing 23-08-2022: Remove calls to deprecated APIs
 package tiscaf
 
-
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object Test extends App with HServer {
   def ports = Set(8910)

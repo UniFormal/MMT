@@ -20,7 +20,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   def apply(ps: ParsingStream)(implicit cont: StructureParserContinuations): Document = {
     init(ps)
     val (doc, errors) = readDocument()
-    errors reverseMap {e => cont.errorCont(e)}
+    errors.reverseIterator.foreach {e => cont.errorCont(e)}
     doc
   }
 

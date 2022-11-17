@@ -45,25 +45,6 @@ object FullsTeXGraph extends ServerExtension("vollki") {
 
     request.path.lastOption match {
       case Some(":vollki") =>
-        /*
-        val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/vollki/guidedtours.html"))(server.getState)
-        val entrydoc = doc.get("select")()("entrydoc").head
-        val usermodel = doc.get("select")()("usermodel").head
-        usermodels.foreach(_.getAllUsers.foreach{ u =>
-          if (user.contains(u))
-            usermodel.add(<option value={u.f.name} selected="true">{u.f.name}</option>)
-          else
-            usermodel.add(<option value={u.f.name}>{u.f.name}</option>)
-        })
-        allobjects.foreach{ n =>
-          if (path.contains(n))
-            entrydoc.add(<option value={n.id} selected="true">{n.getTitle(language)}</option>)
-          else
-            entrydoc.add(<option value={n.id}>{n.getTitle(language)}</option>)
-        }
-        ServerResponse(doc.toString,"application/xhtml+xml")
-
-         */
           var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
           html = html.replace("TOUR_ID_PLACEHOLDER",path.map(_.id).getOrElse(""))
           html = html.replace("BASE_URL_PLACEHOLDER","")
@@ -71,6 +52,10 @@ object FullsTeXGraph extends ServerExtension("vollki") {
           html = html.replace("USER_MODEL_PLACEHOLDER",user.map(_.f.name).getOrElse(""))
           html = html.replace("LANGUAGE_PLACEHOLDER",language)
           ServerResponse(html, "text/html")
+      case Some("list") =>
+        ServerResponse.JsonResponse(JSONArray(
+          getAll().map(e => JSONObject(("value",JSONString(e.id)),("label",JSONString(e.getTitle(language).toString())))) :_*
+        ))
       case Some("frag") =>
         path.foreach {node =>
           val doc = node.getDocument(language).getOrElse(node.getDocument("en").getOrElse(node.getDocument("").get))
@@ -458,7 +443,7 @@ object STeXGraph extends JGraphExporter("stexgraph") {
         }
     }
     JSONObject(
-      ("nodes",JSONArray(jnodes.map(_.toJSON) :_*)),
+      ("nodes",JSONArray(jnodes.map(_.toJSON).toIndexedSeq :_*)),
       ("edges",JSONArray(edges.map(_.toJSON) :_*))
     )
   }

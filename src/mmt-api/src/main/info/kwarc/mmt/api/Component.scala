@@ -86,14 +86,14 @@ case object TypeComponent extends TermComponentKey("type")
 /** definiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
 case object DefComponent  extends TermComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
-@MMT_TODO("replace with TypeComponent")
+@deprecated("MMT_TODO: replace with TypeComponent", since="forever")
 case object DomComponent  extends TermComponentKey("domain")
 /** codomain of a [[modules.Link]] */
-@MMT_TODO("replace with TypeComponent")
+@deprecated("MMT_TODO: replace with TypeComponent", since="forever")
 case object CodComponent  extends TermComponentKey("codomain")
 
 /** parameters */
-@MMT_TODO("replace with TypeComponent")
+@deprecated("MMT_TODO: replace with TypeComponent", since="forever")
 case object ParamsComponent extends ObjComponentKey("params")
 
 /** custom component, e.g., in a [[info.kwarc.mmt.api.symbols.DerivedDeclaration]] */

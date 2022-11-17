@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.web
 
 import java.util.Calendar
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
@@ -11,6 +10,7 @@ import info.kwarc.mmt.api.utils._
 import ServerResponse._
 import info.kwarc.mmt.api.frontend.actions.{Action, GetAction}
 import info.kwarc.mmt.api.objects.Context
+import info.kwarc.mmt.api.presentation.PresentationMathMLPresenter
 
 import scala.util.Try
 
@@ -308,7 +308,7 @@ class QueryServer extends ServerExtension("query") {
 /** HTTP frontend to the [[Search]] class */
 class SearchServer extends ServerExtension("search") {
   private lazy val search = new Search(controller)
-  private val mmlpres = new presentation.MathMLPresenter
+  private val mmlpres = new PresentationMathMLPresenter
 
   override def start(args: List[String]): Unit = {
     mmlpres.init(controller)
@@ -537,7 +537,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
       "</comment>"
     val archive = "/archives/meta/inf/config/OAF/discussions/"
     val root = File(System.getProperty("user.dir")).up.up.up.up
-    val f = root + archive + user + end + ".xml"
+    val f = root.toString + archive + user + end + ".xml"
     val folder = File(f)
     try {
       write(folder, resp)

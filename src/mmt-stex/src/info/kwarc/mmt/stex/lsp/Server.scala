@@ -5,8 +5,8 @@ import info.kwarc.mmt.api.frontend.{Controller, Report, Run}
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
-import info.kwarc.mmt.stex.parsing.STeXSuperficialParser
+import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, SandboxedWebSocket, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.stex.parsing.stex.STeXSuperficialParser
 import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams, WorkspaceFoldersOptions, WorkspaceServerCapabilities, WorkspaceSymbol, WorkspaceSymbolParams}
@@ -60,9 +60,27 @@ class BuildMessage {
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
+  @JsonRequest def openFile(msg:HTMLUpdateMessage): CompletableFuture[Unit]
   @JsonNotification def updateMathHub(): Unit
 }
-class STeXLSPWebSocket extends LSPWebsocket(classOf[STeXClient],classOf[STeXLSPServer])
+final class STeXLSPWebSocket extends SandboxedWebSocket(classOf[STeXClient],classOf[STeXLSPServer]) {
+  override def initialize: Unit = {
+    val controller = new Controller()
+    List("lsp"
+      , "lsp-stex"
+      , "lsp-stex-server-methodcall"
+      , "lsp-stex-websocket"
+      , "lsp-stex-server"
+      , "fullstex").foreach(s => controller.handleLine("log+ " + s))
+    controller.handleLine("log console")
+    controller.handleLine("server on 8090")
+    val lsp = new STeXLSP
+    controller.extman.addExtension(lsp)
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
+    this._lsp = Some(lsp.asInstanceOf[LSP[STeXClient,STeXLSPServer,this.type]])
+  }
+}
 class STeXLSP extends LSP(classOf[STeXClient],classOf[STeXLSPServer],classOf[STeXLSPWebSocket])("stex",5007,5008){
   override def newServer(style: RunStyle): STeXLSPServer = new STeXLSPServer(style)
 }
@@ -106,8 +124,83 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    @JsonNotification("sTeX/buildFile")
    def buildFile(a :BuildMessage) : Unit = {
+     a.file = LSPServer.VSCodeToURI(a.file)
      val d = documents.synchronized{documents.getOrElseUpdate(a.file,newDocument(a.file))}
      d.buildFull()
+   }
+   private def do_manifest(s : String) =
+     s"""
+        |id:$s
+        |ns:http://mathhub.info/$s
+        |narration-base:http://mathhub.info/$s
+        |url-base:http://mathhub.info/$s
+        |format:stex
+        |""".stripMargin
+
+   private val default_stex =
+     """
+       |\documentclass{stex}
+       |\libinput{preamble}
+       |\begin{document}
+       |% A first sTeX document
+       |\end{document}
+       |""".stripMargin
+
+   private val gitignore = """*.sref
+                             |*.pdf
+                             |*.hd
+                             |*.mw
+                             |*.tst
+                             |*.upa
+                             |*.upb
+                             |*.fls
+                             |*.rel
+                             |*.sms
+                             |*.bbl
+                             |*.blg
+                             |*.out
+                             |*.synctex.gz
+                             |*.run.xml
+                             |*.thm
+                             |*.bak
+                             |*.idx
+                             |*.ind
+                             |*.ilg
+                             |*.log
+                             |*.toc
+                             |*.aux
+                             |auto
+                             |*.nav
+                             |*.snmv
+                             |*.vrb
+                             |*.tmp
+                             |*.glo
+                             |*.gls
+                             |*.deps
+                             |*-blx.bib
+                             |*.bcf
+                             |_region_.tex
+                             |.DS_Store
+                             |*~
+                             |*.fdb_latexmk""".stripMargin
+
+   @JsonNotification("sTeX/initializeArchive")
+   def initializeArchive(a : ArchiveMessage): Unit = safely {
+     mathhub_top.foreach {mh =>
+       val ndir = mh / a.archive
+       (ndir / "META-INF").mkdirs()
+       File.write(ndir / "META-INF" / "MANIFEST.MF",do_manifest(a.archive))
+       (ndir / "lib").mkdirs()
+       File.write(ndir / "lib" / "preamble.en.tex",s"% preamble code for ${a.archive}")
+       (ndir / "source").mkdirs()
+       File.write(ndir / "source" / "helloworld.tex", default_stex)
+       File.write(ndir / ".gitignore",gitignore)
+       controller.handleLine("mathpath archive " + ndir.toString)
+       client.client.updateMathHub()
+       val um = new HTMLUpdateMessage
+       um.html = (ndir / "source" / "helloworld.tex").toString
+       client.client.openFile(um)
+     }
    }
 
    @JsonRequest("sTeX/search")
@@ -122,31 +215,8 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    @JsonNotification("sTeX/parseWorkspace")
    def parseWorkspace() : Unit = withProgress(this,"Quickparsing Workspace"){ update =>
-     //Future {
-     var allfiles : List[File] = Nil//List[(Option[Archive],File)] = Nil
-     /*def getFiles(fs : List[(Option[Archive],File)]) : Unit = fs.headOption match {
-       case Some((a,f)) if f.isFile && f.getExtension.contains("tex") =>
-         allfiles ::= ((a,f))
-         getFiles(fs.tail)
-       case Some((Some(a),f)) if f.isDirectory =>
-         getFiles(f.descendants.map(file => (Some(a),file)) ::: fs.tail)
-       case (Some((None,f))) if f.isDirectory =>
-         controller.backend.getArchives.find(_.root == f) match {
-           case Some(a) =>
-             val source = a / info.kwarc.mmt.api.archives.source
-             val lib = a / RedirectableDimension("lib")
-             getFiles((Some(a),source) :: (Some(a),lib) :: fs.tail)
-           case _ =>
-             getFiles(f.children.map((None,_)) ::: fs.tail)
-         }
-       case _ =>
-     }
-     getFiles(workspacefolders.map {f =>
-       val segments = f.segments
-       (controller.backend.getArchives find { a => segments.startsWith(a.root.segments) },f)
-     })*/
+     var allfiles : List[File] = Nil
      allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
-     //documents.synchronized {
        allfiles.zipWithIndex.foreach {
          case (f, i) => //((a, f), i) =>
            update(i.toFloat / allfiles.length.toFloat, "Parsing " + (i + 1) + "/" + allfiles.length + ": " + f.toString)
@@ -167,9 +237,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                  d.init(File.read(f))
              }
            }
-         //parser(f,a)
        }
-     //}
      ((),"Done")
    }
 
@@ -183,10 +251,12 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      this.remoteServer = msg.remote
      controller.handleLine("mathpath archive " + mh.toString)
      controller.handleLine("lmh root " + mh.toString)
-     bootToken.foreach {tk =>
-       updateProgress(tk,0.5,"Initializing RusTeX")
-     }
-     RusTeX.initializeBridge(mh / ".rustex")
+     Future {
+       withProgress(RusTeX,"Initializing RusTeX"){tk =>
+         RusTeX.initializeBridge(mh / ".rustex")
+         ((),"Done.")
+       }
+     }(scala.concurrent.ExecutionContext.global)
      bootToken.foreach {tk =>
        updateProgress(tk,0.5,"Loading relational information")
      }
@@ -269,6 +339,15 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    @JsonNotification("sTeX/installArchive")
    def installArchive(arch: ArchiveMessage) : Unit = installArchives(arch.archive)
 
+   @JsonNotification("sTeX/buildHTML")
+   def buildHTML(a:BuildMessage): Unit = safely {
+     a.file = LSPServer.VSCodeToURI(a.file)
+     val d = documents.synchronized {
+       documents.getOrElseUpdate(a.file, newDocument(a.file))
+     }
+     d.buildHTML()
+   }
+
    override def workspaceSymbol(params: WorkspaceSymbolParams): List[WorkspaceSymbol] = {
      print("")
      super.workspaceSymbol(params)
@@ -288,11 +367,6 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        }
      }
    }
-
-   override def didSave(docuri: String): Unit = safely {this.documents.get(docuri) match {
-     case Some(document) => document.buildHTML()
-     case _ =>
-   }}
 
    val self = this
 
@@ -348,6 +422,28 @@ object Socket {
     controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
     controller.extman.addExtension(new TrivialBuildManager)
     lsp.runSocketListener
+  }
+}
+
+object WebSocket {
+  def main(args : Array[String]) : Unit = {
+    SandboxedWebSocket.runWebSocketListener[STeXClient,STeXLSPServer,STeXLSPWebSocket](classOf[STeXLSPWebSocket],5008)
+    /*
+    val lsp = new STeXLSP
+    val controller = Run.controller
+    List("lsp"
+      , "lsp-stex"
+      , "lsp-stex-server-methodcall"
+      , "lsp-stex-websocket"
+      , "lsp-stex-server"
+      , "fullstex").foreach(s => controller.handleLine("log+ " + s))
+    controller.handleLine("log console")
+    controller.handleLine("server on 8090")
+    controller.extman.addExtension(lsp)
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
+    lsp.runWebSocketListener
+     */
   }
 }
 

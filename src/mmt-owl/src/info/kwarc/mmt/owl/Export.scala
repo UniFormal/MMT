@@ -20,7 +20,7 @@ import uom.OMLiteral._
  import org.semanticweb.owlapi.vocab.OWLFacet
  import uk.ac.manchester.cs.owl.owlapi._
 
- import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
  import scala.collection.immutable.List
 
 class Export(manager: OWLOntologyManager, controller: Controller) {
@@ -348,7 +348,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
       case OMA(OWL2OMS("OWL2SUB", "subClassOf"), args) =>
         val subClass = classToOWL(args(0))
         val superClass = classToOWL(args(1))
-        dataFactory.getOWLSubClassOfAxiom(subClass, superClass, setAsJavaSet(annotationList.toSet))
+        dataFactory.getOWLSubClassOfAxiom(subClass, superClass, annotationList.toSet.asJava)
       // java.util.Set<? extends OWLAnnotation> annotations
 
       case OMA(OWL2OMS("OWL2", "disjointUnionOf"), args) =>
@@ -357,7 +357,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
           case _ => throw Exception("not a class")
         }
         val argsList = args.tail.map(classToOWL)
-        dataFactory.getOWLDisjointUnionAxiom(firstClass, setAsJavaSet(argsList.toSet))
+        dataFactory.getOWLDisjointUnionAxiom(firstClass, argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2SUB", "equivalentClasses"), args) =>
         val argsList = args.map(classToOWL)

@@ -129,7 +129,7 @@ object LocalNotationInfo {
  * @param replace determines if new notations replace or extend existing ones  
  */
 case class LocalNotationInfo(argument: Int, role: LocalNotationInfo.Role, replace: Boolean) {
-  override def toString = argument + role.toString + (if (replace) "!" else "")
+  override def toString = s"${argument}${role.toString}${if (replace) "!" else ""}"
   def *(remap: Int => Int) = copy(argument = remap(argument))
 }
 

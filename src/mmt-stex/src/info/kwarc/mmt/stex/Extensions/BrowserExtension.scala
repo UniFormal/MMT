@@ -16,7 +16,6 @@ object BrowserExtension extends STeXExtension {
           html = html.replace("BASE_URL_PLACEHOLDER", "")
           html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "true")
           Some(ServerResponse(html, "html"))
-          //Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"html"))
         case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
           request.query match {
             case "" =>
@@ -99,7 +98,7 @@ object BrowserExtension extends STeXExtension {
               ("label",JSONString(f.name)),
               ("children",iterate(fp / f.name)),
               ("link",doJs(
-                doLink("/:" + server.pathPrefix + "/fulldocument?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
+                doLink("/:" + server.pathPrefix + "/documentTop?archive=" + a.id + "&filepath=" + fp.toString + {if (fp.isEmpty) "" else "/"} + f.name),
                 setCurrentArchive(a.id),
                 setCurrentPath({if (fp.isEmpty) "" else "/"} + fp.toString + "/" + f.name),
                 deactivateButtons

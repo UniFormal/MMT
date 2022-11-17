@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.api.{DefComponent, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDoctitle, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationOpComponent, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLProblem, HTMLProofFrame, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofbody, HTMLSProofsketch, HTMLSProofstep, HTMLSProoftitle, HTMLSProofyield, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSolution, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarSeqEnd, HTMLVarSeqStart, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
+import info.kwarc.mmt.stex.xhtml.{CustomHTMLNode, HTMLAliasComponent, HTMLArg, HTMLArgMarker, HTMLArityComponent, HTMLAssoctypeComponent, HTMLBindTypeComponent, HTMLComp, HTMLComplexAssignment, HTMLConclusionComponent, HTMLCopyModule, HTMLDefComponent, HTMLDefiniendum, HTMLDoctitle, HTMLDomainComponent, HTMLDonotcopy, HTMLFrame, HTMLFromComponent, HTMLImport, HTMLIncludeproblem, HTMLInputref, HTMLJudgment, HTMLLanguageComponent, HTMLMMTRule, HTMLMacroNameComponent, HTMLMetatheoryComponent, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationOpComponent, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLOMV, HTMLParser, HTMLPremise, HTMLProblem, HTMLProofFrame, HTMLRealization, HTMLReorderComponent, HTMLRule, HTMLSAssertion, HTMLSDefinition, HTMLSExample, HTMLSParagraph, HTMLSProof, HTMLSProofbody, HTMLSProofsketch, HTMLSProofstep, HTMLSProoftitle, HTMLSProofyield, HTMLSignatureComponent, HTMLSimpleAssignment, HTMLSolution, HTMLSpfcase, HTMLSpfeq, HTMLStatementNameComponent, HTMLStructuralFeature, HTMLStructureFeature, HTMLSubproof, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLToComponent, HTMLTopLevelTerm, HTMLTypeComponent, HTMLTypeStringComponent, HTMLUseModule, HTMLVarComp, HTMLVarDecl, HTMLVarSeqDecl, HTMLVarSeqEnd, HTMLVarSeqStart, HTMLVarStructDecl, HasHead, MathMLNode, OMDocHTML, SemanticState, SimpleHTMLRule}
 
 object OMDocExtension extends DocumentExtension {
 
@@ -74,7 +74,7 @@ object OMDocExtension extends DocumentExtension {
   }
 
   override lazy val rules = List(
-    UnknownPropertyRule,
+    //UnknownPropertyRule,
     MathMLRule,
     FeatureRule,
     SimpleHTMLRule("feature:structure",HTMLStructureFeature),
@@ -126,6 +126,7 @@ object OMDocExtension extends DocumentExtension {
     SimpleHTMLRule("definition",HTMLSDefinition),
     SimpleHTMLRule("example",HTMLSExample),
     SimpleHTMLRule("assertion",HTMLSAssertion),
+    SimpleHTMLRule("judgment",HTMLJudgment),
     SimpleHTMLRule("sproof",HTMLSProof),
     SimpleHTMLRule("spfstep",HTMLSProofstep),
     SimpleHTMLRule("spfyield",HTMLSProofyield),
@@ -140,6 +141,7 @@ object OMDocExtension extends DocumentExtension {
     SimpleHTMLRule("definiendum",HTMLDefiniendum),
     SimpleHTMLRule("from",HTMLFromComponent),
     SimpleHTMLRule("to",HTMLToComponent),
+    SimpleHTMLRule("premise",HTMLPremise),
 
     SimpleHTMLRule("vardecl",HTMLVarDecl),
     SimpleHTMLRule("varseq",HTMLVarSeqDecl),
@@ -173,13 +175,18 @@ object OMDocExtension extends DocumentExtension {
           controller.backend.resolveLogical(d.path.uri) match {
             case Some((a,ls)) =>
               val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
+              val ipref = <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath=" + path}>
+                {d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
+                  case OMFOREIGN(node) => node
+                  case _ => ""
+                }).getOrElse("")}
+              </div>
               iref.parent.foreach(_.addAfter(
-                <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath="  + path}>{
-                  d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
-                    case OMFOREIGN(node) => node
-                    case _ => ""
-                  }).getOrElse("")
-                  }</div>
+                if (iref.ancestors.exists(_.isInstanceOf[HTMLFrame])) {
+                  <div class="inputref-container">
+                    {ipref}
+                  </div>
+                } else ipref
                 ,iref))
             case _ =>
           }
@@ -202,12 +209,12 @@ object OMDocExtension extends DocumentExtension {
     },
     {
       case t : HTMLTopLevelTerm if t.orig.isInstanceOf[HTMLDefiniendum] =>
-        overlay(t, "/:" + server.pathPrefix + "/declheader?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString,
+        overlay(t, ""/*/:" + server.pathPrefix + "/declheader?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString*/,
           "/:" + server.pathPrefix + "/declaration?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString  + "&language=" + getLanguage(t))
     },
     {
       case t : HTMLDefiniendum =>
-        overlay(t, "/:" + server.pathPrefix + "/declheader?" + t.head.toString,
+        overlay(t, ""/*"/:" + server.pathPrefix + "/declheader?" + t.head.toString*/,
           "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
     },
     {case t: HasHead if t.isVisible && !t.isInstanceOf[HTMLDefiniendum] =>

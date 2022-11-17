@@ -236,7 +236,7 @@ abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends Infe
 
 
 
-@MMT_TODO("must be reimplemented cleanly")
+@deprecated("MMT_TODO: must be reimplemented cleanly", since="forever")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val checks = apply(tm, covered)(solver,stack,history)
@@ -531,7 +531,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
       val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
       val ruleConst = RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
       ruleConst.setOrigin(GeneratedFrom(c.path, this))
-      log(c.name + " ~~> " + present(c.df.get))
+      log(c.name.toString + " ~~> " + present(c.df.get))
       controller add ruleConst
     case _ =>
   }

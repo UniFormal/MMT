@@ -72,7 +72,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
       c
    }
    def tail: this.type = {
-      next
+      next()
       this
    }
    def trim: this.type = {
@@ -143,16 +143,16 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
       while (!empty && head != until) {
          if (head == exceptAfter) {
             seen.addOne(head)
-               next
+               next()
          }
          seen.addOne(head)
-         next
+         next()
       }
       if (empty) {
          (seen.mkString, false)
       }
       else {
-         next
+         next()
          (seen.mkString,true)
       }
    }
@@ -177,7 +177,7 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
                seen ++= bp.close
             }
           case None =>
-            seen.addOne(next)
+            seen.addOne(next())
         }}
       }
       seen.mkString // impossible

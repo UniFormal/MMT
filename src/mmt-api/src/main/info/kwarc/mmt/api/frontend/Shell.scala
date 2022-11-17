@@ -202,9 +202,9 @@ class Shell extends StandardIOHelper {
         repl.enter(args)
         // run the repl and cleanup
         try {
-          repl.run
+          repl.run()
         } finally {
-          repl.exit
+          repl.exit()
         }
     }
     input.close
@@ -241,7 +241,7 @@ trait REPLExtension extends Extension {
 /** The standard, bare-bones implementation of the REPL */
 class StandardREPL extends REPLExtension {
   private lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-  def run: Unit = {
+  def run(): Unit = {
     var command = Option(input.readLine)
     while (command.isDefined) {
       controller.tryHandleLine(command.get) match {
@@ -251,7 +251,7 @@ class StandardREPL extends REPLExtension {
       command = Option(input.readLine)
     }
   }
-  def exit: Unit = {input.close()}
+  def exit(): Unit = {input.close()}
 }
 
 /** A shell, the default way to run MMT as an application */

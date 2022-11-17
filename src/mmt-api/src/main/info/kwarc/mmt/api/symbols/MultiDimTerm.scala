@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 
 /** a mutable wrapper around a value together with status information */
@@ -135,14 +136,14 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
    /** stores the set of components that analysis depended on */
    lazy val dependsOn = new scala.collection.mutable.HashSet[CPath]
    /** delete this component */
-   def delete: Unit = {
+   def delete(): Unit = {
       _read = None
       List(_parsed,_analyzed,_normalized).foreach {_.delete}
-      dependsOn.clear
+      dependsOn.clear()
    }
    /** clears the contents of this component and sets it to a new value */
    def set(t: T): Unit = {
-     delete
+     delete()
      analyzed = Some(t)
    }
 
@@ -220,7 +221,7 @@ object TermContainer {
    /** factory for an optionally given Term
     *  @param tOpt the term; treated as parsed or analyzed depending on AbstractObjectParser.isOnlyParsed
     */
-   @deprecated("remove this - force users to decide whether a term is analyzed/parsed", "18.0.0") def apply(tOpt: Option[Term]): TermContainer = {
+   @deprecated("MMT_TODO: remove this - force users to decide whether a term is analyzed/parsed", since="forever") def apply(tOpt: Option[Term]): TermContainer = {
       val tc = new TermContainer
       tOpt foreach {t => if (parser.ObjectParser.isOnlyParsed(t))
          tc.parsed = t

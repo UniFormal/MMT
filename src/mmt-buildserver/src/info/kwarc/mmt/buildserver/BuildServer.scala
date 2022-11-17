@@ -280,7 +280,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
             println("???")
         }
       } catch {
-        case e: JSONError =>
+        case _: JSONError | _: java.lang.StringIndexOutOfBoundsException =>
       } else {
         jsonfile.up.mkdirs()
         jsonfile.createNewFile()
@@ -515,6 +515,10 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           State.blocked ::= qt.target.onBlock(qt, res)
         } else {
           log("Missing dependencies and not allowed to block: " + needed.mkString(", "))
+          val oldprovides = FileDeps.getProvides(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
+          val olddeps = FileDeps.getDeps(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
+          FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, (used ::: olddeps).distinct, (provided ::: oldprovides).distinct)
+          State.failed ::= (qt, res)
         }
       case BuildFailure(used, provided) =>
         log("Failed")

@@ -99,7 +99,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
-  @MMT_TODO("unclear what happens here")
+  @deprecated("MMT_TODO: unclear what happens here", since="forever")
   def elabContext(th : Theory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
@@ -883,7 +883,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             //TODO wrap in implicit morphism?
             OMS(pathR).from(s)
           case Some(_) =>
-            env.errorCont(InvalidObject(s, path + " does not refer to constant"))
+            env.errorCont(InvalidObject(s, path.toString + " does not refer to constant"))
             s
           case None =>
             // error was thrown above already 

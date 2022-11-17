@@ -74,7 +74,7 @@ object TPTPObjectPresenter extends ObjectPresenter {
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {o match {
       case t: Term => rh(termToTPTP(t).toString)
       case c: Context => c.map {case VarDecl(x,_,t,d,_) =>
-         Var(x.toPath) + tmOptToTPTP(t, ":") + tmOptToTPTP(d, "=")
+         Var(x.toPath).toString + tmOptToTPTP(t, ":") + tmOptToTPTP(d, "=")
       }.mkString(",")
       case s: Substitution => apply(s.asContext, origin)
    }}

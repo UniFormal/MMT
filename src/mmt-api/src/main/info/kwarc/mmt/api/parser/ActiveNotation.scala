@@ -94,9 +94,9 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
    }
    /** pick exactly ms.length available Tokens, each as as FoundSimp */
    private def PickSingles(ms: List[ChildMarker]): Unit = {
-      val fs = ms reverseMap {m =>
+      val fs = ms.reverseIterator.map {m =>
          FoundSimp(scanner.pick(1), m)
-      }
+      }.toList
       found = fs ::: found
    }
    /** like pickAll, but appends to a previously started sequence or starts a new sequence */

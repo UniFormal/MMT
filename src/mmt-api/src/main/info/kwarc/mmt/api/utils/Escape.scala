@@ -77,7 +77,7 @@ abstract class Escaping {
          c.toString
        else
          useCustomEscapeVal.find(_._1 == c).map(_._2).getOrElse {defaultEscape(c)}
-       escapeChar + e
+       s"${escapeChar}${e}"
      }
   }
   def apply(s: String): String = s flatMap {c => apply(c)}
@@ -145,7 +145,7 @@ object XMLEscaping extends Escaping {
         val e = useCustomEscape.find(_._1 == c).map(_._2).getOrElse {
           "#" + c.toInt.toString
         }
-      escapeChar + e + ";"
+      s"${escapeChar}${e};"
     }
   }
   override def unapply(s: String): String = {

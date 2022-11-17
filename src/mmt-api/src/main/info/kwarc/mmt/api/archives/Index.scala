@@ -87,7 +87,7 @@ trait GeneralImporter extends Extension {
           doModule(nm.module)
         case d: HasNotation =>
           val dN = d.not.map(_.toText).getOrElse("")
-          notFileHandle.println(d.path + " " + dN)
+          notFileHandle.println(d.path.toString + " " + dN)
         case _ =>
       }
     }

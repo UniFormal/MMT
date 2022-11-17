@@ -303,7 +303,7 @@ object LinkInverter {
 						tpC = newTypeContainer,
 						dfC = newDefContainer,
 						rl = originalConstant.rl,
-						notC = originalConstant.notC.copy,
+						notC = originalConstant.notC.copy(),
 						vs = originalConstant.vs
 					)
 

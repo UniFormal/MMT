@@ -7,8 +7,9 @@ import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, URI}
-import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
+import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument, LSPServer}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
+import info.kwarc.mmt.stex.parsing.stex.HasAnnotations
 import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml.{HTMLDefiniendum, HTMLParser, HTMLTopLevelTerm, HasHead, SemanticState}
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXParseError, TeXError}
@@ -24,7 +25,7 @@ case class STeXLSPErrorHandler(eh : api.Error => Unit, cont: (Double,String) => 
   override def close: Unit = {}
 }
 
-class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
+class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],override val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
 
   print("")
   lazy val archive = file.flatMap(f => server.controller.backend.resolvePhysical(f).map(_._1))
@@ -54,7 +55,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       files = files.tail
       files.headOption.foreach(progress)
     }
-    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,thisdoc,uri,e),(_,_) => {})
+    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,thisdoc,uri,e),(_,s) => progress(s))
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
       val (off1,off2,p) = _doctext.fullLine(files.head._2-1)
       val reg = SourceRegion(SourcePosition(off1,files.head._2,0),SourcePosition(off2,files.head._2,p))
@@ -105,8 +106,8 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       case Some(f) =>
         Future { server.safely {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
-            val pars = params(update(0,_))
-            val html = RusTeX.parse(f, pars,List("c_stex_module_"))
+            val pars = params(s => update(0,s))
+            val html = RusTeX.parseString(f,doctext ,pars,List("c_stex_module_"))
             update(0, "Parsing HTML... (2/2)")
             this.synchronized {
               val newhtml = HTMLParser(html)(parsingstate(pars.eh))
@@ -157,7 +158,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
             }
           }
           val msg = new HTMLUpdateMessage
-          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + uri // uri
+          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + LSPServer.URItoVSCode(uri) // uri
           this.client.client.updateHTML(msg)
           quickparse
         }}
@@ -167,7 +168,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
 
   override val timercount: Int = 0
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
-    Annotations.notifyOnChange(client.client)
+    Annotations.notifyOnChange()
   }
   def quickparse = try this.synchronized {
     server.parser.synchronized {
@@ -175,6 +176,11 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       import info.kwarc.mmt.stex.parsing._
       val ret = server.parser(_doctext, file.getOrElse(File(uri)), archive)
       ret.foreach(_.iterate { elem =>
+        elem match {
+          case t: HasAnnotations =>
+            t.doAnnotations(this)
+          case _ =>
+        }
         elem.errors.foreach { e =>
           val start = _doctext.toLC(elem.startoffset)
           val end = _doctext.toLC(elem.endoffset)
@@ -184,11 +190,6 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
               SourcePosition(elem.endoffset, end._1, end._2)
             )), e.shortMsg, if (e.extraMessage != "") List(e.extraMessage) else Nil, e.level)
           )
-        }
-        elem match {
-          case t: HasAnnotations =>
-            t.doAnnotations(this)
-          case _ =>
         }
       })
       super.onUpdate(Nil)

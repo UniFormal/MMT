@@ -141,7 +141,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
             log("adding archive defined by " + manifest)
           } else {
             val generatedId = root.up.getName + "/" + root.getName
-            log(manifest + " does not contain id, creating " + generatedId)
+            log(manifest.toString + " does not contain id, creating " + generatedId)
             properties += (("id", generatedId))
           }
           val arch = new Archive(root, properties, report)
@@ -173,7 +173,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           addStore(ra)
           List(arch)
         case None =>
-          log(root + " is not an archive - recursing")
+          log(root.toString + " is not an archive - recursing")
           // folders beginning with . are skipped
           root.list.toList.sorted flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
       }
@@ -202,7 +202,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       // open the archive in newRoot
       openArchive(unpackedRoot)
     } else {
-      log(root + " is not an archive or a folder containing archives")
+      log(root.toString + " is not an archive or a folder containing archives")
       Nil
     }
   }

@@ -1,5 +1,5 @@
 package info.kwarc.mmt.lsp
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.{File, URI}
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
 
 import scala.collection.mutable
@@ -129,7 +129,7 @@ class SyncedDocument {
   }
   //                      endoffset, line, lineending
   private var lines : List[Line] = Nil
-  def getText = lines.mkString("\n")
+  def getText = lines.map(_.line).mkString("\n")
 
   private def doLines(s : String, add : Line => Unit): Unit ={
     var curro = 0
@@ -221,17 +221,12 @@ class SyncedDocument {
 
 }
 
-class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:ClientWrapper[A],server : B) {
+class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,protected val client:ClientWrapper[A],protected val server : B) {
   val _doctext = new SyncedDocument
   def doctext =  _doctext.getText
   val timercount : Int = 0
   lazy val file : Option[File] = {
-    val f = File({
-      val str = uri.drop(7) // stupid windows fix
-      if (str.length > 2 && str(2) == ':') {
-        str.take(2).toUpperCase + str.drop(2)
-      } else str
-    })
+    val f = File(URI(uri).pathAsString)
     if (f.exists()) Some(f) else None
   }
 
@@ -399,11 +394,12 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
 
   object Annotations {
     def clear = _annotations = Nil
-    def notifyOnChange(client:LSPClient) = {
-      client.refreshSemanticTokens()
-      client.refreshCodeLenses()
-      client.refreshInlineValues()
-      client.refreshInlayHints()
+    def notifyOnChange() = {//[A <: LSPClient](client:ClientWrapper[A]) = {
+      client.client.refreshSemanticTokens()
+      client.client.refreshCodeLenses()
+      client.client.refreshInlineValues()
+      client.client.refreshInlayHints()
+      client.republishErrors(uri)
     }
     private var _annotations : List[Annotation] = Nil
     def getAll = _annotations

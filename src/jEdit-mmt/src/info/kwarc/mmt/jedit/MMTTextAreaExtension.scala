@@ -205,7 +205,7 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
                   vd.tp match {
                     case None => null
                     case Some(tp) =>
-                      vd.name + ": " + asString(tp)
+                      vd.name.toString + ": " + asString(tp)
                   }
                 case OMA(OMID(p), args) =>
                   val opWithImplicits = args.takeWhile(a => parser.SourceRef.get(a).isEmpty)

@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.objects.{OMID, OMS, Obj, Term}
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration}
-import info.kwarc.mmt.api.utils.{MMTSystem, XMLEscaping}
+import info.kwarc.mmt.api.utils.{File, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.OMDocHTML
 import info.kwarc.mmt.stex.vollki.FullsTeXGraph
@@ -86,7 +86,7 @@ object FragmentExtension extends STeXExtension {
   }
 
   def doDeclHeader(c:Constant) : Elem = {
-    <div style="font-size:small">
+    <div>
       <table><tr><td>
         <font size="+2">{" ☞ "}</font><code>{c.path.toString}</code>
       </td><td>{if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {
@@ -166,93 +166,6 @@ object FragmentExtension extends STeXExtension {
     }
   }
 
-  def doDeclarationOld(path : Path,language : Option[String]) = {
-    path match {
-      case mp: MPath =>
-        controller.simplifier(mp)
-      case gn: GlobalName =>
-        controller.simplifier(gn.module)
-    }
-    controller.getO(path) match {
-      case Some(c : Constant) =>
-        val (doc,body) = server.emptydoc
-        /*val head = doc.get("head")()().head
-        head.addBefore(<style>{
-          List(
-            "/mmt-web/css/bootstrap-jobad/css/bootstrap.less.css",
-            "/mmt-web/css/mmt.css",
-            "/mmt-web/css/browser.css",
-            "/mmt-web/css/JOBAD.css",
-            "/mmt-web/css/jquery/jquery-ui.css",
-            "/mmt-web/css/incsearch/jstree.css",
-            "/mmt-web/css/incsearch/index.css",
-            "/mmt-web/css/incsearch/incsearch.css",
-            "/mmt-web/css/incsearch/treeview.css"
-          ).map(MMTSystem.getResourceAsString).mkString("\n")
-          }</style>,head.children.head)
-        head.addBefore("""<script type="text/javascript" src="script/jquery/jquery.js"></script>
-                         |<script type="text/javascript" src="script/jquery/jquery-ui.js"></script>
-                         |<script type="text/javascript" src="script/tree/jquery.hotkeys.js"></script><!-- used by  stree -->
-                         |<script type="text/javascript" src="script/tree/jquery.jstree.js"></script>
-                         |<script type="text/javascript" src="script/incsearch/incsearch.js"></script> -->
-                         |<script type="text/javascript" src="script/incsearch/treeview.js"></script>
-                         |<script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
-                         |<script type="text/javascript" src="script/jobad/deps/underscore-min.js"></script>
-                         |<script type="text/javascript" src="script/bootstrap2/bootstrap.js"></script>
-                         |<script type="text/javascript" src="script/jobad/JOBAD.js"></script>
-                         |<script type="text/javascript" src="script/jobad/modules/hovering.js"></script>
-                         |<script type="text/javascript" src="script/jobad/modules/interactive-viewing.js"></script>
-                         |<script type="text/javascript" src="script/mmt/browser.js"></script>""".stripMargin,head.children.head)
-
-         */
-        body.attributes((HTMLParser.ns_html,"style")) = "background-color:white"
-        stripMargins(doc)
-        val border = body.add(<div style="font-size:small"/>)
-        border.add(<b>Symbol </b>)
-        border.add("&nbsp;")
-        border.add(<a href={"/?"+path} target="_blank" style="pointer-events:all">{XMLEscaping(c.path.toString)}</a>)
-        border.add(<br/>)
-        if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {
-          border.add(<a href={"/:vollki?path=" + c.parent.toString} target="_blank" style="pointer-events:all;color:blue">{"> Guided Tour"}</a>)
-          border.add(<br/>)
-        }
-        border.add(
-          server.htmlpres.asString(c)
-          /*
-          <table>
-            <tr><th>Macro</th><th>Presentation</th><th>Type</th><th></th></tr>
-            <tr>
-              <td>{c.notC.parsing match {
-                case Some(tn) => scala.xml.Text(tn.markers.mkString(""))
-                case _ => scala.xml.Text("(None)")
-              }}</td>
-              <td>{c.notC.presentation match {
-                case Some(tn) => scala.xml.Text(tn.markers.mkString(""))
-                case _ => scala.xml.Text("(None)")
-              }}</td>
-              <td>{c.tp match {
-                case Some(tpi) => server.xhtmlPresenter.asXML(tpi,Some(c.path $ TypeComponent))
-                case _ => scala.xml.Text("(None)")
-              }}</td>
-            </tr>
-          </table>
-           */
-        )
-        getFragment(path,language).foreach(s => border.add(s))
-
-        val docrules = server.extensions.collect {
-          case e : DocumentExtension =>
-            e.documentRules
-        }.flatten
-        def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
-        val nbody = doc.get("body")()().head
-        nbody.iterate(doE)
-        Some(ServerResponse(nbody.toString,"text/html"))
-      case _ =>
-        Some(ServerResponse("Declaration not found","txt"))
-    }
-  }
-
   def getFragment(path : Path,language : Option[String]) = {
     path match {
       case mp: MPath =>
@@ -292,9 +205,9 @@ object FragmentExtension extends STeXExtension {
         body.attributes((HTMLParser.ns_html,"style")) = "background-color:white"
         stripMargins(doc)
         val border = body.add(<div style="font-size:small"/>)
-        border.add(<font size="+2">{" ☞ "}</font>)
-        border.add(<code>{path.toString}</code>)
-        border.add(<hr/>)
+        //border.add(<font size="+2">{" ☞ "}</font>)
+        //border.add(<code>{path.toString}</code>)
+        //border.add(<hr/>)
         border.add(htm)
         val docrules = server.extensions.collect {
           case e : DocumentExtension =>
@@ -323,6 +236,19 @@ object FragmentExtension extends STeXExtension {
     }
     ce match {
       case c : Constant =>
+        val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
+          case Some(sr) =>
+            controller.backend.resolveLogical(sr.container) match {
+              case Some((a,f)) =>
+                val url = "/:sTeX/browser/fulldocument" +
+                  "?archive=" + a.id + "&filepath=" + (f.init ::: f.last.replace(".tex",".xhtml") :: Nil).mkString("/")
+                s"<a href='${url}'>${c.parent.name.toString}</a>"
+              case _ => c.parent.name.toString
+            }
+          case _ => c.parent.name.toString
+        })
+        "<div>"+res+"</div>"
+        /*
         val macroname = OMDocHTML.getMacroName(c)
         (<table>
           <tr><td><b>Type</b></td><td>{c.tp.map(server.xhtmlPresenter.asXML(_,Some(c.path $ TypeComponent))).getOrElse(text("None"))}</td></tr>
@@ -333,6 +259,8 @@ object FragmentExtension extends STeXExtension {
               <tr><td>{"\\"+name+"[" + f + "]"}</td><td>{n}</td></tr>
           }}}
         </table>).toString()
+
+         */
       case _ =>
         ???
     }

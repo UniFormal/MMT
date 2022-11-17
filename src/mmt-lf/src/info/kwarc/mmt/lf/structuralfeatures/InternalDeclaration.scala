@@ -45,11 +45,11 @@ private object InternalDeclarationUtil {
     
    /** a very detailed presenter, useful for debugging */
   def present(c: Constant) : String = {
-    c.path + ": " + present(c.tp.get, false)
+    c.path.toString + ": " + present(c.tp.get, false)
   }
   /** a very detailed presenter, useful for debugging */
   def shortPresent(c: Constant) : String = {
-    c.path + ": " + present(c.tp.get, true)
+    c.path.toString + ": " + present(c.tp.get, true)
   }
   def present(e: Term, shortNames: Boolean) : String = {
     def flatStrList(l : List[String], sep : String): String = l match {
@@ -283,7 +283,7 @@ sealed abstract class InternalDeclaration {
     // In case of an OMV argument used in the type of a later argument
     var subs = Substitution()
     val con: Context = dargs zip args map {case ((loc, tp), arg) =>
-      val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc+suf, Some(context)) else loc
+      val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc.toString + suf, Some(context)) else loc
       if (loc != locSuf) subs = subs ++ OMV(loc) / OMV(locSuf)
       newVar(locSuf.toString, externalizeNamesAndTypes(parent, context)(tp ^? subs), None)
     }
@@ -356,7 +356,7 @@ sealed abstract class InternalDeclaration {
 case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term], ctx: Option[Context]=None, notC : Option[NotationContainer]=None) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
-  def notation = notC getOrElse NotationContainer()
+  def notation = notC getOrElse NotationContainer.empty()
   def isTypeLevel = {true}
 
   /** a var decl with a fresh name whose type is this one 
@@ -376,7 +376,7 @@ object TypeLevel {
 /** term constructor declaration */
 abstract case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term]=None, notC: Option[NotationContainer]=None, ctx: Option[Context]=None) extends InternalDeclaration {
   def tm = df
-  def notation = notC getOrElse NotationContainer()
+  def notation = notC getOrElse NotationContainer.empty()
   /** a var decl with a fresh name of the same type as this one */
   def makeVar(name: String) = newVar(name, tp)
   def isTypeLevel = {false}
@@ -463,7 +463,7 @@ object Constructor {
 case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df: Option[Term]=None, ctx: Option[Context]=None, notC: Option[NotationContainer]=None) extends InternalDeclaration {
   def ret = Univ(1)
   def tm = df
-  def notation = notC getOrElse NotationContainer()
+  def notation = notC getOrElse NotationContainer.empty()
   def isTypeLevel = {false}
 }
 

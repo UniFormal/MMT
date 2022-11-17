@@ -163,7 +163,7 @@ class OEISImporter extends Importer {
           //val tpWrapperO = n.child.find(_.label == "type")
           val tpO = None //tpWrapperO.map(tpN => translateTerm(tpN.child.head))
         val dfO = None //TODO, get also def
-        val const = Constant(OMMOD(mpath), name, Nil, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
+        val const = Constant(OMMOD(mpath), name, Nil, TermContainer(tpO), TermContainer(dfO), None, NotationContainer.empty())
           SourceRef.update(const, sref)
           controller.add(const)
         case "#PCDATA" | "#REM" => //Atom or Comment => do nothing

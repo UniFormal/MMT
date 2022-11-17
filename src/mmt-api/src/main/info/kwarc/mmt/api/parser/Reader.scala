@@ -20,7 +20,7 @@ class Reader(val jr: java.io.BufferedReader) {
    /** the delimiter that terminated the previous read operation */
    private var lastDelimiter: Int = 65536 // initialized as invalid Char
    //TODO remove
-   @MMT_TODO("needs review")
+   @deprecated("MMT_TODO: needs review", since="forever")
    def forceLastDelimiter(i : Int) = lastDelimiter = i
    /**
     * true if the last read operation hit the end of the current input stream
@@ -142,7 +142,7 @@ class Reader(val jr: java.io.BufferedReader) {
           }
        }
        lastDelimiter = c
-      var res = buffer.result
+      var res = buffer.result()
 
        val end = { // there's some weird error here
           val diff = (sourcePosition.offset-start.offset)- res.length

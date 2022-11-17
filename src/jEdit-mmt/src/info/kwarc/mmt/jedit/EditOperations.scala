@@ -93,7 +93,7 @@ class EditActions(mmtplugin: MMTPlugin) {
                   val results = vf.find(mp, to).map(presentView) //.mkString("\n\n")
                   "From: " + mp.toString + "\nTo: " + to + "\n" + {
                     if (results.isEmpty) "No results found :("
-                    else results.length + " Results found:\n\n" + results.mkString("\n\n")
+                    else s"${results.length} Results found:\n\n" + results.mkString("\n\n")
                   }
                 } catch {
                   case NotDone => NotDone.toString // Should not happen
@@ -114,7 +114,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     } ::: v.getDeclarations.collect {
       case c : FinalConstant if c.df.isDefined =>
         "  " + c.name + " = " + (c.df match {
-          case Some(OMS(p)) => p.module.name + "?" + p.name
+          case Some(OMS(p)) => p.module.name.toString + "?" + p.name
           case Some(t) => t.toStr(true)
         })
     }).mkString("\n")
