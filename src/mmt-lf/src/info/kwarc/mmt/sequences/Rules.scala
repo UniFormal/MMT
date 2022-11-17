@@ -231,11 +231,8 @@ object EllipsisTypeCheck extends SequenceTypeCheck(ellipsis.path)
 object RepTypeCheck extends SequenceTypeCheck(rep.path)
 
 class SequenceSubtypeCheck(op: GlobalName) extends VarianceRule(op) {
-  override def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
-    case (ComplexTerm(a, _,_,_), _) if this.heads.contains(a) => true
-    case (_, ComplexTerm(b, _, _, _)) if this.heads.contains(b) => true
-    case _ => false
-  }
+  val under = Nil
+  override def applicable(tp1: Term, tp2: Term) = applicable(tp1) || applicable(tp2)
   override def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val equalLength = Length.checkEqual(solver, tp1, tp2)
     equalLength match {

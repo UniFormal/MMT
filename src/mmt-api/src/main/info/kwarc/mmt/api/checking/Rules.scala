@@ -144,11 +144,8 @@ abstract class SubtypingRule extends CheckingRule {
 }
 
 /** applies to  op(args1) <: op(args2) */
-abstract class VarianceRule(val head: GlobalName) extends SubtypingRule {
-  def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
-    case (ComplexTerm(a, _,_,_), ComplexTerm(b, _, _, _)) if this.heads.contains(a) && this.heads.contains(b) => true
-    case _ => false
-  }
+abstract class VarianceRule(val head: GlobalName) extends SubtypingRule with ApplicableUnder {
+  def applicable(tp1: Term, tp2: Term) = applicable(tp1) && applicable(tp2)
 }
 
 /** variances annotations, used by [[DelarativeVarianceRule]] */
@@ -159,7 +156,7 @@ case object Invariant extends Variance
 case object Ignorevariant extends Variance
 
 /** VarianceRule for OMA(op, args) defined by giving a variance annotation for each arg */
-class DelarativeVarianceRule(h: GlobalName, variance: List[Variance]) extends VarianceRule(h) {
+abstract class DelarativeVarianceRule(h: GlobalName, variance: List[Variance]) extends VarianceRule(h) {
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val OMA(_, args1) = tp1
     val OMA(_, args2) = tp2
