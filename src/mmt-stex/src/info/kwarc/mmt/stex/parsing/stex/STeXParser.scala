@@ -60,10 +60,10 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
             case h :: tail => (Some(h), tail.map(_.path))
           }
       }
-      case Array(m, n) =>
+      case a if a.nonEmpty && a.length <= 3 =>//Array(m, n) =>
         rules.collect {
-          case sm: SemanticMacro if sm.syminfo.path.module.toString.endsWith(m) &&
-            sm.syminfo.path.name.toString == n => sm.syminfo
+          case sm: SemanticMacro if sm.syminfo.path.module.toString.endsWith(a.init.mkString("?")) &&
+            sm.syminfo.path.name.toString == a.last => sm.syminfo
         }.distinct match {
           case List(a) => (Some(a), Nil)
           case Nil => (None, Nil)
