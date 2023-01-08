@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, So
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState, SimpleHTMLRule}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState}
 import info.kwarc.rustex.Params
 
 import scala.annotation.tailrec
@@ -147,10 +147,7 @@ class LaTeXToHTML extends XHTMLParser {
   def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
 
   override def buildFile(bf: BuildTask): BuildResult = {
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    //val state = new XHTMLParsingState(xhtmlrules,bf.errorCont)
-    val state = new HTMLParser.ParsingState(controller,rules)
+    val state = new HTMLParser.ParsingState(controller,stexserver.importRules)
     val (errored,doc) = buildFileActually(bf.inFile,bf.outFile,state,bf.errorCont)
     log("Finished: " + bf.inFile)
     if (errored) BuildFailure(Nil,List(PhysicalDependency(bf.outFile)))
@@ -172,9 +169,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
       bt.errorCont(SourceError(bt.inFile.toString,SourceRef.anonymous(""),"xhtml file " + inFile.toString + " does not exist"))
       BuildFailure(Nil,Nil)
     }
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    val state = new SemanticState(controller, rules, bt.errorCont, dpath)
+    val state = new SemanticState(stexserver, stexserver.importRules, bt.errorCont, dpath)
     controller.library.synchronized{HTMLParser(inFile)(state)}
     index(state.doc)
     log("Finished: " + inFile)
@@ -192,7 +187,10 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     }.filterNot(results.contains)
     state.missings match {
       case Nil => BuildSuccess(used,results)
-      case o => MissingDependency(o.map(LogicalDependency),results,used)
+      case o => MissingDependency(o.flatMap {
+        case mp:MPath => Some(LogicalDependency(mp))
+        case _ => None
+      },results,used)
     }
   }
 }
@@ -215,9 +213,7 @@ class HTMLToLucene extends XHTMLParser {
       BuildFailure(Nil,Nil)
     }
 
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    val state = new SearchOnlyState(controller,rules,bt.errorCont,dpath)
+    val state = new SearchOnlyState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     controller.library.synchronized{HTMLParser(inFile)(state)}
     val doc = state.Search.makeDocument(bt.outFile.stripExtension,bt.inFile,bt.archive)
 
@@ -236,11 +232,9 @@ class STeXToOMDoc extends Importer with XHTMLParser {
   val inExts = List("tex")
   override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / RedirectableDimension("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(controller,rules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     outFile.up.mkdirs()
     val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
@@ -260,7 +254,10 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     }.filterNot(results.contains)
     if (errored) BuildFailure(used,results) else state.missings match {
       case Nil => BuildSuccess(used,results)
-      case o => MissingDependency(o.map(LogicalDependency),results,used)
+      case o => MissingDependency(o.flatMap {
+        case mp: MPath => Some(LogicalDependency(mp))
+        case _ => None
+      },results,used)
     }
   }
 }
@@ -281,6 +278,8 @@ object PdfLatex {
       pdffile.setExtension("nav"),
       pdffile.setExtension("snm"),
       pdffile.setExtension("vrb"),
+      pdffile.setExtension("hd"),
+      pdffile.setExtension("glo"),
       pdffile.setExtension("bcf"),
       pdffile.setExtension("blg"),
       pdffile.setExtension("fdb_latexmk"),
@@ -406,11 +405,9 @@ class FullsTeX extends Importer with XHTMLParser {
       }
     }
     import PdfLatex._
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(controller,rules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     outFile.up.mkdirs()
     try {
       ilog("Building pdflatex " +  bt.inPath + " (first run)")
@@ -456,7 +453,10 @@ class FullsTeX extends Importer with XHTMLParser {
       }.filterNot(results.contains)
       if (errored) BuildFailure(used,results) else state.missings match {
         case Nil => BuildSuccess(used, results)
-        case o => MissingDependency(o.map(LogicalDependency), results, used)
+        case o => MissingDependency(o.flatMap {
+          case mp: MPath => Some(LogicalDependency(mp))
+          case _ => None
+        }, results, used)
       }
     } catch {
       case PdflatexError(Nil) =>

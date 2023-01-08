@@ -6,9 +6,10 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{BrowserExtension, DocumentExtension, FragmentExtension, OMDocExtension, STeXExtension}
-import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, STeXGraph}
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
+import info.kwarc.mmt.stex.Extensions.{ExampleRelational, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
+import info.kwarc.mmt.stex.rules.MathStructureFeature
+import info.kwarc.mmt.stex.vollki.FullsTeXGraph
+import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.xhtml._
 
 import scala.runtime.NonLocalReturnControl
@@ -18,7 +19,8 @@ case class ErrorReturn(s : String) extends Throwable {
 }
 
 
-class STeXServer extends ServerExtension("sTeX") {
+class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML {
+  def ctrl = controller
 
   def resolveDocumentQuery(query : String) = query match {
     case s if s.startsWith("group=") =>
@@ -47,47 +49,39 @@ class STeXServer extends ServerExtension("sTeX") {
       }
   }
 
-  def extensions = controller.extman.get(classOf[STeXExtension])
-
-  def addExtension(ext : Extension) =
-    if (!extensions.contains(ext))
-      controller.extman.addExtension(ext)
-  def addExtension[A <: Extension](cls : Class[A]) =
-    controller.extman.get(cls) match {
-      case Nil =>
-        val n = cls.getConstructor().newInstance()
-        controller.extman.addExtension(n)
-      case _ =>
-    }
-
   override def start(args: List[String]): Unit = {
     super.start(args)
-    addExtension(OMDocExtension)
-    //addExtension(FeaturesExtension)
-    addExtension(DocumentExtension)
+    controller.extman.addExtension(NotationExtractor)
+    controller.extman.addExtension(SymdocRelational)
+    controller.extman.addExtension(ExampleRelational)
+    controller.extman.addExtension(new MathStructureFeature)
+    /*addExtension(DocumentExtension)
     addExtension(FragmentExtension)
-    addExtension(BrowserExtension)
-    //addExtension(EditorExtension)
-    //addExtension(DemoExtension)
-    //addExtension(classOf[PillarFeature])
-    //addExtension(classOf[DefinitionFeature])
-    //addExtension(FullsTeXGraph)
-    //addExtension(STeXGraph)
+    addExtension(BrowserExtension)*/
+
 
     controller.backend.getArchives.filter{a =>
       a.properties.get("format").contains("stex")
     }.foreach(_.readRelational(Nil, controller, "rel"))
 
-    controller.extman.get(classOf[Presenter], "html").foreach {p =>
-      controller.extman.removeExtension(p)
-    }
-    controller.extman.addExtension(htmlpres)
+    controller.extman.addExtension(texPresenter)
+    controller.extman.addExtension(xhtmlPresenter)
   }
 
   lazy val htmlpres = new MMTsTeXPresenter(texPresenter,xhtmlPresenter)
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
+      case Some("document" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable") =>
+        documentRequest(request)
+      case Some("omdoc" | "omdocfrag" | "omdocuri") =>
+        omdocRequest(request)
+      case Some(":sTeX") if request.query == "" =>
+        browserRequest(request)
+      case Some("browser") =>
+        browserRequest(request)
+      case _ =>
+        ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs, "text/plain")
       /*case Some("declaration") =>
         request.query match {
           case "" =>
@@ -107,16 +101,7 @@ class STeXServer extends ServerExtension("sTeX") {
           case Some(s) => Some(Path.parseC(XMLEscaping.unapply(s),NamespaceMap.empty))
           case _ => None
         }*/
-      case Some(":sTeX") if request.query == "" =>
-        val nr = request.copy(path = List(":sTeX","browser"))
-        return apply(nr)
-      case _ =>
-        extensions.foreach(e => e.serverReturn(request) match {
-          case Some(rsp) => return rsp
-          case _ =>
-        })
     }
-    ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs,"text/plain")
     //ServerResponse(ret.toString, "application/xhtml+xml")
   } catch {
     case ret:ErrorReturn => ret.toResponse
@@ -126,36 +111,11 @@ class STeXServer extends ServerExtension("sTeX") {
       throw t
   }
 
-
-  def doHeader(doc : HTMLNode) = {}
-
-  def getState : ParsingState = {
-    val rules = extensions.flatMap(_.rules)
-    new ParsingState(controller,rules)
-  }
-
   def emptydoc = {
-    val rules = extensions.flatMap(_.rules)
-    val state = new ParsingState(controller,rules)
+    val state = new ParsingState(controller,Nil)
     val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/stex/emptydoc.xhtml"))(state)
-    doHeader(doc)
     (doc,doc.get("div")()("body").head)
   }
 
-  lazy val xhtmlPresenter = controller.extman.get(classOf[STeXPresenterML]) match {
-    case p :: _ => p
-    case Nil =>
-      val p = new STeXPresenterML
-      controller.extman.addExtension(p)
-      p
-  }
-
-  lazy val texPresenter = controller.extman.get(classOf[STeXPresenterTex]) match {
-    case p :: _ => p
-    case Nil =>
-      val p = new STeXPresenterTex
-      controller.extman.addExtension(p)
-      p
-  }
 
 }

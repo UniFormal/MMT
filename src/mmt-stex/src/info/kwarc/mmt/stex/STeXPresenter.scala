@@ -5,20 +5,26 @@ import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, RenderingHandler, VarData}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
-import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GlobalName, LocalName, StructuralElement}
+import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GlobalName, LocalName, StructuralElement, presentation}
 import info.kwarc.mmt.stex
 import info.kwarc.mmt.stex.Extensions.NotationExtractor
-import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, StringLiterals}
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
+import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType}
+import info.kwarc.mmt.stex.xhtml.HTMLParser
+import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
+
+import scala.io.Source
+import scala.xml.{NodeSeq, XML}
+//import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
+//import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
 
 import scala.xml.{Elem, Node}
 
-case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : HTMLNode, fragment: String, arity : String, allnotations : List[(String,String,String,HTMLNode)])
+//case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : HTMLNode, fragment: String, arity : String, allnotations : List[(String,String,String,HTMLNode)])
 
 trait STeXPresenter extends ObjectPresenter {
   lazy val server = controller.extman.get(classOf[STeXServer]).head
 
+/*
   protected def getMainNotation(s : GlobalName) = {
     val allNotations = OMDocHTML.getNotations(s)(controller).reverse
     allNotations.collectFirst {
@@ -157,12 +163,133 @@ trait STeXPresenter extends ObjectPresenter {
     }
   }
 
+ */
+
 }
 
 class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
-  def applyWithNotations(o: Obj, origin: Option[CPath], notations : Any /* TODO */)(implicit rh: RenderingHandler): Unit = {
-    // TODO
-    apply(o,origin)
+
+  private def recurseI(obj:Obj)(implicit pc: PresentationContext): NodeSeq = {
+    val sb = new presentation.StringBuilder
+    recurse(obj)(pc.copy(rh=sb))
+    XML.loadString(s"<mrow>${sb.get}</mrow>").head.child
+  }
+
+  override def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pc: PresentationContext): Int = {
+    lazy val default = {
+      super.recurse(obj, bracket)
+    }
+    obj match {
+      case ctx: Context =>
+        if (ctx.length == 0) 0
+        else if (ctx.length == 1) recurse(ctx.variables.head) else {
+          recurse(ctx.variables.head)
+          pc.out({
+            <mi>,</mi>
+          }.toString())
+          recurse(Context(ctx.variables.tail: _*))
+        }
+      case SHTMLHoas.OmaSpine(_,f,args) => recurse(OMA(f, args), bracket)
+      case tm: Term =>
+        val t = tm //val (is, ar, t) = implicits(tm)(pc.getContext)
+
+        def ret() = t match {
+          case SHTML.informal(n) =>
+            val node = HTMLParser(n.toString())(new ParsingState(controller, server.presentationRules))
+            node.plain.attributes((node.namespace, "mathbackground")) = "#ff0000"
+            pc.out(node.toString)
+            0
+          case SHTML.informal.op(label, args) =>
+            pc.out("<" + label + " mathbackground=\"#ff0000\"" + ">")
+            args.foreach(recurse(_))
+            pc.out("</" + label + ">")
+            0
+          case SHTMLHoas.Omb(_,OMS(p), args) =>
+            controller.getO(p) match {
+              case Some(c: Constant) =>
+                server.getArity(c) match {
+                  case Some(arity) if arity.length == args.length =>
+                    server.getNotations(p) match {
+                      // TODO get notation id
+                      case not :: _ =>
+                        val nargs = arity.zip(args).map {
+                          case ('a', STerm(SHTML.flatseq(ls))) =>
+                            ls.map { recurseI(_) }
+                          case ('i', STerm(tm)) =>
+                            List(recurseI(tm))
+                          case ('b',SCtx(Context(v))) =>
+                            List(recurseI(v))
+                          case ('B', SCtx(ctx)) =>
+                            ctx.map { recurseI(_) }
+                        }
+                        pc.out(not.present(nargs.toList).toString())
+                      case _ => default
+                    }
+                  case _ => default
+                }
+              case _ => default
+            }
+          case OMA(OMS(p), args) =>
+            controller.getO(p) match {
+              case Some(c: Constant) =>
+                server.getArity(c) match {
+                  case Some(arity) if arity.length == args.length =>
+                    server.getNotations(p) match {
+                      // TODO get notation id
+                      case not :: _ =>
+                        val nargs = arity.zip(args).map {
+                          case ('a', SHTML.flatseq(ls)) =>
+                            ls.map { recurseI(_) }
+                          case ('i', tm) => List(recurseI(tm))
+                        }
+                        pc.out(not.present(nargs.toList).toString())
+                      case _ => default
+                    }
+                  case _ => default
+                }
+              case _ => default
+            }
+          case OMS(p) =>
+            controller.getO(p) match {
+                case Some(c : Constant) =>
+                  server.getArity(c) match {
+                    case Some("")|None =>
+                    server.getNotations(p) match {
+                      // TODO get notation id
+                      case not :: _ =>
+                        // TODO parentheses
+                        pc.out(not.present(Nil).toString())
+                      case Nil => default
+                    }
+                  case _ =>
+                    // TODO get notation id
+                    server.getNotations(p).find(_.op.isDefined) match {
+                      case Some(not) =>
+                        // TODO parentheses
+                        pc.out(not.op.get.toString)
+                      case _ => default
+                    }
+                }
+              case _ => default
+            }
+          case _ => default
+        }
+
+        ret() /* if (is.isEmpty) ret() else {
+          pc.out("<munder><munder accentunder=\"true\"><mrow>")
+          ret()
+          pc.out("</mrow><mo>&#x23DF;</mo></munder><mrow>")
+          recurse(is.head.obj)
+          is.tail.foreach { a =>
+            pc.out("<mo>,</mo>")
+            recurse(a.obj)
+          }
+          pc.out("</mrow></munder>")
+        } */
+        0
+      case _ =>
+        default
+    }
   }
 
   private var currentDown = -1000000
@@ -173,6 +300,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     currentDown = oldDown
     ret
   }
+  /*
   private def doAssoc(n : HTMLNode,arg : SOMBArg, args:List[(Char,SOMBArg)],owner:String)(implicit pc: PresentationContext,htmlstate : HTMLParser.ParsingState) : Unit = {
     def doPair(arg1: Unit => Unit, arg2: Unit => Unit) : Unit => Unit = {
       def rec(n : HTMLNode) : Unit = {
@@ -180,7 +308,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         val resource = n.attributes.getOrElse((n.namespace,"resource"),"")
         n match {
           case t : HTMLText => pc.out(t.text)
-          case n if property == "stex:arg" && (resource.startsWith("a") || resource.startsWith("B")) =>
+          case n if property == "shtml:arg" && (resource.startsWith("a") || resource.startsWith("B")) =>
             val i = resource.last.toString.toInt
             if (args.isDefinedAt(i-1)) {
               val newcontext = pc.context ::: (args.take(i-1).collect {
@@ -190,11 +318,11 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             } else {
               pc.out("<mi>TODO</mi>")
             }
-          case _ if property == "stex:argmarker" && resource.endsWith("a") =>
+          case _ if property == "shtml:argmarker" && resource.endsWith("a") =>
             arg1(())
-          case _ if property == "stex:argmarker" && resource.endsWith("b") =>
+          case _ if property == "shtml:argmarker" && resource.endsWith("b") =>
             arg2(())
-          case _ if property == "stex:argmarker" =>
+          case _ if property == "shtml:argmarker" =>
             val i = resource.head.toString.toInt
             if (args.isDefinedAt(i-1)) {
               val newcontext = pc.context ::: (args.take(i-1).collect {
@@ -255,7 +383,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
       val resource = n.attributes.getOrElse((n.namespace,"resource"),"")
       n match {
         case t : HTMLText => pc.out(t.text)
-        case n if property == "stex:arg" && (resource.startsWith("a") || resource.startsWith("B")) =>
+        case n if property == "shtml:arg" && (resource.startsWith("a") || resource.startsWith("B")) =>
           val i = resource.last.toString.toInt
           if (args.isDefinedAt(i-1)) {
             val newcontext = pc.context ::: (args.take(i-1).collect {
@@ -265,7 +393,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
           } else {
             pc.out("<mi>TODO</mi>")
           }
-        case _ if property == "stex:argmarker" =>
+        case _ if property == "shtml:argmarker" =>
           val i = resource.head.toString.toInt
           if (args.isDefinedAt(i-1)) {
             val newcontext = pc.context ::: (args.take(i-1).collect {
@@ -436,16 +564,15 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         default
     }
   }
+
+   */
 }
 
 class STeXPresenterTex extends STeXPresenter {
+  override def apply(o: Obj, origin: Option[CPath])(implicit rh: RenderingHandler): Unit = ???
+  /*
   def recurse(obj: Obj)(implicit pc: PresentationContext): Unit = obj match {
-    case c : Context if c.nonEmpty =>
-      recurse(c.variables.head)(pc.copy(context = pc.context ::: c.map(vd => VarData(vd,None,Position.Init))))
-      c.variables.tail.foreach { v =>
-        pc.out(", ")
-        recurse(v)(pc.copy(context = pc.context ::: c.map(vd => VarData(vd,None,Position.Init))))
-      }
+
     case vd : VarDecl =>
       val macroname = OMDocHTML.getMacroName(vd)
       pc.out("\\" + macroname.getOrElse("svar{" + vd.name + "}"))
@@ -538,5 +665,5 @@ class STeXPresenterTex extends STeXPresenter {
     val pc = new PresentationContext(rh,origin,Nil,None,Position.Init,Context.empty,Nil,None)
     recurse(o)(pc)
     rh.apply("</pre>")
-  }
+  } */
 }

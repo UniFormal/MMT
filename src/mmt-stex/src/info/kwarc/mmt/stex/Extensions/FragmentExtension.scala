@@ -11,12 +11,11 @@ import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.OMDocHTML
 import info.kwarc.mmt.stex.vollki.FullsTeXGraph
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser}
 
 import scala.xml.Elem
 //import info.kwarc.mmt.stex.xhtml.{HTMLConstant, HTMLParser, HTMLRule, HTMLTheory, HasLanguage, OMDocHTML}
-import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
-import info.kwarc.mmt.stex.{STeX, translations}
+//import info.kwarc.mmt.stex.{STeX, translations}
 
 import scala.xml.Node
 
@@ -27,7 +26,7 @@ trait FragmentExtension extends STeXExtension {
 }
 
 object FragmentExtension extends STeXExtension {
-
+/*
   override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.lastOption match {
     case Some("fragment") =>
       request.query match {
@@ -85,142 +84,10 @@ object FragmentExtension extends STeXExtension {
     case _ => None
   }
 
-  def doDeclHeader(c:Constant) : Elem = {
-    <div>
-      <table><tr><td>
-        <font size="+2">{" ☞ "}</font><code>{c.path.toString}</code>
-      </td><td>{if (controller.extman.get(classOf[ServerExtension]).contains(FullsTeXGraph)) {
-        <a href={"/:vollki?path=" + c.parent.toString} target="_blank" style="pointer-events:all;color:blue">{"> Guided Tour"}</a>
-      } else <span></span>
-        }</td>
-      </tr></table><hr/>
-      <table>
-        {
-        OMDocHTML.getMacroName(c) match {
-          case None => <tr><td></td><td></td></tr>
-          case Some(s) => <tr><td style="padding:3px"><b>TeX Macro:</b></td><td><code>{"\\" + s}</code></td></tr>
-        }
-        }
-        {
-        def td[A](a:A) = <td style="border:1px solid;padding:3px">{a}</td>
-        OMDocHTML.getNotations(c.path)(controller) match {
-          case Nil => <tr><td></td><td></td></tr>
-          case ls =>
-            <tr><td style="padding-right:3px"><b>Notations:</b></td><td>
-              <table>
-                <tr>{td("identifier")}{td("notation")}{td("operator notation")}{td("in module")}</tr>
-                {ls.map(n =>
-                <tr>
-                  {td(n._4 match {
-                  case "" => "(None)"
-                  case s => s
-                })
-                  }
-                  {td(<math xmlns="http://www.w3.org/1998/Math/MathML">{server.htmlpres.doNotation(n._2)}</math>)}
-                  {td(n._5 match {
-                  case Some(n) => <math xmlns="http://www.w3.org/1998/Math/MathML">{server.htmlpres.doNotation(n)}</math>
-                  case None => <span></span>
-                })}
-                  {td(if (n._1 != c.parent) n._1.toString else "(here)")}
-                </tr>
-              )}
-              </table>
-            </td></tr>
-        }
-        }
-        {c.tp match {
-        case None => <tr><td></td><td></td></tr>
-        case Some(tp) =>
-          <tr><td style="padding:3px"><b>Type:</b></td><td>{server.xhtmlPresenter.asXML(tp,Some(c.path $ TypeComponent))}</td></tr>
-      }}
-        {c.df match {
-        case None => <tr><td></td><td></td></tr>
-        case Some(df) =>
-          <tr><td style="padding:3px"><b>Definiens:</b></td><td>{server.xhtmlPresenter.asXML(df,Some(c.path $ DefComponent))}</td></tr>
-      }}
-      </table></div>
-  }
-
-  def doDeclaration(path : Path,language : Option[String]) : ServerResponse = {
-    controller.getO(path) match {
-      case Some(c: Constant) =>
-        val (doc,body) = server.emptydoc
-        body.add(doDeclHeader(c))
-        getFragment(path,language) match {
-          case Some(htm) =>
-            body.add(<hr/>)
-            body.add(htm)
-          case _ =>
-        }
-        val docrules = server.extensions.collect {
-          case e : DocumentExtension =>
-            e.documentRules
-        }.flatten
-        def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
-        body.iterate(doE)
-        ServerResponse("<body>" + body.toString + "</body>","text/html")
-      case Some(d) =>
-        ServerResponse("Not yet implemented: " + d.getClass.toString,"txt")
-      case _ =>
-        ServerResponse("Declaration not found","txt")
-    }
-  }
-
-  def getFragment(path : Path,language : Option[String]) = {
-    path match {
-      case mp: MPath =>
-        controller.simplifier(mp)
-      case gn: GlobalName =>
-        controller.simplifier(gn.module)
-    }
-    controller.getO(path) match {
-      case Some(elem) =>
-        val exts = server.extensions.collect {case fe : FragmentExtension => fe}
-        elem match {
-          case c : Constant =>
-            var ret : Option[HTMLNode] = None
-            exts.collectFirst{
-              case s if {ret = s.doConstant(c,true);ret}.isDefined => ret
-            }
-            ret match {
-              case Some(s) => Some(s)
-              case _ =>
-                val rules = server.extensions.flatMap(_.rules)
-                val state = new ParsingState(controller,rules)
-                Some(HTMLParser.apply(getFragmentDefault(c,language))(state))
-            }
-          case _ =>
-            ???
-        }
-      case _ => None
-    }
-  }
 
 
 
-  def doFragment(path : Path,language : Option[String]) = {
-    getFragment(path,language) match {
-      case Some(htm) =>
-        val (doc,body) = server.emptydoc
-        body.attributes((HTMLParser.ns_html,"style")) = "background-color:white"
-        stripMargins(doc)
-        val border = body.add(<div style="font-size:small"/>)
-        //border.add(<font size="+2">{" ☞ "}</font>)
-        //border.add(<code>{path.toString}</code>)
-        //border.add(<hr/>)
-        border.add(htm)
-        val docrules = server.extensions.collect {
-          case e : DocumentExtension =>
-            e.documentRules
-        }.flatten
-        def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
-        val nbody = doc.get("body")()().head
-        nbody.iterate(doE)
-        Some(ServerResponse(nbody.toString,"text/html"))
-      case None =>
-        Some(ServerResponse("Empty fragment","txt"))
-    }
-  }
+
 
   def getFragmentDefault(ce : StructuralElement,language:Option[String]) : String = {
     def text(s : String) = scala.xml.Text(s)
@@ -266,12 +133,6 @@ object FragmentExtension extends STeXExtension {
     }
   }
 
-  def stripMargins(ltx : HTMLNode) = {
-    val body = ltx.get("body")()().head
-    body.attributes((HTMLParser.ns_html, "style")) = "margin:0;padding:0;"
-    val doc = body.get("div")()("body").head
-    doc.attributes((HTMLParser.ns_html, "style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
-  }
 
   def termLink(o : Obj, comp : Option[CPath]) = DocumentExtension.makePostButton(
     server.xhtmlPresenter.asXML(o, comp),
@@ -279,5 +140,7 @@ object FragmentExtension extends STeXExtension {
     ("openmath",o.toNode.toString().replace("\n","").replace("\n","")),
     ("component",comp.map(_.toString).getOrElse("None"))
   )
+
+ */
 
 }

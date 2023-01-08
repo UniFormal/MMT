@@ -5,13 +5,7 @@ import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.STeXServer
-import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
-import info.kwarc.mmt.stex.xhtml.HTMLRule
-
-abstract class Translator(val language : String) {
-  def applicable(tm : Term) : Boolean
-  def translate(tm : Term) : (Term,List[GlobalName])
-}
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLRule}
 
 trait STeXExtension extends Extension {
   lazy val server = controller.extman.get(classOf[STeXServer]).head

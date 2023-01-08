@@ -10,8 +10,8 @@ import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument, LSPServer}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.parsing.stex.HasAnnotations
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
-import info.kwarc.mmt.stex.xhtml.{HTMLDefiniendum, HTMLParser, HTMLTopLevelTerm, HasHead, SemanticState}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, SemanticState}
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXParseError, TeXError}
 import info.kwarc.rustex.Params
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
@@ -68,9 +68,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
 
 
   def parsingstate(eh: STeXLSPErrorHandler) = {
-    val extensions = server.stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    new SemanticState(server.controller,rules,eh,DPath(URI(uri)))
+    new SemanticState(server.stexserver,server.stexserver.importRules,eh,DPath(URI(uri)))
   }
 
   var html:Option[HTMLNode] = None
@@ -113,48 +111,14 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
               val newhtml = HTMLParser(html)(parsingstate(pars.eh))
               pars.eh.close
               client.log("html parsed")
-              //try {
-                server.stexserver.doHeader(newhtml)
-
-                val exts = server.stexserver.extensions
-                var docrules = exts.collect {
-                  case e: DocumentExtension =>
-                    e.documentRules
-                }.flatten
-
-              val simplestate = new ParsingState(server.controller,Nil)
-/*
-              docrules = docrules ::: List[PartialFunction[HTMLNode,Unit]](,
-                {case t : HasHead if t.termReference.isDefined =>
-                  server.controller.getO(Path.parseS(t.termReference.get)) match {
-                    case Some(c : Constant) =>
-                      DocumentExtension.sidebar(t,{<span style="display:inline">Term {DocumentExtension.makeButton(
-                        "/:" + server.stexserver.pathPrefix + "/fragment?" + c.path + "&language=" + DocumentExtension.getLanguage(t),
-                        "/:" + server.stexserver.pathPrefix + "/declaration?" + c.path + "&language=" + DocumentExtension.getLanguage(t)
-                        ,server.stexserver.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
-                      )}</span>} :: Nil)
-                    case _ =>
-                  }
-                })
-
- */
-
-              //simplestate._top = Some(newhtml)
-              //newhtml.iterate(_.state = simplestate)
 
                 def doE(e: HTMLNode): Unit = {
-                  docrules.foreach(r => r.unapply(e))
+                 server.stexserver.presentationRulesOld.foreach(r => r.unapply(e))
                 }
 
                 newhtml.iterate(doE)
                 this.html = Some(newhtml)
                 ((), "Done")
-              /*} catch {
-                case t: Throwable =>
-                  t.printStackTrace()
-                  client.log("Error: " + t.getMessage)
-                  ((), "Failed")
-              }*/
             }
           }
           val msg = new HTMLUpdateMessage

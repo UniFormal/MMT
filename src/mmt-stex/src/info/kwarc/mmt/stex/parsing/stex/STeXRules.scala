@@ -89,7 +89,7 @@ trait SymDeclRuleLike extends MacroRule {
     var local = false
     var defd = false
     ls.foreach { l =>
-      val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+      val s = l.mkString.trim//.flatMap(c => if (c.isWhitespace) "" else c.toString)
       s match {
         case s if s.startsWith("args=") =>
           ret = ret.filterNot(_ == l)
@@ -110,7 +110,7 @@ trait SymDeclRuleLike extends MacroRule {
           assoctype = s.drop(6)
         case s if s.startsWith("name=") =>
           ret = ret.filterNot(_ == l)
-          val rest = s.drop(5)
+          val rest = s.drop(5).trim
           name = if (rest.startsWith("{") && rest.endsWith("}")) rest.init.tail else rest
         case s if s.startsWith("gfc=") =>
           ret = ret.filterNot(_ == l)
@@ -145,11 +145,11 @@ trait NotationRuleLike extends MacroRule {
     val (not, nch) = readArg
     var children = nch
     var notation = List(not)
-    syminfo.args.filter(c => c == 'a' || c == 'B').foreach { a =>
+    /*syminfo.args.filter(c => c == 'a' || c == 'B').foreach { a =>
       val (ret, nch) = readArg
       notation ::= ret
       children = children ::: nch
-    }
+    }*/
     (NotationInfo(syminfo, prec, id, notation.reverse, opnot), error, ret, children)
   }
 

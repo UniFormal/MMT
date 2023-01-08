@@ -40,7 +40,7 @@ case class LoggingOn(group: String) extends LoggingAction {
 }
 object LoggingOnCompanion extends ActionCompanion("switch on logging for a certain group", "log+") {
   import Action._
-  def parserActual(implicit state: ActionState) = str ^^ { s => LoggingOn(s) }
+  def parserActual(implicit state: ActionState) = reststr ^^ { s => LoggingOn(s) }
 }
 
 case class LoggingOff(group: String) extends LoggingAction {

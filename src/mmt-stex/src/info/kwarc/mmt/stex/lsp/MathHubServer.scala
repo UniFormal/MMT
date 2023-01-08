@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, 
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.search.Searcher
-import info.kwarc.mmt.stex.xhtml.HTMLParser
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, HTMLText}
 import org.eclipse.jgit.api.Git
 
 import java.io.{FileOutputStream, PrintWriter, StringWriter}
@@ -42,7 +42,7 @@ trait MathHubServer { this : STeXLSPServer =>
       case Some("searchresult") =>
         val i = request.parsedQuery("num").get.toInt
         val (html,body) = server.emptydoc
-        html.get("head")()().head.add(new HTMLParser.HTMLText(body.state,
+        html.get("head")()().head.add(new HTMLText(body.state,
           """<link rel="stylesheet" href="/stex/rustex-min.css"></link>"""
         ))//)
         if (request.parsedQuery("type").contains("local")) {
@@ -51,10 +51,10 @@ trait MathHubServer { this : STeXLSPServer =>
         else {
           body.add(remotes(i))
         }
-        body.attributes.remove((body.namespace, "style"))
-        html.get("body")()().foreach(_.attributes.remove((body.namespace,"style")))
+        body.plain.attributes.remove((body.namespace, "style"))
+        html.get("body")()().foreach(_.plain.attributes.remove((body.namespace,"style")))
         body.get("div")()("paragraph").foreach {par =>
-          par.attributes.remove((par.namespace,"style"))
+          par.plain.attributes.remove((par.namespace,"style"))
         }
         Some(ServerResponse.apply(html.toString,"text/html"))
       case _ => None

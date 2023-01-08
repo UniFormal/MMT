@@ -11,22 +11,24 @@ import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, 
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, empty}
-import info.kwarc.mmt.stex.{STeX, STeXServer}
+//import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, empty}
+import info.kwarc.mmt.stex.{SHTML, STeXServer}
 
 import scala.collection.{Set, mutable}
 import scala.xml.{Elem, Node, XML}
 
-class STeXGraphPopulator extends Extension {
+class STeXGraphPopulator extends Extension { /*
   override def start(args: List[String]): Unit = {
     if (controller.extman.get(classOf[STeXServer]).isEmpty) controller.extman.addExtension("info.kwarc.mmt.stex.STeXServer",Nil)
     if (!controller.extman.get(classOf[Extension]).contains(FullsTeXGraph)) controller.extman.addExtension(FullsTeXGraph)
     FullsTeXGraph.populate()
     controller.extman.removeExtension(this)
-  }
+  } */
 }
 
 object FullsTeXGraph extends ServerExtension("vollki") {
+  override def apply(request: ServerRequest): ServerResponse = ServerResponse.apply("","")
+  /*
 
   lazy val server = controller.extman.get(classOf[STeXServer]).head
 
@@ -477,5 +479,6 @@ object STeXGraph extends JGraphExporter("stexgraph") {
         f
     }
   }
+  */
 
 }

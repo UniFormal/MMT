@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{SyncedDocUnparsed, SyncedDocument}
-import info.kwarc.mmt.stex.STeX
+import info.kwarc.mmt.stex.SHTML
 import info.kwarc.mmt.stex.lsp.sTeXDocument
 import info.kwarc.mmt.stex.parsing._
 import org.eclipse.lsp4j.SymbolKind
@@ -1299,7 +1299,7 @@ object STeXRules {
         s match {
           case s if s.trim.startsWith("meta=") =>
             val mod = s.trim.drop(5).trim
-            if (mod == "NONE") meta = None
+            if (mod == "{}") meta = None
             else {
               try {
                 meta = Some(Path.parseM(mod))
@@ -1440,7 +1440,7 @@ object STeXRules {
       }
       if (name == "") {
         val segs = dict.getFile.split('/').last.split('.').init.toList
-        if (STeX.all_languages.contains(segs.last)) name = segs.init.mkString(".")
+        if (SHTML.all_languages.contains(segs.last)) name = segs.init.mkString(".")
         else name = segs.mkString(".")
       }
       val mp = dict.getMPath(name)

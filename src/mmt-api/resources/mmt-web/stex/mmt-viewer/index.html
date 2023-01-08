@@ -4,6 +4,19 @@
 <head>
   <link rel="stylesheet" href="/stex/fonts.css">
   <script type="text/javascript">
+    addEventListener("resize", (e) => {
+      var bodyelem = document.getElementById('rustexbody');
+      var parent = bodyelem.offsetParent.offsetParent;
+      var pwidth = parent.offsetWidth - ((Number(bodyelem.style.paddingLeft.replace(/px$/, '')) + Number(bodyelem.style.paddingRight.replace(/px$/, ''))));
+      /*var docwidth = Number(window.getComputedStyle(bodyelem, null).getPropertyValue("width").replace(/px$/,"")); //bodyelem.offsetWidth;// - ((Number(bodyelem.style.paddingLeft.replace(/px$/, '')) + Number(bodyelem.style.paddingRight.replace(/px$/, ''))));
+      var offwidth = bodyelem.offsetWidth*/
+      var maxwidth = Number(bodyelem.style.maxWidth.replace(/px$/, ''));
+      if (pwidth < maxwidth) {
+        bodyelem.style.setProperty('--current-width',pwidth + "px");
+      } else {
+        bodyelem.style.setProperty('--current-width',maxwidth + "px");
+      }
+    });
     function preloadFunc() {
       // Eg. https://mmt.beta.vollki.kwarc.info
       window.BASE_URL = '';
@@ -23,10 +36,10 @@
   <title>sTeX Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="/stex/mmt-viewer/styles.8108ee675a3bb1f0.css"><link rel="stylesheet" href=/stex/mmt-viewer/"main.deb7c6d9d622ff23.css"></head>
+<link rel="stylesheet" href="/stex/mmt-viewer/styles.b33b0075a305c1d2.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.4946e0893fa5d8cd.css"></head>
 
 <body>
   <div id="root"></div>
-<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.a5678ebcef29fe76.js" type="module"></script><script src="/stex/mmt-viewer/main.b7c41c1f82f59b14.js" type="module"></script></body>
+<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.e7ea3970f35d3a98.js" type="module"></script><script src="/stex/mmt-viewer/main.4114298f48aa4c42.js" type="module"></script></body>
 
 </html>

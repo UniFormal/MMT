@@ -4,56 +4,255 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{AddError, ComplexStep, ContainerElement, DPath, ErrorHandler, GetError, GlobalName, LocalName, MMTTask, MPath, MutableRuleSet, Path, RuleSet, StructuralElement, utils}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
+import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, NotFound}
 import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.stex.{SHTML, STeXError, STeXServer}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
-import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType, SubstRule}
+import info.kwarc.mmt.stex.rules.HTMLTermRule
+//import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType, SubstRule}
 import info.kwarc.mmt.stex.search.SearchDocument
-import info.kwarc.mmt.stex.{NestedHOAS, OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STeXHOAS, STerm, SimpleHOAS}
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
+//import info.kwarc.mmt.stex.{NestedHOAS, OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STeXHOAS, STerm, SimpleHOAS}
+//import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 
-class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHandler, val dpath : DPath) extends HTMLParser.ParsingState(controller,rules) {
-  override def error(s: String): Unit = eh(new STeXError(s,None,None))
-  private var maindoc : HTMLDocument = null
-  var title: Option[HTMLDoctitle] = None
-  def doc = maindoc.doc
-  var missings : List[MPath] = Nil
-  var in_term = false
-  private var unknowns_counter = 0
-  def getUnknown = {
-    unknowns_counter += 1
-    LocalName("") / "i" / unknowns_counter.toString
+class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHandler, val dpath : DPath) extends HTMLParser.ParsingState(server.ctrl,rules) with SHTMLState[SHTMLNode] {
+  val doc = new Document(dpath)
+  var missings: List[Path] = Nil // Search Stuff
+
+  def getRules(context:Context) = try {
+    RuleSet.collectRules(controller, context)
+  } catch {
+    case g: GetError =>
+      if (!missings.contains(g.path)) {
+        eh(g)
+        g.path match {
+          case mp: MPath => this.missings ::= mp
+          case _ =>
+        }
+      }
+      new MutableRuleSet
   }
-  def getUnknownTp = {
-    unknowns_counter += 1
-    LocalName("") / "I" / unknowns_counter.toString
+  def applyTerm(tm: Term)(implicit self:SHTMLNode): Term = {
+    val rules = getRules(self.getRuleContext).get(classOf[HTMLTermRule])
+    rules.foldLeft(tm)((it,f) => f.apply(it)(this,self).getOrElse(it))
   }
-  def getUnknownWithTp = {
-    unknowns_counter += 1
-    (LocalName("") / "i" / unknowns_counter.toString,LocalName("") / "I" / unknowns_counter.toString)
+
+  def applyTopLevelTerm(tm: Term)(implicit self:SHTMLNode) : Term = {
+    val vars = self.getVariableContext.filter{v =>
+      tm.freeVars.contains(v.name) // TODO more?
+    }.reverse.distinctBy(_.name).reverse
+    val implctx = mutable.Map.empty[LocalName,Term]
+
+    val implicits = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con : Context, state : State) = t match {
+        case v@OMV(x) if isUnknown(v) || !con.isDeclared(x) =>
+          implctx.getOrElseUpdate(x,
+            Solver.makeUnknown(x,
+              con.filterNot(_.name == x).map(v => OMV(v.name)) /*:::
+                implctx.filterNot(_._1 == x).values.toList*/
+            )//(con ++ implctx.keys.map(VarDecl(_))).map(v => OMV(v.name)).filterNot(_.name == x))
+          )
+        case _ => Traverser(this,t)
+      }
+    }
+    val impls = self.getVariableContext.filter{ v =>
+      !vars.exists(_.name == v.name) && vars.exists(_.tp.exists(_.freeVars.contains(v.name)))
+    }.reverse.distinctBy(_.name).reverse
+    val ntp = implicits(SHTML.implicit_binder(impls,SHTML.binder(vars,tm)),())
+    if (implctx.isEmpty) ntp else OMBIND(OMS(ParseResult.unknown),implctx.keys.map(VarDecl(_)).toList,ntp)
   }
-  def markAsUnknown(v:OMV) : OMV = {
-    v.metadata.update(ParseResult.unknown,OMS(ParseResult.unknown))
-    v
+  def addNotation(path: GlobalName, id: String, opprec: Int, component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
+    context.findAncestor {
+      case t: ModuleLike =>
+        val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({ return () }))
+        server.addNotation(th,path,id,opprec,component.asInstanceOf[HTMLNode].plaincopy,op.map(_.asInstanceOf[HTMLNode].plaincopy))
+    }
   }
+
+  override def addVarNotation(name:LocalName, id: String, opprec: Int, component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
+    context.getVariableContext.find(_.name == name).foreach(vd =>
+      server.addVarNotation(vd, id, opprec, component.asInstanceOf[HTMLNode].plaincopy, op.map(_.asInstanceOf[HTMLNode].plaincopy))
+    )
+  }
+  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node)(implicit context: SHTMLNode): Unit = {
+    context.findAncestor {
+      case t: ModuleLike =>
+        val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({
+          return ()
+        }))
+        server.addSymdoc(th,fors,html)
+    }
+  }
+
+  def addExample(fors: List[GlobalName], id: String, html: scala.xml.Node)(implicit context: SHTMLNode): Unit = {
+    context.findAncestor {
+      case t: ModuleLike =>
+        val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({
+          return ()
+        }))
+        server.addExample(th, fors, html)
+    }
+  }
+
+  def addTitle(ttl: SHTMLNode) : Unit = {
+    server.addTitle(doc,ttl.plain.node.head)
+  }
+
+  def addMissing(p : Path) = missings ::= p
   def add(se : StructuralElement) = try {controller.library.add(se)} catch {
-    case NotFound(p,f) => error("Not found " + p.toString)
-    case AddError(e,msg) => error("Error adding " + e.path.toString + ": " + msg)
+    case NotFound(p,f) =>
+      error("Not found " + p.toString)
+    case AddError(e,msg) =>
+      error("Error adding " + e.path.toString + ": " + msg)
   }
   def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = try {controller.library.endAdd(ce)} catch {
+    case NotFound(p, f) =>
+      error("Not found " + p.toString)
+    case AddError(e, msg) =>
+      error("Error adding " + e.path.toString + ": " + msg)
+  }
+
+  def update(se : StructuralElement) = try {
+    controller.library.update(se)
+  } catch {
     case NotFound(p, f) => error("Not found " + p.toString)
     case AddError(e, msg) => error("Error adding " + e.path.toString + ": " + msg)
   }
-  def getO(p : Path) = controller.getO(p)
-  def update(se : StructuralElement) = controller.library.update(se)
+  def getO(p : Path) = try { controller.getO(p) } catch {
+    case e : info.kwarc.mmt.api.Error =>
+      error(e)
+      None
+    case ne:NoClassDefFoundError =>
+      error(ne.getMessage)
+      None
+  }
+  override def error(s: String): Unit = eh(new STeXError(s, None, None))
+  override def error(e: info.kwarc.mmt.api.Error): Unit = eh(e)
+
+  private var maindoc: SHTMLDocument = null
+  override protected def onTop(n: HTMLNode): Option[HTMLNode] = {
+    val nn = SHTMLDocument(dpath,n)
+    maindoc = nn
+    nn.replace(n)
+    Some(nn)
+  }
+
+  private lazy val checker = controller.extman.get(classOf[MMTStructureChecker]).head
+
+  private lazy val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore, new MMTTask {})
+
+  def check(se: StructuralElement) = try {
+    eh match {
+      case STeXLSPErrorHandler(_, cont) =>
+        cont(0.5, "Checking " + se.path.toString)
+      case _ =>
+    }
+    checker(se)(ce)
+  } catch {
+    case g: GetError =>
+      if (!missings.contains(g.path)) {
+        eh(g)
+        g.path match {
+          case mp: MPath => this.missings ::= mp
+          case _ =>
+        }
+      }
+    case e: info.kwarc.mmt.api.Error =>
+      eh(e)
+    case e: Throwable =>
+      eh.apply(new api.Error(e.getMessage) {}.setCausedBy(e))
+  }
+
+  object Search {
+    def makeDocument(outdir: File, source: File, archive: Archive) = {
+      val doc = new SearchDocument(outdir, source, archive, dpath)
+      /*
+      val body = maindoc.get()()("body").head
+      doc.add("content", makeString(body), body.children.map(_.toString).mkString, title.toList.flatMap { t =>
+        val nt = t.copy
+        nt.attributes.remove((nt.namespace, "style"))
+        List(("title", makeString(nt)), ("titlesource", nt.toString))
+      }: _*)
+      definitions.foreach(d => doc.add("definition", makeString(d.copy), d.toString,
+        ("for", d.fors.mkString(",")) ::
+          d.path.map(p => ("path", p.toString)).toList: _*
+      ))
+      assertions.foreach(d => doc.add("assertion", makeString(d.copy), d.toString,
+        ("for", d.fors.mkString(",")) ::
+          d.path.map(p => ("path", p.toString)).toList: _*
+      ))
+      examples.foreach(d => doc.add("example", makeString(d.copy), d.toString,
+        ("for", d.fors.mkString(",")) ::
+          d.path.map(p => ("path", p.toString)).toList: _*
+      ))
+
+       */
+      doc
+    }
+/*
+    private def makeString(node: HTMLParser.HTMLNode): String = {
+      val sb = new mutable.StringBuilder()
+      recurse(node)(sb)
+      sb.mkString.trim
+    }
+
+    def addDefi(df: HTMLStatement) = definitions ::= df
+
+    def addAssertion(ass: HTMLStatement) = assertions ::= ass
+
+    def addExample(ex: HTMLStatement) = examples ::= ex
+
+    private var definitions: List[HTMLStatement] = Nil
+    private var assertions: List[HTMLStatement] = Nil
+    private var examples: List[HTMLStatement] = Nil
+
+    @tailrec
+    private def recurse(node: HTMLNode)(implicit sb: mutable.StringBuilder): Unit = {
+      node match {
+        case txt: HTMLParser.HTMLText =>
+          sb ++= txt.toString().trim + " "
+        case _ =>
+      }
+      (node.attributes.get((node.namespace, "style")) match {
+        case Some(s) if s.replace(" ", "").contains("display:none") =>
+          getNext(node, false)
+        case _ => getNext(node)
+      }) match {
+        case Some(s) => recurse(s)
+        case _ =>
+      }
+    }
+
+    private def getNext(node: HTMLNode, withchildren: Boolean = true): Option[HTMLNode] = node.children match {
+      case h :: _ if withchildren => Some(h)
+      case _ => node.parent match {
+        case Some(p) =>
+          val children = p.children
+          children.indexOf(node) match {
+            case i if i != -1 && children.isDefinedAt(i + 1) => Some(children(i + 1))
+            case _ => getNext(p, false)
+          }
+        case _ => None
+      }
+    }
+
+ */
+  }
+
+
+  /*
+  def doc = maindoc.doc
+  var in_term = false
+
+
 
   private val names = mutable.HashMap.empty[String,Int]
 
@@ -69,51 +268,8 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
 
   lazy val rci = new RuleConstantInterpreter(controller)
 
-  override protected def onTop(n : HTMLNode): Option[HTMLNode] = {
-    val nn = new HTMLDocument(dpath,n)
-    maindoc = nn
-    Some(nn)
-  }
-  /*
-  private val _transforms: List[PartialFunction[Term, Term]] =  List(
-    {
-      case STeX.informal(n) if n.startsWith("<mi") =>
-        val node = HTMLParser.apply(n.toString())(simpleState)
-        val ln = node.children.head.asInstanceOf[HTMLText].text
-        OMV(LocalName(ln))
-    }
-  )
-  private def substitute(subs : List[(Term,Term)], tm : Term) = new StatelessTraverser {
-    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-      case tmi if subs.exists(_._1 == tmi) => subs.find(_._1 == tmi).get._2
-      case _ => Traverser(this,t)
-    }
-  }.apply(tm,())
-  private var _setransforms: List[PartialFunction[StructuralElement, StructuralElement]] = Nil
-  def addTransformSE(pf: PartialFunction[StructuralElement, StructuralElement]) = _setransforms ::= pf
-
-   */
-
-  private val self = this
-  private val traverser = new StatelessTraverser {
-    def trans = getRules.get(classOf[HTMLTermRule])
-    private def applySimple(t:Term) = trans.foldLeft(t)((it, f) => f.apply(it)(self).getOrElse(it))
-    override def traverse(t: Term)(implicit con: Context, state: State): Term = {
-      val ret = Traverser(this,t)
-      val ret2 = applySimple(ret)
-      if (ret2 != t) { SourceRef.copy(t,ret2)}
-      ret2
-    }
-  }
-
-  def applyTerm(tm: Term): Term = {traverser(tm, ())}
   def applyTopLevelTerm(tm : Term) = {
-    val ntm = /* if (reorder.isEmpty) */ applyTerm(tm)
-    /* else applyTerm(tm) match {
-      case OMA(f,args) => OMA(f,reorder.map(args(_)))
-      case SOMB(f, args) => SOMB(f,reorder.map(args(_)):_*)
-      case t => t
-    } */
+    val ntm = applyTerm(tm)
     class NameSet {
       var frees: List[VarDecl] = Nil
       var unknowns: List[LocalName] = Nil
@@ -219,9 +375,6 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 ret.copyFrom(tm)
                 ret
               case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty && (tms ::: rest).length >= 2 =>
-                /*val ret = if (rest.isEmpty) {
-                  SOMA(f,tms.head)
-                } else SOMA(f,tms.head :: rest :_*)*/
                 val ret = if (rest.isEmpty) tms.init.init.foldRight(SOMA(f, tms.last, tms.init.last))((a, r) => SOMA(f, a, r))
                 else tms.init.foldRight(SOMA(f, tms.last :: rest :_*))((a, r) => SOMA(f, a, r))
                 ret.copyFrom(tm)
@@ -262,9 +415,6 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
                 ret.copyFrom(tm)
                 ret
               case IsSeq(Nil, STeX.flatseq(tms), rest) if tms.nonEmpty && (tms ::: rest).length >= 2 =>
-                /*val ret = if (rest.isEmpty) {
-                  SOMA(f,tms.head)
-                } else SOMA(f,tms.head :: rest :_*)*/
                 val ret = if (rest.isEmpty) tms.tail.tail.foldLeft(SOMA(f, tms.head, tms.tail.head))((r, a) => SOMA(f, a, r))
                 else tms.tail.foldLeft(SOMA(f, tms.head :: rest: _*))((r, a) => SOMA(f, a, r))
                 ret.copyFrom(tm)
@@ -660,18 +810,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
         p.collectAncestor{case p : HasRuleContext => p}
     }
   }
-  def context = currentParent.map(_.context).getOrElse(Context.empty)
-  def getRules = try {RuleSet.collectRules(controller,context)} catch {
-    case g: GetError =>
-      if (!missings.contains(g.path)) {
-        eh(g)
-        g.path match {
-          case mp : MPath => this.missings ::= mp
-          case _ =>
-        }
-      }
-      new MutableRuleSet
-  } // currentParent.map(_.rules).getOrElse(Nil)
+  def context = currentParent.map(_.context).getOrElse(Context.empty) // currentParent.map(_.rules).getOrElse(Nil)
   def getVariableContext = (_parent match {
     case Some(p : HTMLGroupLike) => Some(p)
     case Some(p) => p.collectAncestor{case p : HTMLGroupLike => p}
@@ -721,74 +860,11 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
       eh.apply(new api.Error(e.getMessage){}.setCausedBy(e))
   }
 
-  // Search Stuff
-  object Search {
-    def makeDocument(outdir:File,source:File,archive:Archive) = {
-      val doc = new SearchDocument(outdir,source,archive,dpath)
-      val body = maindoc.get()()("body").head
-      doc.add("content",makeString(body),body.children.map(_.toString).mkString,title.toList.flatMap{t =>
-        val nt = t.copy
-        nt.attributes.remove((nt.namespace,"style"))
-        List(("title",makeString(nt)),("titlesource",nt.toString))
-      }:_*)
-      definitions.foreach(d => doc.add("definition",makeString(d.copy),d.toString,
-        ("for",d.fors.mkString(",")) ::
-          d.path.map(p => ("path",p.toString)).toList:_*
-      ))
-      assertions.foreach(d => doc.add("assertion",makeString(d.copy),d.toString,
-        ("for",d.fors.mkString(",")) ::
-        d.path.map(p => ("path",p.toString)).toList:_*
-      ))
-      examples.foreach(d => doc.add("example",makeString(d.copy),d.toString,
-        ("for",d.fors.mkString(",")) ::
-          d.path.map(p => ("path",p.toString)).toList:_*
-      ))
-      doc
-    }
-    private def makeString(node: HTMLParser.HTMLNode) : String = {
-      val sb = new mutable.StringBuilder()
-      recurse(node)(sb)
-      sb.mkString.trim
-    }
-    def addDefi(df: HTMLStatement) = definitions ::= df
-    def addAssertion(ass: HTMLStatement) = assertions ::= ass
-    def addExample(ex : HTMLStatement) = examples ::= ex
-    private var definitions : List[HTMLStatement] = Nil
-    private var assertions : List[HTMLStatement] = Nil
-    private var examples : List[HTMLStatement] = Nil
-    @tailrec
-    private def recurse(node: HTMLParser.HTMLNode)(implicit sb : mutable.StringBuilder): Unit = {
-      node match {
-        case txt:HTMLParser.HTMLText =>
-          sb ++= txt.toString().trim + " "
-        case _ =>
-      }
-      (node.attributes.get((node.namespace,"style")) match {
-        case Some(s) if s.replace(" ","").contains("display:none") =>
-          getNext(node,false)
-        case _ => getNext(node)
-      }) match {
-        case Some(s) => recurse(s)
-        case _ =>
-      }
-    }
-    private def getNext(node : HTMLParser.HTMLNode,withchildren : Boolean = true) : Option[HTMLParser.HTMLNode] = node.children match {
-      case h :: _ if withchildren => Some(h)
-      case _ => node.parent match {
-        case Some(p) =>
-          val children = p.children
-          children.indexOf(node) match {
-            case i if i != -1 && children.isDefinedAt(i+1) => Some(children(i+1))
-            case _ => getNext(p,false)
-          }
-        case _ => None
-      }
-    }
-  }
+   */
 }
 
-class SearchOnlyState(controller : Controller, rules : List[HTMLRule],eh : ErrorHandler, dpath : DPath) extends SemanticState(controller,rules,eh,dpath) {
-  override def add(se : StructuralElement) = {}
+class SearchOnlyState(server:STeXServer, rules : List[HTMLRule],eh : ErrorHandler, dpath : DPath) extends SemanticState(server,rules,eh,dpath) {
+  /*override def add(se : StructuralElement) = {}
   override def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = {}
   override def update(se: StructuralElement): Unit = {}
   override def applyTerm(tm : Term) = tm
@@ -796,4 +872,6 @@ class SearchOnlyState(controller : Controller, rules : List[HTMLRule],eh : Error
   override def context = Context.empty
   override def getRules = new MutableRuleSet
   override def check(se: StructuralElement): Unit = {}
+
+   */
 }
