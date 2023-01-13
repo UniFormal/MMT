@@ -383,7 +383,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                case Some(d) =>
                  /*d.synchronized */ { d.html match {
                    case Some(html) =>
-                     ServerResponse(html.get("body")()().head.toString,"text/html")
+                     ServerResponse(html.toString,"text/html")
                    case None =>
                      ServerResponse("Document not yet built","txt")
                  } }

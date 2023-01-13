@@ -111,13 +111,8 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
               val newhtml = HTMLParser(html)(parsingstate(pars.eh))
               pars.eh.close
               client.log("html parsed")
-
-                def doE(e: HTMLNode): Unit = {
-                 server.stexserver.presentationRulesOld.foreach(r => r.unapply(e))
-                }
-
-                newhtml.iterate(doE)
-                this.html = Some(newhtml)
+              val presentstate = new ParsingState(server.controller,server.stexserver.presentationRules)
+                this.html = Some(HTMLParser(newhtml.toString)(presentstate))
                 ((), "Done")
             }
           }

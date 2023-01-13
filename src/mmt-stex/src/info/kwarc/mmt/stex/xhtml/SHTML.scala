@@ -6,10 +6,10 @@ import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMMOD, OMS, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
-import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude, RuleConstantInterpreter, Structure}
+import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude, RuleConstant, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, Path, Rule, RuleSet, StructuralElement}
 import info.kwarc.mmt.stex.{SCtx, SHTML, SHTMLHoas, STeXServer, STerm}
-import info.kwarc.mmt.stex.rules.{BindingRule, ModelsOf, RulerRule, StringLiterals}
+import info.kwarc.mmt.stex.rules.{BindingRule, ModelsOf, PreEqualRule, RulerRule, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
 import scala.collection.mutable
@@ -23,6 +23,31 @@ trait SHTMLObject {
   def doSourceRef(hm : HasMetaData) : Unit
   def getTerm : Term
   protected def getTermI : Option[Term]
+
+  def matchterms(df : Option[Term], tp:Option[Term]) : (Option[Term],Option[Term]) = (df,tp) match {
+    case (Some(_),None) | (None,Some(_)) | (None,None) => (df,tp)
+    case (Some(OMBIND(OMS(ParseResult.unknown), ct, tm)),_) =>
+      matchterms(Some(tm),tp) match {
+        case (Some(itm),tp) => (Some(OMBIND(OMS(ParseResult.unknown),ct,itm)),tp)
+        case _ => (df,tp) // impossible
+      }
+    case (_,Some(OMBIND(OMS(ParseResult.unknown), ct, tm))) =>
+      matchterms(df,Some(tm)) match {
+        case (df,Some(itm)) => (df,Some(OMBIND(OMS(ParseResult.unknown),ct,itm)))
+        case _ => (df,tp) // impossible
+      }
+    case (Some(SHTML.implicit_binder.spine(ctxa,idf)),Some(SHTML.implicit_binder.spine(ctxb,itp))) =>
+      if (ctxa.length == ctxb.length) {
+        (df,tp)
+      } else {
+        ???
+      }
+    case (Some(SHTML.implicit_binder.spine(ctxa, _)), Some(tp)) =>
+      (df,Some(SHTML.implicit_binder(ctxa,tp)))
+    case (Some(df), Some(SHTML.implicit_binder.spine(ctxb, _))) =>
+      (Some(SHTML.implicit_binder(ctxb,df)),tp)
+    case (_,_) => (df,tp)
+  }
 
   def getVariableContext : Context = findAncestor{
     case gl:SHTMLGroupLike => gl.getVariables
@@ -153,6 +178,14 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
     v.metadata.update(ParseResult.unknown, OMS(ParseResult.unknown))
     v
   }
+  def markAsBound(vd : VarDecl) : VarDecl = {
+    vd.metadata.update(SHTML.meta_quantification,OMS(SHTML.meta_quantification))
+    vd
+  }
+  def isBound(vd : VarDecl) : Boolean = {
+    vd.metadata.getValues(SHTML.meta_quantification).contains(OMS(SHTML.meta_quantification))
+  }
+
   def isUnknown(v: OMV) = {
     v.metadata.getValues(ParseResult.unknown).contains(OMS(ParseResult.unknown))
   }
@@ -314,7 +347,7 @@ trait SHTMLOImportModule extends SHTMLObject {
           doSourceRef(pl)
           state.add(pl)
           state.endAdd(pl)
-          state.check(pl)
+          //state.check(pl)
         }
       }
     }
@@ -378,8 +411,9 @@ trait SHTMLOSymbol extends SymbolLike {
   val path : GlobalName
   def close: Unit = {
     sstate.foreach { state =>
-      val tp = getType.map(state.applyTopLevelTerm)
-      val df = defi.map(state.applyTopLevelTerm)
+      val itp = getType.map(state.applyTopLevelTerm)
+      val idf = defi.map(state.applyTopLevelTerm)
+      val (df,tp) = matchterms(idf,itp)
       val rl = roles match {
         case Nil => None
         case ls => Some(ls.mkString(" "))
@@ -396,15 +430,29 @@ trait SHTMLOSymbol extends SymbolLike {
       doSourceRef(c)
       state.add(c)
       state.check(c)
+      if (assoctype == "pre") {
+        val rl = PreEqualRule.mpath
+        val rc = RuleConstant(c.home,c.name / "pre_rule",OMA(OMMOD(rl),List(OMS(c.path))),None)
+        state.add(rc)
+        state.check(rc)
+      }
     }
   }
 }
 trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
   val name : LocalName
+  var bind = false
 
   def closeSeq = {
     sstate.foreach { state =>
-      val tp = getType//.map(state.applyTopLevelTerm)
+      val tp = getType match {
+        case Some(OMV(x)) => getVariableContext.findLast(_.name == x) match {
+          case Some(vd) if vd.metadata.get(SHTML.flatseq.sym).contains(OMS(SHTML.flatseq.sym)) => Some(OMV(x))
+          case _ => Some(SHTML.flatseq.tp(OMV(x)))
+        }
+        case Some(o) => Some(SHTML.flatseq.tp(o))
+        case o => o
+      }//.map(state.applyTopLevelTerm)
       val df = defi//.map(state.applyTopLevelTerm)
       val rl = roles match {
         case Nil => None
@@ -423,6 +471,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
         doSourceRef(vd)
         vd.metadata.update(SHTML.flatseq.sym,OMS(SHTML.flatseq.sym))
+        if (bind) state.markAsBound(vd)
         gr.variables ++= vd
       }
     }
@@ -444,6 +493,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
         if (args.nonEmpty) state.server.addArity(args, vd)
         doSourceRef(vd)
+        if (bind) state.markAsBound(vd)
         gr.variables ++= vd
       }
     }
@@ -511,6 +561,7 @@ trait SHTMLOTopLevelTerm extends SHTMLObject {
       findAncestor{case m : ModuleLike if m.language_theory.isDefined => m}.flatMap {mod =>
         getTerm match {
           case OMS(_)|OMV(_) => None
+          case SHTMLHoas.OmaSpine(_,_,args) if args.forall(a => a.isInstanceOf[OMV] && state.isUnknown(a.asInstanceOf[OMV])) => None
           case o =>
             val df = state.applyTopLevelTerm(o)
             val c = Constant(OMMOD(mod.language_theory.get.path), state.termname, Nil, None, Some(df), Some("mmt_term"))

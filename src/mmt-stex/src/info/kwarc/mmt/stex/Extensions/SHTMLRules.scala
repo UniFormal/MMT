@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLComp, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFrame, SHTMLHeadTerm, SHTMLImportModule, SHTMLInputref, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLState, SHTMLSymbol, SHTMLTheory, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, TopLevelTerm}
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFrame, SHTMLHeadTerm, SHTMLImportModule, SHTMLInputref, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLState, SHTMLSymbol, SHTMLTheory, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, TopLevelTerm}
 
 trait OMDocSHTMLRules { this : STeXServer =>
 
@@ -21,6 +21,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
 
   lazy val importRules = List(
     UnknownPropertyRule,
+    SHTMLParsingRule("bind", (str, n, _) => SHTMLBind(LocalName.parse(str),n)),
     SHTMLParsingRule("visible", (str, n, _) => SHTMLVisible(str != "false", n), 100),
     SHTMLParsingRule("frame", (str, n, _) => SHTMLFrame(n)),
     SHTMLParsingRule("theory", (str, n, _) => {
@@ -93,6 +94,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("type", (s, n, _) => SHTMLType(n)),
     SHTMLParsingRule("returntype", (s, n, _) => SHTMLReturnType(n)),
     SHTMLParsingRule("definiens", (s, n, _) => SHTMLDefiniens(n), -10),
+    SHTMLParsingRule("conclusion", (s, n, _) => SHTMLConclusion(n), -10),
     SHTMLParsingRule("term", (s, n, _) => {
       s match {
         case "OMID" | "complex" => SHTMLOMS(n)

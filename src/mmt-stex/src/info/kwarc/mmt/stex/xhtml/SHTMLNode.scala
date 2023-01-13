@@ -3,10 +3,10 @@ package info.kwarc.mmt.stex.xhtml
 import info.kwarc.mmt.api.documents.DRef
 import info.kwarc.mmt.api.{DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.metadata.HasMetaData
-import info.kwarc.mmt.api.objects.{OMAorAny, OML, OMMOD, OMS, OMV, Term}
-import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OML, OMMOD, OMS, OMV, Term}
+import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
-import info.kwarc.mmt.stex.SHTML
+import info.kwarc.mmt.stex.{SHTML, SHTMLHoas}
 
 import scala.util.Try
 
@@ -201,8 +201,8 @@ trait SHTMLSymbolLike extends SHTMLNode with SymbolLike {
   assoctype = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "assoctype"), "")
   removed ::= "reorderargs"
   reorderargs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "reorderargs"), "")
-  removed ::= "roles"
-  roles = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "roles"), "").split(',').map(_.trim).toList
+  removed ::= "role"
+  roles = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "role"), "").split(',').map(_.trim).toList
 }
 
 class SHTMLSymbol(val path:GlobalName, orig:HTMLNode) extends SHTMLNode(orig,Some("symdecl"))
@@ -225,18 +225,41 @@ class SHTMLSymbol(val path:GlobalName, orig:HTMLNode) extends SHTMLNode(orig,Som
 class SHTMLVardef(val name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some("vardef"))
   with SHTMLSymbolLike with SHTMLOVarDecl {
 
+  removed ::= "bind"
+  this.plain.attributes.get((HTMLParser.ns_shtml, "bind")) match {
+    case Some(_) => bind = true
+    case _ =>
+  }
+
   override def copy: HTMLNode = {
     val ret = new SHTMLVardef(name,orig.copy)
     copyI(ret)
     ret.types = types
     ret.defi = defi
     ret.return_type = return_type
+    ret.bind = bind
     ret
   }
 
   override def onAdd: Unit = {
     super.onAdd
     this.close
+  }
+}
+
+case class SHTMLBind(name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some("bind")) {
+  override def copy: HTMLNode = SHTMLBind(name,orig.copy)
+
+  override def onAdd(): Unit = sstate.foreach { state =>
+    findAncestor {
+      case gl: SHTMLGroupLike => gl
+    }.foreach {gl =>
+      val vars = gl.getVariables
+      vars.findLast(_.name == name).foreach{ vd =>
+        val nvd = state.markAsBound(vd.copy())
+        gl.variables ++= nvd
+      }
+    }
   }
 }
 
@@ -274,16 +297,99 @@ case class SHTMLType(orig:HTMLNode) extends SHTMLNode(orig,Some("type")) {
 case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens")) {
   set_in_term
   override def copy: HTMLNode = SHTMLDefiniens(orig.copy)
+  lazy val path = this.plain.attributes.get((HTMLParser.ns_shtml, "definiens")) match {
+    case Some(s) if s.nonEmpty => Some(Path.parseS(s))
+    case _ => None
+  }
 
   override def onAdd: Unit = {
     super.onAdd
     reset_in_term
     val tm = getTerm
-    findAncestor { case ht: HasDefiniens => ht }.foreach { ht =>
-      ht.defi = Some(tm)
+    path match {
+      case Some(p) =>
+        findAncestor { case mod : ModuleLike => mod}.foreach { _.signature_theory match {
+          case Some(th) if th.path == p.module =>
+            sstate.foreach { state =>
+              state.getO(p) match {
+                case Some(c : Constant) =>
+                  val (df,tp) = matchterms(Some(state.applyTopLevelTerm(tm)),c.tp)
+                  val nc = Constant(c.home,c.name,c.alias,tp,df,c.rl)
+                  nc.metadata = c.metadata
+                  state.update(nc)
+                  state.check(nc)
+                case _ =>
+              }
+            }
+          case _ =>
+            print("")
+        }}
+      case None =>
+        findAncestor { case ht: HasDefiniens => ht }.foreach { ht =>
+          ht.defi = Some(tm)
+        }
     }
   }
 }
+
+
+case class SHTMLConclusion(orig:HTMLNode) extends SHTMLNode(orig,Some("conclusion")) {
+  set_in_term
+  override def copy: HTMLNode = SHTMLDefiniens(orig.copy)
+  lazy val path = this.plain.attributes.get((HTMLParser.ns_shtml, "conclusion")) match {
+    case Some(s) if s.nonEmpty => Some(Path.parseS(s))
+    case _ => None
+  }
+
+  override def onAdd: Unit = {
+    super.onAdd
+    reset_in_term
+    path match {
+      case Some(p) =>
+        findAncestor { case mod : ModuleLike => mod}.foreach { _.signature_theory match {
+          case Some(th) if th.path == p.module =>
+            sstate.foreach { state =>
+              state.getO(p) match {
+                case Some(c : Constant) =>
+                  var judg: Option[(Term,Option[SHTMLHoas.HoasRule])] = None
+                  self.getRuleContext.getIncludes.foreach { i =>
+                    state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
+                      case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("judgment") =>
+                        state.getRuler(c.toTerm) match {
+                          case Some(r) =>
+                            judg = Some((c.toTerm,SHTMLHoas.get(r)))
+                          case _ => judg = Some((c.toTerm,None))
+                        }
+                      case _ =>
+                    }
+                  }
+                  def doTerm(tm : Term) : Term = tm match {
+                    case OMBIND(OMS(ParseResult.unknown),ctx,bd) =>
+                      OMBIND(OMS(ParseResult.unknown),ctx,doTerm(bd))
+                    case SHTML.implicit_binder.spine(ctx,bd) =>
+                      SHTML.implicit_binder(ctx,doTerm(bd))
+                    case t => judg match {
+                      case Some((tm, Some(h))) => h.HOMA(tm, List(t))
+                      case Some((tm, None)) => OMA(tm, List(t))
+                      case _ => t
+                    }
+                  }
+                  val tp = doTerm(state.applyTopLevelTerm(getTerm))
+                  val nc = Constant(c.home,c.name,c.alias,Some(tp),None,c.rl)
+                  nc.metadata = c.metadata
+                  state.update(nc)
+                  state.check(nc)
+                case _ =>
+              }
+            }
+          case _ =>
+            print("")
+        }}
+      case None =>
+    }
+  }
+}
+
 case class SHTMLReturnType(orig:HTMLNode) extends SHTMLNode(orig,Some("returntype")) {
   set_in_term
   override def copy = SHTMLReturnType(orig.copy)
@@ -346,7 +452,11 @@ case class SHTMLArg(ind:Int,orig:HTMLNode) extends SHTMLNode(orig,Some("arg"))
         case t: HTMLText if t.text == "&#8205;" => false
         case _ => true
       }
-      case n:SHTMLVisible if n.label == "mrow" && n.plain.attributes.get((HTMLParser.ns_shtml,"visible")).contains("false") && n.children.isEmpty => false
+      case n:SHTMLVisible if n.plain.attributes.get((HTMLParser.ns_shtml,"visible")).contains("false") && n.children.isEmpty => false
+      case n:SHTMLVisible if n.plain.attributes.get((HTMLParser.ns_shtml, "visible")).contains("false") => n.children.exists {
+        case t : HTMLText if t.text == "&#8205;" || t.text == "&nbsp;" => false
+        case _ => true
+      }
       case _ => true
     }
     plain._children = plain._children.filter(n => filter(n))
@@ -599,6 +709,7 @@ case class SHTMLAssertion(orig:HTMLNode) extends HTMLStatement("assertion",orig)
 
   override def onAdd: Unit = {
     super.onAdd
+    sstate.foreach(_.addSymdoc(fors, id, this.plain.node.head))
   }
 }
 

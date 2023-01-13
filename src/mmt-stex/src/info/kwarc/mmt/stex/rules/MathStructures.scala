@@ -42,9 +42,9 @@ object Getfield extends RecSymbol("record field") {
 }
 
 object RecMerge extends RecSymbol("module type merge") {
-  def apply(tm:Term*) = OMA(this.term,tm.toList)
+  def apply(tm:Term*) = OMA(this.term,List(SHTML.flatseq(tm.toList)))
   def unapply(tm : Term) =tm match {
-    case OMA(this.term,args) => Some(args)
+    case OMA(this.term,List(SHTML.flatseq(args))) => Some(args)
     case _ => None
   }
 }

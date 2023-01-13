@@ -189,7 +189,6 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
           }.toString())
           recurse(Context(ctx.variables.tail: _*))
         }
-      case SHTMLHoas.OmaSpine(_,f,args) => recurse(OMA(f, args), bracket)
       case tm: Term =>
         val t = tm //val (is, ar, t) = implicits(tm)(pc.getContext)
 
@@ -229,7 +228,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
                 }
               case _ => default
             }
-          case OMA(OMS(p), args) =>
+          case SHTMLHoas.OmaSpine(_,OMS(p), args) =>
             controller.getO(p) match {
               case Some(c: Constant) =>
                 server.getArity(c) match {

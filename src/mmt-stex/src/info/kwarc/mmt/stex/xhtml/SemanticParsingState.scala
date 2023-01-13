@@ -42,32 +42,90 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   }
   def applyTerm(tm: Term)(implicit self:SHTMLNode): Term = {
     val rules = getRules(self.getRuleContext).get(classOf[HTMLTermRule])
-    rules.foldLeft(tm)((it,f) => f.apply(it)(this,self).getOrElse(it))
+    rules.foldLeft(tm)((it,f) => f.apply(it)(this,self,applyTerm(_)).getOrElse(it))
   }
 
   def applyTopLevelTerm(tm: Term)(implicit self:SHTMLNode) : Term = {
-    val vars = self.getVariableContext.filter{v =>
-      tm.freeVars.contains(v.name) // TODO more?
-    }.reverse.distinctBy(_.name).reverse
-    val implctx = mutable.Map.empty[LocalName,Term]
+    val vars = self.getVariableContext.filter(isBound)
+      .reverse.distinctBy(_.name).reverse
+    var ntm = vars.foldRight(tm)((vd,t) => SHTML.binder(vd,t))//SHTML.binder(vars,tm)
+/*
+    var impls = Context.empty
+    self.getVariableContext.reverse.foreach { v =>
+      if (!impls.exists(_.name == v.name) && (ntm.freeVars.contains(v.name) || impls.exists(_.tp.exists(_.freeVars.contains(v.name)))))
+        impls ++= v
+    }
+    var nobinds : List[LocalName] = Nil
+    impls = ntm.freeVars.foldLeft(impls.reverse)((ctx,n) => {
+      if (!ctx.exists(_.name == n)) {
+        val tpn = this.getUnknownTp
+        nobinds ::= tpn
+        ctx ::: VarDecl(n,OMV(tpn)) :: Nil
+      } else ctx
+    })
 
-    val implicits = new StatelessTraverser {
-      override def traverse(t: Term)(implicit con : Context, state : State) = t match {
-        case v@OMV(x) if isUnknown(v) || !con.isDeclared(x) =>
-          implctx.getOrElseUpdate(x,
-            Solver.makeUnknown(x,
-              con.filterNot(_.name == x).map(v => OMV(v.name)) /*:::
-                implctx.filterNot(_._1 == x).values.toList*/
-            )//(con ++ implctx.keys.map(VarDecl(_))).map(v => OMV(v.name)).filterNot(_.name == x))
-          )
+ */
+    /*val impls = self.getVariableContext.filter{ v =>
+      ntm.freeVars.contains(v.name)//vars.exists(_.tp.exists(_.freeVars.contains(v.name)))
+    }.reverse.distinctBy(_.name).reverse*/
+
+    var implbinds = Context.empty
+    var tosolves = Context.empty
+    var nobinds : List[LocalName] = Nil
+    val trav1 = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case v@OMV(x) if isUnknown(v) =>
+          tosolves ++= VarDecl(x)
+          v
+          //Solver.makeUnknown(x,(implbinds ++ con).map(v => OMV(v.name)))
+        case v@OMV(x) if !(implbinds ++ tosolves ++ con).isDeclared(x) =>
+          self.getVariableContext.findLast(_.name == x) match {
+            case Some(vd) =>
+              vd.tp.foreach(traverse)
+              vd.df.foreach(traverse)
+              implbinds ++= vd
+            case None =>
+              val tpn = getUnknownTp
+              nobinds ::= tpn
+              tosolves ++= VarDecl(tpn)
+              implbinds ++= VarDecl(x, OMV(tpn))
+          }
+          v
         case _ => Traverser(this,t)
       }
     }
-    val impls = self.getVariableContext.filter{ v =>
-      !vars.exists(_.name == v.name) && vars.exists(_.tp.exists(_.freeVars.contains(v.name)))
-    }.reverse.distinctBy(_.name).reverse
-    val ntp = implicits(SHTML.implicit_binder(impls,SHTML.binder(vars,tm)),())
-    if (implctx.isEmpty) ntp else OMBIND(OMS(ParseResult.unknown),implctx.keys.map(VarDecl(_)).toList,ntp)
+    val trav2 = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case OMV(x) if !nobinds.contains(x) && tosolves.exists(_.name == x) =>
+          Solver.makeUnknown(x,con.map(v => OMV(v.name)))
+        case _ => Traverser(this,t)
+      }
+    }
+    ntm = trav1(ntm,())
+    implbinds = implbinds.sortBy(vd => self.getVariableContext.indexOf(vd) match {case -1 => 10000 case i => i})
+    ntm = trav2(SHTML.implicit_binder(implbinds,ntm),())
+    if (tosolves.isEmpty) ntm else OMBIND(OMS(ParseResult.unknown),tosolves,ntm)
+/*
+    val implctx = mutable.Map.empty[LocalName, (Term,Option[Term])]
+
+    val implicits = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State) = t match {
+        case v@OMV(x) if (isUnknown(v) || !con.isDeclared(x)) =>
+          implctx.getOrElseUpdate(x,
+            (if (nobinds.contains(x)) v else
+            Solver.makeUnknown(x,
+              con.filterNot(_.name == x).map(v => OMV(v.name)) /*:::
+                implctx.filterNot(_._1 == x).values.toList*/
+            ),con.findLast(_.name == x).flatMap(_.tp)) //(con ++ implctx.keys.map(VarDecl(_))).map(v => OMV(v.name)).filterNot(_.name == x))
+          )._1
+        case _ => Traverser(this, t)
+      }
+    }
+
+ */
+
+    //val ntp = implicits(SHTML.implicit_binder(impls,ntm),())
+    //if (implctx.isEmpty) ntp else OMBIND(OMS(ParseResult.unknown),implctx.map(p => VarDecl(p._1,None,p._2._2,None,None)).toList,ntp)
   }
   def addNotation(path: GlobalName, id: String, opprec: Int, component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
     context.findAncestor {

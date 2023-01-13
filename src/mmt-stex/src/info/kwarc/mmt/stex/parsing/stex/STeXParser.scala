@@ -972,7 +972,7 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\instantiate expected")
       }
       val module = state.macrorules.collectFirst {
-        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
+        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
@@ -1045,7 +1045,7 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\varinstantiate expected")
       }
       val module = state.macrorules.collectFirst {
-        case m:MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
+        case m:MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
@@ -1173,13 +1173,14 @@ object STeXRules {
       optargs.foreach{l =>
         val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
         s match {
-          case s if s.trim.startsWith("name=") =>
-            name = s.drop(5).trim
+          case s if s.trim.startsWith("this=") =>
+          case s =>
+            name = s.trim
           case _ =>
             throw LaTeXParseError("Unknown key:" + s.drop(5).trim)
         }
       }
-      val mp = dict.getMPath(name + "-structure")
+      val mp = dict.getMPath(name + "-module")
       val sympath = dict.getGlobalName(name)
       val macr = MathStructureMacro(begin.plain,mp,maybename,sympath,begin.children ::: children,this,dict.getFile,dict)
       dict.getModuleOpt match {
@@ -1227,7 +1228,7 @@ object STeXRules {
             throw LaTeXParseError("Unknown key:" + s.drop(5).trim)
         }
       }
-      val mp = dict.getMPath(name + "-structure")
+      val mp = dict.getMPath(name + "-module")
       val sympath = dict.getGlobalName(name)
       val macr = MathStructureMacro(begin.plain, mp, maybename, sympath, begin.children ::: children, this, dict.getFile, dict)
       dict.getModuleOpt match {
@@ -1255,7 +1256,7 @@ object STeXRules {
       }
       val modules = exts.flatMap { struct =>
         state.macrorules.collectFirst {
-          case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
+          case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
             dict.all_modules.get(m.mpi)
         }.flatten match {
           case Some(mod) => Some(mod)
@@ -1354,7 +1355,7 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\usestructure expected")
       }
       val module = state.macrorules.collectFirst {
-        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-structure" || m.macroname == struct =>
+        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod

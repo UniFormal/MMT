@@ -471,9 +471,18 @@ object SHTML {
   val meta_quantification = mmtmeta_path ? "quantification"
 
   val string = mmtmeta_path ? "stringliteral"
-  val nat = meta_path ? "integer literal"
+  val int = meta_path ? "integer literal"
+  val ord = meta_path ? "ordinal"
 
   val headterm = mmtmeta_path ? "headsymbol"
+
+  val of_type = new {
+    val sym = meta_path ? "of type"
+    def unapply(tm:Term) = tm match {
+      case OMA(OMS(`sym`),List(tm,tp)) => Some((tm,tp))
+      case _ => None
+    }
+  }
 
   val informal = new {
     val sym = mmtmeta_path ? "informalsym"
@@ -553,6 +562,16 @@ object SHTML {
       case OMBIND(OMS(`path`), Context(vd, rest@_*), bd) =>
         if (rest.isEmpty) Some(vd.name, vd.tp, bd) else Some(vd.name, vd.tp, apply(Context(rest: _*), bd))
       case _ => None
+    }
+    private val self = this
+    val spine = new {
+      def unapply(tm: Term) : Option[(Context,Term)] = tm match {
+        case self(l,tp,bd) => unapply(bd) match {
+          case Some((ct,r)) => Some(Context(VarDecl(l,None,tp,None,None)) ++ ct,r)
+          case _ => Some(Context(VarDecl(l,None,tp,None,None)),bd)
+        }
+        case _ => None
+      }
     }
   }
 

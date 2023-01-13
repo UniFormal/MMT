@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.rules
 
-import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History, InferenceRule, SingleTermBasedCheckingRule, Solver}
+import info.kwarc.mmt.api.checking.{CheckingCallback, CheckingUnit, ComputationRule, History, InferenceRule, SingleTermBasedCheckingRule, Solver}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.{GlobalName, LocalName, ParametricRule, ParseError, Rule, RuleSet}
@@ -9,10 +9,10 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardNat, StandardString}
 import info.kwarc.mmt.stex.Extensions.Symbols
 import info.kwarc.mmt.stex.xhtml.{SHTMLNode, SHTMLObject, SHTMLState}
-import info.kwarc.mmt.stex.{IsSeq, SHTML, SHTMLHoas}
+import info.kwarc.mmt.stex.{IsSeq, SCtx, SHTML, SHTMLHoas, SOMBArg, STerm}
 
 object StringLiterals extends RepresentedRealizedType(OMS(SHTML.string),StandardString)
-object NatLiterals extends RepresentedRealizedType(OMS(SHTML.nat),StandardNat)
+object NatLiterals extends RepresentedRealizedType(OMS(SHTML.int),StandardNat)
 
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.objects.Conversions._
@@ -89,6 +89,46 @@ object HOASRule extends ParametricRule {
 
 abstract class RulerRule extends Rule {
   def apply(controller: Controller, cont: Term => Option[HasMetaData], term: Term) : Option[HasMetaData]
+}
+
+object FieldRuler extends RulerRule {
+
+  def doTp(tm : Term,field:LocalName)(implicit controller : Controller, cont: Term => Option[HasMetaData]) : Option[HasMetaData] = {
+    val cu = CheckingUnit(None, Context.empty, Context.empty, null)
+    val solver = new Solver(controller, cu, MathStructureRule)
+    val rec = RecordsGeneral.makeRecBody(solver, tm)(Stack.empty, new History(Nil))
+    rec._2 match {
+      case Some(sm: SimpleModule) =>
+        sm.getOrig(field)(controller.globalLookup, new History(Nil)) match {
+          case Some(d) =>
+            cont(d.toTerm) match {
+              case s@Some(_) => s
+              case _ => Some(d)
+            }
+          case _ => None
+        }
+      case Some(_) =>
+        ???
+      case None =>
+        None
+    }
+  }
+  override def apply(controller: Controller, cont: Term => Option[HasMetaData], term: Term): Option[HasMetaData] = term match {
+    case Getfield(SHTML.of_type(_,RecMerge(ls)),fieldname) =>
+      val nls = ls.filter {
+        case OMS(_) => true
+        case ModelsOf(_) => true
+        case _ => false
+      }
+      val ret = nls match {
+        case List(x) => x
+        case ls => RecMerge(ls:_*)
+      }
+      doTp(ret,fieldname)(controller,cont)
+    case Getfield(SHTML.of_type(_,rtp), fieldname) =>
+      doTp(rtp,fieldname)(controller,cont)
+    case _ => None
+  }
 }
 
 // Terms -> Variables
@@ -225,11 +265,11 @@ object TypeAssertionLike extends ParametricRule {
 // HTML -> OMDoc
 
 trait HTMLTermRule extends Rule {
-  def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode) : Option[Term]
+  def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode,cont:Term => Term) : Option[Term]
 }
 
 object MnRule extends HTMLTermRule {
-  override def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode) : Option[Term] = tm match {
+  override def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode,cont:Term => Term) : Option[Term] = tm match {
     case SHTML.informal(n) if n.label == "mi" && n.child.length == 1 && n.attribute("mathvariant").exists(_.head.toString() == "normal") =>
       val str = n.child.head.toString()
       if (str.forall(_.isDigit)) {
@@ -254,14 +294,14 @@ object ParenthesisRule extends HTMLTermRule {
       case _ => None
     }
   }
-  override def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode) : Option[Term] = tm match {
+  override def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode,cont:Term => Term) : Option[Term] = tm match {
     case SHTML.informal.op("mrow",List(open(_),t,close(_))) => Some(t)
     case _ => None
   }
 }
 
 object MiMoVariableRule extends HTMLTermRule {
-  override def apply(tm: Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode): Option[Term] = tm match {
+  override def apply(tm: Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode,cont:Term => Term): Option[Term] = tm match {
     case SHTML.informal(n) if n.label == "mi" && n.child.length == 1 && MnRule(tm).isEmpty =>
       Some(OMV(n.child.head.toString()))
     case _ => None
@@ -269,7 +309,7 @@ object MiMoVariableRule extends HTMLTermRule {
 }
 
 object OMVRule extends HTMLTermRule {
-  override def apply(tm: Term)(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode): Option[Term] = tm match {
+  override def apply(tm: Term)(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode,cont:Term => Term): Option[Term] = tm match {
     case OMV(x) =>
     self.getVariableContext.findLast(_.name == x) match {
       case Some(vd) =>
@@ -287,7 +327,7 @@ object OMVRule extends HTMLTermRule {
 }
 
 object ReorderRule extends HTMLTermRule {
-  override def apply(tm: Term)(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode): Option[Term] = tm match {
+  override def apply(tm: Term)(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode,cont:Term => Term): Option[Term] = tm match {
     case SHTMLHoas.OmaSpine(h, f, args) =>
       state.getRuler(f) match {
         case Some(obj) =>
@@ -315,7 +355,65 @@ object ReorderRule extends HTMLTermRule {
 
 }
 
+object ImplicitsRule extends HTMLTermRule {
+  override def apply(tm: Term)(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode,cont:Term => Term): Option[Term] = tm match {
+    case SHTMLHoas.OmaSpine(h, f, args) =>
+      state.getRuler(f) match {
+        case Some(c : Constant) if c.tp.isDefined => c.tp match {
+          case Some(SHTML.implicit_binder.spine(ctx,_)) =>
+            val ret = SHTMLHoas.OmaSpine(h,f,ctx.map(_ => state.markAsUnknown(OMV(state.getUnknown))) ::: args) //doBinr(h, f, args)
+            tm.metadata.getAll.foreach(ret.metadata.add(_))
+            Some(ret)
+          case _ => None
+        }
+        case _ => None
+      }
+    case SHTMLHoas.Omb(h, f, args) =>
+      state.getRuler(f) match {
+        case Some(c: Constant) if c.tp.isDefined => c.tp match {
+          case Some(SHTML.implicit_binder.spine(ctx, _)) =>
+            val ret = h.HOMB(f, ctx.map(_ => STerm(state.markAsUnknown(OMV(state.getUnknown)))) ::: args) //doBinr(h, f, args)
+            tm.metadata.getAll.foreach(ret.metadata.add(_))
+            Some(ret)
+          case _ => None
+        }
+        case _ => None
+      }
+    /*case t@OMS(_) => TODO!!
+      state.getRuler(t) match {
+        case Some(c: Constant) if c.tp.isDefined => c.tp match {
+          case Some(SHTML.implicit_binder.spine(ctx, _)) =>
+            val h = SHTMLHoas.get(c)
+            val ret = SHTMLHoas.OmaSpine(h,t,ctx.map(_ => state.markAsUnknown(OMV(state.getUnknown))))
+            t.metadata.getAll.foreach(ret.metadata.add(_))
+            Some(ret)
+          case _ => None
+        }
+        case _ => None
+      }*/
+    case _ => None
+  }
+
+}
+
 object AssocRule extends HTMLTermRule {
+  override def priority: Int = 10
+  def doPre(h :  SHTMLHoas.HoasRule,f : Term,args:List[SOMBArg])(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode) = args match {
+    case STerm(v@OMV(_)) :: SCtx(ctx) :: rest if ctx.nonEmpty && state.isUnknown(v) =>
+      ctx.variables.init.foldRight(
+        h.HOMB(f, STerm(v) :: SCtx(ctx.variables.last) :: rest)
+      )((vd, ti) => h.HOMB(f, STerm(state.markAsUnknown(OMV(state.getUnknown))) :: SCtx(vd) :: STerm(ti) :: Nil))
+    case STerm(t) :: SCtx(ctx) :: rest if ctx.nonEmpty =>
+      ctx.variables.init.foldRight(
+        h.HOMB(f, STerm(t) :: SCtx(ctx.variables.last) :: rest)
+      )((vd, ti) => h.HOMB(f, STerm(t) :: SCtx(vd) :: STerm(ti) :: Nil))
+    case SCtx(ctx) :: rest if ctx.nonEmpty =>
+      ctx.variables.init.foldRight(
+        h.HOMB(f,SCtx(ctx.variables.last) :: rest)
+      )((vd,t) => h.HOMB(f,SCtx(vd) :: STerm(t) :: Nil))
+    case _ =>
+      h.HOMB(f,args)
+  }
 
   def doBinr(h : Option[SHTMLHoas.HoasRule], f:Term,args:List[Term])(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode) = args match {
     case IsSeq(Nil,SHTML.flatseq(ls),rest) if ls.nonEmpty && ls.length + rest.length >= 2  =>
@@ -343,7 +441,49 @@ object AssocRule extends HTMLTermRule {
     case _ =>
       SHTMLHoas.OmaSpine(h, f, args)
   }
-  override def apply(tm: Term)(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode): Option[Term] = tm match{
+
+  def doConj(h: Option[SHTMLHoas.HoasRule], f: Term, args: List[Term])(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode) = args match {
+    case IsSeq(pre, SHTML.flatseq(a :: b :: Nil), Nil) =>
+      SHTMLHoas.OmaSpine(h,f,pre ::: List(a, b))
+    case IsSeq(pre, SHTML.flatseq(a :: Nil), List(b)) =>
+      SHTMLHoas.OmaSpine(h,f, pre ::: List(a, b))
+    case IsSeq(pre, SHTML.flatseq(ls), Nil) if ls.length > 2 =>
+      var conj : Option[Constant] = None
+      self.getRuleContext.getIncludes.foreach{i =>
+        state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)){
+          case (_,_,c : Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("conjunction") =>
+            conj = Some(c)
+          case _ =>
+        }
+      }
+      conj match {
+        case Some(c) =>
+          ls.init.init.foldRight(SHTMLHoas.OmaSpine(h,f,pre ::: List(ls.init.last,ls.last)))((t,r) =>
+            SHTMLHoas.OmaSpine(h,OMS(c.path),List(r,SHTMLHoas.OmaSpine(h,f,pre ::: List(t,ls.last))))
+          )
+        case _ =>
+          SHTMLHoas.OmaSpine(h,f,args)
+      }
+    case IsSeq(pre, SHTML.flatseq(ls), List(b)) if ls.length > 2 =>
+      var conj: Option[Constant] = None
+      self.getRuleContext.getIncludes.foreach { i =>
+        state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
+          case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("conjunction") =>
+            conj = Some(c)
+          case _ =>
+        }
+      }
+      conj match {
+        case Some(c) =>
+          ls.init.init.foldRight(SHTMLHoas.OmaSpine(h, f, pre ::: List(ls.last, b)))((t, r) =>
+            SHTMLHoas.OmaSpine(h, OMS(c.path), List(r, SHTMLHoas.OmaSpine(h, f, pre ::: List(t, b))))
+          )
+        case _ =>
+          SHTMLHoas.OmaSpine(h, f, args)
+      }
+    case _ => SHTMLHoas.OmaSpine(h,f,args)
+  }
+  override def apply(tm: Term)(implicit state: SHTMLState[SHTMLNode], self: SHTMLNode,cont:Term => Term): Option[Term] = tm match{
     case SHTMLHoas.OmaSpine(h,f,args) =>
       state.getRuler(f) match {
         case Some(obj) =>
@@ -352,7 +492,27 @@ object AssocRule extends HTMLTermRule {
               val ret = doBinr(h,f,args)
               ret.copyFrom(tm)
               Some(ret)
+            case Some("conj") =>
+              val ret = doConj(h, f, args)
+              ret.copyFrom(tm)
+              Some(ret)
             case Some("pre") =>
+              ???
+            case _ => None
+          }
+        case _ => None
+      }
+    case SHTMLHoas.Omb(h,f,args) =>
+      state.getRuler(f) match {
+        case Some(obj) =>
+          state.server.getAssoctype(obj) match {
+            case Some("binr" | "bin") =>
+              ???
+            case Some("pre") =>
+              val ret = doPre(h,f,args)
+              ret.copyFrom(tm)
+              Some(ret)
+            case Some("conj") =>
               ???
             case _ => None
           }

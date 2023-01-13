@@ -127,6 +127,12 @@ trait SymDeclRuleLike extends MacroRule {
           ret = ret.filterNot(_ == l)
           defd = true
         // TODO?
+        case s if s.startsWith("return=") =>
+          ret = ret.filterNot(_ == l)
+          // TODO
+        case s if s.startsWith("argtypes=") =>
+          ret = ret.filterNot(_ == l)
+        // TODO
         case s if s.startsWith("op=") || s.startsWith("prec=") || !s.contains('=') =>
         case _ =>
           print("")
@@ -445,6 +451,7 @@ class StatementRule(_name:String,val dict:Dictionary) extends EnvironmentRule(_n
         case s if s.trim.startsWith("name=") =>
           name = Some(s.drop(5))
         case s if s.trim.startsWith("type=") =>
+        case s if s.trim.startsWith("style=") =>
         case s if s.trim.startsWith("id=") =>
         case s if s.trim.startsWith("title=") =>
         case s if s.trim.startsWith("for=") =>
