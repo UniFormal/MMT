@@ -401,6 +401,11 @@ trait SymbolLike extends HasTypes with HasDefiniens with HasMacroName with HasRo
     case Some(rt) =>
       types match {
         case Nil if args.isEmpty => Some(rt)
+        case ls if ls.length == args.length =>
+          import info.kwarc.mmt.api.objects.Conversions._
+          // TODO choose binder
+          val ret = SHTML.binder(ls.zipWithIndex.map{case (t,i) => LocalName("ARGUMENT_" + (i+1)) % t},rt)
+          Some(ret)
         case _ =>
           println("TODO!")
           Some(rt)

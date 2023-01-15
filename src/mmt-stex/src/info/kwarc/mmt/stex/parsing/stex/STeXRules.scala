@@ -467,7 +467,9 @@ class StatementRule(_name:String,val dict:Dictionary) extends EnvironmentRule(_n
     BeginStatement(begin.plain,begin.children ::: ch,this,name)
   }
 }
-
+trait MathStructureInfo extends SymdeclInfo {
+  val module_path : MPath
+}
 case class MathStructureMacro(
                                pm:PlainMacro,
                                mpi:MPath,
@@ -479,7 +481,9 @@ case class MathStructureMacro(
                              ) extends TeXModuleLike(pm,mpi,ch,rl) with TeXRule with SemanticMacro {
   val sig = ""
   override lazy val name = "mathstructure " + mpi.toString
-  val syminfo = SymdeclInfo(macroname,symbolpath,"","",false,this.file,this.startoffset,this.endoffset,true)
+  val syminfo = new SymdeclInfo(macroname,symbolpath,"","",false,this.file,this.startoffset,this.endoffset,true) with MathStructureInfo {
+    val module_path = mpi
+  }
 }
 
 trait StructureLikeRule extends EnvironmentRule with InStructureRule {
@@ -552,7 +556,12 @@ trait StructureLikeRule extends EnvironmentRule with InStructureRule {
       case List(List(pt: PlainText)) => pt.str
       case _ => ""
     }
-    val module = dict.requireModule(dict.resolveMPath(a, domstr), a, domstr)
+    val module = dict.resolveName(domstr) match {
+      case (Some(ds : MathStructureInfo),_) =>
+        dict.requireModule(ds.module_path,a,domstr)
+      case _ =>
+        dict.requireModule(dict.resolveMPath(a, domstr), a, domstr)
+    }
 
     val name = nametk match {
       case Some(gr: Group) =>

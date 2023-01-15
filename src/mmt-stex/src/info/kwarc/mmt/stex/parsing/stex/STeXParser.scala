@@ -312,9 +312,10 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
           readfiles ::= file
         }
         try {
+          add()
           parser.applyFormally(file, archive)
         } finally {
-          add()
+          //add()
         }
       } /*
             } catch {
@@ -329,7 +330,6 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
           filetracker ::= ParseThread(file, future)
           Await.result(future, Duration.Inf)
       } */
-
       all_modules.getOrElse(mp, {
         throw LaTeXParseError("No module " + mp + " found")
       })
@@ -825,7 +825,7 @@ object STeXRules {
         n
       } {
         val (ninfo, err2, nopt2, nch) = optsAndNotation(sdinfo, nopt)
-        val nsdinfo = SymdeclInfo(sdinfo.macroname + "-sym",sdinfo.path,"","",false,sdinfo.file,sdinfo.start,sdinfo.end,false)
+        val nsdinfo = SymdeclInfo(sdinfo.macroname,sdinfo.path.module ? LocalName.parse(sdinfo.path.name.toString + "-sym"),"","",false,sdinfo.file,sdinfo.start,sdinfo.end,false)
         children = children ::: nch
         val ret = SymdefApp(plain, children, this, nsdinfo, ninfo)
         val ret2 = new SymdefApp(plain,children,this,sdinfo,ninfo) {
@@ -1085,11 +1085,11 @@ object STeXRules {
 
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       var children: List[TeXTokenLike] = Nil
-      val (ns,ch0) = readOptArg
-      children = ch0
-      val (n, ch) = readArg
+      val (n2, ch) = readArg
       children = children ::: ch
-      val (n2, ch2) = readArg
+      val (ns, ch0) = readOptArg
+      children = ch0
+      val (n, ch2) = readArg
       children = children ::: ch2
       setupBody(ns,n,Some(n2))((mp,dom) =>
         new StructureModuleBegin(begin.plain,mp,dom,ch,this)
@@ -1110,11 +1110,11 @@ object STeXRules {
     }
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       var children: List[TeXTokenLike] = Nil
+      val (n2, ch) = readArg
+      children = children ::: ch
       val (ns, ch0) = readOptArg
       children = ch0
-      val (n, ch) = readArg
-      children = children ::: ch
-      val (n2, ch2) = readArg
+      val (n, ch2) = readArg
       children = children ::: ch2
       setupBody(ns, n, Some(n2))((mp, dom) =>
         new StructureModuleBegin(begin.plain, mp, dom, ch, this)
