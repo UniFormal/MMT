@@ -1213,17 +1213,16 @@ object STeXRules {
         case _ =>
           throw LaTeXParseError("Name expected")
       }
-      val (iexts, chext) = readArg
-      children = children ::: chext
-
       val (optargs, ch2) = readOptArg
       children = children ::: ch2
+      val (iexts, chext) = readArg
+      children = children ::: chext
       var name = maybename
       optargs.foreach { l =>
         val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
         s match {
-          case s if s.trim.startsWith("name=") =>
-            name = s.drop(5).trim
+          case s  =>
+            name = s.trim
           case _ =>
             throw LaTeXParseError("Unknown key:" + s.drop(5).trim)
         }
