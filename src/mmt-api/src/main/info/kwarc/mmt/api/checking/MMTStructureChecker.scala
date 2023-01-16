@@ -244,6 +244,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 env.errorCont(InvalidElement(c, "cannot find realized constant"))
                 Expectation(None, None)
             }
+          case meq: MorphEquality =>
           case dd: DerivedModule =>
             val sfOpt = extman.getOrAddExtension(classOf[ModuleLevelFeature], dd.feature)
             sfOpt match {

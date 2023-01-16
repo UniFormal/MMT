@@ -425,6 +425,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case ViewKey(_) => readView(parentInfo, Context.empty, isImplicit = true)
             case _ => throw makeError(reg2, "only views can be implicit here")
           }
+        case "morphequal" =>
+          readMorphEquality(parentInfo, Context.empty)(state)
         case k =>
           getParseExt(doc, k) match {
             // first look for a parser extension
