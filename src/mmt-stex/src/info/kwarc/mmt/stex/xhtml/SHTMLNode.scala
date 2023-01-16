@@ -352,16 +352,20 @@ case class SHTMLConclusion(orig:HTMLNode) extends SHTMLNode(orig,Some("conclusio
               state.getO(p) match {
                 case Some(c : Constant) =>
                   var judg: Option[(Term,Option[SHTMLHoas.HoasRule])] = None
-                  self.getRuleContext.getIncludes.foreach { i =>
-                    state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
-                      case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("judgment") =>
-                        state.getRuler(c.toTerm) match {
-                          case Some(r) =>
-                            judg = Some((c.toTerm,SHTMLHoas.get(r)))
-                          case _ => judg = Some((c.toTerm,None))
-                        }
-                      case _ =>
+                  try {
+                    self.getRuleContext.getIncludes.foreach { i =>
+                      state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
+                        case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("judgment") =>
+                          state.getRuler(c.toTerm) match {
+                            case Some(r) =>
+                              judg = Some((c.toTerm, SHTMLHoas.get(r)))
+                            case _ => judg = Some((c.toTerm, None))
+                          }
+                        case _ =>
+                      }
                     }
+                  } catch {
+                    case e : info.kwarc.mmt.api.Error => state.error(e)
                   }
                   def doTerm(tm : Term) : Term = tm match {
                     case OMBIND(OMS(ParseResult.unknown),ctx,bd) =>

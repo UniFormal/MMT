@@ -669,22 +669,23 @@ object STeXRules {
 
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       var children: List[TeXTokenLike] = Nil
-      val (maybename,ch1) = readOptArg
-      children = ch1
-      var name : Option[String] = None
-      maybename.foreach { l =>
-        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
-        s match {
-          case s if s.trim.startsWith("name=") =>
-            name = Some(s.drop(5))
-          case _ =>
-            throw LaTeXParseError("Unknown key " + s.trim)
-        }
-      }
 
       val (domtk,ch2) = readSafeArg("\\renamedecl")
       children = children ::: ch2
       val target = getTarget(domtk)
+
+      val (maybename, ch1) = readOptArg
+      children = ch1
+      var name: Option[String] = None
+      maybename.foreach { l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s /*if s.trim.startsWith("name=")*/ =>
+            name = Some(s.trim)
+          case _ =>
+            throw LaTeXParseError("Unknown key " + s.trim)
+        }
+      }
 
       val (macronamestr,ch3) = readSafeArg("\\renamedecl")
       children = children ::: ch3

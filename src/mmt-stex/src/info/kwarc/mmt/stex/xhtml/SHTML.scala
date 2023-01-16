@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMMOD, OMS, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMMOD, OMS, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude, RuleConstant, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, Path, Rule, RuleSet, StructuralElement}
@@ -37,10 +37,17 @@ trait SHTMLObject {
         case _ => (df,tp) // impossible
       }
     case (Some(SHTML.implicit_binder.spine(ctxa,idf)),Some(SHTML.implicit_binder.spine(ctxb,itp))) =>
+      import info.kwarc.mmt.api.objects.Conversions._
       if (ctxa.length == ctxb.length) {
         (df,tp)
+      } else if (ctxb.forall(ctxa.contains)) {
+        val ntp = SHTML.implicit_binder(ctxa,itp)
+        (df,Some(ntp))
+      } else if (ctxa.forall(ctxb.contains)) {
+        val ndf = SHTML.implicit_binder(ctxb,idf)
+        (Some(ndf),tp)
       } else {
-        ???
+        (df,tp)
       }
     case (Some(SHTML.implicit_binder.spine(ctxa, _)), Some(tp)) =>
       (df,Some(SHTML.implicit_binder(ctxa,tp)))
@@ -589,11 +596,12 @@ trait SHTMLOOMB extends IsTermWithArgs {
 
     val ret = hoas match {
       case Some(h) => h.HOMB(head,args)
-      case _ => args match {
-        case List(SCtx(ctx),STerm(t)) => OMBIND(head,ctx,t)
-        case _ =>
-          ???
-      }
+      case _ => OMBINDC(head,args.foldLeft(Context.empty){
+          case (ctx,SCtx(ctx2)) => ctx ++ ctx2
+          case (ctx,_) => ctx
+        },args.collect {
+          case STerm(t) => t
+        })
     }
     doSourceRef(ret)
     if (!headsymbol.contains(head)) {
