@@ -835,12 +835,12 @@ object STeXRules {
             val notation = notations.headOption match {
               case None =>
                 val ret = cons(plain, children, None)
-                if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString)
-                return ret
+                if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString, lvl=Level.Warning)
+                None
               case Some(not) =>
-                not
+                Some(not.notinfo)
             }
-            cons(plain, children, Some(notation.notinfo))
+            cons(plain, children, notation)
           }
         }
         if (err != "") ret.addError(err)

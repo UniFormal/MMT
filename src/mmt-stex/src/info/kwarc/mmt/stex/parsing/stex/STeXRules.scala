@@ -273,22 +273,25 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
           notations.headOption match {
             case None =>
               val ret = cons(plain, children, None)
-              if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString)
-              return ret
+              if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString, lvl=Level.Warning)
+              None
             case Some(not) =>
-              not
+              Some(not.notinfo)
           }
         case (ls, ch) =>
           children = children ::: ch
           val notid = ls.map(_.mkString).mkString
-          notations.find(_.notinfo.id == notid).getOrElse {
-            val ret = cons(plain, children, None)
-            if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString)
-            return ret
+          notations.find(_.notinfo.id == notid) match {
+            case None =>
+              val ret = cons(plain, children, None)
+              if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString, lvl=Level.Warning)
+              None
+              //return ret
+            case Some(not) => Some(not.notinfo)
           }
       }
       if (op) {
-        val ret = cons(plain, children, Some(notation.notinfo))
+        val ret = cons(plain, children, notation)
         /*notation.notinfo.opnotation match {
           case None =>
             if (requireNotation) ret.addError("Notation " + notation.notinfo.id + " for " + notation.notinfo.syminfo.path.toString + " has no operator notation!")
@@ -296,13 +299,13 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
         }*/
         ret
       } else safely {
-        cons(plain, children, Some(notation.notinfo))
+        cons(plain, children, notation)
       } {
         syminfo.args.foreach { _ =>
           val (_, nch) = readSafeArg("\\" + plain.name)
           children = children ::: nch
         }
-        cons(plain, children, Some(notation.notinfo))
+        cons(plain, children, notation)
       }
     }
   }
