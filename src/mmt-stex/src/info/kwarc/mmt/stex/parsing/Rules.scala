@@ -102,62 +102,68 @@ trait TeXRule {
 
   def readOptArg(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (List[List[TeXTokenLike]],List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
-    in.trim
-    var children : List[TeXTokenLike] = Nil
-    var args : List[List[TeXTokenLike]] = Nil
-    while (!in.empty) {
-      in.first match {
-        case '%' =>
-          children = children ::: List(readComment)
-          in.trim
-        case '[' =>
-          var done = false
-          in.drop(1)
-          children = children ::: List(new PlainText("[", in.offset - 1, in.offset))
-          while (!done) {
-            if (in.empty) {
-              done = true
-              throw LaTeXParseError("File ended unexpectedly")
-            }
-            var curr : List[TeXTokenLike] = Nil
-            var inbrackets = 0
-            var break = false
-            while(!in.empty && !break) {
-              in.first match {
-                case ']' if inbrackets == 0 =>
-                  children = children ::: List(new PlainText("]", in.offset, in.offset + 1))
-                  in.drop(1)
-                  done = true
-                  break = true
-                case ']' =>
-                  inbrackets -= 1
-                  in.drop(1)
-                  children = children ::: List(new PlainText("]", in.offset, in.offset + 1))
-                  curr ::= new PlainText("]", in.offset, in.offset + 1)
-                case ',' if inbrackets == 0 =>
-                  children = children ::: List(new PlainText(",", in.offset, in.offset + 1))
-                  in.drop(1)
-                  break = true
-                case '[' =>
-                  inbrackets += 1
-                  in.drop(1)
-                  children = children ::: List(new PlainText("[", in.offset, in.offset + 1))
-                  curr ::= new PlainText("[", in.offset, in.offset + 1)
-                case _ =>
-                  val ret = readOne(List('[',']',',').contains)
-                  children = children ::: ret :: Nil
-                  curr ::= ret
+    val currrules = state.rules
+    state.rules = Nil
+    try {
+      in.trim
+      var children: List[TeXTokenLike] = Nil
+      var args: List[List[TeXTokenLike]] = Nil
+      while (!in.empty) {
+        in.first match {
+          case '%' =>
+            children = children ::: List(readComment)
+            in.trim
+          case '[' =>
+            var done = false
+            in.drop(1)
+            children = children ::: List(new PlainText("[", in.offset - 1, in.offset))
+            while (!done) {
+              if (in.empty) {
+                done = true
+                throw LaTeXParseError("File ended unexpectedly")
               }
+              var curr: List[TeXTokenLike] = Nil
+              var inbrackets = 0
+              var break = false
+              while (!in.empty && !break) {
+                in.first match {
+                  case ']' if inbrackets == 0 =>
+                    children = children ::: List(new PlainText("]", in.offset, in.offset + 1))
+                    in.drop(1)
+                    done = true
+                    break = true
+                  case ']' =>
+                    inbrackets -= 1
+                    in.drop(1)
+                    children = children ::: List(new PlainText("]", in.offset, in.offset + 1))
+                    curr ::= new PlainText("]", in.offset, in.offset + 1)
+                  case ',' if inbrackets == 0 =>
+                    children = children ::: List(new PlainText(",", in.offset, in.offset + 1))
+                    in.drop(1)
+                    break = true
+                  case '[' =>
+                    inbrackets += 1
+                    in.drop(1)
+                    children = children ::: List(new PlainText("[", in.offset, in.offset + 1))
+                    curr ::= new PlainText("[", in.offset, in.offset + 1)
+                  case _ =>
+                    val ret = readOne(List('[', ']', ',').contains)
+                    children = children ::: ret :: Nil
+                    curr ::= ret
+                }
+              }
+              if (curr.nonEmpty)
+                args ::= curr.filterNot(_.isInstanceOf[Comment]).reverse
+              curr = Nil
             }
-            if (curr.nonEmpty)
-              args ::= curr.filterNot(_.isInstanceOf[Comment]).reverse
-            curr = Nil
-          }
-          return (args.reverse, children)
-        case _ => return (Nil, children)
+            return (args.reverse, children)
+          case _ => return (Nil, children)
+        }
       }
+      throw LaTeXParseError("File ended unexpectedly")
+    } finally {
+      state.rules = currrules
     }
-    throw LaTeXParseError("File ended unexpectedly")
   }
 }
 
