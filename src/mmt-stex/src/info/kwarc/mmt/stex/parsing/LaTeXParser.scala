@@ -37,6 +37,23 @@ object SuperficialLaTeXParser {
     in.trim
     ret
   }
+
+  def readMacroNoRule(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+    val start = in.offset
+    in.drop("\\")
+    val first = in.first
+    val str = if (state.isLetter(first)) {
+      in.takeWhile(state.isLetter)
+    } else {
+      in.drop(1)
+      first.toString
+    }
+    val plain = new PlainMacro(str, start, in.offset)
+    //val ret = state.macrorules.find(_.name == plain.name).map(_.parse(plain)).getOrElse(plain)
+    //in.trim
+    //ret
+    plain
+  }
   def readTop(break:Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : List[TeXTokenLike] = {
     var ret : List[TeXTokenLike] = Nil
     while(!in.empty && !break(in.first)) try {
@@ -64,6 +81,21 @@ object SuperficialLaTeXParser {
       case _ => readText(break)
     }
   }
+  def readOneNoRule(break: Char => Boolean = _ => false)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+    if (in.empty) {
+      throw LaTeXParseError("Unexpected end of file")
+    }
+    in.first match {
+      case '\\' => readMacroNoRule
+      case '{' => readGroup
+      case '%' => readComment
+      case '$' if in.getnext(2).toString == "$$" =>
+        readMath("$$", "$$")
+      case '$' => readMath("$", "$")
+      case _ => readText(break)
+    }
+  }
+
   def readMath(starts : String,ends:String)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
     val start = in.offset
     var ret : List[TeXTokenLike] = Nil

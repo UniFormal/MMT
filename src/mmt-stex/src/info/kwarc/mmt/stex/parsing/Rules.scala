@@ -102,9 +102,6 @@ trait TeXRule {
 
   def readOptArg(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (List[List[TeXTokenLike]],List[TeXTokenLike]) = {
     import SuperficialLaTeXParser._
-    val currrules = state.rules
-    state.rules = Nil
-    try {
       in.trim
       var children: List[TeXTokenLike] = Nil
       var args: List[List[TeXTokenLike]] = Nil
@@ -147,7 +144,7 @@ trait TeXRule {
                     children = children ::: List(new PlainText("[", in.offset, in.offset + 1))
                     curr ::= new PlainText("[", in.offset, in.offset + 1)
                   case _ =>
-                    val ret = readOne(List('[', ']', ',').contains)
+                    val ret = readOneNoRule(List('[', ']', ',').contains)
                     children = children ::: ret :: Nil
                     curr ::= ret
                 }
@@ -161,9 +158,6 @@ trait TeXRule {
         }
       }
       throw LaTeXParseError("File ended unexpectedly")
-    } finally {
-      state.rules = currrules
-    }
   }
 }
 
