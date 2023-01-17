@@ -289,11 +289,11 @@ trait SemanticMacro extends MacroRule with SymRefRuleLike {
       }
       if (op) {
         val ret = cons(plain, children, Some(notation.notinfo))
-        notation.notinfo.opnotation match {
+        /*notation.notinfo.opnotation match {
           case None =>
             if (requireNotation) ret.addError("Notation " + notation.notinfo.id + " for " + notation.notinfo.syminfo.path.toString + " has no operator notation!")
           case _ =>
-        }
+        }*/
         ret
       } else safely {
         cons(plain, children, Some(notation.notinfo))
