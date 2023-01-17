@@ -132,9 +132,9 @@ class LaTeXParserState(initrules : List[TeXRule]) {
     if (rules.isEmpty) throw LaTeXParseError("No group here to close")
     rules = rules.tail
   }
-  def macrorules = rules.flatMap(_.rules).collect{case mr : MacroRule => mr}
-  def getRules = rules.flatMap(_.rules)
-  def envrules = rules.flatMap(_.rules).collect{case er: EnvironmentRule => er}
+  def macrorules = rules.view.flatMap(_.rules).collect{case mr : MacroRule => mr}.toList.distinct
+  def getRules = rules.view.flatMap(_.rules).toList.distinct
+  def envrules = rules.view.flatMap(_.rules).collect{case er: EnvironmentRule => er}.toList.distinct
   def addRule(rule : TeXRule,global:Boolean = false) = if (global) rules.foreach(_.rules ::= rule) else rules.head.rules ::= rule
   var letters : List[Char] = Nil
   var specialchars : List[Char] = List('\\','%','{','$')

@@ -480,7 +480,7 @@ case class MathStructureMacro(
                                file:String,dict:Dictionary
                              ) extends TeXModuleLike(pm,mpi,ch,rl) with TeXRule with SemanticMacro {
   val sig = ""
-  override lazy val name = "mathstructure " + mpi.toString
+  //override lazy val name = "mathstructure " + mpi.toString
   val syminfo = new SymdeclInfo(macroname,symbolpath,"","",false,this.file,this.startoffset,this.endoffset,true) with MathStructureInfo {
     val module_path = mpi
   }
