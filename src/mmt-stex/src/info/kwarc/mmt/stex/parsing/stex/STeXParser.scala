@@ -917,7 +917,9 @@ object STeXRules {
           case s if s.startsWith("def=") =>
             ls = ls.filterNot(_ == l)
             defd = true
-          // TODO?
+          case s if s.startsWith("return=") =>
+            ls = ls.filterNot(_ == l)
+          // TODO
           case s if s.startsWith("op=") || s.startsWith("prec=") || !s.contains('=') =>
           case _ =>
             print("")
