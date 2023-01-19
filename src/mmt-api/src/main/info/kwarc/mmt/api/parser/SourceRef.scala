@@ -45,10 +45,10 @@ object SourceRegion {
  */
 case class SourcePosition(offset: Int, line: Int, column: Int) {
   /** inverse of SourcePosition.parse */
-  override def toString = offset + "." + line + "." + column
-  def twoDimString = line + "." + column
+  override def toString = s"$offset.$line.$column"
+  def twoDimString = s"$line.$column"
   /** same as twoDimString but columns and rows are counted from 1, not 0 */
-  def twoDimStringFromOne = (line+1) + "." + (column+1)
+  def twoDimStringFromOne = s"${line+1}.${column+1}"
   /** the position that is i places later in the same line */
   def +(i: Int) = SourcePosition(offset + i, line, column + i)
   /** the position after the string s, which starts at the current position (s may contain newlines) */
@@ -113,6 +113,7 @@ object SourceRef extends metadata.Linker[SourceRef](mmt.mmtbase ? "metadata" ? "
       SourceRef(container, reg)
    }
    def toURI(s: SourceRef) = s.toURI
+   def fromString(s: String) = SourceRef.fromURI(URI(s))
    def anonymous(s: String) = {
       val reg = SourceRegion.ofString(s)
       SourceRef(URI.empty, reg)

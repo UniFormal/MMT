@@ -28,7 +28,6 @@ class RuleBasedChecker extends ObjectChecker {
 
       def fail(msg: String) = {
         env.errorCont(InvalidUnit(cu, NoHistory, msg))
-        val tm = ParseResult
         CheckingResult(false, None, prOrg.toTerm)
       }
       if (cu.isKilled) {
@@ -41,10 +40,10 @@ class RuleBasedChecker extends ObjectChecker {
       val updateComponent = cu.component map {comp =>
          controller.globalLookup.getComponent(comp) match {
             case tc: TermContainer =>
-               tc.dependsOn.clear
+               tc.dependsOn.clear()
                (comp,tc)
             case cc: ContextContainer =>
-               cc.dependsOn.clear
+               cc.dependsOn.clear()
                (comp,cc)
             case _ => throw ImplementationError("not a TermContainer")
          }
@@ -83,10 +82,10 @@ class RuleBasedChecker extends ObjectChecker {
          }
         // report warnings
         solver.getErrors.foreach{
-          case e@SolverError(l,h,_) =>
+          case e@SolverError(exc,h,_) =>
             val msg = e.msg(solver.presentObj(_))
             env.errorCont(new InvalidUnit(cu,h.narrowDownError,msg) {
-              override val level = l
+              override val excuse = exc
             })
         }
       } else {
@@ -94,15 +93,15 @@ class RuleBasedChecker extends ObjectChecker {
          val cuS = cu.present(solver.presentObj)
          logGroup {
             solver.logState(logPrefix)
-            val (errors,warnings) = solver.getErrors.partition(e => e.level >= Level.Error)
-            (errors:::warnings) foreach {case SolverError(l,h,_) =>
+            val errors = solver.getErrors
+            errors foreach {case SolverError(exc,h,_) =>
                val e = new InvalidUnit(cu, h.narrowDownError, cuS) {
-                 override val level = l
+                 override val excuse = exc
                }
                env.errorCont(e)
             }
             if (errors.isEmpty) {
-               val constraints = solver.getConstraints 
+               val constraints = solver.getConstraints
                constraints foreach {dc =>
                   val h = dc.history + "unresolved constraint"
                   env.errorCont(InvalidUnit(cu, h, cuS))

@@ -2,9 +2,9 @@ package info.kwarc.mmt.api.utils
 
 import java.net.URLDecoder
 import java.util.jar.JarFile
-
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{Git, UnixGit, WindowsGit}
+
+import java.nio.charset.StandardCharsets
 
 object MMTSystem {
   /** information about how MMT was run, needed to access resources */
@@ -47,7 +47,8 @@ object MMTSystem {
      if (location == null)
         OtherStyle
      else {
-       val classFolder = File(location.getPath)
+       val path = URLDecoder.decode(location.getPath, StandardCharsets.UTF_8)
+       val classFolder = File(path)
        if (classFolder.isFile) {
          if (classFolder.name == "mmt.jar") {
            if (classFolder.up.name == "deploy")
@@ -61,9 +62,9 @@ object MMTSystem {
              ThinJars(classFolder.up.up.up.up / "deploy")
            }
          }
-      } else {
+       } else {
          Classes(classFolder)
-      }
+       }
      }
    }
 
@@ -87,15 +88,9 @@ object MMTSystem {
     (version, url)
   }
 
-  /** the git used by this MMT instance */
-  lazy val git: Git = OS.detect match {
-    case Windows => new WindowsGit() 
-    case _ => UnixGit
-  }
-
   /** the git version (branch) used by mmt, if available */
   lazy val gitVersion: Option[String] = runStyle match {
-    case d: DeployRunStyle => git(d.deploy, "symbolic-ref", "HEAD") match {
+    case d: DeployRunStyle => OS.git(d.deploy, "symbolic-ref", "HEAD") match {
       case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length).trim)
       case _ => None
     }
@@ -151,7 +146,7 @@ object MMTSystem {
         val jarPath = myPath.getPath.substring(5, myPath.getPath.indexOf("!"))
 
         // open the jar and find all files in it
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         val entries = new JarFile(URLDecoder.decode(jarPath, "UTF-8")).entries.asScala.map(e => "/" + e.getName)
 
         // find all the resources within the given path, then remove the prefix

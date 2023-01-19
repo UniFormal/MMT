@@ -134,7 +134,7 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
          </graph>
       </gexf>
    }
-   def exportGEXF(filename: utils.File) {
+   def exportGEXF(filename: utils.File): Unit = {
       utils.File.write(filename, toGEXF.toString)
    }
    // note graphviz does not like some characters (including -) in the tooltip attributes

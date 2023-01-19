@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.utils.{File, FilePath, URI}
 sealed abstract class MathPathAction extends Action
 
 case object ShowArchives extends MathPathAction with ResponsiveAction {
-  def apply() {
+  def apply(): Unit = {
     println("The following archives are loaded: ")
     logGroup {
       controller.backend.getArchives.foreach({ a =>
@@ -29,7 +29,7 @@ case object ShowArchives extends MathPathAction with ResponsiveAction {
 object ShowArchivesCompanion extends ObjectActionCompanion(ShowArchives, "show currently loaded archives", "show archives")
 
 case object Local extends MathPathAction {
-  def apply() {
+  def apply(): Unit = {
     val currentDir = new java.io.File(".").getCanonicalFile
     val b = URI.fromJava(currentDir.toURI)
     controller.backend.addStore(LocalSystem(b))
@@ -49,7 +49,7 @@ object AddArchiveCompanion extends ActionCompanion("add catalog entries for a se
 }
 
 case class AddMathPathFS(uri: URI, file: File) extends MathPathAction {
-  def apply() {
+  def apply(): Unit = {
     val lc = new LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
     controller.backend.addStore(lc)
   }
@@ -58,27 +58,6 @@ case class AddMathPathFS(uri: URI, file: File) extends MathPathAction {
 object AddMathPathFSCompanion extends ActionCompanion("add mathpath entry for a local directory", "mathpath fs") {
   import Action._
   def parserActual(implicit state: ActionState) = uri ~ file ^^ { case u ~ f => AddMathPathFS(u, f) }
-}
-
-case class Read(file: File, interpret: Boolean) extends MathPathAction {
-  def apply() {
-    if (!file.isFile)
-      throw GeneralError("file not found: " + file)
-    val ps = controller.backend.resolvePhysical(file) match {
-      case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FilePath(p))
-      case None => ParsingStream.fromFile(file)
-    }
-    controller.read(ps, interpret, mayImport = true)(new ErrorLogger(controller.report))
-    ps.stream.close
-  }
-  def toParseString = s"${if (interpret) "interpret" else "read"} $file"
-}
-object ReadCompanion extends ActionCompanion("read a file containing MMT in OMDoc syntax", "read", "interpret") {
-  import Action._
-  override val addKeywords = false
-  def parserActual(implicit state: ActionState) = read | interpret
-  private def read(implicit state: ActionState) = "read" ~> file ^^ { f => Read(f, interpret=false)}
-  private def interpret(implicit state: ActionState) = "interpret" ~> file ^^ { f => Read(f, interpret=true)}
 }
 
 /** implements helper functions of [[MathPathAction]]s */

@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api._
 import java.io._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import utils.File
 
 object ShellCommand {
@@ -30,19 +30,8 @@ object ShellCommand {
        return Abort(e) // GeneralError("error while trying to run external process").setCausedBy(e)
     }
     // read all output immediately to make sure proc does not deadlock if buffer size is limited
-    val output = new StringBuilder
-    val outputReader = new BufferedReader(new InputStreamReader(proc.getInputStream))
-    var line: Option[String] = None
-    while ( {
-      line = Option(outputReader.readLine)
-      line.isDefined
-    }) {
-      output.append(line.get + "\n")
-      out(line.get)
-    }
+    val op = StreamReading.read(proc.getInputStream)
     proc.waitFor
-    outputReader.close()
-    val op = output.result()
     val ev = proc.exitValue
     if (ev == 0) {
       Success(op)

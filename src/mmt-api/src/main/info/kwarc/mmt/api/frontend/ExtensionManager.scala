@@ -5,20 +5,14 @@ import actions._
 import archives._
 import backend._
 import checking._
-import libraries._
 import opaque._
 import parser._
 import presentation._
 import symbols._
 import proving._
 import uom._
-import presentation._
 import utils._
-import utils.MyList._
 import web._
-
-import scala.util.Try
-
 
 trait Extension extends Logger {
   /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
@@ -37,7 +31,7 @@ trait Extension extends Logger {
   /** a custom error class for this extension */
   case class LocalError(s: String) extends ExtensionError(logPrefix, s)
   /** convenience method for wrapping code in error handler that throws [[LocalError]] */
-  protected def catchErrors(msg: String)(code: => Unit) {
+  protected def catchErrors(msg: String)(code: => Unit): Unit = {
      try {code}
      catch {case e: Error =>
        log(LocalError(msg).setCausedBy(e))
@@ -53,20 +47,20 @@ trait Extension extends Logger {
   }
   /** an [[ErrorHandler]] that wraps an error in a [[LocalError]] and throws it */
   protected def makeErrorThrower(msg: String) = new ErrorHandler {
-    protected def addError(e: Error) {
+    protected def addError(e: Error): Unit = {
       throw LocalError(msg).setCausedBy(e)
     }
   }
 
 
   /** MMT initialization (idempotent) */
-  private[api] def init(controller: Controller) {
+  private[api] def init(controller: Controller): Unit = {
     this.controller = controller
     report = controller.report
   }
 
   /** any extension can initialize other extensions if those are not meant to be added to the ExtensionManager */
-  protected def initOther(e: Extension) {
+  protected def initOther(e: Extension): Unit = {
      e.init(controller)
   }
 
@@ -86,20 +80,23 @@ trait Extension extends Logger {
   }
 
   /** extension-specific initialization (override as needed, empty by default) */
-  def start(args: List[String]) {}
+  def start(args: List[String]): Unit = {}
+
+  /** called when the controller is cleared; extensions must still be operational after processing this call */
+  def clear: Unit = {}
 
   /** extension-specific cleanup (override as needed, empty by default)
     *
     * Extensions may create persistent data structures and threads,
     * but they must clean up after themselves in this method
     */
-  def destroy {}
+  def destroy: Unit = {}
 
   /** extensions that process tasks in separate threads should override this and wait until those threads are done */
-  def waitUntilRemainingTasksFinished {}
+  def waitUntilRemainingTasksFinished: Unit = {}
 
   /** convenience for calling waitUntilRemainingTasksFinished and then destroy */
-  def destroyWhenRemainingTasksFinished {
+  def destroyWhenRemainingTasksFinished: Unit = {
     waitUntilRemainingTasksFinished
     destroy
   }
@@ -123,12 +120,12 @@ trait FormatBasedExtension extends Extension {
 trait LeveledExtension extends Extension {
   def objectLevel: Extension
 
-  override def init(controller: Controller) {
+  override def init(controller: Controller): Unit = {
     objectLevel.init(controller)
     super.init(controller)
   }
 
-  override def destroy {
+  override def destroy: Unit = {
     objectLevel.destroy
     super.destroy
   }
@@ -215,7 +212,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
     val ext = try {
       val Ext = clsJ.asInstanceOf[Class[Extension]]
-      Ext.newInstance
+      Ext.getDeclaredConstructor().newInstance()
     } catch {
       case e: Exception =>
         throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
@@ -234,7 +231,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** initializes and adds an extension */
-  def addExtension(ext: Extension, args: List[String] = Nil) {
+  def addExtension(ext: Extension, args: List[String] = Nil): Unit = {
     log("adding extension " + ext.getClass.toString)
     ext.init(controller)
     extensions ::= ext
@@ -263,7 +260,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** remove an extension (must have been stopped already) */
-  def removeExtension(ext: Extension) {
+  def removeExtension(ext: Extension): Unit = {
     extensions = extensions diff List(ext)
   }
 
@@ -280,7 +277,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }.mkString("")
   }
 
-  def addDefaultExtensions {
+  def addDefaultExtensions: Unit = {
     // MMT's defaults for the main algorithms
     val nbp = new NotationBasedParser
     val kwp = new KeywordBasedParser(nbp)
@@ -293,6 +290,14 @@ class ExtensionManager(controller: Controller) extends Logger {
     val rbs = new RuleBasedSimplifier
     val mss = new ElaborationBasedSimplifier(rbs)
     val mmtint = new TwoStepInterpreter(kwp, msc, mss)// with MMTStructureEstimator
+    // a fast interpreter that only parses structure and does not check
+    /*
+    does not work well yet because (co)domains and rules are also parsed by the object-parser and then cause parser errors
+    val fastparse = new KeywordBasedParser(DefaultObjectParser)
+    val fastint = new OneStepInterpreter(fastparse) {
+      override def format = "mmtstructure"
+      override def inExts = mmtint.inExts
+    } */
     val rbe = new execution.RuleBasedExecutor
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
@@ -306,11 +311,11 @@ class ExtensionManager(controller: Controller) extends Logger {
     // pragmatic-strict converter
     addExtension(new notations.Pragmatics)
     //targets, opaque formats, and presenters
-    val mp = new MathMLPresenter
+    val mp = new PresentationMathMLPresenter
     val hp = new HTMLPresenter(mp) {
       val key = "html"
     }
-    List(mp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
+    List(mp, hp, new uom.GenericScalaExporter,
       new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter,
       new MMTSyntaxPresenter(nbpr), new FlatMMTSyntaxPresenter(nbpr)).foreach(addExtension(_))
     //parser extensions
@@ -325,30 +330,34 @@ class ExtensionManager(controller: Controller) extends Logger {
     // graphs: loading these here is practical even though they need the path to dot (which will be retrieved via getEnvvar)
     List(new DeclarationTreeExporter, new DependencyGraphExporter, new TheoryGraphExporter).foreach(addExtension(_))
     // shell extensions
-    List(new ShellSendCommand, new execution.ShellCommand, new Make).foreach(addExtension(_))
+    List(new ShellSendCommand, new execution.ExecuteFromShell, new Make, new RunFile).foreach(addExtension(_))
 
     addExtension(new AbbreviationRuleGenerator)
     
     // action companions
-    List(NoActionCompanion,RemoteActionCompanion,
+    List(NoActionCompanion,
         ListReportGroupsCompanion, AddReportHandlerCompanion, LoggingOnCompanion, LoggingOffCompanion,
-        ExecFileCompanion, ScalaCompanion, MBTCompanion,
+        ExecFileCompanion, ScalaCompanion,
         InspectDefineCompanion, DefineCompanion, EndDefineCompanion, DoCompanion,
-        CheckCompanion, CheckTermCompanion, NavigateCompanion, CompareCompanion,
-        ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, ReadCompanion,
+        CheckCompanion, CheckTermCompanion, NavigateCompanion, NavigateSourceCompanion,
+        ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
         MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
         ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHOpenCompanion, LMHUseCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
-        ClearCompanion, ExitCompanion, SetBaseCompanion,
+        ClearCompanion, ExitCompanion, SetBaseCompanion, SuppressErrorsCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
-        ArchiveBuildCompanion, FinishBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion,
+        ArchiveBuildCompanion, ArchiveMarCompanion,
     ).foreach{e => addExtension(e)}
     // This **must** be at the end, to act as a default for stuff
     addExtension(GetActionCompanion)
   }
 
-  def cleanup {
+  def clear: Unit = {
+    extensions.foreach(_.clear)
+  }
+
+  def cleanup: Unit = {
     extensions.foreach(_.destroy)
     extensions = Nil
   }

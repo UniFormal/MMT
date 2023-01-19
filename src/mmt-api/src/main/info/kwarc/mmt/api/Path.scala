@@ -279,7 +279,7 @@ abstract class LNStep {
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
    override def toString = toStr(false)
-   def toStr(implicit shortURIs: Boolean): String  
+   def toStr(implicit shortURIs: Boolean): String
 }
 
 object LNStep {
@@ -347,11 +347,11 @@ object LocalRef {
       var seen : List[String] = Nil    //segments that have been parsed
       var current : String = ""        //the part of the current segment that has been parsed
       //called when the end of the current segment has been detected
-      def segmentDone {seen ::= current; current = ""}
+      def segmentDone: Unit = {seen ::= current; current = ""}
       //called when the next character is appended to the current segment
-      def charDone {current = current + left(0); left = left.substring(1)}
+      def charDone: Unit = {current = current + left(0); left = left.substring(1)}
       //parses s segment-wise; if a segment starts with [, pass control to complex
-      def start {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
+      def start: Unit = {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
                else if (left.startsWith("[") && current == "" && {
                   val p = left.indexOf("]")
                   p != -1 && (left.length == p+1 || (left.length > p+1 && left(p+1) == '/'))
@@ -361,7 +361,7 @@ object LocalRef {
                else                            {charDone; start}
       } //TODO accept only balanced nestings of []?
       //parses a complex segment of the form [URI] (assumes [ has been parsed already)
-      def complex {if (left.isEmpty)           {throw ParseError("unclosed '[' in " + s)}
+      def complex: Unit = {if (left.isEmpty)           {throw ParseError("unclosed '[' in " + s)}
                else if (left == "]")           {charDone; segmentDone}
                else if (left.startsWith("]/")) {charDone; segmentDone; left = left.substring(1); start}
                else                            {charDone; complex}

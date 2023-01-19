@@ -41,8 +41,8 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
     val document = new Document(dpath, ModuleLevel, Some(self))
     document.metadata = metadata
     /** call a function on all logical declarations and their parent document */
-    def traverse(f: (Document,SRef) => Unit) {traverse(document, f)}
-    private def traverse(doc: Document, f: (Document,SRef) => Unit) {
+    def traverse(f: (Document,SRef) => Unit): Unit = {traverse(document, f)}
+    private def traverse(doc: Document, f: (Document,SRef) => Unit): Unit = {
       doc.getDeclarations.foreach {
         case r: SRef => f(doc, r)
         case childDoc: Document => traverse(childDoc, f)
@@ -96,14 +96,14 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
     *  @param at the position where to add, at end by default
     * this throws an errors if a declaration for that name already exists; exception: if the two declarations are equivalent, the old one is overridden
     */
-  def add(d : Declaration, at: AddPosition = AtEnd) {
+  def add(d : Declaration, at: AddPosition = AtEnd): Unit = {
     val existedAlready = addDecl(d)
     if (!existedAlready)
       addRef(d, at, false)
   }
 
   /** like add, but treats the second argument as the name of a [[NarrativeElement]] */
-  def addAfterNarrative(d: Declaration, after: LocalName) {
+  def addAfterNarrative(d: Declaration, after: LocalName): Unit = {
     addDecl(d)
     addRef(d, After(after), true)
   }
@@ -117,11 +117,15 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
       case None =>
         false
       case Some(old) =>
-        if (s equivalentTo old)
-          true
-        else
-          throw AddError("a declaration for the name " + name + s" already exists " +
-            s"(full path is ${s.path})")
+        if (s equivalentTo old) {
+          if (!s.isGenerated && old.isGenerated) {
+            // this error is needed, e.g., to avoid replacing an induced include with a later original one, thus changing the logical order
+            throw AddError(s, s"redundancy, an equivalent declaration for $name was already generated")
+          }
+        } else {
+          throw AddError(s, s"name clash, a declaration for $name already exists")
+        }
+        true
     }
     statements(name) = s
     addAlternativeNames(s)
@@ -144,12 +148,12 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
    *
    * @param afterNarrative if at==After(n), whether n is a narrative name
    */
-  private def addRef(s: Declaration, at: AddPosition = AtEnd, afterNarrative: Boolean = true) {
+  private def addRef(s: Declaration, at: AddPosition = AtEnd, afterNarrative: Boolean = true): Unit = {
     val inDoc = s.relativeDocumentHome
     val doc = asDocument.getLocally(inDoc) match {
       case Some(d: Document) => d
-      case Some(_) => throw AddError(s"narrative element $inDoc exists in theory $path but is not a document")
-      case _ => throw AddError(s"document $inDoc does not exist in theory $path")
+      case Some(_) => throw AddError(s, s"narrative element $inDoc exists in theory $path but is not a document")
+      case _ => throw AddError(s, s"document $inDoc does not exist in theory $path")
     }
     val ref = SRef(doc.path, s.path)
     val afterSRef = at match {
@@ -166,7 +170,7 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
     doc.add(ref, afterSRef)
   }
   /** delete the SRef for the Declaration with local name 'name' */
-  private def deleteRef(name: LocalName) {
+  private def deleteRef(name: LocalName): Unit = {
     traverse {case (parDoc,r) =>
       if (r.target.name == name) parDoc.delete(r.name)
     }
@@ -174,19 +178,19 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
 
   /* adding/deleting hashmap entry for the alias */
 
-  private def addAlternativeNames(s: Declaration) {
+  private def addAlternativeNames(s: Declaration): Unit = {
     s.alternativeNames foreach {a =>
       if (statements.isDefinedAt(a))
-        throw AddError("a declaration for the name " + a + " already exists")
+        throw AddError(s, s"name clash, a declaration for the alternative name $a already exists")
       statements(a) = s
     }
   }
-  private def deleteAlternativeNames(s: Declaration) {
+  private def deleteAlternativeNames(s: Declaration): Unit = {
     s.alternativeNames foreach {a => statements -= a}
   }
 
   /** updates a named declaration (preserving the order) */
-  def update(s : Declaration) {
+  def update(s : Declaration): Unit = {
     statements.get(s.name) match {
       case Some(old) =>
         deleteAlternativeNames(old)
@@ -199,7 +203,7 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
   /** moves a declaration to the end of its section (if the relDocHome of ln has changed, it is also moved to the new section)
     *  also moves all subsequent ln/X declarations (and updates their relDocHome)
     */
-  def reorder(ln: LocalName) {
+  def reorder(ln: LocalName): Unit = {
     statements.get(ln) match {
       case Some(s) =>
         deleteRef(ln)
@@ -269,8 +273,8 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
     }
     makeNodes(document)
   }
-  def streamInnerNodes(rh: presentation.RenderingHandler) {
-    def streamNodes(doc: Document) {
+  def streamInnerNodes(rh: presentation.RenderingHandler): Unit = {
+    def streamNodes(doc: Document): Unit = {
       headerNodes.foreach(rh(_))
       doc.getMetaDataNode.foreach(rh(_))
       doc.getDeclarations.foreach {

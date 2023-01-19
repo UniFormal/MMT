@@ -53,7 +53,7 @@ class Shell extends StandardIOHelper {
   var disableFirstRun = false
 
   /** creates controller, loads configurations/startup files, processes arguments, possibly drops into shell or terminates */
-  def main(a: Array[String]) {
+  def main(a: Array[String]): Unit = {
     try {
        mainRaw(a)
     } catch {
@@ -62,33 +62,38 @@ class Shell extends StandardIOHelper {
         controller.cleanup
         // We do not re-throw the exception here but instead simply exit with a non-zero code
         // Make sure ShellArguments is configured in such a way that we log to the console by default; otherwise, this would suppress errors
-        sys.exit(Shell.EXIT_CODE_FAIL_EXCEPTION)
+        exitFail
     }
   }
 
-  private def loadConfig(cfg: File) {
+  protected def exitFail = sys.exit(Level.Fatal.toInt)
+
+  private def loadConfig(cfg: File): Unit = {
      if (cfg.exists) {
         controller.loadConfig(MMTConfig.parse(cfg), false)
      }
   }
-  private def loadMsl(msl: File) {
+  private def loadMsl(msl: File): Unit = {
      if (msl.exists) {
-        controller.runMSLFile(msl, None)
+        controller.runMSLFile(msl, None, true, None)
      }
   }
 
   /** run a ShellExtension */
-  private def deferToExtension(key: String, args: List[String]) {
+  private def deferToExtension(key: String, args: List[String]): Unit = {
      controller.extman.getOrAddExtension(classOf[ShellExtension], key) match {
        case Some(se) =>
           controller.report.addHandler(ConsoleHandler)
           controller.report.groups += se.logPrefix
-          val doCleanup = se.run(this, args)
-          if (doCleanup) {
-             controller.cleanup
+          val result = se.run(this, args)
+          result.foreach {l =>
+            controller.cleanup
+            if (l > Level.Warning)
+              sys.exit(l.toInt)
           }
        case None =>
           println("no shell extension found for " + key)
+          exitFail
     }
   }
 
@@ -103,7 +108,7 @@ class Shell extends StandardIOHelper {
   }
 
   /** main method without exception handling */
-  private def mainRaw(a: Array[String]) {
+  private def mainRaw(a: Array[String]): Unit = {
 
      val deployFolder = runStyle match {
        case rs: MMTSystem.DeployRunStyle => Some(rs.deploy)
@@ -151,7 +156,7 @@ class Shell extends StandardIOHelper {
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
       controller.handle(HelpAction("usage_short"))
-      sys.exit(Shell.EXIT_CODE_FAIL_ARGUMENT)
+      exitFail
     }
 
     // configure logging
@@ -186,10 +191,9 @@ class Shell extends StandardIOHelper {
        controller.extman.addExtension(new BuildQueue)
     }
 
-    // run -file and -mbt commands
+    // run -file commands
     val mmtCommands = args.mmtFiles map {s => ExecFile(File(s), None)}
-    val mbtCommands = args.scalaFiles map {s => MBT(File(s))}
-    (mmtCommands ::: mbtCommands) foreach {a => controller.handle(a)}
+    mmtCommands foreach {a => controller.handle(a)}
     // run the remaining commands
     args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = true)}
 
@@ -198,9 +202,9 @@ class Shell extends StandardIOHelper {
         repl.enter(args)
         // run the repl and cleanup
         try {
-          repl.run
+          repl.run()
         } finally {
-          repl.exit
+          repl.exit()
         }
     }
     input.close
@@ -222,7 +226,7 @@ trait REPLExtension extends Extension {
   /* A report handler to be added to the console automatically when needed */
   protected val handler : ReportHandler = ConsoleHandler
   /** Called when entering (i.e. starting up) the REPL */
-  def enter(args : ShellArguments) {
+  def enter(args : ShellArguments): Unit = {
     //print the banner
     println(banner)
     // switch on console reports for wrong user inputs
@@ -237,7 +241,7 @@ trait REPLExtension extends Extension {
 /** The standard, bare-bones implementation of the REPL */
 class StandardREPL extends REPLExtension {
   private lazy val input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-  def run {
+  def run(): Unit = {
     var command = Option(input.readLine)
     while (command.isDefined) {
       controller.tryHandleLine(command.get) match {
@@ -247,16 +251,7 @@ class StandardREPL extends REPLExtension {
       command = Option(input.readLine)
     }
   }
-  def exit {input.close()}
-}
-
-object Shell {
-  /** exit code for when everything is OK */
-  final val EXIT_CODE_OK : Int = 0
-  /** exit code for when parsing arguments fails */
-  final val EXIT_CODE_FAIL_ARGUMENT : Int = 1
-  /** exit code for when an unexpected exception occurs */
-  final val EXIT_CODE_FAIL_EXCEPTION : Int = 2
+  def exit(): Unit = {input.close()}
 }
 
 /** A shell, the default way to run MMT as an application */

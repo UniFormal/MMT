@@ -6,7 +6,8 @@ import archives._
 import javax.swing._
 import event._
 
-class BackendPane(backend: Backend) extends {val ta = new JTextArea} with JScrollPane(ta) {
+private[gui] abstract class BackendPaneEI(val ta: JTextArea) extends JScrollPane(ta)
+class BackendPane(backend: Backend) extends BackendPaneEI(new JTextArea) {
    def set = {
       var s : String = ""
       backend.getStores foreach {

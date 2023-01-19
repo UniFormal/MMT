@@ -9,6 +9,8 @@ import frontend._
   * a simple prover
   */
 class RuleBasedProver extends Prover {
+   override val priority: Int = 10
+
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int) = {
       val gl = new Goal(pu.context, pu.tp)
       val searcher = new Searcher(controller, gl, rules, pu)

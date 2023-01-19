@@ -20,7 +20,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   val logPrefix = "backend"
 
   /** adds a storage */
-  def addStore(s: Storage*) {
+  def addStore(s: Storage*): Unit = {
     stores = stores ::: s.toList
     s.foreach { d =>
       log("adding storage " + d.toString)
@@ -28,7 +28,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   }
 
   /** removes a Storage (if present) */
-  def removeStore(s: Storage) {
+  def removeStore(s: Storage): Unit = {
     stores = stores.filter(_ != s)
     log("removing storage " + s.toString)
   }
@@ -36,12 +36,12 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   /** retrieves all Stores */
   def getStores: List[Storage] = stores
 
-  def clear {
+  def clear: Unit = {
     stores.foreach(_.clear)
   }
 
   /** releases all resources held by storages */
-  def cleanup {
+  def cleanup: Unit = {
     stores.foreach(_.destroy)
     stores = Nil
   }
@@ -52,7 +52,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     *
     * throws [[NotApplicable]] if the resource is not known/available, [[BackendError]] if it is but something goes wrong
     */
-  def load(nf: NotFound)(implicit controller: Controller) {
+  def load(nf: NotFound)(implicit controller: Controller): Unit = {
     val p = nf.path
     log("loading " + p)
     var messages: List[String] = Nil
@@ -141,7 +141,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
             log("adding archive defined by " + manifest)
           } else {
             val generatedId = root.up.getName + "/" + root.getName
-            log(manifest + " does not contain id, creating " + generatedId)
+            log(manifest.toString + " does not contain id, creating " + generatedId)
             properties += (("id", generatedId))
           }
           val arch = new Archive(root, properties, report)
@@ -151,7 +151,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
             case None =>
           }
           addStore(arch)
-          val files = utils.splitAtWhitespace(arch.properties.getOrElse("classpath", "")).map {cp =>
+          val files = arch.classpath.map {cp =>
             val rF = root / cp
             log("loading realization archive" + rF)
             rF
@@ -173,7 +173,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           addStore(ra)
           List(arch)
         case None =>
-          log(root + " is not an archive - recursing")
+          log(root.toString + " is not an archive - recursing")
           // folders beginning with . are skipped
           root.list.toList.sorted flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
       }
@@ -202,13 +202,13 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       // open the archive in newRoot
       openArchive(unpackedRoot)
     } else {
-      log(root + " is not an archive or a folder containing archives")
+      log(root.toString + " is not an archive or a folder containing archives")
       Nil
     }
   }
 
   /** unregisters an Archive with a given id */
-  def closeArchive(id: String) {
+  def closeArchive(id: String): Unit = {
     getArchive(id) foreach { arch =>
       removeStore(arch)
       removeStore(arch.narrationBackend)
@@ -216,12 +216,12 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   }
 
   /** unregisters all archives */
-  def closeAllArchives {
+  def closeAllArchives: Unit = {
     getArchives foreach {a => closeArchive(a.id)}
   }
 
   /** closes all archives, then opens them again */
-  def reopenArchives {
+  def reopenArchives: Unit = {
     val paths = getArchives.map(_.root)
     closeAllArchives
     paths foreach {p => openArchive(p)}
@@ -291,7 +291,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   }
 
   /** auxiliary function of openArchive */
-  private def extractMar(file: File, newRoot: File) {
+  private def extractMar(file: File, newRoot: File): Unit = {
     log("unpacking archive " + file + " to " + newRoot)
     File.unzip(file, newRoot)
   }

@@ -1,0 +1,226 @@
+body {
+    font-family: Latin Modern, STIXgeneral, Times, Times New Roman,Symbol, cmr10, CMSY10, CMEX10, serif;
+    margin:auto;
+}
+* {
+    position:relative
+}
+
+.resetfont {
+    font-family: Latin Modern, STIXgeneral, Times, Times New Roman, Symbol, cmr10, CMSY10, CMEX10, serif;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+}
+
+.monospaced {
+    font-family: Latin Modern Mono, FreeMono, Courier New, monospace;
+}
+
+.blackboard {
+    font-family: msbm;
+}
+
+.mskip {}
+
+.script {
+    font-family: URW Chancery L, cursive;
+}
+
+.sansserif {
+    font-family: Latin Modern Sans, sans-serif;
+}
+
+.body {
+    position: relative;
+
+    color: hsl(0, 5%, 10%);
+    background-color: hsl(210, 20%, 98%);
+
+    text-rendering: optimizeLegibility;
+    align-content: inherit;
+    justify-content: start;
+    grid-auto-flow:row;
+    text-align:justify;
+    display: flex;
+    flex-direction: column;
+}
+
+span {
+    display:inherit;
+    flex-direction: inherit;
+}
+.paragraph > span {
+    display:inline;
+}
+.displaymath {
+    display:block;
+    text-align:center;
+}
+.vskip {
+    display: inline-block;
+    line-height:0pt
+}
+.reftarget {
+}
+.vrule {
+    /*align-self:end;*/
+    display:inline-block;
+}
+.hrule {
+    /*align-self:start;*/
+    display:block;
+}
+a {
+    color: inherit;
+    text-decoration: inherit;
+}
+.raise {
+    position: relative;
+    display: inline-block;
+}
+.moveright {
+    position: relative;
+    display: inline-block;
+}
+.paragraph {
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    margin-top: 0;
+    margin-bottom: 0;
+    max-width:100%;
+    justify-content:inherit;
+    align-content:inherit;
+}
+hr {
+    width: 100%;
+}
+.vbox {
+    overflow-wrap:initial;
+    display: inline-flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: center;
+    justify-content: flex-end;
+    width:max-content;
+    max-width:100%;
+    text-align:justify;
+    align-self: center;
+}
+.hbox {
+    overflow-wrap:initial;
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-content: inherit;
+    align-items: baseline;
+    width:max-content;
+    height:max-content;
+    max-width:100%;
+}
+.matrix {
+    display: inline-flex;
+}
+.hskip {
+    display: inline-block;
+    width: 0%;
+    height: 0%;
+}
+.indent {
+    display: inline-block;
+    width: 0%;
+    height: 0%;
+}
+.vskip {
+    width: 0%;
+    height: 0%;
+}
+foreignObject {
+}
+.foreign {
+    display:flex;
+    width:100%;
+    height:100%;
+    align-items:center;
+    justify-content:center;
+}
+table {
+    border-spacing:0;
+    white-space:nowrap;
+    width:max-content;
+    height:max-content;
+    display:initial;
+}
+td {
+    padding:0;
+}
+.vfil {
+    margin-bottom: 10px;
+    width: 0%;
+    height: 0%;
+}
+.vfill {
+    margin-bottom: 30px;
+    width: 0%;
+    height: 0%;
+}
+.HFil {
+    width: 0%;
+    height: 0%;
+    display: inline-block;
+}
+.Hss {
+    width: 0%;
+    height: 0%;
+    display: inline-block;
+}
+.hkern {
+    display: inline-block;
+}
+.HFill {
+    margin-left: 30px;
+    width: 0%;
+    height: 0%;
+    display: inline-block;
+}
+.br {
+    flex-basis:100%;
+    height:0;
+}
+math {
+    width:max-content;
+    height:max-content;
+    font-size:85%;
+}
+.displaymath {
+    align-self: center;
+}
+.displaymathcontainer {
+    text-align:center;
+    display:flex;
+    justify-content:center;
+    align-self:center;
+}
+.definiendum{color:#ed028c}
+.varcomp{color:#828282}
+.symcomp{color:#0e90d2}
+.frame{background-color:#fff;display:flex;flex-direction:column;margin:0 auto}
+.frame{border:2px solid #000;border-radius:5px;overflow-y:auto;padding:1%;width:97%}
+.halign{display:table}.row{display: table-row}.cell{display: table-cell}
+.inner-frame{
+    overflow-wrap:initial;
+    display: inline-flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: center;
+    justify-content: flex-end;
+    text-align:justify;
+    align-self: center;
+    width:100%;
+}
+.inputref-container{
+    width:99%;
+    vertical-align: top;
+    display: inline-flex;
+}

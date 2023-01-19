@@ -10,7 +10,7 @@ case class CodeFile(replacements: Map[String, String], templatePath: String, des
       val handle = scala.io.Source.fromFile(templatePath)
       val result = try {
         replacements.foldLeft(handle.mkString)((str, mapItem) => {
-          str.replaceAllLiterally(mapItem._1, mapItem._2)
+          str.replace(mapItem._1, mapItem._2)
         })
       } finally handle.close()
 

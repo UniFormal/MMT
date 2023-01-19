@@ -70,6 +70,10 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
    lazy val freeVars : List[LocalName] = freeVars_.distinct
    /** helper function for freeVars that computes the free variables without eliminating repetitions */
    private[objects] def freeVars_ : List[LocalName]
+   /** the paths mentioned in this object in any order */
+   def paths = paths_.distinct
+   /** helper function for paths that does not eliminate repetitions */
+   private[objects] def paths_ : List[Path]
    /** all direct subobjects of this object with their context (excluding any outer context of this object) */
    def subobjects: List[(Context,Obj)]
    /** auxiliary function for subobjects in the absence of binding */
@@ -79,7 +83,7 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
      pos.indices.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
             obj.subobjects.lift(i) match {
-               case None => throw GetError("position " + pos + " not valid in " + this)
+               case None => throw SubobjectError(this, pos)
                case Some((newCon, so)) => (con ++ newCon, so)
             }
       }
@@ -92,7 +96,7 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
     * @param o the original object
     * call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata
     */
-   def copyFrom(o: Obj) {
+   def copyFrom(o: Obj): Unit = {
       metadata = o.metadata
    }
    /** applies copyFrom and returns this
@@ -133,6 +137,7 @@ case class OMID(path: ContentPath) extends Term {
    def head = Some(path)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def paths_ = List(path)
    def subobjects = Nil
    override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toStr else path.toString
    def toNode = path match {
@@ -174,6 +179,7 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
       OMBINDC(binder ^^ sub, newCon ^^ sub, scopes.map(_ ^^ subN)).from(this)
    }
    private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))
+   private[objects] def paths_ = binder.paths_ ::: context.paths_ ::: scopes.flatMap(_.paths_)
    def subobjects = ComplexTerm.subobjects(this) getOrElse {
      (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
    }
@@ -205,6 +211,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       </om:OMA>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
+   private[objects] def paths_ = fun.paths_ ::: args.flatMap(_.paths_)
    def subobjects = ComplexTerm.subobjects(this) getOrElse subobjectsNoContext(fun :: args)
 }
 
@@ -246,6 +253,7 @@ case class OMV(name : LocalName) extends Term {
            case None => this
        }
    private[objects] def freeVars_ = List(name)
+   private[objects] def paths_ = Nil
    def subobjects = Nil
 }
 
@@ -274,6 +282,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
    def subobjects = List(arg, key, value).map(s => (Context(), s))
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars
+   private[objects] def paths_ = arg.paths_ ::: key.paths_ ::: value.paths_
 }
 
 /** apply/unapply methods for a list of attributions */
@@ -299,7 +308,8 @@ sealed trait OMLITTrait extends Term {
    def synTypeXML = Obj.toStringOrNode(synType)
    def toNode = addAttrOrChild(<om:OMLIT value={toString}/>, "type", synTypeXML)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
-   private[objects] def freeVars_ = Nil
+   private[objects] def freeVars_ = Nil // free variables in a type do not make sense for literal values
+   private[objects] def paths_ = synType.paths_
    def subobjects = Nil
 
    /** checks equality, including the case [[OMLIT]] =?= [[UnknownOMLIT]] */
@@ -333,7 +343,7 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
  *
  *  This class is awkward but necessary to permit a lookup-free parser, which delays parsing of literals to a later phase.
- *  UnknownOMLITs are replaced with OMLITs in the [[libraries.StructureChecker]].
+ *  UnknownOMLITs are replaced with OMLITs in the [[checking.MMTStructureChecker]].
  *
  *  @param synType the type of the this literal
  */
@@ -351,12 +361,13 @@ case class OMFOREIGN(node : Node) extends Term {
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def paths_ = Nil
    def subobjects = Nil
 }
 
 
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
-@MMT_TODO("this should be replaced with the urtheory for semiformal objects")
+@deprecated("MMT_TODO: this should be replaced with the urtheory for semiformal objects", since="forever")
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
    def toStr(implicit shortURIs: Boolean) = toString
@@ -368,6 +379,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
       OMSemiFormal(newtokens).from(this)
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
+   private[objects] def paths_ = tokens.flatMap(_.paths)
    def subobjects = {
       val terms = tokens.flatMap {
          case Formal(t) => List(t)
@@ -394,6 +406,7 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
      */
     def vd = VarDecl(name, featureOpt, tp, df, nt).from(this)
     private[objects] def freeVars_ = vd.freeVars
+    private[objects] def paths_ = vd.paths
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)
     def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub),nt,featureOpt)
@@ -619,7 +632,7 @@ object Obj {
      case OMA(fun, args) => (fun::args).map(toPathEncodingAux).mkString("(", sepString, ")")
      case OMID(p) => p.toPath
      case ComplexTheory(Context.empty) => toPathEncodingAux(OMA(OMS(ModExp.complextheory), Nil))
-     case _ => throw ImplementationError("path encoding only available for theory expressions")
+     case q => throw ImplementationError("path encoding only available for theory expressions "+ q.toString)
   }
   private object MPathEncodedOMA {
       def unapply(s: String): Option[(Path,List[String])] =

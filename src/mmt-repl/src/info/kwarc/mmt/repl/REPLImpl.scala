@@ -8,7 +8,7 @@ import org.jline.reader.impl.history.DefaultHistory
 import org.jline.terminal.TerminalBuilder
 import org.jline.terminal.impl.DumbTerminal
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 
@@ -55,7 +55,8 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
 
   /** the underlying LineReader implementation used by this jLineREPL */
   lazy private val reader: LineReader = {
-    Logger.getLogger("org.jline").setLevel(Level.OFF) // turns of logging
+    val logger = Logger.getLogger("org.jline") // need to hold a reference to the logger to avoid settings to be overridden
+    logger.setLevel(Level.OFF) // turns of logging
 
     // create a new terminal
     val terminal = TerminalBuilder.builder.system(true).build()
@@ -80,15 +81,15 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
 
     // our completer will use the suggestions method above
     val completer = new Completer {
-      override def complete(lineReader: LineReader, parsedLine: ParsedLine, list: util.List[Candidate]) {
+      override def complete(lineReader: LineReader, parsedLine: ParsedLine, list: util.List[Candidate]): Unit = {
         list.addAll(suggestions(parsedLine.line()).map(new Candidate(_)).asJavaCollection)
       }
     }
 
     // our history can not be loaded or saved
     val history = new DefaultHistory {
-      override def load(){}
-      override def save(){}
+      override def load(): Unit = {}
+      override def save(): Unit = {}
     }
 
     // finally put it all together and make the LineReader
@@ -120,7 +121,7 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
   def history() : List[String] = reader.getHistory.iterator.asScala.map(_.line).toList
 
   /** starts a loop of input and output */
-  def run(){
+  def run(): Unit ={
     var shouldQuit = false
 
     while (!shouldQuit) {

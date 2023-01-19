@@ -2,9 +2,9 @@ package info.kwarc.mmt.moduleexpressions.operators.meta
 
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
+import info.kwarc.mmt.api.objects.OMSReplacer
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.OMSReplacer
-import info.kwarc.mmt.api.uom.{FlexaryConstantScala, RecurseOnly, Simplifiability, Simplify}
+import info.kwarc.mmt.api.uom.{Simplify, FlexaryConstantScala, Simplifiability, RecurseOnly}
 import info.kwarc.mmt.moduleexpressions.operators.{Combinators, Common}
 
 object Extends extends FlexaryConstantScala(Combinators._path, "extends") {

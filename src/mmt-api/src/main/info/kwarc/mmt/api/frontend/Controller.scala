@@ -41,7 +41,7 @@ class ControllerState {
   /** base URL In the local system
    *  initially the current working directory
    */
-  var home = File(System.getProperty("user.dir"))
+  var home = File.currentDir
 
   var actionDefinitions: List[Defined] = Nil
   var currentActionDefinition: Option[Defined] = None
@@ -58,9 +58,9 @@ abstract class ROController {
 
   def get(path: Path): StructuralElement
 
-  def getDocument(path: DPath, msg: Path => String = p => "no document found at " + p): Document = Try(get(path)) match {
+  def getDocument(path: DPath, msg: String = "no document found"): Document = Try(get(path)) match {
     case scala.util.Success(d: Document) => d
-    case _ => throw GetError(msg(path))
+    case _ => throw GetError(path, msg)
   }
 }
 
@@ -100,8 +100,6 @@ class Controller(report_ : Report = new Report) extends ROController with Action
 
   /** convenience for getting the default simplifier */
   def simplifier: Simplifier = extman.get(classOf[Simplifier]).head
-  /** applies only complification rules, used to unsimplify a fully-processed object, e.g., to undo definition expansion */
-  def complifier(rules: RuleSet) = new TermTransformer("complify", this, rules, ttr => ttr.isInstanceOf[ComplificationRule])
 
   /** convenience for getting the default object parser */
   def objectParser: ObjectParser = extman.get(classOf[ObjectParser], "mmt").get
@@ -147,7 +145,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** @return the current home directory */
   def getHome: File = state.home
   /** sets the current home directory (relative to which path names in commands are executed) */
-  def setHome(h: File) {
+  def setHome(h: File): Unit = {
     state.home = h
   }
 
@@ -165,7 +163,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** integrate a configuration into the current state */
-  def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
+  def loadConfig(conf: MMTConfig, loadEverything: Boolean): Unit = {
        state.config.add(conf)
        // add entries to the namespace
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
@@ -184,18 +182,18 @@ class Controller(report_ : Report = new Report) extends ROController with Action
          loadAllNeededTargets(conf)
        }
    }
-  def loadConfigFile(f: File, loadEverything: Boolean) {
+  def loadConfigFile(f: File, loadEverything: Boolean): Unit = {
      val cfg = MMTConfig.parse(f)
      loadConfig(cfg, loadEverything)
   }
 
-   private def loadAllArchives(conf: MMTConfig) {
+   private def loadAllArchives(conf: MMTConfig): Unit = {
        conf.getArchives foreach { arch =>
         addArchive(File(conf.getBase + arch.id))
       }
    }
 
-   private def loadAllNeededTargets(conf: MMTConfig) {
+   private def loadAllNeededTargets(conf: MMTConfig): Unit = {
       val archives = conf.getArchives
       val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
         conf.getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw ConfigurationError("Unknown format id: " + id))
@@ -214,7 +212,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
 
   // *************************** initialization and termination
 
-  private def init {
+  private def init: Unit = {
     extman.addDefaultExtensions
     // load default configuration
     val mmtrc = MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc"), None)
@@ -224,7 +222,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   init
 
   /** releases all resources that are not handled by the garbage collection */
-  def cleanup {
+  def cleanup: Unit = {
     // notify all extensions
     extman.cleanup
     //close all open storages in backend
@@ -259,7 +257,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
      // The merging happens in the 'add' method.
      val oldDocOpt = localLookup.getO(dpath) map {
         case d: Document => d
-        case _ => throw AddError("a non-document with this URI already exists: " + dpath)
+        case e => throw AddError(e, "a non-document with this URI already exists")
      }
      oldDocOpt.foreach {doc =>
         // (M): deactivate the old structure
@@ -300,7 +298,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** builds a file/folder in an archive using an appropriate importer */
-  def build(f: File)(implicit errorCont: ErrorHandler) {
+  def build(f: File)(implicit errorCont: ErrorHandler): Unit = {
     backend.resolvePhysical(f) orElse backend.resolveAnyPhysicalAndLoad(f) match {
       case Some((a, p)) =>
         val format = f.getExtension.getOrElse {
@@ -310,7 +308,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
           throw GeneralError("no importer found for " + f)
         }
         log("building " + f)
-        importer.build(a, Build.update, FilePath(p), Some(errorCont))
+        importer.build(a, BuildChanged(), FilePath(p), Some(errorCont))
       case None =>
         throw GeneralError("not in a known archive: " + f)
     }
@@ -355,8 +353,8 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     */
   def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = getO(path) match {
     case Some(e : E@unchecked) if cls.isInstance(e) => e
-    case Some(r) => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
-    case None => throw GetError("Element doesn't exist: " + path)
+    case Some(r) => throw GetError(path, "element exists but is not a " + cls + " - it is a " + r.getClass)
+    case None => throw GetError(path, "element does not exist")
   }
 
   /**
@@ -369,7 +367,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     */
   def getAsO[E <: StructuralElement](cls : Class[E], path: Path): Option[E] = getO(path).map {
     case e : E@unchecked if cls.isInstance(e) => e
-    case r => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
+    case r => throw GetError(path, "element exists but is not a " + cls + " - it is a " + r.getClass)
   }
 
   def getConstant(path: GlobalName): Constant = getAs(classOf[Constant], path)
@@ -493,7 +491,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
             "retrieval finished, but element was not in memory afterwards (this usually means the backend loaded an element whose URI is not the one that was requested)"
           else
             "cyclic dependency while trying to retrieve"
-          throw GetError("cannot retrieve " + eprev.last.path + ": " + msg)
+          throw GetError(eprev.last.path, msg)
         } else {
           iterate({retrieve(e)}, eprev, false)
           iterate(a, eprev, true)
@@ -502,7 +500,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** loads a path via the backend and reports it */
-  protected def retrieve(nf: NotFound) {
+  protected def retrieve(nf: NotFound): Unit = {
     log("asking backend for URI " + nf.path)
     logGroup {
       try {
@@ -512,7 +510,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
         }
       } catch {
         case NotApplicable(msg) =>
-          throw GetError(msg)
+          throw GetError(nf.path, msg)
       }
     }
     log("retrieved " + nf.path)
@@ -524,7 +522,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     * Adds a knowledge item (a [[StructuralElement]]).
     *
     * If the element is a [[ContainerElement]] (incl. [[Structure]]s and [[PlainInclude]]s!),
-    * you *must* to call [[endAdd()]] sometime after calling this [[add()]] method.
+    * you *must* to call [[endAdd()]] some time after calling this [[add()]] method.
     * Otherwise, you risk an inconsistent state of MMT.
     *
     * If the element is a [[Module]] (e.g. a [[Theory]] or [[View]]) whose name indicates
@@ -533,7 +531,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     *
     * @param at the position where it should be added (only inside modules, documents)
    */
-  def add(nw: StructuralElement, at: AddPosition = AtEnd) {
+  def add(nw: StructuralElement, at: AddPosition = AtEnd): Unit = {
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>
@@ -584,7 +582,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
                 deletedKeys foreach {comp =>
                   old.getComponent(comp).foreach {
                     log(comp.toString + " deleted")
-                    _.delete
+                    _.delete()
                   }
                 }
                 // activate the old one
@@ -631,12 +629,12 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
   
   /** called after adding all elements in the body of a container element */
-  def endAdd(c: ContainerElement[_]) {
+  def endAdd(c: ContainerElement[_]): Unit = {
     memory.content.endAdd(c)
   }
   
   /** marks this and its descendants as inactive */
-  private def deactivate(se: StructuralElement) {
+  private def deactivate(se: StructuralElement): Unit = {
      if (!se.isGenerated) {
        // generated constants and refs to them (see (*)) should be updated/removed by change listeners
        memory.content.deactivate(se)
@@ -656,7 +654,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
      }
   }
   /** deletes all inactive descendants */
-  private def deleteInactive(se: StructuralElement) {
+  private def deleteInactive(se: StructuralElement): Unit = {
      if (InactiveElement.is(se)) {
         log("deleting deactivated " + se.path)
         delete(se.path)
@@ -678,10 +676,10 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** deletes a document or module from memory
     * no change management, deletions are non-recursive, listeners are notified
     */
-  def delete(p: Path) {
+  def delete(p: Path): Unit = {
     p match {
       case _: CPath =>
-         throw DeleteError("deletion of component paths not implemented")
+         throw DeleteError(p, "deletion of component paths not implemented")
       case p =>
         val seOpt = localLookup.getO(p)
         seOpt foreach {se =>
@@ -692,9 +690,10 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   }
 
   /** clears the state */
-  def clear {
+  def clear: Unit = {
     memory.clear
     backend.clear
+    extman.clear
     notifyListeners.onClear
   }
 

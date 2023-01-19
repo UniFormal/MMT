@@ -50,7 +50,7 @@ abstract class MMTIntegrationTest(override val archives : String*)(neededExtensi
     log("Running automated setup")
     report.withGroups(/* "setup" */) {
       logGroup {
-        setup.setup(systemFolder, contentFolder, None, installContent = false)
+        setup.setup(systemFolder, contentFolder, None, installContent = None)
       }
     }
 

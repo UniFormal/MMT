@@ -7,7 +7,7 @@ import org.gjt.sp.jedit.textarea._
 
 class MMTGutterExtension(mmt: MMTPlugin, editPane: EditPane) extends MMTTextAreaExtension(editPane) {
   
-  override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+  override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int): Unit = {
     val task = mmt.progressTracker.get(editPane.getBuffer).getOrElse(return)
     val lastReport = task.getReports.headOption match {
       case Some(r: MMTInterpretationProgress) => r

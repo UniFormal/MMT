@@ -43,7 +43,7 @@ import MMTTeX._
 case class MMTTeX(tex: File) extends Action {
    def toParseString = s"mmttex $tex"
    
-   def apply() { 
+   def apply(): Unit = {
      val base = DPath(FileURI(tex))
      val mmt = tex.addExtension("mmt")
      val sty = mmt.addExtension("sty")
@@ -65,11 +65,11 @@ case class MMTTeX(tex: File) extends Action {
      initOther(presenter)
      val jobFile = new FileWriter(sty)
 
-     def doDocument(doc: Document) {
+     def doDocument(doc: Document): Unit = {
        doc.getModulesResolved(controller.globalLookup) foreach doModule
      }
 
-     private def doModule(m: Module) {
+     private def doModule(m: Module): Unit = {
         controller.simplifier(m)
         m match {
           case dt: Theory => dt.meta.foreach {mt =>

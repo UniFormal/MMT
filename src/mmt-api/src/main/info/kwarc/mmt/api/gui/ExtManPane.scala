@@ -5,7 +5,8 @@ import frontend._
 import javax.swing._
 //import event._
 
-class ExtManPane(extman: ExtensionManager) extends {val ta = new JTextArea} with JScrollPane(ta) {
+private[gui] abstract class ExtManPaneEI(val ta: JTextArea) extends JScrollPane(ta)
+class ExtManPane(extman: ExtensionManager) extends ExtManPaneEI(new JTextArea) {
    def set = {
       ta.setText(extman.stringDescription)
    }

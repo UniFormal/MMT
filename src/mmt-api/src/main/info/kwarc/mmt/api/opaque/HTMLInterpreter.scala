@@ -39,7 +39,7 @@ class HTMLInterpreter extends OpaqueElementInterpreter
       new OpaqueXML(parent, format, nodeM, terms.reverse)
    }
 
-   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {
+   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment): Unit = {
       val oh = downcast(oe)
       oh.terms foreach {tf =>
          tf.tc.parsed.foreach {t =>
@@ -49,7 +49,7 @@ class HTMLInterpreter extends OpaqueElementInterpreter
       }
    }
 
-   def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler) {
+   def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler): Unit = {
       val oh = downcast(oe)
       val nP = mapMMTNodes(oh.node) {case MMTIndex(i) =>
          val tf = oh.terms(i)

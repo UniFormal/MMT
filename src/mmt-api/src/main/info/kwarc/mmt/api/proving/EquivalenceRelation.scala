@@ -38,7 +38,7 @@ class EquivalenceRelation(levels: Int) {
    }
 
    /** merges two classes */
-   private def merge(c: EquivalenceClass, d: EquivalenceClass, cBelowD: Boolean) {
+   private def merge(c: EquivalenceClass, d: EquivalenceClass, cBelowD: Boolean): Unit = {
      val betw = if (cBelowD || (c below d)) {
        c between d
      } else if (d below c) {
@@ -59,7 +59,7 @@ class EquivalenceRelation(levels: Int) {
    def getOrAddClass(t: Term) = getClass(t).getOrElse(addClass(t))
 
    /** records the knowledge s == t */
-   def equivalent(s: Term, t: Term) {
+   def equivalent(s: Term, t: Term): Unit = {
      if (s hasheq t) return
      (getClass(s), getClass(t)) match {
        case (Some(c), Some(d)) =>
@@ -81,7 +81,7 @@ class EquivalenceRelation(levels: Int) {
    }
 
    /** records the knowledge s != t */
-   def notEquivalent(s: Term, t: Term) {
+   def notEquivalent(s: Term, t: Term): Unit = {
      val c = getOrAddClass(s)
      val d = getOrAddClass(t)
      if (c == d) {
@@ -93,7 +93,7 @@ class EquivalenceRelation(levels: Int) {
    }
 
    /** records the knowledge s <= t */
-   def belowOrEqual(s: Term, t: Term) {
+   def belowOrEqual(s: Term, t: Term): Unit = {
      val c = getOrAddClass(s)
      val d = getOrAddClass(t)
      if (c below d) return
@@ -105,7 +105,7 @@ class EquivalenceRelation(levels: Int) {
    }
 
    /** records the knowledge s < t */
-   def strictlyBelow(s: Term, t: Term) {
+   def strictlyBelow(s: Term, t: Term): Unit = {
       belowOrEqual(s,t)
       notEquivalent(s,t)
    }
@@ -160,18 +160,18 @@ class EquivalenceClass(levels: Int) extends ShapeIndexedSet[Term](levels, x => x
   /** true if two classes must be disjoint */
   def disjointFrom(c: EquivalenceClass) = _disjointFrom contains c
   /** records the knowledge that two classes must be disjoint */
-  def mustBeDisjointFrom(c: EquivalenceClass) {_disjointFrom ::= c}
+  def mustBeDisjointFrom(c: EquivalenceClass): Unit = {_disjointFrom ::= c}
 
   /** classes that must be directly above this from this one */
   private var _below: List[EquivalenceClass] = Nil
   /** true if this is below that */
   def below(that: EquivalenceClass): Boolean = this == that || _below.exists(b => b below this)
   /** records the knowledge that two classes must be disjoint */
-  def mustBeBelow(c: EquivalenceClass) {_below ::= c}
+  def mustBeBelow(c: EquivalenceClass): Unit = {_below ::= c}
   /** all classes between this and that */
   def between(that: EquivalenceClass): List[EquivalenceClass] = {
     var res: List[EquivalenceClass] = Nil
-    def aux(seen: List[EquivalenceClass], next: EquivalenceClass) {
+    def aux(seen: List[EquivalenceClass], next: EquivalenceClass): Unit = {
       if (next == that) {
         res :::= seen
       } else {
@@ -182,13 +182,13 @@ class EquivalenceClass(levels: Int) extends ShapeIndexedSet[Term](levels, x => x
   }
 
   /** merges another class into this one */
-  def add(c: EquivalenceClass) {
+  def add(c: EquivalenceClass): Unit = {
      c.foreach {x => this += x}
      _disjointFrom = (_disjointFrom ::: c._disjointFrom).distinct
      _below = (_below ::: c._below).distinct
   }
   /** replaces any reference to a d in ds with c */
-  def merged(c: EquivalenceClass, ds: List[EquivalenceClass]) {
+  def merged(c: EquivalenceClass, ds: List[EquivalenceClass]): Unit = {
     def needsC(l: List[EquivalenceClass]) = !l.contains(c) && !utils.disjoint(l,ds)
     if (needsC(_disjointFrom))
       _disjointFrom ::= c

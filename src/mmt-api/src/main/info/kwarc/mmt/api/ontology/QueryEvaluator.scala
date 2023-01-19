@@ -54,7 +54,7 @@ class QueryEvaluator(controller: Controller) {
     }
   }
 
-  private def log(msg: => String) {
+  private def log(msg: => String): Unit = {
     controller.report("query", msg)
   }
 
@@ -164,8 +164,8 @@ class QueryEvaluator(controller: Controller) {
             case Some(tc: AbstractObjectContainer) => tc.get foreach {
               res += List(_)
             }
-            case Some(cc) => throw GetError(s"component $comp exists but it is not an object: $cc" )
-            case _ => throw GetError("component does not exist: " + comp)
+            case Some(cc) => throw GetError(p $ comp, s"component exists but is not an object: $cc")
+            case _ => throw GetError(p $ comp, "component does not exist")
           }
         case _ => throw ImplementationError("ill-typed query")
       }
@@ -230,7 +230,7 @@ class QueryEvaluator(controller: Controller) {
             res += List(_)
           }
           res
-        case p => throw GetError("must be a module path " + p)
+        case p => throw GetError(p, "not a module path")
       }
 
     /** union of the result sets */

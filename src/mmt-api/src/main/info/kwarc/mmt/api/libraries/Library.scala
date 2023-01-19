@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
-import info.kwarc.mmt.api.notations.NotationContainer
 import modules._
 import objects._
 import symbols._
@@ -21,17 +20,17 @@ class ModuleHashMap {
   def get(p: MPath): Option[Module] = {
     underlying.get(p).flatMap(_.get)
   }
-  def update(p: MPath, m: Module) {
+  def update(p: MPath, m: Module): Unit = {
     val r = new SoftReference(m)
     underlying.update(p, r)
   }
-  def -=(p: MPath) {
+  def -=(p: MPath): Unit = {
     underlying -= p
   }
   def keys = underlying.keys
   def values = underlying.values.flatMap(_.get)
-  def clear {
-    underlying.clear
+  def clear: Unit = {
+    underlying.clear()
   }
   override def toString = {
     underlying.toList.sortBy(_._1.name.toPath).map { case (mp, r) =>
@@ -74,6 +73,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private val documents = new scala.collection.mutable.HashMap[DPath,Document]
   /** all known root modules (which also induce root documents) */
   private val modules = new ModuleHashMap
+  // private val computedModules = new scala.collection.mutable.HashMap[Term,Module]
+  // private val generalizedMorphisms = new scala.collection.mutable.HashMap[Term,ExpressionTransformer]
   /** the diagram of implicit morphisms */
   private val implicitGraph = new ImplicitGraph
 
@@ -105,13 +106,13 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    *  this considers both root documents  p / ln and root modules p / ln.init ? ln.head
    *  the longest known p is chosen in case of ambiguity
    */
-  private def documentsGetRoot(dp: DPath, error: String => Nothing): (Document, LocalName) = {
+  private def documentsGetRoot(dp: DPath): (Document, LocalName) = {
     val top = dp.^^
     val name = dp.name
     val rootDoc = name.prefixes.reverse.mapFind {n =>
        val topn = top / n
        documents.get(topn) orElse {
-          if (n.nonEmpty) modules.get(topn.toMPath).map(m => seeAsDoc(m, error))
+          if (n.nonEmpty) modules.get(topn.toMPath).map(m => seeAsDoc(m))
           else None // n may be empty if name is empty to begin with
        }
     }.getOrElse {throw NotFound(dp)}
@@ -121,22 +122,22 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
 
   /** top level retrieval method */
   def get(p: Path): StructuralElement = {
-     val error = (msg:String) => throw GetError("error while retrieving " + p + ": " + msg)
+     val error = (msg:String) => throw GetError(p, msg)
      val se = p match {
-        case d: DPath => getNarrative(d, error)
-        case p: MPath => getContent(p, error)
-        case GlobalName(mp, n) => getDeclarationInTerm(OMMOD(mp), n, error)
-        case c: CPath => throw GetError("retrieval of components not possible")
+        case d: DPath => getNarrative(d)
+        case p: MPath => getContent(p)
+        case GlobalName(mp, n) => getDeclarationInTerm(OMMOD(mp), n)
+        case c: CPath => throw GetError(c, "retrieval of components not possible")
      }
      ifActive(se).getOrElse {
-       throw GetError("element used to exist but is not valid anymore (this may also be caused by an illegal forward-reference)")
+       throw GetError(p, "element used to exist but is not valid anymore (this may also be caused by an illegal forward-reference)")
      }  
   }
   /** retrieval in a module expression */
-  def get(home: Term, name: LocalName, error: String => Nothing): Declaration = {
-    val d = getDeclarationInTerm(home, name, error)
+  def get(home: Term, name: LocalName): Declaration = {
+    val d = getDeclarationInTerm(home, name)
     ifActive(d).getOrElse {
-       throw GetError("declaration used to exist but is not valid anymore (this may also be caused by an illegal forward-reference)")
+       throw GetError(d.path, "declaration used to exist but is not valid anymore (this may also be caused by an illegal forward-reference)")
     }   
   }
 
@@ -149,12 +150,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    *
    *  Note the similarity to getContent.
    */
-  private def getNarrative(d: DPath, error: String => Nothing): NarrativeElement = {
+  private def getNarrative(d: DPath): NarrativeElement = {
      /** step-wise looks up left in ne */
      def getNarrativeAux(ne: NarrativeElement, left: LocalName): NarrativeElement = {
         if (left.isEmpty) ne
         else {
-            val doc = seeAsDoc(ne, error)
+            val doc = seeAsDoc(ne)
             val child = doc.getLocally(LocalName(left.head)).getOrElse {
                throw NotFound(doc.path / left.head)
                // no error here because the document may exist separately
@@ -164,22 +165,25 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          }
      }
      // try root document
-     val (doc, left) = documentsGetRoot(d, error)
+     val (doc, left) = documentsGetRoot(d)
      getNarrativeAux(doc, left)
   }
 
   /** tries to interpret a narrative element as a document
    *  in particular, this treats modules as documents, and dereferences NRefs
    */
-  private def seeAsDoc(se: StructuralElement, error: String => Nothing): Document = se match {
-     case d: Document => d
-     case r: NRef => getO(r.target) match {
-        case Some(se) => seeAsDoc(se, error)
+  private def seeAsDoc(se: StructuralElement): Document = {
+    def error(s: String) = throw GetError(se.path, s)
+    se match {
+      case d: Document => d
+      case r: NRef => getO(r.target) match {
+        case Some(se) => seeAsDoc(se)
         case None => error("referenced element does not exist: " + r.target)
-     }
-     case b: ModuleOrLink => b.asDocument
-     case nm: NestedModule => seeAsDoc(nm.module, error)
-     case _ => error("element exists but is not document-like: " + se.path)
+      }
+      case b: ModuleOrLink => b.asDocument
+      case nm: NestedModule => seeAsDoc(nm.module)
+      case _ => error("element exists but is not document-like")
+    }
   }
 
   // ******************* module level retrieval
@@ -192,13 +196,13 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    *
    *  Note the similarity to getNarrative.
    */
-  private def getContent(p: MPath, error: String => Nothing): ContentElement = {
+  private def getContent(p: MPath): ContentElement = {
      /** step-wise looks up left in ce */
      def getContentAux(ce: ContentElement, left: LocalName): ContentElement = {
         if (left.isEmpty) ce
         else {
-           val m = seeAsMod(ce, error)
-           val d = getDeclarationInElement(m, Nil, LocalName(left.head), error)
+           val m = seeAsMod(ce)
+           val d = getDeclarationInElement(m, Nil, LocalName(left.head))
            getContentAux(d, left.tail)
          }
      }
@@ -214,17 +218,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** tries to interpret a content element as a module
    *  In particular, [[NestedModule]]s are turned into [[Module]]s, which allows referencing into nested theory-like elements.
    */
-  private def seeAsMod(ce: ContentElement, error: String => Nothing): ModuleOrLink = ce match {
+  private def seeAsMod(ce: ContentElement): ModuleOrLink = ce match {
      case m: Module => m
      case nm: NestedModule => nm.module
      case s: Structure => s
      case dd: DerivedDeclaration => dd
-     case _ => error("element exists but is not module-like: " + ce.path)
+     case _ => throw GetError(ce.path, "element exists but is not module-like")
   }
 
   // ******************* declaration level retrieval
-  private val sourceError = (s: String) => throw GetError("error while looking up source declaration: "+s)
-
   /** dereferences a declaration level reference
    *
    * Retrieval starts in the given module 'home'.
@@ -239,9 +241,9 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    * @param name declaration name relative to that materialization
    * @param error error continuation
    */
-  private def getDeclarationInTerm(home: Term, name: LocalName, error: String => Nothing): Declaration = {
+  private def getDeclarationInTerm(home: Term, name: LocalName): Declaration = {
     /* convenience method for making an assignment that maps t?name to target; if target is omitted, this returns the identity assignment */
-    def makeAssignment(t: Term, name: LocalName, target: Option[Term]) = get(t, name, error) match {
+    def makeAssignment(t: Term, name: LocalName, target: Option[Term]) = get(t, name) match {
       case c: Constant => ConstantAssignment(home, name, Nil, target orElse Some(c.toTerm))
       case l: Structure => DefLinkAssignment(home, name, l.from, target getOrElse l.toTerm)
       case rc: RuleConstant => RuleConstant(home, name, target orElse rc.tp, None)
@@ -249,24 +251,24 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     home match {
       // base case: lookup in atomic modules
       case OMPMOD(p, args) =>
-         val mod = seeAsMod(getContent(p, error), error)
+         val mod = seeAsMod(getContent(p))
          val newName = name.steps match {
            case ComplexStep(`p`) :: r =>
              if (r.isEmpty)
-               throw GetError("cannot lookup " + p + " in itself")
+               throw GetError(p, "cannot lookup element in itself")
              LocalName(r)
            case _ => name
          }
-         getDeclarationInElement(mod, args, newName, error)
+         getDeclarationInElement(mod, args, newName)
       // base case: lookup in atomic declaration
       case OMS(p) =>
          getO(p) match {
            case Some(ce: ContentElement) =>
-             getDeclarationInElement(ce, Nil, name, error)
+             getDeclarationInElement(ce, Nil, name)
            case Some(e) =>
-             error("element exists but cannot contain declarations: " + e.path)
+             throw GetError(p/name, "element " + e.path + " exists but cannot contain declarations")
            case None =>
-             error("containing declaration not found: " + p)
+             throw GetError(p/name, "containing declaration not found")
          }
       // complex cases: lookup in module expressions
       case ComplexTheory(cont) =>
@@ -279,7 +281,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                   // if name is visible to p, delegate to lookup in p
                   getImplicit(q, p).foreach {m =>
                     // we only need the existence of m to know in which direction to continue; translation along m will happen anyway
-                    return get(OMPMOD(p,args), name, error)
+                    return get(OMPMOD(p,args), name)
                   }
                 case _ =>
               }
@@ -288,7 +290,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                 case s2@SimpleStep(_) if s == LocalName(s2) =>
                   val sym = getSymbol(p ? name.tail)
                   val struc = vdDecl.asInstanceOf[Structure]
-                  val symT = translateByLink(sym, struc, error)
+                  val symT = translateByLink(sym, struc)
                   return symT
                 case _ =>
               }
@@ -306,24 +308,19 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         // added for LMFDB queries, where LMFDB theories might not be in the context of the query
         name.steps match {
           case ComplexStep(q)::ln =>
-            return get(OMMOD(q), ln, error)
+            return get(OMMOD(q), ln)
           case _ =>
         }
-        throw GetError("name " + name + " not found in " + cont)
-      case TUnion(ts) => ts mapFind { t =>
-        getO(t,name)
-      } getOrElse {
-        error("union of theories has no declarations except includes")
-      }
+        throw GetError(ComplexTheory.path, s"name $name not found in " + cont)
       case OMCOMP(Nil) =>
         name match {
           case LocalName(ComplexStep(d) :: _) =>
             // infer domain of identity morphism
-            get(OMIDENT(OMMOD(d)),name,error)
-          case _ => throw GetError("cannot look up " + name + " in empty composition")
+            get(OMIDENT(OMMOD(d)),name)
+          case _ => throw GetError(OMCOMP.path, s"cannot look up $name in empty composition")
         }
       case OMCOMP(hd :: tl) =>
-        val a = get(hd, name, error)
+        val a = get(hd, name)
         if (tl.isEmpty)
           a
         else a match {
@@ -337,21 +334,22 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         // arguments are only relevant when looking up a declaration in the target, because this represents an include 
         makeAssignment(OMMOD(f),name,None)
       case OMStructuralInclude(f,t) =>
-         val mod = seeAsMod(getContent(t, error), error)
-         getAssignmentInModuleOrLink(mod, OMMOD(f), name, error)
-      case Morph.empty => error("empty morphism has no assignments")
-      case _ => error("unknown module: " + home)
+         val mod = seeAsMod(getContent(t))
+         getAssignmentInModuleOrLink(mod, OMMOD(f), name)
+      case Morph.empty => throw GetError(ComplexMorphism.path, s"cannot look up assignment for $name in empty morphism")
+      case _ => throw GetError(home.head.getOrElse(utils.mmt.mmtcd), s"cannot look up $name in unknown module: " + home)
     }
   }
 
   /** auxiliary method of get for lookups in a parent that has already been retrieved */
-  private def getDeclarationInElement(mod: ContentElement, args: List[Term], name: LocalName, error: String => Nothing): Declaration = {
+  private def getDeclarationInElement(mod: ContentElement, args: List[Term], name: LocalName): Declaration = {
+    def error(s: String) = throw GetError(mod.path, s"cannot get $name: $s")
     // only theories may have parameters for now
     mod match {
       case t: Theory =>
       case d =>
         if (0 != args.length)
-          throw GetError("number of arguments does not match number of parameters")
+          error("number of arguments does not match number of parameters")
     }
     // now the actual lookup
     mod match {
@@ -360,21 +358,21 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          t.df match {
            case Some(df) if !uom.ElaboratedElement.isPartially(t) =>
              // lookup in definiens if not elaborated yet; alternatively: call elaboration
-             val d = getDeclarationInTerm(df, name, error)
+             val d = getDeclarationInTerm(df, name)
              instantiate(d, t.parameters, args)
            case _ =>
-             val d = getInTheory(t, args, name, error)
+             val d = getInTheory(t, args, name)
              d
          }
       case l: Link if l.df.isDefined =>
          // defined view or structure
          // TODO: lookup in elaboration if possible
-         getDeclarationInTerm(l.df.get, name, error)
+         getDeclarationInTerm(l.df.get, name)
       case v: View =>
          // if v is partial, the returned declaration may have an empty definiens
-         getInLink(v, name, error)
+         getInLink(v, name)
       case s: Structure =>
-         val assig = getInLink(s, name, error)
+         val assig = getInLink(s, name)
          // structures are total: so we merge in a default definiens: s(n) = s/n
          def defaultDef = TermContainer(OMS(s.home.toMPath ? translateNameByLink(name, s)))
          assig match {
@@ -385,14 +383,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case a => a
          }
       case nm: NestedModule =>
-        getDeclarationInElement(nm.module, args, name, error)
+        getDeclarationInElement(nm.module, args, name)
       case e =>
-        error(e.feature + " declaration cannot contain declarations: " + e.path)
+        error(e.feature + " " + e.path + " declaration cannot contain declarations")
     }
   }
 
   /** auxiliary method of get for lookups in a [[Theory]] */
-  private def getInTheory(t: AbstractTheory, args: List[Term], name: LocalName, error: String => Nothing) = {
+  private def getInTheory(t: AbstractTheory, args: List[Term], name: LocalName) = {
+     def error(s: String) = throw GetError(t.path, s"cannot get $name: $s")
      val declLnOpt = t.getMostSpecific(name) map {
         case (d, ln) => (instantiate(d, t.parameters, args), ln)
      }
@@ -400,17 +399,17 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
        case Some((d, LocalName(Nil))) => d // perfect match
        case Some((d, ln)) => d match {
          case Include(id) =>
-           val sym = getDeclarationInTerm(OMPMOD(id.from,id.args),ln,error)
+           val sym = getDeclarationInTerm(OMPMOD(id.from,id.args),ln)
            id.df match {
-             case Some(df) => translate(sym, df, error)
+             case Some(df) => translate(sym, df)
              case None => sym
            }
          // a prefix exists and resolves to d, a suffix ln is left
          case s:Structure =>
-           val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
-           translateByLink(sym, s, error) // translate sym along s
+           val sym = getDeclarationInTerm(s.from, ln) // resolve ln in the domain of s
+           translateByLink(sym, s) // translate sym along s
          case dd: DerivedDeclaration =>
-            getInElaboration(t, dd, ln, error)
+            getInElaboration(t, dd, ln)
          case e =>
            error("local name " + ln + " left after resolving to " + e.path)
        }
@@ -418,7 +417,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          // initial complex steps are possible even if no prefix of name is declared in t if t is not flattened
          case ComplexStep(mpath) :: ln =>
            getO(mpath) match {
-             case Some(included: Theory) =>
+             case Some(included: AbstractTheory) =>
                // continue lookup in (possibly implicitly) included theory
                val imp = implicitGraph(mpath, t match {
                  case t:Theory => t.path
@@ -436,21 +435,21 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                      Include(t.toTerm, mpath, Nil, Some(imp)) // implicit morphism as a defined include
                  }
                } else {
-                 val sym = getDeclarationInElement(included, Nil, ln, sourceError)
-                 val symT = translate(sym, imp, error) // translate the result along the implicit morphism
+                 val sym = getDeclarationInElement(included, Nil, ln)
+                 val symT = translate(sym, imp) // translate the result along the implicit morphism
                  symT
                }
              case Some(l: Link) =>
                // continue lookup in domain of l
-               val sym = getDeclarationInTerm(l.from, ln, sourceError)
-               translateByLink(sym, l, error) // translate the result along the link
+               val sym = getDeclarationInTerm(l.from, ln)
+               translateByLink(sym, l) // translate the result along the link
              case Some(e) =>
                error("cannot resolve complex step " + mpath)
              case None =>
                error("cannot resolve " + mpath)
            }
          case Nil =>
-           throw GetError("empty name not allowed")
+           error("empty name not allowed")
          case _ => throw NotFound(t.modulePath ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
        }
      }
@@ -459,7 +458,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /**
    * look up 'name' in elaboration of dd
    */
-  private def getInElaboration(parent: AbstractTheory, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
+  private def getInElaboration(parent: AbstractTheory, dd: DerivedDeclaration, name: LocalName): Declaration = {
+      def error(s: String) = throw GetError(parent.path, s"cannot get $name: $s")
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
@@ -469,7 +469,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           if (ln.isEmpty)
             d
           else
-            getInElaboration(parent, d, ln, error)
+            getInElaboration(parent, d, ln)
         case Some((e,ln)) =>
           error("cannot elaborate " + ln + " after resolving to " + e.path)
         case None =>
@@ -478,15 +478,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** convenience interface for getAssignmentInModuleOrLink */
-  private def getInLink(l: Link, name: LocalName, error: String => Nothing) = {
-    getAssignmentInModuleOrLink(l, l.from, name, error)
+  private def getInLink(l: Link, name: LocalName) = {
+    getAssignmentInModuleOrLink(l, l.from, name)
   }
   /** auxiliary method of get to unify lookup theories, structures, and views
     * returns an empty Declaration (with only home and name set) if no assignment provided
     */
-  private def getAssignmentInModuleOrLink(l: ModuleOrLink, from: Term, name: LocalName, error: String => Nothing): Declaration = {
+  private def getAssignmentInModuleOrLink(l: ModuleOrLink, from: Term, name: LocalName): Declaration = {
      def default = {
-        val da = get(from, name, sourceError) match {
+        val da = get(from, name) match {
           case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
           case d: Structure => new Structure(l.toTerm, name, d.tpC, new TermContainer, false, false)
           case rc: RuleConstant => new RuleConstant(l.toTerm, name, new TermContainer, None)
@@ -501,22 +501,22 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           a // perfect match
         case Some((a, ln)) => a match {
           case a: Constant =>
-            error("local name " + ln + " left after resolving to constant assignment")
+            throw GetError(a.path, s"local name $ln left after resolving $name to constant assignment")
           case a: Structure =>
             val aname = a.name
             val afrom = a.from
             val adf = a.df getOrElse {
               (l,a) match {
-                case (_: AbstractTheory, Include(id)) if !id.isRealization =>
+                case (_: AbstractTheory, Include(id)) if !(id.isRealization && id.df.isEmpty) =>
                   // if l is a theory that already includes afrom
                   // we have to be careful to avoid a cycle because the realization itself is found at this point if an assignment is missing
                   id.asMorphism
                 case _ =>
-                  throw GetError("element " + a.path + " found when trying to find assignment for " + nameS + " (This may happen when trying to use a realization that is not total.)")
+                  throw GetError(a.path, s"different element found while trying to find assignment for $nameS (This may happen when trying to use a realization that is not total.)")
               }
             }
             val dom = afrom.toMPath
-            val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln, error)
+            val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln)
             // dfAssig has the right definiens, but we need to change its home and name to fit the original request
             val h = dfAssig.name.head
             val prefix = if (h.isInstanceOf[ComplexStep] && aname.head == h) aname.init else aname
@@ -552,7 +552,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                 val vmA = if (tname.isEmpty) {
                   Include(l.toTerm, theo, Nil, Some(vm))
                 } else {
-                  getDeclarationInTerm(vm, nameS, error)
+                  getDeclarationInTerm(vm, nameS)
                 }
                 return vmA
               }
@@ -571,7 +571,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
     if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
     val subs: Substitution = (params / args).getOrElse {
-        throw GetError("number of arguments does not match number of parameters of " + decl.path + ": " + params.length + " (" + params.map(_.name).mkString(", ") + ") given: " + args)
+        throw GetError(decl.path, "number of arguments does not match number of parameters: " + params.length + " (" + params.map(_.name).mkString(", ") + ") given: " + args)
       }
     if (subs.isIdentity) return decl // avoid creating new instance
     val newHome = decl.home match {
@@ -584,28 +584,28 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** translate a Declaration along a morphism */
-  private def translate(d: Declaration, morph: Term, error: String => Nothing): Declaration = {
+  private def translate(d: Declaration, morph: Term): Declaration = {
     morph match {
       case OMMOD(v) =>
         val link = getView(v)
-        translateByLink(d, link, error)
+        translateByLink(d, link)
       case OMS(p) =>
         val link = getStructure(p)
-        translateByLink(d, link, error)
+        translateByLink(d, link)
       case OMIDENT(t) =>
         val imp = implicitGraph(d.home, t) getOrElse {
-          throw GetError("no implicit morphism from " + d.home + " to " + t)
+          throw GetError(d.path, "no implicit morphism to translate declaration to " + t)
         }
         //TODO better copy d and change home to t and name to d.home/d.name
-        translate(d, imp, error)
+        translate(d, imp)
       case OMINST(p,_,args) =>
-        getDeclarationInTerm(OMPMOD(p,args), LocalName(d.path.module)/d.name, error)
+        getDeclarationInTerm(OMPMOD(p,args), LocalName(d.path.module)/d.name)
       case OMStructuralInclude(f,t) =>
         val thy = getTheory(t)
-        translateByModuleOrLink(d, thy, OMMOD(f), error)
+        translateByModuleOrLink(d, thy, OMMOD(f))
       case OMCOMP(Nil) => d
       case OMCOMP(hd :: tl) =>
-        translate(translate(d, hd, error), OMCOMP(tl), error)
+        translate(translate(d, hd), OMCOMP(tl))
       //TODO remaining cases
     }
   }
@@ -631,21 +631,21 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** auxiliary method of translate to unify translation along structures and views */
   // if the morphism is partial, this returns a Constant with empty definiens;
   // for a structure, the definiens is the composed morphism (which may be defined for some constants even if it is not defined in general)
-  private def translateByLink(decl: Declaration, l: Link, error: String => Nothing) =
-    translateByModuleOrLink(decl, l, l.from, error)
-  private def translateByModuleOrLink(decl: Declaration, l: ModuleOrLink, from: Term, error: String => Nothing): Declaration =
+  private def translateByLink(decl: Declaration, l: Link) =
+    translateByModuleOrLink(decl, l, l.from)
+  private def translateByModuleOrLink(decl: Declaration, l: ModuleOrLink, from: Term): Declaration =
     l.df match {
       case Some(df) =>
-        translate(decl, df, error)
+        translate(decl, df)
       case None =>
         // if necessary, first translate decl along implicit morphism into l.from
         val imp = implicitGraph(decl.home, from) getOrElse {
-          throw GetError("no implicit morphism from " + decl.home + " to " + from)
+          throw GetError(decl.path, "no implicit morphism to translate declaration to " + from)
         }
-        val declT = translate(decl, imp, error)
+        val declT = translate(decl, imp)
         // get the assignment for declT provided by l (if any)
         val qualName = LocalName(declT.parent) / declT.name
-        val assig = getAssignmentInModuleOrLink(l, from, qualName, error)
+        val assig = getAssignmentInModuleOrLink(l, from, qualName)
         val newName = l match {
           case l: Link => translateNameByLink(qualName, l)
           case t: AbstractTheory => qualName
@@ -671,7 +671,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val newDef = a.df orElse c.df.map(mapTerm)
             val newRole = a.rl orElse c.rl
             // translating notations is the trickiest part, especially verbalization notations are experimental
-            val newNotC = a.notC.copy
+            val newNotC = a.notC.copy()
             // most important special case: copy over notation of c if a does not have one and it is unambiguous
             (a.notC.parsing, c.notC.parsing) match {
               case (None, Some(cn)) =>
@@ -734,7 +734,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
   }*/
 
-  def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) {
+  def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit): Unit = {
     val impls = visibleVia(mod).toList
     impls.foreach {
       case (p, m) =>
@@ -798,29 +798,30 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    *  Therefore, they share a lot of code, which is captured in this class.
    */
   private abstract class ChangeProcessor {
-     def errorFun(msg: String): Nothing
+     def topError: Error
+     def errorHandler[A](code: => A): A = try {code} catch {case l: LibraryError => throw topError.setCausedBy(l)}
      def primitiveDocument(dp: DPath): Unit
      def otherNarrativeElement(parent: Document, ln: LocalName): Unit
      def primitiveModule(mp: MPath): Unit
      def otherContentElement(parent: ModuleOrLink, ln: LocalName): Unit
      def component(cp: CPath, cont: ComponentContainer): Unit
      /** This does the relevant case distinction and then delegates to one of the abstract methods. */
-     def apply(p: Path) {p match {
+     def apply(path: Path): Unit = {path match {
         case dp: DPath =>
            if (documents.isDefinedAt(dp))
              primitiveDocument(dp)
            else {
-             val doc = seeAsDoc(getNarrative(dp ^, errorFun), errorFun)
+             val doc = errorHandler {seeAsDoc(getNarrative(dp ^))}
              otherNarrativeElement(doc, LocalName(dp.name.last))
            }
         case mp: MPath =>
            primitiveModule(mp)
         case GlobalName(p,ln) =>
-            val se = seeAsMod(getContent(p, errorFun), errorFun)
+            val se = errorHandler {seeAsMod(getContent(p))}
             se match {
               case b: ModuleOrLink =>
                  otherContentElement(b, ln)
-              case _ => errorFun("parent does not resolve to container " + se.path)
+              case _ => errorHandler {throw GetError(path, "parent does not resolve to container")}
             }
         case cp: CPath =>
            getO(cp.parent) foreach {se =>
@@ -840,10 +841,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     * Adds a [[StructuralElement]].
     *
     * If the element is a [[ContainerElement]] (incl. [[Structure]]s and [[PlainInclude]]s!),
-    * you *must* to call [[endAdd()]] sometime after calling this [[add()]] method.
+    * you *must* call [[endAdd()]] sometime after calling this [[add()]] method.
     * Otherwise, you risk an inconsistent state of MMT.
     */
-  def add(e: StructuralElement, at: AddPosition = AtEnd) {
+  def add(e: StructuralElement, at: AddPosition = AtEnd): Unit = {
     log("adding " + e.path + " (which is a " + e.feature + ")")
     val adder = new Adder(e, at)
     e match {
@@ -853,7 +854,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
        case ne: NarrativeElement if ne.name.length != 1 =>
           // this case is needed because ChangeProcessor assumes ne.name.length == 1 && ne.parentOpt = Some(ne.path ^)
           // can it be specified away?
-          val parDoc = seeAsDoc(getNarrative(ne.parentOpt.get, adder.errorFun), adder.errorFun)
+          val parDoc = adder.errorHandler {seeAsDoc(getNarrative(ne.parentOpt.get))}
           adder.otherNarrativeElement(parDoc, ne.name)
        case _ =>
           adder.run
@@ -864,19 +865,20 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** add-related work that has to be done at the end of an element
    *  in particular: implicit morphisms are registered only when the inducing element has been checked 
    */
-  def endAdd(c: ContainerElement[_]) {
+  def endAdd(c: ContainerElement[_]): Unit = {
     addImplicits(c, false)
   }
 
   /** the bureaucracy of adding 'se' */
   private class Adder(se: StructuralElement, at: AddPosition) extends ChangeProcessor {
-     def errorFun(msg: String) = throw AddError(msg)
-     def wrongType(exp: String) {errorFun("expected a " + exp + ", found " + se.feature + " " + se.path)}
-     def checkNoAfter {
+     def errorFun(msg: String): LibraryError = AddError(se, msg)
+     def topError = errorFun("unknown cause")
+     def wrongType(exp: String): Unit = {errorFun("expected a " + exp + ", found " + se.feature)}
+     def checkNoAfter: Unit = {
        if (at != AtEnd)
          errorFun("adding after a declaration only allowed in containers")
      }
-     def run {
+     def run: Unit = {
         apply(se.path)
      }
      def primitiveDocument(dp: DPath) = {
@@ -925,10 +927,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
 
-  private def addImplicits(se: StructuralElement, before: Boolean) {
+  private def addImplicits(se: StructuralElement, before: Boolean): Unit = {
     se match {
       // before == true
-      case t: Theory if before =>
+      case t: AbstractTheory if before =>
         t.getAllIncludes foreach addIncludeToImplicit
       case dd: DerivedDeclaration if before =>
         implicitGraph.add(dd.home.toMPath, dd.modulePath, None)
@@ -946,7 +948,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           id.home match {
             case OMMOD(h) =>
               get(h) match {
-                case thy: Theory =>
+                case thy: AbstractTheory =>
                   val oldImpl = implicitGraph(OMMOD(id.from),id.home) flatMap {
                     case OMCOMP(Nil) => None
                     case i => Some(i)
@@ -969,12 +971,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case _ =>
           }
         }
-      case t: Theory if !before  =>
+      case t: AbstractTheory if !before  =>
       // (*)
       //t.getRealizees foreach addIncludeToImplicit
       case l: Link if l.isImplicit && !before =>
-        val fO = checkAtomic(l.from)
-        val tO = checkAtomic(l.to)
+        val fO = checkAtomic(se, l.from)
+        val tO = checkAtomic(se, l.to)
         (fO,tO) match {
           case (Some(f),Some(t)) =>
             implicitGraph.add(f, t, Some(l.toTerm))
@@ -985,22 +987,22 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
   }
 
-  private def deleteImplicits(p: Path) {
+  private def deleteImplicits(p: Path): Unit = {
     p match {
       case p: MPath => implicitGraph.delete(p)
       case _ =>
     }
   }
 
-  private def checkAtomic(t: Term) = t match {
+  private def checkAtomic(se: StructuralElement, t: Term) = t match {
     case OMPMOD(p,_) => Some(p)
-    case OMSemiFormal(_) => None // this basically only happens when the parsing has previously failedterm has previously failpeople would not expect this to be implicit; error
+    case OMSemiFormal(_) => None // this basically only happens when the parsing has previously failed; people would not expect this to be implicit
     case _ =>
-      throw AddError("implicit morphism must have atomic domain and codomain")
+      throw AddError(se, "implicit morphism must have atomic domain and codomain")
   }
 
   // shared code for adding an include
-  private def addIncludeToImplicit(id: IncludeData) {
+  private def addIncludeToImplicit(id: IncludeData): Unit = {
     val mor = if (!id.isRealization && id.args.isEmpty && !id.df.isDefined) None else Some(id.asMorphism)
     implicitGraph.add(id.from, id.home.toMPath, mor)
   }
@@ -1020,25 +1022,25 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     *
     * @param path the path to the element to be deleted
     */
-  def delete(path: Path) {
+  def delete(path: Path): Unit = {
     deleteImplicits(path)
-    Deleter.apply(path)
+    new Deleter(path).apply(path)
   }
   
-  def deactivate(se: StructuralElement) {
+  def deactivate(se: StructuralElement): Unit = {
     InactiveElement.set(se)
     deleteImplicits(se.path)
   }
   
-  def reactivate(se: StructuralElement) {
+  def reactivate(se: StructuralElement): Unit = {
     InactiveElement.erase(se)
     addImplicits(se, true)
     addImplicits(se, false)
   }
 
   private val lib = this
-  private object Deleter extends ChangeProcessor {
-     def errorFun(msg: String) = throw DeleteError(msg)
+  private class Deleter(path: Path) extends ChangeProcessor {
+     def topError = DeleteError(path, "unknown cause")
      def primitiveDocument(dp: DPath) = {
         // delete all modules of this document
         documents.get(dp) foreach {doc =>
@@ -1067,7 +1069,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
        }
      }
      def component(cp: CPath, cont: ComponentContainer) = {
-        cont.delete
+        cont.delete()
         notifyUpdated(cp)
      }
   }
@@ -1075,7 +1077,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
  // ******************* updating elements
 
   /** updates a StructuralElement */
-  def update(e: StructuralElement) {
+  def update(e: StructuralElement): Unit = {
     log("updating " + e.path)
     deleteImplicits(e.path)
     new Updater(e).run
@@ -1087,7 +1089,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
    * AddPosition is irrelevant
    */
   private class Updater(se: StructuralElement) extends Adder(se, AtEnd) {
-     override def errorFun(msg: String) = throw UpdateError(msg)
+     override def errorFun(msg: String) = UpdateError(se, msg)
      override def otherNarrativeElement(doc: Document, ln: LocalName) = {
         se match {
            case ne: NarrativeElement =>
@@ -1107,20 +1109,20 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** moves an element with a given path to the end of its parent document */
-  def reorder(p: Path) {
-     Reorderer.apply(p)
+  def reorder(p: Path): Unit = {
+    (new Reorderer(p)).apply(p)
   }
-  private object Reorderer extends ChangeProcessor {
-     def errorFun(msg: String) = throw UpdateError(msg)
-     def primitiveDocument(dp: DPath) {}
-     def otherNarrativeElement(doc: Document, ln: LocalName) {
+  private class Reorderer(path: Path) extends ChangeProcessor {
+     def topError = GetError(path, "error while reordering")
+     def primitiveDocument(dp: DPath): Unit = {}
+     def otherNarrativeElement(doc: Document, ln: LocalName): Unit = {
         doc.reorder(ln)
      }
-     def primitiveModule(mp: MPath) {}
-     def otherContentElement(body: ModuleOrLink, ln: LocalName) {
+     def primitiveModule(mp: MPath): Unit = {}
+     def otherContentElement(body: ModuleOrLink, ln: LocalName): Unit = {
         body.reorder(ln)
      }
-     def component(cp: CPath, cont: ComponentContainer) {}
+     def component(cp: CPath, cont: ComponentContainer): Unit = {}
   }
 
   // change management
@@ -1134,7 +1136,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     *
     * @param p path to the component that was changed/deleted
     */
-  def notifyUpdated(p: CPath) {
+  def notifyUpdated(p: CPath): Unit = {
     log("updated: " + p)
     logGroup {
       // notify the definiens (if any) if a type changed
@@ -1167,10 +1169,11 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   // delete everything
 
   /** forgets everything */
-  def clear {
+  def clear: Unit = {
     modules.clear
     implicitGraph.clear
-    documents.clear
+    documents.clear()
+    previous.map(_.clear)
   }
 }
 

@@ -15,8 +15,8 @@ import info.kwarc.mmt.odk.{IntegerLiterals, LFX, StringLiterals}
 object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "debug") {
   override val gotoshell: Boolean = false
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
@@ -27,7 +27,7 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "debug") {
     controller.extman.addExtension(new PathGraphExporter)
   }
 
-  def run : Unit = {
+  def run() : Unit = {
     hl("extension info.kwarc.mmt.odk.LMFDB.Plugin")
 
     // the query from sage (xml, but a string)

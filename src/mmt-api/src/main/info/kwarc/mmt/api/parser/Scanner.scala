@@ -6,23 +6,27 @@ import utils._
 
 import scala.annotation.tailrec
 
-case class Ambiguous(notations: List[ParsingRule]) extends {
-  val message = "multiple notations apply: " + notations.map(_.toString).mkString(",")
-} with Error(message)
+case class Ambiguous(notations: List[ParsingRule]) extends Error(
+  "multiple notations apply: " + notations.map(_.toString).mkString(",")
+)
 
 import info.kwarc.mmt.api.parser.ActiveNotation._
 
-/** scans a TokenList against some notations
-  * @param tl the TokenList to scan
-  *           matched notations are applied to tl, i.e., tl always holds the current TokenList
+/**
+  * An UnmatchedList represents a subterm that has not been matched against a rule (in particular: notations) yet
+  * It is defined by a token list and holds parsing rules that can be used to scan that list against those rules.
+  * It arises in particular when notations matched against the parent term and determine that a certain list of tokens must eventually produce a single subterm.
+  * @param tl the TokenList to scan, its content will change during the scanning as this term is graudally parsed
+  * @param ruleTableInit the rules to use
+  * @param parsingUnitOpt the parsing unit that gave rise to this
   */
 class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableInit: ParsingRuleTable, val report: frontend.Report) extends frontend.Logger {
   val logPrefix = "scanner"
 
-  private def logState() {
+  private def logState(): Unit = {
     log("token list: " + tl)
     log("shifted " + numCurrentTokens)
-    active.reverseMap { an =>
+    active.reverseIterator.foreach { an =>
       log(an.toString + ", shifted: " + an.numCurrentTokens)
     }
   }
@@ -30,7 +34,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   /** the rules with which we still have to scan
    */
   private var ruleTable = ruleTableInit
-  def addRules(that: ParsingRuleTable, replace: Boolean) {
+  def addRules(that: ParsingRuleTable, replace: Boolean): Unit = {
     val newRuleTable = if (replace) that else ruleTable.add(that) 
     ruleTable = newRuleTable
   }
@@ -55,7 +59,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   private var picked = 0
 
   /** reset picked */
-  private def resetPicker() {
+  private def resetPicker(): Unit = {
     picked = 0
   }
 
@@ -126,7 +130,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   /** applies the first active notation (precondition: must be applicable)
     * @param leftOpen notation may be left-open, i.e., it has not been applied before
     */
-  private def applyFirst(leftOpen: Boolean) {
+  private def applyFirst(leftOpen: Boolean): Unit = {
     val an = active.head
     // left-open notations get all Token's that were shifted in the surrounding group
     if (leftOpen) {
@@ -162,7 +166,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   /** closes the first active notation (precondition: must be closable)
     * @param rightOpen true if the notation may still pick from the right during a call to its close method
     */
-  private def closeFirst(rightOpen: Boolean) {
+  private def closeFirst(rightOpen: Boolean): Unit = {
     log("closing current notation")
     val an = active.head
     if (rightOpen) {
@@ -194,7 +198,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
     }
   }
 
-  private def advance() {
+  private def advance(): Unit = {
     log("shifting 1 Token: " + tl(currentIndex))
     active match {
       case Nil => numCurrentTokens += 1
@@ -202,7 +206,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
     }
   }
 
-  private def restoreBacktrackInfo(an: ActiveNotation) {
+  private def restoreBacktrackInfo(an: ActiveNotation): Unit = {
     an.backtrackInfo match {
       case bti: ScannerBacktrack =>
         currentIndex = bti.currentIndex
@@ -217,7 +221,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
 
   /** tail-recursively going through the Token's */
   @tailrec
-  private def next() {
+  private def next(): Unit = {
     tl(currentIndex) match {
       case ml: MatchedList =>
         advance()
@@ -333,16 +337,16 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   /** scans for some notations and applies matches to tl
     * @param group the rules to scan with
     */
-  private def scan(group: ParsingRuleGroup) {
+  private def scan(group: ParsingRuleGroup): Unit = {
     log("scanning " + tl + " with notations " + group.rules.mkString(","))
     currentIndex = 0
     numCurrentTokens = 0
     next()
-    if (active != Nil) throw ImplementationError("active notation left after scanning")
+    if (active != Nil) throw ImplementationError("active notation left after scanning for " + active.head.rules.head.name)
   }
 
   /** scan using all notations in the ruleTable */
-  def scan() {
+  def scan(): Unit = {
     ruleTable.groups foreach {g =>
        if (!parsingUnitOpt.exists(_.isKilled))
          scan(g)

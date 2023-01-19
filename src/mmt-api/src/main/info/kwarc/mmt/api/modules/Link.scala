@@ -22,12 +22,19 @@ trait Link extends ModuleOrLink {
    def from: Term = fromC.get.getOrElse {
      throw ImplementationError("can only call this method after domain has been inferred")
    }
-   /** the codomain of this link; pre: must have been given explicitly or have been inferred */
+   /** the domain as a context */
+   def domainAsContext: Context = toC.get match {
+    case Some(ComplexTheory(cont)) => cont
+    case _ => throw ImplementationError("domain of link must be union of atomic theories")
+   }
+  /** the codomain of this link; pre: must have been given explicitly or have been inferred */
    def to: Term = toC.get.getOrElse(throw ImplementationError("can only call this method after codomain has been inferred"))
-   /** the codomain as a context; pre: same as `to` */
+   /** list of theories whose union is included into 'to' */
+   def codomainPaths = codomainAsContext.getIncludes
+   /** the codomain as a context */
    def codomainAsContext: Context = toC.get match {
     case Some(ComplexTheory(cont)) => cont
-    case _ => throw ImplementationError("codomain of link must be theory")
+    case _ => throw ImplementationError("codomain of link must be union of atomic theories")
    }
 
    /** true if this link is implicit */

@@ -22,16 +22,16 @@ class Setup extends ShellExtension("jeditsetup") {
   val log: String => Unit = println
 
   /** run method as ShellExtension */
-  def run(shell: Shell, args: List[String]): Boolean = {
+  def run(shell: Shell, args: List[String]): Option[Level.Level] = {
     val l = args.length
     if (l <= 0 || l > 2) {
       log(helpText)
-      return true
+      return withError
     }
     val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
     val jedit = jeditOpt.getOrElse {
       log("The jEdit settings folder was not found. If you have installed jEdit just now, you may have to run it once so that it creates the folder.")
-      return true
+      return withError
     }
     val doIt = new DoIt(shell, jedit)
     if (args.head == "customize") {
@@ -44,7 +44,7 @@ class Setup extends ShellExtension("jeditsetup") {
       }
       val install = installOpt.getOrElse {
         log(helpText)
-        return true
+        return withError
       }
       if (install) {
         log("trying to install to " + jedit)
@@ -53,7 +53,7 @@ class Setup extends ShellExtension("jeditsetup") {
       }
       doIt.install(install)
     }
-    true
+    withSuccess
   }
 
 
@@ -75,7 +75,7 @@ class Setup extends ShellExtension("jeditsetup") {
        stringToList(getResource(path), "\\n").foreach(proc)
 
     /** merge properties from a resource into a jEdit file */
-    def mergeProps(propsOldFile: File, propsAddResource: List[String]) {
+    def mergeProps(propsOldFile: File, propsAddResource: List[String]): Unit = {
        log("merging " + propsAddResource.mkString("/") + " into " + propsOldFile)
        var propsAdd = utils.stringToList(getPluginResource(propsAddResource), "\\n").flatMap {line =>
          val i = line.indexOf("=")
@@ -103,9 +103,9 @@ class Setup extends ShellExtension("jeditsetup") {
       *
       * @param install true/false for install/uninstall
       */
-    def install(install: Boolean) {
+    def install(install: Boolean): Unit = {
       /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
-      def copyOrDeleteJar(dir: File, f: List[String], g: List[String]) {
+      def copyOrDeleteJar(dir: File, f: List[String], g: List[String]): Unit = {
         if (install) {
           copy(dir / f, jedit / g, overwrite = true)
         } else {
@@ -113,7 +113,7 @@ class Setup extends ShellExtension("jeditsetup") {
         }
       }
       /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
-      def copyOrDeleteResource(f: List[String], replace: Boolean) {
+      def copyOrDeleteResource(f: List[String], replace: Boolean): Unit = {
         val file = jedit / f
         if (install) {
           if (!file.exists || replace) {
@@ -237,9 +237,10 @@ class Setup extends ShellExtension("jeditsetup") {
     }
 
 
-    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
+    // ErrorList 2.4.0 causes bug where errors are not removed from the Error Panel (the updates are sent and they are removed from the gutter)
+    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.2.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
-    def customize() {
+    def customize(): Unit = {
        // download jars from jEdit plugin central
        jars.foreach {case (pluginName,pluginVersion) =>
          val target = jarFolder / (pluginName + ".jar")
@@ -266,14 +267,14 @@ class Setup extends ShellExtension("jeditsetup") {
     }
   }
 
-  private def delete(f: File) {
+  private def delete(f: File): Unit = {
     if (f.exists && f.isFile) {
       f.delete
       log("deleting " + f)
     }
   }
 
-  private def copy(from: File, to: File, overwrite: Boolean) {
+  private def copy(from: File, to: File, overwrite: Boolean): Unit = {
     if (to.exists && !overwrite) {
       log("warning: " + to + " already exists, skipping; you probably want to run uninstall first")
     } else {

@@ -1,4 +1,4 @@
-/* nice, but were never used; needs rethinking
+/* nice, but were never used; should be merged into a novel algebra tactic
 
 package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._

@@ -22,7 +22,7 @@ class DiffReader(controller : Controller) {
     case "add" | "delete" =>
       var changes : List[Change] = Nil
       val cont = new StructureParserContinuations(ErrorThrower) {
-        override def onElement(s : StructuralElement) {
+        override def onElement(s : StructuralElement): Unit = {
           val change = n.label match {
               case "add" => Add(s)
               case "delete" => Delete(s)

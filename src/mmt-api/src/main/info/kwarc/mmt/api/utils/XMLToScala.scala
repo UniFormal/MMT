@@ -29,6 +29,7 @@ case class BacktrackableExtractError(token: Int, msg: String) extends Exception(
  *  * the case class whose name is the tag name is used except that
  *    * XML - is treated as Scala _
  *    * XML names that are Scala reserved words are prefixed by 'XML' in Scala
+ *    * if a Scala class with name N does not exist, N_ is tried as a fallback (e.g., useful if N cannot be a Scala class name)
  *  * the arguments to the class (technically: the single apply method of the companion object) are computed as follows:
  *   * k: String: the value of the attribute with key s, or the content of the child with tag k, ("" if neither present)
  *   * k: Int: accordingly
@@ -183,10 +184,18 @@ class XMLToScala(pkg: String) {
          // treat text nodes as Strings
          return node.text
       }
+      val name = pkg + "." + scalaName(node.label)
       val c = try {
-         Class.forName(pkg + "." + scalaName(node.label))
+         Class.forName(name)
       } catch {
-         case e: java.lang.ClassNotFoundException => throw FatalExtractError("no class for " + node)
+         case _: java.lang.ClassNotFoundException =>
+           try {
+             // try again with a variant name, this allows for otherwise impossible Scala names (e.g., if there XML labels that only differ in capitalization)
+             Class.forName(name + "_")
+           } catch {
+             case _: java.lang.ClassNotFoundException =>
+               throw FatalExtractError("no class for " + node)
+           }
       }
       val foundType = m.classSymbol(c).toType
       if (! (foundType <:< expType)) {
@@ -377,7 +386,7 @@ class XMLToScala(pkg: String) {
 }
 
 object XMLToScala {
-   def checkString(value: String, allowed: String*) {
+   def checkString(value: String, allowed: String*): Unit = {
      if (! (allowed contains value))
          throw FatalExtractError(s"illegal string value: $value; expected: ${allowed.mkString(",")}")
    }
@@ -419,7 +428,7 @@ object Test {
                     Ce(List(J(B("a1",Nil), Ca("Ca1")), J(B("a2",Nil), Ca("Ca2"))), Some(Ca("Ca")))
                )
              )
-   def main(args: Array[String]) {
+   def main(args: Array[String]): Unit = {
       val a1 = new XMLToScala("info.kwarc.mmt.api.utils").apply(n1)
       println(a1)
       assert(a1 == r1)

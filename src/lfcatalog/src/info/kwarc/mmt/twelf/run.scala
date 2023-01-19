@@ -22,7 +22,7 @@ object Run {
   /** Port on which the server runs. Default value is 8080 */
   private var port = 8080
 
-  def main(args : Array[String]) {
+  def main(args : Array[String]): Unit = {
 
     // parse program arguments
     var patternsAndLocations : Array[String] = args
@@ -58,7 +58,7 @@ object Run {
 
     // accept console input
     while (true) {
-          val input = scala.io.StdIn.readLine.trim
+          val input = scala.io.StdIn.readLine().trim
           val words : Array[String] = input.split("\\s")
           if (words.length >= 1)
             if (words(0) == "exit") {       // exit the program
@@ -70,10 +70,10 @@ object Run {
                     try {
                         catalog.deleteStringLocation(words(1))
                     } catch {
-                        case InexistentLocation(msg) => println(Time + msg)
+                        case InexistentLocation(msg) => println(Time.toString + msg)
                     }
                 else
-                    println(Time + "error: delete must be followed by a location address")
+                    println(Time.toString + "error: delete must be followed by a location address")
             }
             else if (words(0) == "errors")    // print files with errors
                 println(catalog.urlToDocument.filter(x => !x._2.errors.isEmpty).toSeq.sortBy(_._1.toString).map(_._2.errors).flatten.mkString("\n"))
@@ -81,7 +81,7 @@ object Run {
                 try {
                     catalog.addStringLocation(words(0))
                 } catch {
-                    case InexistentLocation(msg) => println(Time + msg)
+                    case InexistentLocation(msg) => println(Time.toString + msg)
                 }
             }
     }

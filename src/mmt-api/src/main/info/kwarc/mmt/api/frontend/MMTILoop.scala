@@ -12,25 +12,25 @@ import scala.tools.nsc.interpreter.Results
  */
 object MMTILoop {
   val settings = new Settings() // make sure all classes of the Java classpath are available
-  settings.usejavacp.value = true
+  settings.usejavacp.value = true // TODO: this does not load classes from archives
   val cfg = ShellConfig(settings)
 }
 class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
    /** this is overridden in order to bind variables after the interpreter has been created */
-   override def createInterpreter(settings: Settings = MMTILoop.settings) {
+   override def createInterpreter(settings: Settings = MMTILoop.settings): Unit = {
       super.createInterpreter(settings)
       init
    }
-   override def printWelcome {
-      out.println
+   override def printWelcome(): Unit = {
+      out.println()
       out.println("This is a Scala interpreter running within MMT; ':help' lists commands.")
       out.println("Use 'controller' to access the current MMT Controller.")
-      out.println
-      out.flush
+      out.println()
+      out.flush()
    }
    override lazy val prompt = "scala-mmt> "
-   private def init {
-     def printError(r: Results.Result, s: String) {
+   private def init: Unit = {
+     def printError(r: Results.Result, s: String): Unit = {
        if (r != Results.Success)
          println("binding of " + s + " failed")
      }
@@ -46,7 +46,7 @@ class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
       }
    }
    /** run a command and return or interactively read commands */
-   def run(command: Option[String]) {
+   def run(command: Option[String]): Unit = {
       //settings.sourceReader.value = "SimpleReader"
       //settings.debug.value = true
       command match {
@@ -56,7 +56,7 @@ class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
             // code copied from process(settings) but without going into the loop
             createInterpreter()
             intp.interpret(c)
-            closeInterpreter
+            closeInterpreter()
       }
    }
 }

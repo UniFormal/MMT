@@ -1,13 +1,14 @@
 package info.kwarc.mmt.jedit
 
 import java.awt.Font
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils.File._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.msg._
 import org.gjt.sp.jedit.textarea._
+
 import javax.swing.SwingUtilities
 
 /**
@@ -35,20 +36,30 @@ class MMTPlugin extends EBPlugin with Logger {
    
    /** implements onNavigate hook in terms of the methods of MMTHyperlink */
    val mmtListener = new ChangeListener {
-      override def onNavigate(p: Path) {
+      override def logPrefix = "jedit-navigate"
+      override def onNavigate(p: Path): Unit = {
          log("navigating to " + p)
-         val ref = controller.getO(p) flatMap {
-            e => MMTHyperlink.elemToSourceRef(controller, e)
-         }
-         ref foreach {r =>
-            val view = jEdit.getActiveView
-            MMTHyperlink.navigateTo(view, r)
-         }
+         val ref = controller.getO(p) flatMap SourceRef.get
+         ref foreach navigateTo
       }
+     override def onNavigateSource(r: SourceRef): Unit = {
+       log("navigating to " + r)
+       navigateTo(r)
+     }
+     def navigateTo(r: SourceRef): Unit = {
+       val rPO = MMTHyperlink.makeSourceRefPhysical(controller, r)
+       rPO match {
+         case Some(rP) =>
+           val view = jEdit.getActiveView
+           MMTHyperlink.navigateTo(view,rP)
+         case None =>
+           log("no physical source ref found")
+       }
+     }
    }
 
    /** called by jEdit when plugin is loaded */
-   override def start {
+   override def start: Unit = {
       val home = getPluginHome
       home.mkdirs
       controller.setHome(home)
@@ -56,7 +67,7 @@ class MMTPlugin extends EBPlugin with Logger {
       val startup = MMTOptions.startup.get.getOrElse("startup.msl")
       val file = home resolve startup
       if (file.exists)
-         controller.runMSLFile(file, None)
+         controller.runMSLFile(file, None, true, Some(new ErrorLogger(controller.report)))
 
       val conf = MMTOptions.config.get.getOrElse("mmtrc")
       val confFile = home resolve conf
@@ -83,13 +94,13 @@ class MMTPlugin extends EBPlugin with Logger {
       // tooltip font is set in handleMessage
    }
    /** called by jEdit when plugin is unloaded */
-   override def stop {
+   override def stop: Unit = {
       controller.cleanup
       errorlist.ErrorSource.unregisterErrorSource(errorSource)
       jEdit.getViews foreach clearMMTToolBar
    }
 
-   override def handleMessage(message: EBMessage) {
+   override def handleMessage(message: EBMessage): Unit = {
      message match {
         //add MMTTextAreaExtension to every newly-created TextArea
         case epu: EditPaneUpdate =>
@@ -119,7 +130,7 @@ class MMTPlugin extends EBPlugin with Logger {
           val file = utils.File(buffer.getPath)
           bup.getWhat match {
             case BufferUpdate.CLOSED =>
-              errorSource.removeFileErrors(file)
+              errorSource.removeMMTFileErrors(file)
             case _ =>
           }
         case _ =>
@@ -127,34 +138,34 @@ class MMTPlugin extends EBPlugin with Logger {
    }
 
   /** helper function that creates a thread and executes it */
-  def invokeLater(code: => Unit) {
+  def invokeLater(code: => Unit): Unit = {
      SwingUtilities.invokeLater(
         new Runnable() {
-          def run() {
+          def run(): Unit = {
             code
           }
         }
      )
   }
 
-  private def customizeView(view: View) {
+  private def customizeView(view: View): Unit = {
      view.getEditPanes foreach customizeEditPane
      addMMTToolBar(view)
   }
-  private def customizeEditPane(editPane: EditPane) {
+  private def customizeEditPane(editPane: EditPane): Unit = {
     val ta = editPane.getTextArea
     val painter = ta.getPainter
     if (!painter.getExtensions.exists(_.isInstanceOf[MMTTextAreaExtension])) {
       val taExt = new MMTTextHighlighting(controller, editPane)
       val tooltipExt = new MMTToolTips(controller, editPane)
       val gutterExt = new MMTGutterExtension(this, editPane)
-      val annotExt = new MMTGutterAnnotations(this, editPane)
+      // val annotExt = new MMTGutterAnnotations(this, editPane) // never used, but could be reactivated
       painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list
       // This only painted delimiters, which is now done by syntax highlighting, and did semantic highlighting, which never worked anyway
       painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
       ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
-      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
-      ta.getGutter.addMouseListener(annotExt.mouseAdapter)
+      //ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
+      //ta.getGutter.addMouseListener(annotExt.mouseAdapter)
     }
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)
@@ -171,7 +182,7 @@ class MMTPlugin extends EBPlugin with Logger {
    }
 
   /** adds MMT toolbar */
-  def addMMTToolBar(view: View) {
+  def addMMTToolBar(view: View): Unit = {
     invokeLater {
       clearMMTToolBar(view)
       val viewToolBar = view.getToolBar
@@ -183,7 +194,7 @@ class MMTPlugin extends EBPlugin with Logger {
     }
   }
   /** removes MMT toolbar */
-  def clearMMTToolBar(view: View) {
+  def clearMMTToolBar(view: View): Unit = {
     val viewToolBar = view.getToolBar
     if (viewToolBar != null) {
       log("Number of components of this view: " + viewToolBar.getComponentCount.toString)
@@ -237,7 +248,7 @@ abstract class MMTTextAreaExtension(editPane: EditPane) extends TextAreaExtensio
   protected val lineHeight = textArea.getPainter.getFontMetrics.getHeight
   
   /** @param y vertical position (same as passed by jEdit) */
-  protected def drawMarker(gfx: java.awt.Graphics2D, color: java.awt.Color, y: Int, oval: Boolean) {
+  protected def drawMarker(gfx: java.awt.Graphics2D, color: java.awt.Color, y: Int, oval: Boolean): Unit = {
     val diameter = (lineHeight-2) min (gutterWidth-2)
 	  val horiMargin = (gutterWidth-diameter)/2
 	  val vertiMargin = (lineHeight-diameter)/2
@@ -249,19 +260,19 @@ abstract class MMTTextAreaExtension(editPane: EditPane) extends TextAreaExtensio
   }
 
   /** @param y vertical position (same as passed by jEdit) */
-  protected def drawChar(gfx: java.awt.Graphics2D, color: java.awt.Color, y: Int, char : Char) {
+  protected def drawChar(gfx: java.awt.Graphics2D, color: java.awt.Color, y: Int, char : Char): Unit = {
     val painter = textArea.getPainter
     gfx.setColor(color)
     val horiMargin = (gutterWidth-painter.getStringWidth(char.toString))/2
     val fm = painter.getFontMetrics
     val baseLine = y + painter.getFontHeight - (fm.getLeading()) - fm.getDescent()  // taken from TextAreaPainter#PaintText
-    gfx.drawString(char.toString, horiMargin, baseLine)
+    gfx.drawString(char.toString, horiMargin, baseLine.toFloat)
   }
 
 }
 
 object StatusBarLogger extends ReportHandler("jEdit") {
-  def apply(ind: Int, caller: => String, group: String, msg: List[String]) {
+  def apply(ind: Int, caller: => String, group: String, msg: List[String]): Unit = {
      val v = jEdit.getActiveView
      if (v != null) {
         v.getStatus.setMessage("MMT " + group + ": " + msg.headOption.getOrElse(""))

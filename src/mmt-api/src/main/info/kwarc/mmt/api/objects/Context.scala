@@ -40,6 +40,7 @@ case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], d
   }).getOrElse(Nil) ::: (df map {
     _.freeVars_
   }).getOrElse(Nil)
+  private[objects] def paths_ = tp.map(_.paths_).getOrElse(Nil) ::: df.map(_.paths_).getOrElse(Nil)
 
   def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
 
@@ -219,8 +220,8 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
     Context(vds.reverse: _*)
   }
 
-  /** true if that is a subcontext (inclusion substitution) of this one */
-  // TODO too conservative: may return false too often
+  /** a sound but not necessary complete criterion for whether this context is stronger than that one */
+  // TODO could return true more often, but covers the practically important cases
   def subsumes(that: Context): Boolean = {
     val thisNames = this.variables.toList.map(_.name)
     val thatNames = that.variables.toList.map(_.name)
@@ -311,7 +312,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
 
     def hasNext = !todo.isEmpty
 
-    def next = {
+    def next() = {
       val hd :: tl = todo.toList
       val ret = (sofar, hd)
       sofar = sofar ++ hd
@@ -363,6 +364,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
       fv
     }
   }
+  private[objects] def paths_ = this.flatMap(_.paths_)
 
   def subobjects = mapVarDecls { case (con, vd) => (con, vd) }
 
@@ -412,6 +414,7 @@ case class Sub(name: LocalName, target: Term) extends Obj {
   def map(f: Term => Term) = Sub(name, f(target))
 
   private[objects] def freeVars_ = target.freeVars_
+  private[objects] def paths_ = target.paths_
 
   def subobjects = subobjectsNoContext(List(target))
 
@@ -419,7 +422,7 @@ case class Sub(name: LocalName, target: Term) extends Obj {
     {mdNode}{target.toNode}
   </om:OMV>
 
-  def toStr(implicit shortURIs: Boolean) = name + ":=" + target.toStr
+  def toStr(implicit shortURIs: Boolean) = name.toString + ":=" + target.toStr
 
   def head = None
 }
@@ -463,6 +466,7 @@ case class Substitution(subs: Sub*) extends Obj {
   private[objects] def freeVars_ = (this flatMap {
     _.freeVars_
   })
+  private[objects] def paths_ = this.flatMap(_.paths_)
 
   def subobjects = subobjectsNoContext(subs.toList)
 

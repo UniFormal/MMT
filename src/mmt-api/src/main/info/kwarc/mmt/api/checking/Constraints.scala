@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.presentation.Presenter
 import objects._
 
 class BranchInfo(val history: History, val backtrack: Branchpoint)
@@ -14,12 +15,14 @@ abstract class DelayedConstraint {
   val branchInfo: BranchInfo
   def history = branchInfo.history
   def branch = branchInfo.backtrack
-  /** @return true if a solved variable occurs free in this Constraint */
+  /** true if a solved variable occurs free in this Constraint */
   def isActivatable(solved: List[LocalName]) = notTriedYet || (solved exists {name => freeVars contains name})
+  /** unknown-solving equalities that are sufficient but not necessary to discharge this */
+  def suffices : Option[List[Equality]]
 }
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, val notTriedYet: Boolean = false) extends DelayedConstraint {
+class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, val suffices: Option[List[Equality]] = None, val notTriedYet: Boolean = false) extends DelayedConstraint {
   val freeVars = constraint.freeVars
   override def toString = constraint.toString
 }
@@ -27,6 +30,7 @@ class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, va
 /** A wrapper around a continuation function to be delayed until a certain type inference succeeds */
 class DelayedInference(val stack: Stack, val branchInfo: BranchInfo, val tm: Term, val cont: Term => Boolean) extends DelayedConstraint {
    def notTriedYet = false
+   def suffices = None
    val freeVars = {
      val vs = stack.context.freeVars ++ tm.freeVars
      scala.collection.immutable.ListSet(vs :_*)
@@ -55,7 +59,7 @@ case class Comment(text: () => String) extends HistoryEntry {
  * The most import History's are those ending in an error message.
  * See [[Solver.getErrors]]
  *
- * @param the nodes of the branch, from leaf to root
+ * @param e nodes of the branch, from leaf to root
  */
 case class IndentedHistoryEntry(e : HistoryEntry, level: Int) extends HistoryEntry {
    def present(implicit cont: Obj => String): String = indentation(level) + e.present
@@ -69,11 +73,15 @@ class History(var steps: List[HistoryEntry]) {
    /** shortcut for adding a Comment leaf */
    def +(s: => String) : History = this + new Comment(() => s)
    /** appends a child to the leaf */
-   def +=(e: HistoryEntry) {steps ::= IndentedHistoryEntry(e,inc)}
+   def +=(e: HistoryEntry): Unit = {steps ::= IndentedHistoryEntry(e,inc)}
    /** appends another history to the leaf */
-   def +=(h: History) {steps :::= h.steps.map(e => IndentedHistoryEntry(e, inc))}
+   def +=(h: History): Unit = {steps :::= h.steps.map(e => IndentedHistoryEntry(e, inc))}
    /** appends a child to the leaf */
-   def +=(s: => String) {this += Comment(() => s)}
+   def +=(s: => String): Unit = {this += Comment(() => s)}
+   /** pre: that is extension of this, post: this == that */
+   def mergeIn(that: History): Unit = {
+     steps :::= that.steps.take(that.steps.length-this.steps.length)
+   }
    /** creates a copy of the history that can be passed when branching */
    def branch = new History(steps)
    /** get the steps */
@@ -88,6 +96,8 @@ class History(var steps: List[HistoryEntry]) {
        inc -=1
      }
    }
+
+  def present(p : Presenter) = steps.map(_.present(o => p.asString(o))).reverse.mkString("\n")
 
    override def toString = steps.map(_.toString).mkString("\n")
 
@@ -116,7 +126,7 @@ class History(var steps: List[HistoryEntry]) {
 
 /** a history that ignores all messages */
 object NoHistory extends History(Nil) {
-   override def +=(e: HistoryEntry) {}
+   override def +=(e: HistoryEntry): Unit = {}
    override def +(e: HistoryEntry) = this
    override def branch = this
    override def narrowDownError = this

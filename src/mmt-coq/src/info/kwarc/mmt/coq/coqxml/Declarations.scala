@@ -1,15 +1,12 @@
 package info.kwarc.mmt.coq.coqxml
 
-import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.NestedModule
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq._
 import info.kwarc.mmt.lf.{ApplySpine, Lambda}
-
-import scala.collection.mutable
 
 trait CoqEntry
 
@@ -49,7 +46,8 @@ case class DEFINITION(uri : URI,as:String, components : List[CoqEntry]) extends 
 // as \in Theorem | Lemma | Corollary | Fact | Remark
 case class THEOREM(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure
 // as \in Assumption | Hypothesis | LocalDefinition | LocalFact
-case class VARIABLE(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure
+// We append _ to disambiguate the class files for VARIABLE and Variable on case-insensitive file systems
+case class VARIABLE_(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure
 
 case class SECTION(uri:URI,statements:List[theorystructure]) extends theorystructure
 
@@ -230,7 +228,7 @@ case class MUTIND(uri : URI, noType : Int, id : String) extends term with object
 case class MUTCONSTRUCT(uri : URI, noType : Int, noConstr : Int, id : String, sort : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val gn = variables.toGlobalName(uri)
-    OMS(gn.module ? (gn.name + "_C_" + noConstr ))
+    OMS(gn.module ? (gn.name.toString + "_C_" + noConstr ))
   }
 }// OMS
 //                                     ^  from 0      ^ starts from 1, index in list of constructors

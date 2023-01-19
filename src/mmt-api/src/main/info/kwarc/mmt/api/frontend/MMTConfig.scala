@@ -95,15 +95,15 @@ class MMTConfig {
     private var entries: List[ConfEntry] = Nil
 
     override def toString = {
-       entries.reverseMap {e => e.toString}.mkString("\n")
+       entries.reverseIterator.map{e => e.toString}.mkString("\n")
     }
 
-    def addEntry(e: ConfEntry) {entries = entries ::: List(e)}
-    def setBase(b : String) {
+    def addEntry(e: ConfEntry): Unit = {entries = entries ::: List(e)}
+    def setBase(b : String): Unit = {
       base = b
     }
 
-    def add(that: MMTConfig) {
+    def add(that: MMTConfig): Unit = {
        entries = that.getEntries ::: entries
        setBase(that.getBase)
     }

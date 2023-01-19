@@ -24,7 +24,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
   
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
@@ -85,7 +85,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
    * @param decl the corresponding declaration which is to be defined by d
    * @note this will return an error if d.tp doesn't match decl.externalTp
    */
-  def checkDecl(d: InternalDeclaration, decl: InternalDeclaration) {//TODO: This should be implemented to provide more accurate error messages
+  def checkDecl(d: InternalDeclaration, decl: InternalDeclaration): Unit = {//TODO: This should be implemented to provide more accurate error messages
     
   }
   

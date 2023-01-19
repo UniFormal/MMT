@@ -1,38 +1,160 @@
 package info.kwarc.mmt.stex
 
+import info.kwarc.mmt.api.checking.History
+import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, RenderingHandler}
-import info.kwarc.mmt.api.{CPath, ContentPath, StructuralElement}
+import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, RenderingHandler, VarData}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
+import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GlobalName, LocalName, StructuralElement}
 import info.kwarc.mmt.stex
-import info.kwarc.mmt.stex.xhtml.{PreElement, XHTMLNode}
+import info.kwarc.mmt.stex.Extensions.NotationExtractor
+import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, StringLiterals}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
 
-case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : XHTMLNode, fragment: String, arity : String, allnotations : List[(String,XHTMLNode)])
+import scala.xml.{Elem, Node}
+
+case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : HTMLNode, fragment: String, arity : String, allnotations : List[(String,String,String,HTMLNode)])
 
 trait STeXPresenter extends ObjectPresenter {
-  protected def getComponents(cp : ContentPath, tm : Term) : Option[STeXNotation] = controller.getO(cp) match {
-    case Some(c: StructuralElement) =>
-      val notations = PreElement.getNotations(c)
-      val notationFragment = tm.metadata.getValues(STeX.meta_notation).headOption match {
-        case Some(STeX.StringLiterals(s)) => s
-        case _ => ""
+  lazy val server = controller.extman.get(classOf[STeXServer]).head
+
+  protected def getMainNotation(s : GlobalName) = {
+    val allNotations = OMDocHTML.getNotations(s)(controller).reverse
+    allNotations.collectFirst {
+      case t if t._1 == s.module => t
+    } match {
+      case None => allNotations.headOption
+      case o => o
+    }
+  }
+  protected def getMainNotation(s : LocalName)(implicit context:Context) = {
+    context.findLast(_.name == s).flatMap(_.metadata.get(STeX.notation.tp.sym).headOption.map(_.value)) match {
+      case Some(STeX.notation(n,s1,s2,o)) =>
+        Some((n,s1,s2,o))
+      case _ => None
+    }
+  }
+
+  private def getImplicitTerm(t : Term)(implicit context:Context) : Option[Term] = {
+    t match {
+      case OMV(n) => context.findLast(_.name== n) match {
+        case Some(vd) =>
+          vd.tp match {
+            case Some(t) => Some(t)
+            case _ => vd.df
+          }
+        case _ => None
       }
-      // TODO withnotations
-      val notation = notations.collectFirst { case (s, n) if s == notationFragment => n } match {
-        case Some(n) =>
-          n
-        case _ =>
-          return None
+      case OMS(p) => controller.getO(p).flatMap {
+        case c : Constant =>
+          c.tp match {
+            case Some(t) => Some(t)
+            case _ => c.df
+          }
+        case _ => None
       }
-      val macroname = PreElement.getMacroName(c) match {
-        case Some(n) => n
-        case _ =>
-          return None
-      }
-      val arity = c.metadata.getValues(STeX.meta_arity) match {
-        case List(STeX.StringLiterals(s)) => s
-        case _ => ""
-      }
-      Some(stex.STeXNotation(tm,cp,macroname,notation,notationFragment,arity,notations))
+      case Getfield(t, f) => OMDocHTML.getOriginal(t, f)(controller,context).flatMap(c => getImplicitTerm(OMS(c.path)))
+      case _ => None
+    }
+
+  }
+
+  protected def implicits(t : Term)(implicit context : Context) : (List[SOMBArg],String,Term) = {
+    def getArgs(tp : Term,args : List[SOMBArg]) : (List[SOMBArg],List[SOMBArg]) = tp match {
+      case STeX.implicit_binder(_,_,bd) =>
+        val (i,r) = getArgs(bd,args.tail)
+        (args.head :: i,r)
+      case _ => (Nil,args)
+    }
+    t match {
+      case SOMA(f,args) => implicits(OMA(f,args))
+      case OMA(f,args) =>
+        val (i,r) = getImplicitTerm(f) match {
+          case Some(t) => getArgs(t,args.map(STerm))
+          case _ => (Nil,args.map(STerm))
+        }
+        val (ii,rr,s) = reorder(OMA(f,r.map(_.asInstanceOf[STerm].tm) ))
+        ((i ::: ii).distinct,s,rr)
+      case SOMB(f,args) =>
+        val (i,r) = getImplicitTerm(f) match {
+          case Some(t) => getArgs(t,args)
+          case _ => (Nil,args)
+        }
+        val (ii,rr,s) = reorder(SOMB(f,r:_*))
+        ((i ::: ii).distinct,s,rr)
+      case _ => (Nil,"",t)
+    }
+  }
+
+  protected def reorder(t : Term)(implicit context:Context) : (List[SOMBArg],Term,String) = {
+    t match {
+      case OMA(f,args) =>
+        val (ros,assoc,arity) = OMDocHTML.getRuleInfo(f)(controller,context).getOrElse{ return (Nil,t,"") }
+        val reordered = ros match {
+          case Nil => args
+          case ls => (1 to ls.max).map(i => args(ls.indexOf(i) + 1))
+        }
+        (assoc,arity,reordered) match {
+          case (Some("bin"|"binr"),"a",List(a,b)) =>
+            b match {
+              case SOMA(`f`,_) | OMA(`f`,_) =>
+                val (is,_,nit) = implicits(b)
+                nit match {
+                  case OMA(`f`,List(STeX.flatseq(na))) =>
+                    (is,OMA(f,List(STeX.flatseq(a :: na :_*))),arity)
+                  case _ =>
+                    (is,OMA(f,reordered.toList),arity)
+                }
+              case _ =>
+                (Nil,OMA(f,List(STeX.flatseq(reordered:_*))),arity)
+            }
+          case (Some("bin"|"binr"),"ai",List(a,b)) =>
+            b match {
+              case SOMA(`f`,_) | OMA(`f`,_) =>
+                val (is,_,nit) = implicits(b)
+                nit match {
+                  case OMA(`f`,List(STeX.flatseq(na),l)) =>
+                    (is,OMA(f,List(STeX.flatseq(a :: na :_*),l)),arity)
+                  case _ =>
+                    (is,OMA(f,List(STeX.flatseq(a),b)),arity)
+                }
+              case _ =>
+                (Nil,OMA(f,List(STeX.flatseq(a),b)),arity)
+            }
+          case (Some("conj"),"a",List(a,b)) =>
+            (Nil,OMA(f,List(STeX.flatseq(a,b))),arity)
+          case (Some(s),_,_) =>
+            (Nil,OMA(f,reordered.toList),arity)
+          case (_,_,_) => (Nil,OMA(f,reordered.toList),arity)
+        }
+      case SOMB(f,args) =>
+        val (ros,assoc,arity) = OMDocHTML.getRuleInfo(f)(controller,context).getOrElse{ return (Nil,t,"") }
+        val reordered = ros match {
+          case Nil => args
+          case ls => (1 to ls.max).map(i => args(ls.indexOf(i) + 1))
+        }
+        (assoc,arity,reordered) match {
+          case (Some("pre"),"Bi",List(SCtx(ctx1),STerm(it))) =>
+            it match {
+              case SOMB(`f`,_) =>
+                val (is,_,nit) = implicits(it)(context ++ ctx1)
+                nit match {
+                  case SOMB(`f`,List(SCtx(ctx2),bd)) =>
+                    (is,SOMB(f,List(SCtx(ctx1 ++ ctx2),bd) :_*),arity)
+                  case _ =>
+                    (is,SOMB(f,reordered.toList :_*),arity)
+                }
+              case _ =>
+                (Nil,SOMB(f,reordered.toList :_*),arity)
+            }
+          case (Some("pre"),_,_) =>
+            (Nil,SOMB(f,reordered.toList :_*),arity)
+          case (_,_,_) =>
+            (Nil,SOMB(f,reordered.toList :_*),arity)
+        }
+      case _ => (Nil,t,"")
+    }
   }
 
 }
@@ -51,8 +173,131 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     currentDown = oldDown
     ret
   }
+  private def doAssoc(n : HTMLNode,arg : SOMBArg, args:List[(Char,SOMBArg)],owner:String)(implicit pc: PresentationContext,htmlstate : HTMLParser.ParsingState) : Unit = {
+    def doPair(arg1: Unit => Unit, arg2: Unit => Unit) : Unit => Unit = {
+      def rec(n : HTMLNode) : Unit = {
+        val property = n.attributes.getOrElse((n.namespace,"property"),"")
+        val resource = n.attributes.getOrElse((n.namespace,"resource"),"")
+        n match {
+          case t : HTMLText => pc.out(t.text)
+          case n if property == "stex:arg" && (resource.startsWith("a") || resource.startsWith("B")) =>
+            val i = resource.last.toString.toInt
+            if (args.isDefinedAt(i-1)) {
+              val newcontext = pc.context ::: (args.take(i-1).collect {
+                case (_,SCtx(ctx)) => ctx.map(vd => VarData(vd,None,Position.Init))
+              }).flatten
+              doAssoc(n,args(i-1)._2,args,owner)(pc.copy(context = newcontext),htmlstate)
+            } else {
+              pc.out("<mi>TODO</mi>")
+            }
+          case _ if property == "stex:argmarker" && resource.endsWith("a") =>
+            arg1(())
+          case _ if property == "stex:argmarker" && resource.endsWith("b") =>
+            arg2(())
+          case _ if property == "stex:argmarker" =>
+            val i = resource.head.toString.toInt
+            if (args.isDefinedAt(i-1)) {
+              val newcontext = pc.context ::: (args.take(i-1).collect {
+                case (_,SCtx(ctx)) => ctx.map(vd => VarData(vd,None,Position.Init))
+              }).flatten
+              val arg = args(i - 1)
+              recurse(arg._2.obj)(pc.copy(context = newcontext))
+            } else {
+              pc.out("<mi>TODO</mi>")
+            }
+          case n =>
+            pc.out("<" + n.label +
+              (if (n.classes.nonEmpty) " class=\"" + n.classes.mkString(" ") + "\"" else "") +
+              n.attributes.toList.map{
+                case ((ns,k),v) if ns == n.namespace => " " + k + "=\"" + v + "\""
+                case ((ns,k),v) => " " + htmlstate.namespaces(ns) + ":" + k + "=\"" + v + "\""
+              }.mkString +
+              (if (n.children.isEmpty) "/>" else ">")
+            )
+            if (n.children.nonEmpty) {
+              n.children.foreach(rec)
+              pc.out("</" + n.label + ">")
+            }
+        }
+      }
+      _ => n.children.foreach(rec)
+    }
+    val f = arg match {
+      case SCtx(ctx) if ctx.length > 1 =>
+        val newcontext = pc.context ::: ctx.map(vd => VarData(vd,None,Position.Init))
+        ctx.variables.init.init.foldRight(
+          doPair(_ => recurse(ctx.variables.init.last)(pc.copy(context = newcontext)),_ => recurse(ctx.variables.last)(pc.copy(context = newcontext)))
+        )((vd,f) =>
+          doPair(_ => recurse(vd)(pc.copy(context = newcontext)),f)
+        )
+      case STerm(STeX.flatseq(ls)) if ls.length > 1 =>
+        ls.init.init.foldRight(
+          doPair(_ => recurse(ls.init.last),_ => recurse(ls.last))
+        )((vd,f) =>
+          doPair(_ => recurse(vd),f)
+        )
+      case STerm(OMV(n)) if pc.getContext.exists(v => v.name == n &&
+        v.tp.exists(t => STeX.flatseq.tp.unapply(t).nonEmpty)
+      ) => (_ : Unit) =>
+        pc.out("<mrow><mi>" + owner + "</mi><mo>(</mo>")
+        recurse(OMV(n))
+        pc.out("<mo>)</mo></mrow>")
+      case o => (_:Unit) => recurse(o.obj)
+    }
+    f(())
+  }
 
-  override def recurse(obj: Obj)(implicit pc: PresentationContext): Int = {
+  private def substitute(n : Node,args : List[(Char,SOMBArg)],owner:String)(implicit pc: PresentationContext) : Unit = {
+    implicit val htmlstate : HTMLParser.ParsingState = new HTMLParser.ParsingState(controller,Nil)
+    val top = HTMLParser(n.toString)
+    def rec(n : HTMLNode) : Unit = {
+      val property = n.attributes.getOrElse((n.namespace,"property"),"")
+      val resource = n.attributes.getOrElse((n.namespace,"resource"),"")
+      n match {
+        case t : HTMLText => pc.out(t.text)
+        case n if property == "stex:arg" && (resource.startsWith("a") || resource.startsWith("B")) =>
+          val i = resource.last.toString.toInt
+          if (args.isDefinedAt(i-1)) {
+            val newcontext = pc.context ::: (args.take(i-1).collect {
+              case (_,SCtx(ctx)) => ctx.map(vd => VarData(vd,None,Position.Init))
+            }).flatten
+            doAssoc(n,args(i-1)._2,args,owner)(pc.copy(context = newcontext ),htmlstate)
+          } else {
+            pc.out("<mi>TODO</mi>")
+          }
+        case _ if property == "stex:argmarker" =>
+          val i = resource.head.toString.toInt
+          if (args.isDefinedAt(i-1)) {
+            val newcontext = pc.context ::: (args.take(i-1).collect {
+              case (_,SCtx(ctx)) => ctx.map(vd => VarData(vd,None,Position.Init))
+            }).flatten
+            val arg = args(i - 1)
+            recurse(arg._2.obj)(pc.copy(context = newcontext))
+          } else {
+            pc.out("<mi>TODO</mi>")
+          }
+        case n =>
+          pc.out("<" + n.label +
+            (if (n.classes.nonEmpty) " class=\"" + n.classes.mkString(" ") + "\"" else "") +
+            n.attributes.toList.map{
+              case ((ns,k),v) if ns == n.namespace => " " + k + "=\"" + v + "\""
+              case ((ns,k),v) => " " + htmlstate.namespaces(ns) + ":" + k + "=\"" + v + "\""
+            }.mkString +
+            (if (n.children.isEmpty) "/>" else ">")
+          )
+          if (n.children.nonEmpty) {
+            n.children.foreach(rec)
+            pc.out("</" + n.label + ">")
+          }
+      }
+    }
+    rec(top)
+  }
+
+  override def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pc: PresentationContext): Int = {
+    lazy val default = {
+      super.recurse(obj,bracket)
+    }
     obj match {
       case ctx : Context =>
         if (ctx.length == 0) 0
@@ -66,155 +311,232 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
       case vd : VarDecl =>
         vd.tp match {
           case Some(tm) =>
-            pc.out("<mrow><mi>"+vd.name+"</mi><mo>:</mo>")
+            pc.out("<mrow>")
+            getMainNotation(vd.name)(pc.getContext ++ vd) match {
+              case Some((_,a,b,Some(n))) =>
+                substitute(n,Nil,n.toString)
+              case Some((n,a,b,_)) =>
+                substitute(n,Nil,n.toString)
+              case None =>
+                pc.out(<mi>{vd.name}</mi>.toString)
+            }
+            pc.out("<mo>:</mo>")
             recurse(tm)
             pc.out("</mrow>")
-          case _ => pc.out({<mi>{vd.name}</mi>}.toString())
+          case _ =>
+            getMainNotation(vd.name)(pc.getContext ++ vd) match {
+              case Some((_,a,b,Some(n))) =>
+                substitute(n,Nil,n.toString)
+              case Some((n,a,b,_)) =>
+                substitute(n,Nil,n.toString)
+              case None =>
+                pc.out(<mi>{vd.name}</mi>.toString)
+            }
         }
         0
-      case tm@OMS(gn) =>
-        val comps = getComponents(gn,tm).getOrElse{return super.recurse(obj)}
-        pc.out(comps.notation_used.toString)
+      case STeX.informal(n) =>
+        val node = HTMLParser(n.toString())(new ParsingState(controller,server.extensions.flatMap(_.rules)))
+        node.attributes(("","mathbackground")) = "#ff0000"
+        pc.out(node.toString)
         0
-      case tm@OMA(OMS(gn),args) =>
-        val comps = getComponents(gn,tm).getOrElse{return super.recurse(obj)}
-        val br = 0 // TODO
-        var ret = comps.notation_used.toString
-        var doarg : List[Unit => Unit] = Nil
-        var i = 0
-        comps.arity.toList.zipWithIndex.foreach {
-          case ('i', _) =>
-            val j = i
-            doarg ::= { _: Unit =>
-              recurse(args(j))
+      case STeX.informal.op(label,args) =>
+        pc.out("<" + label + " mathbackground=\"#ff0000\"" + ">")
+        args.foreach(recurse(_))
+        pc.out("</" + label + ">")
+        0
+      case SOMA(f,args) => recurse(OMA(f,args),bracket)
+      case tm : Term =>
+        val (is,ar,t) = implicits(tm)(pc.getContext)
+        def ret() = t match {
+          case STeX.symboldoc(ls,s,n) =>
+            pc.out("<mtext>Documentation (" + s + ") for " + ls.mkString(",") + " :")
+            pc.out(n.toString())
+          case OMA(OMS(p),args) =>
+            getMainNotation(p) match {
+              case Some((_,n,a,b,_)) =>
+                substitute(n,ar.zip(args.map(STerm)).toList,p.name.toString)
+              case None =>
+                pc.out("<mrow>")
+                pc.out(<mi>{p.name}</mi>.toString)
+                pc.out("<mo>(</mo>")
+                args.foreach(recurse)
+                pc.out("<mo>)</mo>")
+                pc.out("</mrow>")
             }
-            i += 1
-          case ('a', j) =>
-            val n = comps.notation_used.get("mrow")().reverse.collectFirst {
-              case n if n.toString.contains("<mtext>##" + (i + 1) + "a</mtext>") && n.toString.contains("<mtext>##" + (i + 1) + "b</mtext>") =>
-                n
-            }.getOrElse{
-              print("")
-              ???
+          case OMA(OMV(n),args) =>
+            getMainNotation(n)(pc.getContext) match {
+              case Some((n,a,b,_)) =>
+                substitute(n,ar.zip(args.map(STerm)).toList,n.toString)
+              case None =>
+                pc.out("<mrow>")
+                pc.out(<mi>{n}</mi>.toString)
+                pc.out("<mo>(</mo>")
+                args.foreach(recurse)
+                pc.out("<mo>)</mo>")
+                pc.out("</mrow>")
             }
-            val nstr = n.toString
-            val retargs = if (i == comps.arity.length - 1) args.drop(i)
-            else args.drop(i).dropRight(comps.arity.reverse.indexOf('a'))
-            i += retargs.length
-            ret = ret.replace(nstr, "<mtext>#" + (j + 1) + "</mtext>")
-            val pre = nstr.take(nstr.indexOf("<mtext>##" + (j + 1)))
-            val next = nstr.drop(pre.length + "<mtext>##</mtext>".length + 2)
-            val middle = next.take(next.indexOf("<mtext>##" + (j + 1)))
-            val end = next.drop(middle.length + "<mtext>##</mtext>".length + 2)
-            doarg ::= { _: Unit =>
-              retargs.init.foreach { a =>
-                pc.out(pre)
-                recurse(a)
-                pc.out(middle)
-              }
-              recurse(retargs.last)
-              (1 until retargs.length).foreach(_ => pc.out(end))
+          case SOMB(OMS(p),args) =>
+            getMainNotation(p) match {
+              case Some((_,n,a,b,_)) =>
+                substitute(n,ar.zip(args).toList,p.name.toString)
+              case None =>
+                pc.out("<mrow>")
+                pc.out(<mi>{p.name}</mi>.toString)
+                pc.out("<mo>(</mo>")
+                args.foreach(a => recurse(a.obj))
+                pc.out("<mo>)</mo>")
+                pc.out("</mrow>")
+            }
+          case SOMB(OMV(n),args) =>
+            getMainNotation(n)(pc.getContext) match {
+              case Some((n,a,b,_)) =>
+                substitute(n,ar.zip(args).toList,n.toString)
+              case None =>
+                pc.out("<mrow>")
+                pc.out(<mi>{n}</mi>.toString)
+                pc.out("<mo>(</mo>")
+                args.foreach(a => recurse(a.obj))
+                pc.out("<mo>)</mo>")
+                pc.out("</mrow>")
+            }
+          case OMS(p) =>
+            getMainNotation(p) match {
+              case Some((_,_,a,b,Some(n))) =>
+                substitute(n,Nil,p.name.toString)
+              case Some((_,n,a,b,_)) =>
+                substitute(n,Nil,p.name.toString)
+              case None =>
+                pc.out(<mi>{p.name}</mi>.toString)
+            }
+          case OMV(n) =>
+            getMainNotation(n)(pc.getContext) match {
+              case Some((_,a,b,Some(n))) =>
+                substitute(n,Nil,n.toString)
+              case Some((n,a,b,_)) =>
+                substitute(n,Nil,n.toString)
+              case None =>
+                pc.out(<mi>{n}</mi>.toString)
             }
           case _ =>
+            default
         }
-        doarg = doarg.reverse
-        while (ret.nonEmpty) {
-          ret.indexOf("<mtext>#") match {
-            case -1 =>
-              pc.out(ret)
-              ret = ""
-            case i if ret.charAt(i+8).isDigit =>
-              pc.out(ret.take(i))
-              ret = ret.drop(i+8)
-              val argnum = ret.head.toString.toInt
-              ret = ret.drop(1)
-              assert(ret.startsWith("</mtext>"))
-              ret = ret.drop(8)
-              // TODO downwardsprec
-              assert(doarg.isDefinedAt(argnum-1))
-              doarg(argnum-1)(())
-            case _ =>
-              ???
+        if (is.isEmpty) ret() else {
+          pc.out("<munder><munder accentunder=\"true\"><mrow>")
+          ret()
+          pc.out("</mrow><mo>&#x23DF;</mo></munder><mrow>")
+          recurse(is.head.obj)
+          is.tail.foreach{a =>
+            pc.out("<mo>,</mo>")
+            recurse(a.obj)
           }
+          pc.out("</mrow></munder>")
         }
-        br
-      case tm@OMBIND(OMS(gn),ctx,arg) if ctx.length == 1 =>
-        val comps = getComponents(gn,tm).getOrElse{return super.recurse(obj)}
-        val br = 0 // TODO
-        var ret = comps.notation_used.toString
-        while (ret.nonEmpty) {
-          // TODO associative args
-          ret.indexOf("<mtext>#") match {
-            case -1 =>
-              pc.out(ret)
-              ret = ""
-            case i if ret.charAt(i + 8).isDigit =>
-              pc.out(ret.take(i))
-              ret = ret.drop(i + 8)
-              val argnum = ret.head.toString.toInt
-              ret = ret.drop(1)
-              assert(ret.startsWith("</mtext>"))
-              ret = ret.drop(8)
-              if (argnum == 1)
-                recurse(ctx)
-              else if (argnum == 2)
-                recurse(arg)
-              else {
-                ???
-              }
-            // TODO downwardsprec
-          }
-        }
-        br
-      case tm@OMBIND(OMS(gn),ctx,arg) if ctx.length > 1 => recurse(OMBIND(OMS(gn),Context(ctx.variables.head),OMBIND(OMS(gn),Context(ctx.variables.tail:_*),arg)))
+        0
       case _ =>
-        super.recurse(obj)
+        default
     }
   }
 }
 
 class STeXPresenterTex extends STeXPresenter {
-  override def apply(o: Obj, origin: Option[CPath])(implicit rh: RenderingHandler): Unit = o match {
-    case t@OMID(cn) =>
-      getComponents(cn,t) match {
-        case Some(comp) =>
-          rh("\\" + comp.macroname + {if (comp.fragment.isEmpty) "" else "[" + comp.fragment + "]"})
-        case _ =>
-          rh("???")
+  def recurse(obj: Obj)(implicit pc: PresentationContext): Unit = obj match {
+    case c : Context if c.nonEmpty =>
+      recurse(c.variables.head)(pc.copy(context = pc.context ::: c.map(vd => VarData(vd,None,Position.Init))))
+      c.variables.tail.foreach { v =>
+        pc.out(", ")
+        recurse(v)(pc.copy(context = pc.context ::: c.map(vd => VarData(vd,None,Position.Init))))
       }
-    case t@OMA(OMS(cn),args) =>
-      getComponents(cn,t) match {
-        case Some(comp) =>
-          rh("\\" + comp.macroname + {if (comp.fragment.isEmpty) "" else "[" + comp.fragment + "]"})
-        // TODO associative args
-          args.foreach{t =>
-            rh("{")
-            apply(t,origin)
-            rh("}")
+    case vd : VarDecl =>
+      val macroname = OMDocHTML.getMacroName(vd)
+      pc.out("\\" + macroname.getOrElse("svar{" + vd.name + "}"))
+
+    case c : Context =>
+    case SOMA(f,args) => recurse(OMA(f,args))
+    case tm : Term =>
+      val (_,ar,t) = implicits(tm)(pc.getContext)
+      t match {
+        case SOMB(f,arg) =>
+          f match {
+            case OMS(p) =>
+              controller.getO(p).flatMap(OMDocHTML.getMacroName) match {
+                case Some(s) => pc.out("\\" + s)
+                case _ => pc.out("\\" + p)
+              }
+            case OMV(n) =>
+              val macroname = pc.getContext.findLast(_.name == n).flatMap(OMDocHTML.getMacroName)
+              pc.out("\\" + macroname.getOrElse("svar{" + n + "}"))
+            case _ =>
+              pc.out("(unclear)")
+          }
+          val nctx = arg.collect{case SCtx(ctx) => ctx}.flatten
+          ar.zip(arg).foreach {
+            case ('a'|'B',STeX.flatseq(a :: ls)) =>
+              pc.out("{")
+              recurse(a)(pc.copy(context = pc.context ::: nctx.map(vd => VarData(vd,None,Position.Init))))
+              ls.foreach {t =>
+                pc.out(", ")
+                recurse(t)(pc.copy(context = pc.context ::: nctx.map(vd => VarData(vd,None,Position.Init))))
+              }
+              pc.out("}")
+            case ('a'|'B',STeX.flatseq(List(a))) =>
+              pc.out("{")
+              recurse(a)(pc.copy(context = pc.context ::: nctx.map(vd => VarData(vd,None,Position.Init))))
+              pc.out("}")
+            case (_,a) =>
+              pc.out("{")
+              recurse(a.obj)(pc.copy(context = pc.context ::: nctx.map(vd => VarData(vd,None,Position.Init))))
+              pc.out("}")
+          }
+        case OMA(f,arg) =>
+          f match {
+            case OMS(p) =>
+              controller.getO(p).flatMap(OMDocHTML.getMacroName) match {
+                case Some(s) => pc.out("\\" + s)
+                case _ => pc.out("\\" + p)
+              }
+            case OMV(n) =>
+              val macroname = pc.getContext.findLast(_.name == n).flatMap(OMDocHTML.getMacroName)
+              pc.out("\\" + macroname.getOrElse("svar{" + n + "}"))
+            case _ =>
+              pc.out("(unclear)")
+          }
+          ar.zip(arg).foreach {
+            case ('a'|'B',STeX.flatseq(a :: ls)) =>
+              pc.out("{")
+              recurse(a)
+              ls.foreach {t =>
+                pc.out(", ")
+                recurse(t)
+              }
+              pc.out("}")
+            case ('a'|'B',STeX.flatseq(List(a))) =>
+              pc.out("{")
+              recurse(a)
+              pc.out("}")
+            case (_,a) =>
+              pc.out("{")
+              recurse(a)
+              pc.out("}")
+          }
+        case OMV(n) =>
+          val macroname = pc.getContext.findLast(_.name == n).flatMap(OMDocHTML.getMacroName)
+          pc.out("\\" + macroname.getOrElse("svar{" + n + "}"))
+        case OMS(p) =>
+          controller.getO(p).flatMap(OMDocHTML.getMacroName) match {
+            case Some(s) => pc.out("\\" + s)
+            case _ => pc.out("\\" + p.toString)
           }
         case _ =>
-          rh("???")
+          pc.out("(unclear)")
       }
-    case t@OMBINDC(OMS(cn),ctx,args) =>
-      getComponents(cn,t) match {
-        case Some(comp) =>
-          rh("\\" + comp.macroname + {if (comp.fragment.isEmpty) "" else "[" + comp.fragment + "]"})
-          // TODO associative args
-          // TODO bound variables
-          args.foreach{t =>
-            rh("{")
-            apply(t,origin)
-            rh("}")
-          }
-        case _ =>
-          rh("???")
-      }
-    case o@UnknownOMLIT(valstr,_) => rh(valstr)
-    case o@OMLIT(valstr,rt) => rh(rt.semType.toString(valstr))
-    case o@OMV(n) =>
-      // TODO
-      rh("\\" + n)
     case _ =>
-      rh("???")
+      pc.out("(unclear)")
+  }
+
+  override def apply(o: Obj, origin: Option[CPath])(implicit rh: RenderingHandler): Unit = {
+    rh.apply("<pre>")
+    val pc = new PresentationContext(rh,origin,Nil,None,Position.Init,Context.empty,Nil,None)
+    recurse(o)(pc)
+    rh.apply("</pre>")
   }
 }

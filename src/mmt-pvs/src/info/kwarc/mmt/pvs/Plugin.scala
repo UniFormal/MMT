@@ -31,6 +31,7 @@ import PVSTheory._
 // Notation Extension
 
 object PVSNotation extends NotationExtension {
+  val theory = PVSTheory.thpath
   override val priority = 3
   def isApplicable(t: Term): Boolean = t match {
     case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,OMS(fun),tuple_expr(List(a,b)))) =>
@@ -58,7 +59,7 @@ object PVSNotation extends NotationExtension {
       case _ => return None
     }
     val delim = Delim(fun.name match {
-      case ComplexStep(p) / s => p.name + "?" + s
+      case ComplexStep(p) / s => p.name.toString + "?" + s
       case _ => fun.name.toString
     })
     val fixity = Mixfix(List(SimpArg(1),Delim("%w"),delim,Delim("%w"),SimpArg(2)))
@@ -74,7 +75,7 @@ class LambdaPiInclude extends StructuralFeature("BoundInclude") with IncludeLike
     val dom = getDomain(dd)
     val body = controller.simplifier.getBody(Context.empty, dom) match {
       case t : Theory => t.path
-      case _ => throw GetError("Not a declared theory: " + dom)
+      case _ => throw LocalError("not a declared theory: " + dom)
     }
     new Elaboration {
       override def domain: List[LocalName] = List(LocalName(body))

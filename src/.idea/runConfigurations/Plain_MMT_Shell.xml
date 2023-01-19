@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Plain MMT Shell" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="12" />
+    <option name="MAIN_CLASS_NAME" value="info.kwarc.mmt.api.frontend.Run" />
+    <module name="mmt" />
+    <shortenClasspath name="NONE" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

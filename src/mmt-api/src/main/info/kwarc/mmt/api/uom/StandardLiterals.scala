@@ -42,23 +42,23 @@ case class Product(val left: SemanticType, val right: SemanticType) extends Sema
       private var nextFromLeft = true
       private var precomputed: List[Any] = Nil
       def hasNext = precomputed.nonEmpty || lE.hasNext || rE.hasNext
-      def next = {
+      def next() = {
         if (precomputed.nonEmpty) {
           val h = precomputed.head
           precomputed = precomputed.tail
           h
         } else {
           if (nextFromLeft && lE.hasNext) {
-            val l = lE.next
+            val l = lE.next()
             lSeen ::= l
             precomputed = rSeen map {r => (l,r)}
           } else {
-            val r = rE.next
+            val r = rE.next()
             rSeen ::= r
             precomputed = lSeen map {l => (l,r)}
           }
           nextFromLeft = ! nextFromLeft
-          next
+          next()
         }
       }
     }
@@ -128,7 +128,7 @@ case class ListType(val over: SemanticType) extends SemanticType {
 
       def hasNext = precomputed.nonEmpty || el.hasNext
 
-      def next = {
+      def next() = {
         if (precomputed.nonEmpty) {
           val h = precomputed.head
           precomputed = precomputed.tail
@@ -143,7 +143,7 @@ case class ListType(val over: SemanticType) extends SemanticType {
           }
           c = 0
           if(m == 0){
-            curlen = rand.nextInt % 100
+            curlen = rand.nextInt() % 100
           } else{
             curlen = (curlen + 1) % m
           }
@@ -185,7 +185,7 @@ case class TupleType(val over: SemanticType, val dim: Int) extends SemanticType 
 
       def hasNext = precomputed.nonEmpty || el.hasNext
 
-      def next = {
+      def next() = {
         if (precomputed.nonEmpty) {
           val h = precomputed.head
           precomputed = precomputed.tail
@@ -274,7 +274,7 @@ abstract class IntegerLiteral extends Atomic[BigInt] with IntegerRepresented {
       private val rand = scala.util.Random
       private var precomputed = 0
       def hasNext = true
-      def next = {
+      def next() = {
         val i = precomputed
         if(m == 0){
           precomputed = rand.nextInt()
@@ -312,7 +312,7 @@ object StandardNat extends RSubtype(StandardInt) {
       private val rand = scala.util.Random
       private var precomputed = 0
       def hasNext = true
-      def next = {
+      def next() = {
         val i = precomputed
         if(m == 0){
           precomputed = rand.nextInt()
@@ -397,7 +397,7 @@ object StandardString extends Atomic[String] {
       var len = 0
       var curlen = 0
       def hasNext = true
-      def next = {
+      def next() = {
         var s1 = ""
         while(len < curlen){
           c = c.tail
@@ -509,6 +509,10 @@ object Arithmetic {
   }
 }
 
+
+object OpenMath {
+  val _path = DPath(utils.URI("http", "www.openmath.org") / "cd") ? "OpenMath"
+}
 /** OpenMath's literals
   *  These should be moved to an OpenMath plugin, but they are used by the API, e.g., for metadata
   */

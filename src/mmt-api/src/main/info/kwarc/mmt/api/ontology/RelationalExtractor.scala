@@ -32,7 +32,7 @@ object MMTExtractor extends RelationalExtractor {
 
 
    /** apply a continuation function to every relational element of a StructuralElement */
-   def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
+   def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = {
       val path = e.path
       e match {
          case d: Document =>
@@ -62,10 +62,14 @@ object MMTExtractor extends RelationalExtractor {
                case _ =>
             }
          case v: View =>
-            f(HasDomain(path, v.from.toMPath))
-            f(HasCodomain(path, v.to.toMPath))
             f(IsView(path))
-            f(HasViewFrom(v.to.toMPath, v.from.toMPath))
+            v.domainAsContext.getIncludes.foreach {p => f(HasDomain(path, p))}
+            v.codomainAsContext.getIncludes.foreach {p => f(HasCodomain(path, p))}
+            v.to match {
+              case OMPMOD(to,_) =>
+                v.domainAsContext.getIncludes.foreach {from => f(HasViewFrom(from,to))}
+              case _ =>
+            }
          case _ =>
       }
       e match {
@@ -130,7 +134,7 @@ object MMTExtractor extends RelationalExtractor {
    }
    
    /** extract all dependencies of object containers */
-   private def doDependencies(path: Path, oc: ObjContainer[_])(implicit f: RelationalElement => Unit) {
+   private def doDependencies(path: Path, oc: ObjContainer[_])(implicit f: RelationalElement => Unit): Unit = {
      oc.dependsOn foreach {p =>
        val r = DependsOn(path, p)
        f(r)

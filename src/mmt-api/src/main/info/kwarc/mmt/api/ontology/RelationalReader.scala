@@ -10,7 +10,7 @@ import archives._
 class RelationalReader extends ArchiveChangeListener {
    private var read: List[Archive] = Nil
 
-   def oncePerArchive(a: Archive) {
+   def oncePerArchive(a: Archive): Unit = {
       if (! (read contains a)) {
          a.readRelational(Nil, controller, "rel")
          read ::= a

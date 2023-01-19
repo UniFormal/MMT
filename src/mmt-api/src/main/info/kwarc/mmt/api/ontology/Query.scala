@@ -1,12 +1,11 @@
 package info.kwarc.mmt.api.ontology
 
-
 import info.kwarc.mmt.api._
 import frontend.Controller
 import objects._
 import documents._
 import parser.{ParsingUnit, SourceRef}
-import utils.{Sourceable, URI, mmt, stringToList, xml}
+import utils._
 
 import scala.xml.Node
 
@@ -206,7 +205,7 @@ object Query {
       QueryFunctionApply(fun, parse(q), Nil)
 
     case _ =>
-      throw ParseError("illegal query expression: " + Sourceable(t))
+      throw ParseError("illegal query expression: " + t)
   }
 
   /**

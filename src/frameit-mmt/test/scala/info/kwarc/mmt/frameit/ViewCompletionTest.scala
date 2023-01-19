@@ -32,7 +32,7 @@ object ViewCompletionTest extends MMTIntegrationTest(
     thy.get(LocalName(constant)).asInstanceOf[FinalConstant].df.get
   }
 
-  private def expectedTypeTests() {
+  private def expectedTypeTests(): Unit = {
     // We test expected type computation on pseudo views ("assignment lists", i.e. views that may fail to contain
     // mappings for arbitrary domain declarations).
     //

@@ -43,7 +43,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
     </derived>
   }
   // override def toNodeElab
-  override def toNode(rh: presentation.RenderingHandler) {
+  override def toNode(rh: presentation.RenderingHandler): Unit = {
     rh << s"""<derived feature="$feature" name="${name.toPath}" base="${parent.toPath}">"""
     (getMetaDataNode++tpNode++dfNode++notNode) foreach {n =>
       rh(n)
@@ -57,7 +57,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
 class DerivedModule(val feature: String, p: DPath, n: LocalName, val meta: Option[MPath], val tpC: TermContainer, val dfC : TermContainer, val notC: NotationContainer)
    extends Module(p,n) with DerivedContentElement {
    def translate(newNS: DPath, newName: LocalName, tl: Translator, con: Context): DerivedModule = {
-     new DerivedModule(feature, newNS, newName, meta, translateTp(tl, con), translateDf(tl, con), notC.copy)
+     new DerivedModule(feature, newNS, newName, meta, translateTp(tl, con), translateDf(tl, con), notC.copy())
    }
 }
 
@@ -69,13 +69,13 @@ class DerivedDeclaration(val home: Term, val name: LocalName, val feature: Strin
   
   def meta = None
   
-  @MMT_TODO("redundant: every DerivedDeclaration is module-like now")
+  @deprecated("MMT_TODO: redundant: every DerivedDeclaration is module-like now", since="forever")
   val module = this // left over from old definition via NestedModule
 
   override def translate(newHome: Term, prefix: LocalName, tl: Translator, con : Context) = {
      val tpT = translateTp(tl, con)
      val dfT = translateDf(tl,con)
-     val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy, dfT)
+     val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy(), dfT)
      val icont = con ++ getInnerContext
      getDeclarations.foreach {d =>
        val dTranslated = d.translate(res.toTerm, LocalName.empty, tl, icont)
@@ -185,7 +185,7 @@ abstract class StructuralFeature(feature: String) extends GeneralStructuralFeatu
    def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration
 
    def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
-   def checkInContext(prev: Context, dv: VarDecl) {}
+   def checkInContext(prev: Context, dv: VarDecl): Unit = {}
 
    /** for creating/matching variable declarations of this feature */
    object VarDeclFeature extends DerivedVarDeclFeature(feature)
@@ -221,7 +221,7 @@ abstract class Elaboration extends ElementContainer[Declaration] {
      * may be overridden for efficiency
      */
     def getDeclarations = {
-      domain.map {n => getO(n).getOrElse {throw ImplementationError(n + " is said to occur in domain of elaboration but retrieval failed")}}
+      domain.map {n => getO(n).getOrElse {throw ImplementationError(n.toString + " is said to occur in domain of elaboration but retrieval failed")}}
     }
     def getMostSpecific(name: LocalName): Option[(Declaration,LocalName)] = {
       domain.reverse.foreach {n =>
@@ -282,7 +282,7 @@ trait ParametricTheoryLike extends StructuralFeature {
      case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
    }
 
-   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
      //TODO check IsContext here
    }
    
@@ -291,11 +291,11 @@ trait ParametricTheoryLike extends StructuralFeature {
     override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
   }
   
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     initOther(noLookupPresenter)
   }
   
-  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
+  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name.toString + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
 }
 
 /** helper object */
@@ -332,7 +332,7 @@ trait Untyped {self : StructuralFeature =>
       }
     }
   }
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 trait UnnamedUntyped {self : StructuralFeature =>
@@ -349,7 +349,7 @@ trait UnnamedUntyped {self : StructuralFeature =>
       }
     }
   }
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 trait TypedConstantLike {self: StructuralFeature =>
@@ -363,7 +363,7 @@ trait TypedConstantLike {self: StructuralFeature =>
     case None => throw ImplementationError("no type present")
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     // TODO env.objectChecker(CheckingUnit())
   }
 }
@@ -393,7 +393,7 @@ trait TheoryLike extends StructuralFeature {
     case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
-  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+  def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     // TODO env.objectChecker(CheckingUnit())
   }
 }
@@ -573,7 +573,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
       }
    }
 
-   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 // Binds theory parameters using Lambda/Pi in an include-like structure
@@ -607,13 +607,14 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     val applyPars = applyParams(body,toTerm)(vars)
     def applyType(c: Context, t: Term) = bindPi(applyPars(t, c))
     def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
+    def applyPlain(c: Context, t: Term) = applyDef(c,t) // This is probably not correct, but recovers original behavior.
   }
 
   override def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
     case VarDeclFeature(LocalName(ComplexStep(dom) :: Nil), OMMOD(q), None) if dom == q && !context.contains(dv) =>
       val thy = controller.simplifier.getBody(context, OMMOD(dom)) match {
         case t : Theory => t
-        case _ => throw GetError("Not a declared theory: " + dom)
+        case _ => throw GetError(dom, "variable feature declaration does not refer to a theory")
       }
       controller.simplifier.apply(thy)
       implicit val vars = thy.parameters.filter(_.feature.isEmpty)
@@ -654,7 +655,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
     val context = controller.simplifier.elaborateContext(Context.empty,parenth.getInnerContext)
     val body = controller.simplifier.getBody(context, dom) match {
       case t : Theory => t
-      case _ => throw GetError("Not a theory: " + dom)
+      case _ => throw GetError(dd.path, "domain of derived declaration is not a theory")
     }
     controller.simplifier.apply(body)
     val parentContextIncludes = context.collect{
@@ -797,7 +798,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   }
   private def checkpath(mp : MPath) = controller.get(mp)
   // def modules(d: DerivedDeclaration): List[Module] = Nil
-  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 }
 
 object StructuralFeatureUtil {

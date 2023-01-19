@@ -30,7 +30,7 @@ trait CheckTester extends BaseTester {
 
       errorBuffer.getAll
     } catch {case e: Exception =>
-      val msg = e.getClass + ": " + e.getMessage
+      val msg = e.getClass.toString + ": " + e.getMessage
       throw testError("Unknown Error occured: " + msg, Some(e))
     }
   }
@@ -110,8 +110,8 @@ trait CheckTester extends BaseTester {
 
         // build an info message to show the user
         val countMessage = messageCounts.map({
-          case (t: Level, 1) => s"1 ${Level.toString(t)}"
-          case (t: Level, c) => s"$c ${Level.toString(t)}s"
+          case (t: Level, 1) => s"1 ${t.toString}"
+          case (t: Level, c) => s"$c ${t.toString}s"
         }).mkString(", ")
 
         statusMessage.append(s"$messagePrefix: $countMessage ")
@@ -169,7 +169,7 @@ class TestErrorBuffer(controller: Controller) extends ErrorHandler {
   private var errors: ListBuffer[(Path, Error)] = new ListBuffer
 
   /** resets the internal state to an empty state */
-  override def reset {
+  override def reset: Unit = {
     errors.clear()
     super.reset
   }

@@ -23,7 +23,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
     checkParams(indCtx, indParams, Context(dd.parent)++context, env)
   }
@@ -44,7 +44,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val intC = intDecls.find(_.name == c.name).getOrElse(
       throw GeneralError("Definien for declaration "+c.name+" is missing. "))
     val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
-    tr(Context.empty, intC.externalTp(indDPath))
+    tr.applyPlain(Context.empty, intC.externalTp(indDPath))
   }  
   
    /**

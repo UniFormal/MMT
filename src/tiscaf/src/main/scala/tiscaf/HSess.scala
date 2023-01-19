@@ -15,13 +15,15 @@
  *  along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  *  ****************************************************************************
  */
+// twiesing 22-08-2022: Remove syntax depreactions
+// twiesing 23-08-2022: Remove use of deprecated APIs
 package tiscaf
 
 import scala.collection.{ mutable => mute }
 
 import sync.Sync
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 // backend map is SynchronizedMap
 final private class HSess(data: HTalkData, resp: HResponse) extends mute.Map[Any, Any] {
@@ -32,7 +34,7 @@ final private class HSess(data: HTalkData, resp: HResponse) extends mute.Map[Any
   def addOne(kv: (Any, Any)): this.type = { sidMap._2 += kv; this }
   def subtractOne(key: Any): this.type = { sidMap._2 -= key; this }
   override def size: Int = sidMap._2.size
-  override def clear: Unit = sidMap._2.clear
+  override def clear(): Unit = sidMap._2.clear()
   override def foreach[U](f: Tuple2[Any, Any] => U): Unit = sidMap._2.foreach { f(_) }
 
   // delegating here from HTalk user API
@@ -152,6 +154,6 @@ private object HSessMonitor {
 
   // starting cleaning daemon
   new java.util.Timer(true).scheduleAtFixedRate(
-    new java.util.TimerTask { def run { cleanExpired } },
+    new java.util.TimerTask { def run: Unit = { cleanExpired } },
     60000, 60000) // every minute
 }

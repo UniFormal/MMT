@@ -39,11 +39,24 @@ abstract class Escaping {
   def useCustomEscape: List[(Char,String)] = List('\n' -> "n", '\t' -> "t")
   private lazy val useCustomEscapeVal = useCustomEscape
 
+  /** the escape used for characters outside the legal range that are not otherwise escaped */
+  def defaultEscape(c: Char) = c.toInt.formatted("%4h").replace(" ", "0")
+  /** pulls an escaped character from the beginning of a string and returns that char and the number of characters consumed */
+  def defaultUnescape(s: String) : Option[(Char,Int)] = {
+    try {
+      val hex = s.substring(0,4)
+      val char = Integer.parseInt(hex,16).toChar
+      Some((char,5))
+    } catch {
+      case _: Exception => None
+    }
+  }
+
   /** characters that are escaped because of an escape rule */
   protected lazy val escapedChars = usePlainEscapeVal ::: useCustomEscapeVal.map(_._1)
 
-  /** check invariant that guarantees invertibility of escaping */
-  def check {
+  /** check invariant that guarantees invertibility of escaping (not guaranteed if the default functions are overridden) */
+  def check: Unit = {
     useCustomEscapeVal foreach {case (c,s) =>
       if (s == "")
         throw Error("empty custom escape")
@@ -63,10 +76,8 @@ abstract class Escaping {
        val e = if (usePlainEscapeVal contains c)
          c.toString
        else
-         useCustomEscapeVal.find(_._1 == c).map(_._2).getOrElse {
-            c.toInt.formatted("%4h").replace(" ", "0")
-         }
-       escapeChar + e
+         useCustomEscapeVal.find(_._1 == c).map(_._2).getOrElse {defaultEscape(c)}
+       s"${escapeChar}${e}"
      }
   }
   def apply(s: String): String = s flatMap {c => apply(c)}
@@ -90,18 +101,14 @@ abstract class Escaping {
                 if (usePlainEscapeVal contains second)
                   (second,2)
                 else {
-                  try {
-                     val hex = rest.substring(0,4)
-                   val char = Integer.parseInt(hex, 16).toChar
-                   (char, 5)
-                  } catch {case _: Exception =>
-                    throw Error("illegal escape: " + escaped)
+                  defaultUnescape(rest).getOrElse {
+                    throw Error("illegal escape: " + rest)
                   }
                 }
             }
         }
-         unescaped += next
-       escaped = escaped.substring(length)
+        unescaped += next
+        escaped = escaped.substring(length)
       }
       unescaped
   }
@@ -128,9 +135,49 @@ object FileNameEscaping extends Escaping {
 object XMLEscaping extends Escaping {
   val escapeChar = '&'
   override def usePlainEscape = Nil
-  override def useCustomEscape = List(
-    '>' -> "gt;", '<' -> "lt;", '"' -> "quot;", '&' -> "amp;"
+  override val useCustomEscape = List(
+    '>' -> "gt", '<' -> "lt", '"' -> "quot", '&' -> "amp"//, '\'' -> "#39;"
   )
+
+  override def apply(c: Char): String = {
+    if (legal(c)) c.toString
+    else {
+        val e = useCustomEscape.find(_._1 == c).map(_._2).getOrElse {
+          "#" + c.toInt.toString
+        }
+      s"${escapeChar}${e};"
+    }
+  }
+  override def unapply(s: String): String = {
+    var escaped = s
+    var unescaped = ""
+    while (escaped.nonEmpty) {
+      val first = escaped(0)
+      val rest = escaped.substring(1)
+      // the next character to produce, and the number of characters that were consumed
+      val (next, length): (Char,Int) = if (first != escapeChar) {
+        (first,1)
+      } else {
+        useCustomEscape.find(cs => rest.startsWith(cs._2 + ";")) match {
+          case Some((c,s)) => (c,2+s.length)
+          case None =>
+              val ind = if (rest.head == '#') 1 else 0
+              val endind = rest.indexOf(';')
+              try {
+                val int = rest.substring(ind,endind)
+                val char = Integer.parseInt(int).toChar
+                (char, endind)
+              } catch {case _: Exception =>
+                throw Error("illegal escape: " + escaped)
+              }
+        }
+      }
+      unescaped += next
+      escaped = escaped.substring(length)
+    }
+    unescaped
+  }
+  override def defaultEscape(c: Char) = c.toString
 }
 
 /** escapes a string using the %-escapes for URLs */

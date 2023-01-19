@@ -18,8 +18,8 @@ abstract class MWSExporter extends Exporter {
     e
   })
 
-  def exportTheory(t: Theory, bf: BuildTask) {
-    try {controller.simplifier(t)} catch { case _ => /* am besten alles */ }
+  def exportTheory(t: Theory, bf: BuildTask): Unit = {
+    try {controller.simplifier(t)} catch { case _: Throwable => /* am besten alles */ }
 
     rh(xml.header)
 
@@ -70,16 +70,16 @@ abstract class MWSExporter extends Exporter {
     rh("</mws:harvest>\n")
   }
 
-  def exportView(v: View, bf: BuildTask) {
+  def exportView(v: View, bf: BuildTask): Unit = {
     //excluding expressions from views for now
   }
 
 
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {
     //Nothing to do - MathML in namespaces
   }
 
-  def exportDocument(doc : Document, bt: BuildTask) {
+  def exportDocument(doc : Document, bt: BuildTask): Unit = {
     //Nothing to do - no MathML at document level
   }
 }
@@ -116,7 +116,7 @@ class FlatteningPresenter extends Presenter(new ParallelMathMLPresenter) {
       case doc : Document =>
         wrapScope(standalone, doc.path)(doDocument(doc))
       case thy : Theory =>
-        val newThys = if (thy.path.toPath.contains("math")) mf.enrichFineGrained(thy) else List(thy)
+        val newThys = List(thy) // Mihnea used to call enrichment here, which added declarations induced by views to theories
         newThys foreach { t =>
           val out = (folder / t.name.toPath).setExtension("html")
           this.outputTo(out) {
@@ -132,11 +132,11 @@ class FlatteningPresenter extends Presenter(new ParallelMathMLPresenter) {
   protected val htmlRh = utils.HTML(s => rh(s))
   import htmlRh._
 
-  def doDocument(doc : Document) {
+  def doDocument(doc : Document): Unit = {
     //nothing to do
   }
 
-  private def doTheory(thy : Theory) {
+  private def doTheory(thy : Theory): Unit = {
     div ("theory") {
       thy.getDeclarations foreach {
         case c : Constant =>
@@ -175,7 +175,7 @@ class FlatteningPresenter extends Presenter(new ParallelMathMLPresenter) {
     }
   }
 
-  def doView(view : View) {//nothing to do
+  def doView(view : View): Unit = {//nothing to do
 
   }
 
@@ -192,7 +192,7 @@ class FlatteningPresenter extends Presenter(new ParallelMathMLPresenter) {
     case _ => uri.last
   }
 
-  def wrapScope(standalone : Boolean, uri : Path)(content : => Unit) {
+  def wrapScope(standalone : Boolean, uri : Path)(content : => Unit): Unit = {
     if (standalone) {
       rh("<!DOCTYPE html>")
       html{

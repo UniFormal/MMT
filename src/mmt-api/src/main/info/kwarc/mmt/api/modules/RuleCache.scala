@@ -10,9 +10,9 @@ import objects._
 class RuleCache extends ChangeListener {
   override val logPrefix = "rule-cache"
 
-  private var rules = new utils.HashMapToSet[MPath,Rule]
+  private val rules = new utils.HashMapToSet[MPath,Rule]
 
-  override def onAdd(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {
      e match {
         case r: RuleConstant => r.home match {
            case OMMOD(t) => r.df foreach {rdf => rules(t) += rdf}
@@ -21,7 +21,7 @@ class RuleCache extends ChangeListener {
         case _ =>
      }
   }
-  override def onDelete(e: StructuralElement) {
+  override def onDelete(e: StructuralElement): Unit = {
      e match {
         case r: RuleConstant => r.home match {
            case OMMOD(t) => r.df foreach {rdf => rules(t) -= rdf}

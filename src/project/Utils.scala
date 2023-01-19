@@ -103,9 +103,37 @@ class Utils(base: File) {
   def settings: Map[String, String] = if (settingsFile.exists) File.readProperties(settingsFile) else Map[String, String]()
 
   /** executes a shell command (in the src folder) */
-  def runscript(command: String, waitFor: Boolean = true): Option[String] = {
-    val pb = sys.process.Process(Seq(command), src.getAbsoluteFile)
-    if (waitFor) Some(pb.!!) else {pb.run; None}
+  def runscript(command: List[String], home: File = src, waitFor: Boolean = true) {
+    println("running: " + command.mkString(" "))
+    val pb = sys.process.Process(command, home.getAbsoluteFile)
+    if (waitFor) pb.! else pb.run(false)
+  }
+
+  /** runs the mmt.jar command in a sister folder MMT-test */
+  def testSetup {
+    val test = (root / ".." / "MMT-test").canonical
+    val jEdit = test / "jEdit"
+    jEdit.mkdirs
+    println("starting and killing jEdit so that it creates a fresh settings directory")
+    val initJEDit = s"jedit -settings=${jEdit}".split("\\s").toList
+    runscript(initJEDit, waitFor = false)
+    // need to wait a while before killing because it takes jEdit a while to start
+    import scala.concurrent.ExecutionContext.Implicits.global
+    scala.concurrent.Future {
+      Thread.sleep(10000)
+      println("killing jEdit now (from a different thread that has waited a while to give it time to start up)")
+      settings.get(killJEdit).foreach {x => runscript(List(x),waitFor = true)}
+    }
+
+    println("copying mmt.jar and running setup (including jEdit setup)")
+    Utils.deployTo(test / "mmt.jar")(deploy / "mmt.jar")
+    // starts but can't read interactive input, echo | doesn't work either, so it's fully automated here
+    val command = s"java -jar mmt.jar :setup --auto --auto devel $jEdit".split("\\s").toList
+    runscript(command, test, waitFor = true)
+
+    println("starting jEdit with a test file")
+    val plFile = test / "MMT-content" / "MMT" / "examples" / "source" / "logic" / "pl.mmt"
+    runscript(initJEDit ::: List(plFile.toString), waitFor = false)
   }
 
   // ************************************************** jEdit-specific code
@@ -122,15 +150,15 @@ class Utils(base: File) {
   /** These methods are used by the target jedit/install to copy files to the local jEdit installation */
   /** copy MMT jar to jEdit settings directory */
   def installJEditJars {
-    settings.get(killJEdit).foreach {x => runscript(x, true)}
-    Thread.sleep(500)
+    settings.get(killJEdit).foreach {x => runscript(List(x), waitFor = true)}
+    Thread.sleep(1000)
     val fname = settings.get(jeditSettingsFolder).getOrElse {
       Utils.error(s"cannot copy jars because there is no setting '$jeditSettingsFolder' in $settingsFile")
       return
     }
     val jsf = File(fname) / "jars"
     copyJEditJars(jsf)
-    settings.get(startJEDit).foreach {x => runscript(x, false)}
+    settings.get(startJEDit).foreach {x => runscript(List(x), waitFor = false)}
   }
 
   /** copy all jars to jEditPluginRelease */

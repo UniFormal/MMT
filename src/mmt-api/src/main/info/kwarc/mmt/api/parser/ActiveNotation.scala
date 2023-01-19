@@ -64,13 +64,13 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
    private[parser] var numCurrentTokens : Int = 0
 
    /** remove n Markers from left */
-   private def delete(n: Int) {
+   private def delete(n: Int): Unit = {
       left = left.drop(n)
    }
    /**
     * move a delimiter from left to found and addPrepickedDelims if necessary
     */
-   private def deleteDelim(index: Int) {
+   private def deleteDelim(index: Int): Unit = {
       val delim = left.head.asInstanceOf[Delimiter]
       found ::= FoundDelim(index, delim)
       left = left.tail
@@ -83,7 +83,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * for each additional character c in delim, add Delim(c) to the front
     * this has the effect of skipping the subsequent Tokens that have been used already after matching token against delim
     */
-   private def addPrepickedDelims(delim: Delimiter, token: Token) {
+   private def addPrepickedDelims(delim: Delimiter, token: Token): Unit = {
       val prepicked = delim.text.substring(token.word.length).toList.map(c => Delim(c.toString))
       left = prepicked ::: left
    }
@@ -93,14 +93,14 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       FoundSimp(ts, m)
    }
    /** pick exactly ms.length available Tokens, each as as FoundSimp */
-   private def PickSingles(ms: List[ChildMarker]) {
-      val fs = ms reverseMap {m =>
+   private def PickSingles(ms: List[ChildMarker]): Unit = {
+      val fs = ms.reverseIterator.map {m =>
          FoundSimp(scanner.pick(1), m)
-      }
+      }.toList
       found = fs ::: found
    }
    /** like pickAll, but appends to a previously started sequence or starts a new sequence */
-   private def PickAllSeq(m: ChildMarker) {
+   private def PickAllSeq(m: ChildMarker): Unit = {
       val f = PickAll(m)
       (found.headOption, m) match {
          case (Some(FoundSeq(s, args)), m) if s.number == m.number =>
@@ -110,7 +110,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       }
    }
    /** inserts an empty sequence if a sequence is ended before any elements were found */
-   private def SeqDone(m: ChildMarker) {
+   private def SeqDone(m: ChildMarker): Unit = {
       found.headOption match {
          case Some(FoundSeq(s, _)) if s.number == m.number =>
          case _ =>
@@ -244,7 +244,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                        delete(numCurrentTokens)
                        deleteDelim(currentIndex)
                     }
-                 } else if (ns.length > numCurrentTokens) {
+                 } else if (ns.length < numCurrentTokens) {
                     // if more tokens available than needed, merge all remaining tokens into the last argument
                     //TODO use matched tokens as delimiters, merge in between them
                     onApplyI {currentIndex =>
@@ -418,7 +418,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * precondition: this.closable
     * terminate the current argument(s)
     */
-   def close {
+   def close: Unit = {
       remember(-13) // dummy value because closable never uses the currentIndex argument
    }
 }

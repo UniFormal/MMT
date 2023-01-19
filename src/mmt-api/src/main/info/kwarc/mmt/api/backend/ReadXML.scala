@@ -27,11 +27,11 @@ class XMLReader(controller: Controller) extends Logger {
    private val rci = new RuleConstantInterpreter(controller)
 
    /** adds metadata and calls the continuation functions */
-   private def add(e : StructuralElement, md: Option[MetaData])(implicit cont: StructureParserContinuations) {
+   private def add(e : StructuralElement, md: Option[MetaData])(implicit cont: StructureParserContinuations): Unit = {
       md foreach {e.metadata = _}
       cont.onElement(e)
    }
-   private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructureParserContinuations) {
+   private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructureParserContinuations): Unit = {
       m.parentDoc = docOpt.map(_.path)
       add(m, md)
       docOpt foreach {d =>
@@ -40,7 +40,7 @@ class XMLReader(controller: Controller) extends Logger {
         add(mref, None)
       }
    }
-   private def endAdd(ce: ContainerElement[_])(implicit cont: StructureParserContinuations) {
+   private def endAdd(ce: ContainerElement[_])(implicit cont: StructureParserContinuations): Unit = {
      cont.onElementEnd(ce)
    }
 
@@ -51,7 +51,7 @@ class XMLReader(controller: Controller) extends Logger {
     *
     *  If the document has a base attribute, it is used as the default namespace of modules.
     */
-   def readDocument(dpath : DPath, nodeMd : Node)(implicit cont: StructureParserContinuations) {
+   def readDocument(dpath : DPath, nodeMd : Node)(implicit cont: StructureParserContinuations): Unit = {
       val nsMap = NamespaceMap.fromXML(nodeMd)(dpath)
       val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
       node match {
@@ -71,7 +71,7 @@ class XMLReader(controller: Controller) extends Logger {
    }
 
    /** entry point for reading in a node if the containing document, theory, view is known */
-   def readIn(nsMap: NamespaceMap, se: ContainerElement[_], node: Node)(implicit cont: StructureParserContinuations) {
+   def readIn(nsMap: NamespaceMap, se: ContainerElement[_], node: Node)(implicit cont: StructureParserContinuations): Unit = {
       // base is unchanged for documents, module.path for theories, codomain for views
       se match {
          case d: Document => d.contentAncestor match {
@@ -81,7 +81,7 @@ class XMLReader(controller: Controller) extends Logger {
                readInDocument(nsMap, Some(d), node)
          }
          case t: AbstractTheory => readInModule(t.modulePath, nsMap(t.path), t, node)
-         case v: View =>           readInModule(v.modulePath, nsMap(v.to.toMPath), v, node)
+         case v: View =>           readInModule(v.modulePath, v.codomainPaths.headOption.fold(nsMap)(nsMap.apply(_)), v, node)
          case s: Structure =>      readInModule(s.modulePath, nsMap, s, node)
       }
    }
@@ -92,7 +92,7 @@ class XMLReader(controller: Controller) extends Logger {
     * @param docOpt the containing document, if any; if given, XRef's will be generated
     * @param nodeMd the node to parse
     */
-   def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], nodeMd : Node)(implicit cont: StructureParserContinuations) {
+   def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], nodeMd : Node)(implicit cont: StructureParserContinuations): Unit = {
       lazy val doc = docOpt.getOrElse {throw ParseError("narrative element without containing document")}
       lazy val dname = LocalName.parse(xml.attr(nodeMd,"name"), nsMap)
       val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
@@ -208,18 +208,18 @@ class XMLReader(controller: Controller) extends Logger {
     * @param body the containing theory, view, or structure
     * @param node the node to parse
     */
-   def readInModule(home: MPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructureParserContinuations) {
+   def readInModule(home: MPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructureParserContinuations): Unit = {
       readInModuleAux(home, body.asDocument.path, nsMap, body, node)
    }
    /** additionally keeps track of the document nesting inside the body */
-   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructureParserContinuations) {
+   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructureParserContinuations): Unit = {
       val homeTerm = OMMOD(home)
       val relDocHome = docHome.dropPrefix(home.toDPath).getOrElse {
          throw ImplementationError(s"document home must extend content home")
       }
       val (symbolWS, md) = MetaData.parseMetaDataChild(node, nsMap)
       /* declarations must only be added through this method */
-      def addDeclaration(d: Declaration) {
+      def addDeclaration(d: Declaration): Unit = {
          d.setDocumentHome(relDocHome)
          add(d, md)
       }

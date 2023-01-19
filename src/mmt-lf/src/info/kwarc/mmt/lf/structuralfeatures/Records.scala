@@ -229,7 +229,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * Checks the validity of the record to be constructed
    * @param dd the derived declaration from which the record is to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
   /**
    * Elaborates the declaration of a record into the derived declarations, 

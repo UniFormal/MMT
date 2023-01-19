@@ -18,8 +18,8 @@ import info.kwarc.mmt.odk.OpenMath._
 object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign","translator") {
   def newTrace = new VRESystem.MitMComputationTrace(Some(t => MitM.present(t, s => controller.presenter.asString(s))))
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     // Copied here because these lines were removed from MagicTest.
     // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
@@ -31,7 +31,7 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign","tra
   }
 
   // override val gotoshell = false
-  def run {
+  def run(): Unit = {
     // turn on scscp on localhost:26134:
     hl("scscp on 26134")
     //hl("extension info.kwarc.mmt.api.ontology.AddAlignments /home/jazzpirate/work/Stuff/AlignmentsPublic/odk")
@@ -91,7 +91,7 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign","tra
       computed
   }
   
-  private def printTraceToFiles(trace: MitMComputationTrace, folder: String) {
+  private def printTraceToFiles(trace: MitMComputationTrace, folder: String): Unit = {
     trace.steps.reverse.zipWithIndex.foreach {case (s,i) => s match {
       case SCSCPSend(sys, t, om) =>
         val prefix = folder + "/" + i + "-scscp-send-to-" + sys
@@ -119,10 +119,10 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign","tra
     Obj.parse(n, NamespaceMap.empty).asInstanceOf[Term]
   }
 
-  private def termToFile(t: Term, f: String) {
+  private def termToFile(t: Term, f: String): Unit = {
     File.write(File(f+".mitm"), t.toNode.toString)
   }
-  private def omToFile(om: OMAny, f: String) {
+  private def omToFile(om: OMAny, f: String): Unit = {
     File.write(File(f+".openmath"), (new Coding.OMXMLCoding).encode(om).toString)
   }
 }

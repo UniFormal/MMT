@@ -8,15 +8,13 @@ import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMID, OML, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.xml.XMLError
 import info.kwarc.mmt.api.utils.{File, URI, xml}
 import info.kwarc.mmt.coq.coqxml.{CoqEntry, CoqXml, SupXML, TranslationState}
 import info.kwarc.mmt.lf.ApplySpine
 
 import scala.collection.mutable
-import scala.io.Source
 import scala.util.Try
-import scala.xml.{Node, parsing}
+import scala.xml.{Node}
 import scala.xml.parsing.XhtmlParser
 
 
@@ -40,7 +38,7 @@ class Importer extends archives.Importer {
     } catch {
       case e: utils.ExtractError =>
         log(e.getMessage)
-        sys.exit
+        sys.exit()
     }
 
     val ns = bf.inPath.init.tail.foldLeft(Path.parseD("cic://" + bf.inPath.head,NamespaceMap.empty))((b,s) => b / s)
@@ -185,7 +183,7 @@ class Importer extends archives.Importer {
         }
         catch {
           case e: ExtensionError =>
-          case e =>
+          case e: Throwable =>
             println(e.getClass)
             ???
         }
@@ -229,7 +227,7 @@ class Importer extends archives.Importer {
             (LocalName(m.uri.path.last + "_impl"),m.componentsImpl)
         } // parent.name / m.uri.path.last
 
-        val nt = new DerivedDeclaration(parent.toTerm,name,m.as,TermContainer(Some(tp)),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        val nt = new DerivedDeclaration(parent.toTerm,name,m.as,TermContainer(Some(tp)),NotationContainer.empty()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
         used_uris += m.uri
         controller add nt
         log("Module " + nt.modulePath.toString)
@@ -250,7 +248,7 @@ class Importer extends archives.Importer {
         try {
           controller.simplifier(nt.path)
         } catch {
-          case GetError(_) =>
+          case _:GetError =>
           case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
         }
 
@@ -360,7 +358,7 @@ class Importer extends archives.Importer {
       case coqxml.SECTION(uri,statements) =>
         val name = parent.name / uri.path.last
         //val th = Theory(parent.parent,name,Some(Coq.foundation))
-        val nt = new DerivedDeclaration(parent.toTerm,LocalName(uri.path.last),"Section",TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        val nt = new DerivedDeclaration(parent.toTerm,LocalName(uri.path.last),"Section",TermContainer(None),NotationContainer.empty()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
         nt.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? "Section")))
         log("Section " + nt.path.toString)
         controller add nt
@@ -368,11 +366,11 @@ class Importer extends archives.Importer {
         try {
           controller.simplifier(nt.path)
         } catch {
-          case GetError(_) =>
+          case _:GetError =>
           case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
         }
       // controller add PlainInclude(th.path,parent.path)
-      case coqxml.VARIABLE(uri,as,components) =>
+      case coqxml.VARIABLE_(uri,as,components) =>
         val (name,tp,df) = components.collectFirst {
           case coqxml.TopXML(coqxml.Variable(nm,params,_,body,tptm)) =>
             (LocalName(nm),Some(Coqtp(tptm.tm.toOMDoc(state))),body.map(_.tm.toOMDoc(state))) // TODO
@@ -396,7 +394,7 @@ class Importer extends archives.Importer {
         val dname = LocalName(tps.map {
           case coqxml.InductiveType(namei,_,_,_,_) => namei
         }.mkString + "_DEF")
-        val dd = new DerivedDeclaration(parent.toTerm,dname,as,TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        val dd = new DerivedDeclaration(parent.toTerm,dname,as,TermContainer(None),NotationContainer.empty()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
         controller add dd
 
         tps foreach {
@@ -415,7 +413,7 @@ class Importer extends archives.Importer {
         try {
           controller.simplifier(parent.path)
         } catch {
-          case GetError(_) =>
+          case _:GetError =>
         }
       /*
       val (name,tp,df) = components.collectFirst {
@@ -572,7 +570,7 @@ class Importer extends archives.Importer {
         val uri = URI((d\"@uri").mkString)
         // log(uri.toString)
         val as = (d\"@as").mkString
-        List(coqxml.VARIABLE(uri,as,handleXml(namespaces ::: sections,uri.path.last)))
+        List(coqxml.VARIABLE_(uri,as,handleXml(namespaces ::: sections,uri.path.last)))
       case d @ <DEFINITION/> =>
         val uri = URI((d\"@uri").mkString)
         // log(uri.toString)

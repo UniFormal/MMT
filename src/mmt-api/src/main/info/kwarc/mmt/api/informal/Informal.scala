@@ -1,11 +1,14 @@
 package info.kwarc.mmt.api.informal
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 import symbols._
 import metadata._
+
 import scala.xml._
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Informal {
    val base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
 
@@ -14,35 +17,43 @@ object Informal {
 //   lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 class InformalSym(name: String) {
    val path = Informal.path ? name
    val term = OMS(path)
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Opaque extends InformalSym("opaque") {
   def apply(child : List[Term]) = OMA(term, child)
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Narration extends InformalSym("narration")
+
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object MathMLNarration extends InformalSym("mathml-narration")
 
-
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object FlexiformalXML {
   def apply(node : Node) : Term = {
     OMATTR(Opaque.term,Narration.term,OMFOREIGN(node))
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object FlexiformalTerm {
   def apply(term : Term) : Term = term
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object FlexiformalRef {
   def apply(term : Term, node : Node) : Term = {
     OMATTR(term, Narration.term, OMFOREIGN(node))
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object FlexiformalNode {
   def apply(node : Node, child : List[(Term, List[Int])]) : Term = {
     val terms = child.map(_._1)
@@ -65,6 +76,7 @@ object FlexiformalNode {
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Definition {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -74,6 +86,7 @@ object Definition {
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Assertion {
   def apply(home : Term, name : LocalName, df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -83,6 +96,7 @@ object Assertion {
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Exercise {
   def apply(home : Term, name : LocalName, prob : Term, sol : Option[Term], localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, Some(prob), sol, None)
@@ -92,6 +106,7 @@ object Exercise {
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Example {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -101,6 +116,7 @@ object Example {
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object Proof {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)
@@ -110,6 +126,7 @@ object Proof {
   }
 }
 
+@deprecated("MMT_TODO: needs full revision, should be deleted", since="forever")
 object PlainNarration {
   def apply(home : Term, name : LocalName, df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)

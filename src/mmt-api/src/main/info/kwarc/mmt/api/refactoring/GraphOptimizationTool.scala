@@ -5,7 +5,7 @@ import java.awt.{BorderLayout, ComponentOrientation, Container, Dimension, FlowL
 import java.io.PrintWriter
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
+import info.kwarc.mmt.api.archives.{Archive, BuildTarget,Build}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMID, Term, Traverser}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
@@ -593,7 +593,7 @@ class GraphOptimizationTool extends BuildTarget {
     /*control buttons*/
     val yesButton = new JButton("yes")
     yesButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="yes"
           disableButtons()
@@ -603,7 +603,7 @@ class GraphOptimizationTool extends BuildTarget {
     })
     val noButton = new JButton("no")
     noButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="no"
           disableButtons()
@@ -613,7 +613,7 @@ class GraphOptimizationTool extends BuildTarget {
     })
     val laterButton = new JButton("later")
     laterButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="later"
           disableButtons()
@@ -623,7 +623,7 @@ class GraphOptimizationTool extends BuildTarget {
     })
     val neverButton = new JButton("never")
     neverButton.addActionListener(new ActionListener(){
-      def actionPerformed(e : ActionEvent){
+      def actionPerformed(e : ActionEvent): Unit ={
         got.synchronized {
           got.command="never"
           disableButtons()
@@ -712,16 +712,16 @@ class GraphOptimizationTool extends BuildTarget {
 
   /** clean this target in a given archive */
   override def clean(a: Archive, in: FilePath): Unit = {
-    val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")
+    val file = new java.io.File(a.root.toString + "/export/got/"+a.id+".xml")
     file.delete()
   }
 
   /** build or update this target in a given archive */
-  override def build(a: Archive, up: Update, in: FilePath): Unit = {
+  def build(a: Archive, w: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
     val theories = a.allContent.flatMap({p:MPath => controller.get(p) match { case dt : Theory => Some(p) case _ => None}})
     val replacements = findReplacements(theories, interactive = false)
     val output = toXML(replacements)
-    val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")
+    val file = new java.io.File(a.root.toString + "/export/got/"+a.id+".xml")
     file.getParentFile.mkdirs
     val pw = new PrintWriter(file)
     pw.write(output)

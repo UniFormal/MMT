@@ -72,19 +72,19 @@ abstract class LazyConstant(val home : Term, val name : LocalName) extends Const
 
 abstract class SimpleLazyConstant(h : Term, n : LocalName) extends LazyConstant(h,n) {
   def onAccess: Unit
-  def onAccessTp {
+  def onAccessTp: Unit = {
     onAccess
     tpDefined = true
     dfDefined = true
     otherDefined = true
   }
-  def onAccessDf {
+  def onAccessDf: Unit = {
     onAccess
     tpDefined = true
     dfDefined = true
     otherDefined = true
   }
-  def onAccessOther {
+  def onAccessOther: Unit = {
     onAccess
     tpDefined = true
     dfDefined = true

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
 package tiscaf
 
 import java.util.Date
@@ -71,7 +72,7 @@ final class HTalk(data : HTalkData) {
     def subtractOne(key : Any) : this.type = if (isAllowed) { session.get -= key; this } else this
 
     override def size : Int = if (isAllowed) session.get.size else 0
-    override def clear : Unit = if (isAllowed) session.get.clear
+    override def clear(): Unit = if (isAllowed) session.get.clear()
 
     override def foreach[U](f : Tuple2[Any, Any] => U) : Unit = if (isAllowed) session.get.foreach[U] { t => f(t) }
 

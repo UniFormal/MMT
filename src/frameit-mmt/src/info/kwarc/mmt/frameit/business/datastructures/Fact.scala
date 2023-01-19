@@ -51,6 +51,7 @@ sealed case class Fact(
                         tp: Term,
                         df: Option[Term]
                       ) {
+  var additionalContext : Context = Context.empty
 
   /**
     * Renders to an [[SFact]] for passing on to the game engine.
@@ -70,21 +71,21 @@ sealed case class Fact(
     */
   private def _toSimple(implicit ctrl: Controller): SFact = {
     val simplify: Term => Term = {
+      val ctx = Context(ref.uri.module) ++ additionalContext
       val simplificationRules: RuleSet = {
-        val rules = RuleSet.collectRules(ctrl, Context(ref.uri.module))
+        val rules = RuleSet.collectRules(ctrl, ctx)
         rules.add(new LabelVerbalizationRule()(ctrl.globalLookup))
 
         rules
       }
 
-      val ctx = Context(ref.uri.module)
-      val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
+      val simplicationUnit = SimplificationUnit(ctx, expandVarDefs = true, expandConDefs = true, fullRecursion = true)
 
       ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }
 
-    lazy val simpleTp = simplify(tp)
-    lazy val simpleDf = df.map(simplify)
+    val simpleTp = simplify(tp)
+    val simpleDf = df.map(simplify)
 
     val label = simplify(meta.label).toStr(shortURIs = true)
 
@@ -92,7 +93,7 @@ sealed case class Fact(
       case Some(valueEqFact) => valueEqFact
       case _ => Fact.tryRenderSEquationSystemFact(ref, label, tp = tp, simpleTp = simpleTp, df = df, simpleDf = simpleDf) match {
           case Some(equationSystemFact) => equationSystemFact
-          case _ => SGeneralFact(Some(ref), label, tp, df)
+          case _ => SGeneralFact(Some(ref), label, tp, simpleDf)
       }
     }
   }

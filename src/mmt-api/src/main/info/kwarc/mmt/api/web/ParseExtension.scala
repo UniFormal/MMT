@@ -21,7 +21,7 @@ class ParseServer extends ServerExtension(":parse") {
           val parser = controller.extman.get(classOf[Parser], format).getOrElse {
              throw LocalError("no parser found")
           }
-          val errorCont = new ErrorContainer(None)
+          val errorCont = new ErrorContainer
           val ps = ParsingStream.fromString(text, dpath, format)
           val doc = parser(ps)(new StructureParserContinuations(errorCont))
           errorCont.getErrors match {

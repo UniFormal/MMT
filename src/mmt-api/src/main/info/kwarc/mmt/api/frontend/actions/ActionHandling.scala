@@ -28,13 +28,13 @@ trait ActionHandling extends
   def currentActionDefinition : Option[String] = state.currentActionDefinition.map(_.name)
 
   /** executes a string command */
-  def handleLine(l: String, showLog: Boolean = true) {
+  def handleLine(l: String, showLog: Boolean = true, errorCont: Option[ErrorHandler] = None): Unit = {
     val act = Action.parseAct(this, l)
-    handle(act, showLog)
+    handle(act, showLog, errorCont)
   }
 
   /** executes an Action */
-  def handle(act: Action, showLog: Boolean = true) {
+  def handle(act: Action, showLog: Boolean = true, errorCont: Option[ErrorHandler] = None): Unit = {
     act.init(this)
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
@@ -45,7 +45,10 @@ trait ActionHandling extends
           report("user", s"'$act'")
           report.indent
         }
-        act()
+        act match {
+          case a: ActionWithErrorRecovery => a(errorCont)
+          case a => a()
+        }
         if (act != NoAction && showLog) {
           report.unindent
           report("user", s"'$act' finished")
@@ -90,7 +93,7 @@ trait ActionHandling extends
         val context = contOpt.getOrElse(Context.empty)
         val pu = ParsingUnit(SourceRef.anonymous(text), context, text, InterpretationInstructionContext(getNamespaceMap))
         val checked = interpreter(pu)(ErrorThrower)
-        val simplified = simplifier(checked.term, SimplificationUnit(context, false, true))
+        val simplified = simplifier(checked.term, SimplificationUnit(context, false,false, true))
         val presented = presenter.asString(simplified)
         ObjectResponse(presented, "html")
 

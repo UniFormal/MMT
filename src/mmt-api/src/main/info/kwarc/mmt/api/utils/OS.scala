@@ -27,7 +27,7 @@ object OS {
      detect match {
         case Windows => File(System.getenv("APPDATA"))
         case MacOS => uh / "Library"
-        case os : Unix => uh
+        case _: Unix => uh
      }
   }
 
@@ -37,10 +37,16 @@ object OS {
     (OS.detect match {
       case Windows => List(File(System.getenv("APPDATA")) / "jEdit")
       case MacOS => List(uh / "Library" / "jEdit")
-      case os: Unix => List(
+      case _: Unix => List(
         uh / ".jEdit",
         uh / ".jedit"
       )
     }).find(_.isDirectory)
+  }
+
+  /** the git used by this MMT instance */
+  lazy val git: Git = OS.detect match {
+    case Windows => new WindowsGit()
+    case _ => UnixGit
   }
 }

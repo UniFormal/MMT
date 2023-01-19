@@ -127,7 +127,7 @@ object StandardArgumentChecker extends ArgumentChecker {
  *
  * This rule works for B:U for any universe U
  *
- * This rule implements currying and all arguments at once
+ * This rule implements currying and checks all arguments at once
  */
 class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule(Apply.path, OfType.path) {
    def apply(solver: Solver, tm: Term, tpO: Option[Term], covered: Boolean)(implicit stack: Stack, history: History) : (Option[Term], Option[Boolean]) = {
@@ -168,7 +168,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
       }
       tm match {
          case ApplySpine(f,args) =>
-            val fTOpt = solver.inferType(f, covered)(stack, history + ("inferring type of function " + solver.presentObj(f)))
+            val hI = history + ("inferring type of function " + solver.presentObj(f))
+            val fTOpt = solver.inferType(f, covered)(stack, hI)
             fTOpt match {
               case Some(fT) =>
                 history += "function is `" + solver.presentObj(f) + "` of type `" + solver.presentObj(fT) + "`"
@@ -176,22 +177,23 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
                   case Some((argTypes,tmI)) =>
                     // It is not clear whether it is better to type-check the return type or the arguments first.
                     // Conceivably the latter allows solving more unknowns early and localize errors.
-                    // But it can also introduce complex terms early, thus slowing down (factor 2  in experiments) checking and 
+                    // But it can also introduce complex terms early, thus slowing down (factor 2 in experiments) checking and
                     // even lead to failures where beta-reductions lead to substitutions to the arguments of unknowns.
                     // Using tryToCheckWithoutDelay instead of check here avoids the latter but not the former.
                     // Therefore, the early check of the type is skipped. Future experiments may find better heuristics.
-                    //val resCheckResult = tpO flatMap {tp =>
-                    //   solver.check(Subtyping(stack, tmI, tp))(history + "checking return type against expected type")
-                    //}
-                    val resCheckResult: Option[Boolean] = None
+                    // Currently, aggressive early result checking is used to investigate if problems persist.
+                    val resCheckResult = tpO map {tp =>
+                       solver.check(Subtyping(stack, tmI, tp))(history + "checking return type against expected type")
+                    }
+                    // val resCheckResult: Option[Boolean] = None
                     // check the arguments
-                    // open question: should later arguments still be ckeched if an error is found?
+                    // this does not check later arguments if one argument leads to a definite error
                     val argCheckResult = (args zip argTypes).zipWithIndex forall {case ((t,a),i) =>
                       val aS = solver.substituteSolution(a) // previous checks may have solved some unknowns
                       conforms(solver)(t, aS, covered)(stack, history + ("checking argument " + (i+1)))
                     }
                     // no point in returning a positive check result if this is internally ill-typed
-                    val checkResult = resCheckResult map {r => r && argCheckResult}
+                    val checkResult = resCheckResult map {_ && argCheckResult}
                     // we return the inferred type and (if expected type provided) the type check result
                     val tmIS = solver.substituteSolution(tmI)
                     (Some(tmIS), checkResult)
@@ -199,7 +201,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
                     (None, None)
                 }
               case None =>
-                history += "failed"
+                history.mergeIn(hI)
+                history += "inference of type of function `" + solver.presentObj(f) + "` failed"
                 //TODO commented out because it looks redundant, check if it's ever helpful
                 //args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
                 (None,None)
@@ -220,7 +223,7 @@ object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
-            // this case is somewhat redundant, but allows reusing the variable name
+            // this case is somewhat redundant, but allows reusing the variable name of the lambda
             // TODO this might check a1 >: a2 instead, but then a1 must be checked separately
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             val (xn,sub1) = Common.pickFresh(solver, x1)
@@ -353,7 +356,7 @@ object FlattenCurrying extends ComputationRule(Apply.path) {
 /**
  * the beta-reduction rule reducible(s,A)  --->  (lambda x:A.t) s = t [x/s]
  *
- * the reducibility judgment is left abstract, usually the typing judgment s:A
+ * the reducibility judgment is kept abstract, usually it is the typing judgment s:A
  *
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
  */
@@ -425,7 +428,7 @@ object Beta extends GenericBeta(StandardArgumentChecker) {
     * Effectively applies the simplifier to the term using only one rule, namely `this`.
     */
   def reduce(t: Term)(implicit ctrl: Controller): Term = {
-    val su = SimplificationUnit(Context.empty, expandDefinitions = false, fullRecursion = true)
+    val su = SimplificationUnit(Context.empty, expandConDefs = false, expandVarDefs=false, fullRecursion = true)
     ctrl.simplifier(t, su, RuleSet(lf.Beta))
   }
 }
@@ -458,15 +461,6 @@ object UnsafeBeta extends BreadthRule(Apply.path){
 */
 
 
-/** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
- * LocalName.Anon is used for x */
-// not used anymore because Pi rules now also apply to arrow
-object ExpandArrow extends ComputationRule(Arrow.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
-      case Arrow(a,b) => Simplify(Pi(OMV.anonymous, a, b))
-      case _ => Simplifiability.NoRecurse
-   }
-}
 
 class Injectivity(val head: GlobalName) extends TermBasedEqualityRule {
    def applicable(tm1: Term, tm2: Term) = (tm1,tm2) match {
@@ -615,8 +609,20 @@ object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
    }
 }
 
+/** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
+  * LocalName.Anon is used for x */
+// not used anymore because Pi rules now also apply to arrow
+/*
+object ExpandArrow extends ComputationRule(Arrow.path) {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
+      case Arrow(a,b) => Simplify(Pi(OMV.anonymous, a, b))
+      case _ => Simplifiability.NoRecurse
+   }
+}
+*/
+
 /**
-  * Removes unnecessary occurrences of [[Pi]]s.
+  * inverse of ExpandArrow - removes unnecessary occurrences of [[Pi]]s.
   * E.g., over the signature `{A: type, B: type}`, the [[Pi]] in `Πx: A. B`
   * is unnecessary and can be replaced by an [[Arrow]] `A -> B`.
   */
@@ -627,5 +633,20 @@ object RemoveUnusedPi extends SimplificationRule(Pi.path) {
       else Simplify(Arrow(tp, body))
 
     case _ => Simplifiability.NoRecurse
+  }
+}
+
+/** makes this applicabile to terms of the form operator(head(args)) where both operator and head use LF application */
+trait ApplicableUnderUnaryOperator extends SingleTermBasedCheckingRule {
+  val operator: GlobalName
+  private val ops = List(OMS(Apply.path), OMS(head))
+  override def applicable(tm: Term) = tm match {
+    case Apply(OMS(`operator`), t) => t match {
+      case OMA(f,a) => (f :: a).startsWith(ops)
+      case OMS(p) => head == p
+      case OMBINDC(OMS(p),_,_) => head == p
+      case _ => false
+    }
+    case _ => false
   }
 }

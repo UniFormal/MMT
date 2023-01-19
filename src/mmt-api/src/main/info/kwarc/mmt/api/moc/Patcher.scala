@@ -22,7 +22,7 @@ object Patcher {
    * @param ch the change to be applied
    * @param mem the memory representing the theory graph
    */
-  private def patchChange(ch : Change, controller : Controller) {
+  private def patchChange(ch : Change, controller : Controller): Unit = {
     ch match {
       case a : Add => controller.add(a.s)
       case d : Delete => controller.delete(d.s.path)
@@ -48,7 +48,7 @@ object Patcher {
 
   }
 
-  private def copyDecls(old : Module, nw : Module) {
+  private def copyDecls(old : Module, nw : Module): Unit = {
     old.getDeclarations collect {
       case s : Declaration => nw.add(s)
     }
@@ -88,7 +88,7 @@ object Patcher {
     case (c : Constant, TypeComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, Some(s), c.df, c.rl, c.notC)
     case (c : Constant, TypeComponent, None) => Constant(c.home, c.name, c.alias, None, c.df, c.rl, c.notC)
 
-    case _ => throw UpdateError("Unexpected component update found while applying Diff.\n" +
+    case _ => throw UpdateError(d, "unexpected component update found while applying diff.\n" +
                                 "ContentElement = " + d.toString + "\n" +
                                 "compName = " + comp +  "\n" +
                                 "newComp = " + nw.toString)

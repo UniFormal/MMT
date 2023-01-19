@@ -23,7 +23,7 @@ abstract class MMTOption[A] {
   }
 
   /** set the setting in jedit */
-  def set(a: A) {
+  def set(a: A): Unit = {
     jEdit.setProperty(jeditKey, toString(a))
   }
 
@@ -32,16 +32,16 @@ abstract class MMTOption[A] {
 
   def fromGUIComponent: A
 
-  def toGUIComponent(a: A)
+  def toGUIComponent(a: A): Unit
 
   /** add an interface component to the jedit plugin options pane */
-  def init(op: AbstractOptionPane) {
+  def init(op: AbstractOptionPane): Unit = {
     get.foreach { a => toGUIComponent(a) }
     op.addComponent(label, guiComponent)
   }
 
   /** save the values of the interface component to the jedit settings */
-  def save {
+  def save: Unit = {
     set(fromGUIComponent)
   }
 }
@@ -88,19 +88,23 @@ object MMTOptions {
   val config = new StringOption("config", "custom configuration file")
   val archives = new StringOption("archives", "local folder that contains archives (mathhub root)")
   val lowAsciiDelims = new BooleanOption("lowAsciiDelims", "use ASCII 28-31 as delimiters")
-  val semantichighlighting = new BooleanOption("SemanticHighlighting","Semantic highlighting (does not work yet)")
+
+  // taken out because it does not work well: MMT-parsing every time is too slow to run all the time
+  // But otherwise, the source references are not uptodate.
+  // val semantichighlighting = new BooleanOption("SemanticHighlighting","Semantic highlighting")
+
   /** the list of all options */
-  val all = List(startup, config, archives, lowAsciiDelims, semantichighlighting)
+  val all = List(startup, config, archives, lowAsciiDelims)
 }
 
 /** the MMT plugin options pane using the options defined in the companion object */
 class MMTOptions extends AbstractOptionPane("info.kwarc.mmt.jedit.MMTPlugin") {
-  override def _init {
+  override def _init: Unit = {
     addSeparator("all paths are relative to MMT plugin home")
     MMTOptions.all foreach { c => c.init(this) }
   }
 
-  override def _save {
+  override def _save: Unit = {
     MMTOptions.all foreach { c => c.save }
   }
 }

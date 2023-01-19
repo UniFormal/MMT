@@ -21,6 +21,10 @@ object PVSTheory {
    val preludepath = rootdpath ? "Prelude" //Path.parseM("http://pvs.csl.sri.com/?Prelude",NamespaceMap.empty) //rootdpath ? "Prelude"
    val natlit = thpath ? "NatLit"
    class sym(s: String) {
+     val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
+     val nasapath = DPath(URI.http colon "shemesh.larc.nasa.gov") / "fm" / "ftp" / "larc" / "PVS-library"
+     val thname = "PVS"
+     val thpath = rootdpath ? thname
       val path = thpath ? s
       val term = OMS(path)
    }

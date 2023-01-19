@@ -1,0 +1,111 @@
+@font-face {
+    font-family: 'Latin Modern SmallCaps';
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmromancaps10-regular.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern SmallCaps';
+    font-style: italic;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmromancaps10-oblique.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern';
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmroman10-regular.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern';
+    font-style: italic;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmroman10-italic.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern';
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url('/stex/fonts/lmroman10-bold.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern';
+    font-style: italic;
+    font-weight: bold;
+    font-display: swap;
+    src: url('/stex/fonts/lmroman10-bolditalic.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Mono';
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmmono10-regular.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Mono';
+    font-style: italic;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmmono10-italic.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Mono';
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url('/stex/fonts/lmmonolt10-bold.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Mono';
+    font-style: italic;
+    font-weight: bold;
+    font-display: swap;
+    src: url('/stex/fonts/lmmonolt10-boldoblique.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Sans';
+    font-style: normal;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmsans10-regular.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Sans';
+    font-style: italic;
+    font-weight: normal;
+    font-display: swap;
+    src: url('/stex/fonts/lmsans10-oblique.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Sans';
+    font-style: normal;
+    font-weight: bold;
+    font-display: swap;
+    src: url('/stex/fonts/lmsans10-bold.otf');
+}
+
+@font-face {
+    font-family: 'Latin Modern Sans';
+    font-style: italic;
+    font-weight: bold;
+    font-display: swap;
+    src: url('/stex/fonts/lmsans10-boldoblique.otf');
+}

@@ -56,7 +56,7 @@ trait CheckingCallback {
    }
 
    /** flag an error */
-   def error(message: => String)(implicit history: History): Boolean = false
+   def error(message: => String, exc: Option[Level.Excuse] = None)(implicit history: History): Boolean = false
 
    /** lookup */
    def lookup: Lookup
@@ -144,11 +144,8 @@ abstract class SubtypingRule extends CheckingRule {
 }
 
 /** applies to  op(args1) <: op(args2) */
-abstract class VarianceRule(val head: GlobalName) extends SubtypingRule {
-  def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
-    case (ComplexTerm(a, _,_,_), ComplexTerm(b, _, _, _)) if this.heads.contains(a) && this.heads.contains(b) => true
-    case _ => false
-  }
+abstract class VarianceRule(val head: GlobalName) extends SubtypingRule with ApplicableUnder {
+  def applicable(tp1: Term, tp2: Term) = applicable(tp1) && applicable(tp2)
 }
 
 /** variances annotations, used by [[DelarativeVarianceRule]] */
@@ -159,7 +156,7 @@ case object Invariant extends Variance
 case object Ignorevariant extends Variance
 
 /** VarianceRule for OMA(op, args) defined by giving a variance annotation for each arg */
-class DelarativeVarianceRule(h: GlobalName, variance: List[Variance]) extends VarianceRule(h) {
+abstract class DelarativeVarianceRule(h: GlobalName, variance: List[Variance]) extends VarianceRule(h) {
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val OMA(_, args1) = tp1
     val OMA(_, args2) = tp2
@@ -218,15 +215,18 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
  *  Thus it can be used both for type inference and for type checking.
  *  @param h the head of the term whose type this rule infers
  *  @param t the "typing judgement symbol", e.g. ''info.kwarc.mmt.lf.OfType.path''
+ *  Even if the expected type is given, rules should still perform some kind of type inference on the term
+ *  as opposed to simply returning the expected type. The expected type might contain unknowns that are to be solved
+ *  by equating it to the inferred type.
  */
 abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
    /**
     *  @param tp the expected type
     *    pre: if provided, tp is covered
-    *  @param covered whether tm is covered
+    *  @param covered whether tm is covered; if so and tp is provided, then tm:tp covered
     *  @return the inferred type and the result of type-checking
     *    post: if the left component is Some(tpI), typing tm:tpI is covered
-     *         if tp provided and the right component is Some(true), tm:tp is covered
+    *      if tp provided and the right component is Some(true), tm:tp is covered
     */
    def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean])
 
@@ -236,7 +236,7 @@ abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends Infe
 
 
 
-@MMT_TODO("must be reimplemented cleanly")
+@deprecated("MMT_TODO: must be reimplemented cleanly", since="forever")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val checks = apply(tm, covered)(solver,stack,history)
@@ -467,6 +467,7 @@ abstract class TypeSolutionRule(val head: GlobalName) extends SolutionRule {
  * This is legal if all terms of that type are equal.
  */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
+  override def priority = -10 // make sure we don't shadow other equality rules
 
   /** if this type is proof-irrelevant, this returns the unique term of this type
    *
@@ -521,8 +522,8 @@ class AbbreviationRuleGenerator extends ChangeListener {
     }
   }
 
-  override def onAdd(e: StructuralElement) {onCheck(e)}
-  override def onDelete(e: StructuralElement) {
+  override def onAdd(e: StructuralElement): Unit = {onCheck(e)}
+  override def onDelete(e: StructuralElement): Unit = {
     getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
   }
   override def onCheck(e: StructuralElement): Unit = e match {
@@ -530,7 +531,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
       val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
       val ruleConst = RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
       ruleConst.setOrigin(GeneratedFrom(c.path, this))
-      log(c.name + " ~~> " + present(c.df.get))
+      log(c.name.toString + " ~~> " + present(c.df.get))
       controller add ruleConst
     case _ =>
   }

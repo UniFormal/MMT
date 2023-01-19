@@ -33,14 +33,14 @@ class RealizedValue(synVal: GlobalName, synTp: Term, semVal: SemanticValue) exte
 object RealizedValue {
   /** builds the literal from a semantic value */
   def make(tp: Term, semVal: SemanticValue) = {
-    val rt = new RealizedType(tp, semVal.tp)
+    val rt = RealizedType(tp, semVal.tp)
     rt.of(semVal.value)
   }
 }
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */
 case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends SimplificationRule(synOp) {
   /** basic type-checking */
-  override def init {
+  override def init: Unit = {
      semOp.init
      if (synTp.arity != semTp.arity)
        throw ImplementationError("syntactic and semantic arity are not equal")
@@ -105,12 +105,13 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
          def applicable(t: Term) = t match {
            case OMA(f,args) =>
              val comps = f::args
-             if (comps.startsWith(synTp.under ::: List(OMS(synOp)))) {
-               val effectiveArgs = args.drop(synTp.under.length+1) 
+             if (comps.startsWith(synTp.under.map(OMS(_)) ::: List(OMS(synOp)))) {
+               val numUnderArgs = synTp.under.length
+               val effectiveArgs = args.drop(numUnderArgs)
                if (effectiveArgs.length == arity) {
                  val nonlits = effectiveArgs.zipWithIndex.filterNot(_._1.isInstanceOf[OMLIT])
                  nonlits match {
-                   case (_,i)::Nil => Some(i)
+                   case (_,i)::Nil => Some(numUnderArgs+i)
                    case _ => None
                  }
                } else None
@@ -168,7 +169,7 @@ object RealizedOperator {
 
 /**
  *  counterpart to a [[RealizedOperator]] for the partial inverse
- *  This is also possible if head is injective. See [[lf.SolutionRules]] for the non-injective case.
+ *  This is also possible if head is injective. See [[lf.LFRealizationInScala]] for the non-injective case.
  */
 abstract class InverseOperator(val head: GlobalName) extends SimplifierRule {
    /** takes the result of applying 'head' and returns the list of arguments */

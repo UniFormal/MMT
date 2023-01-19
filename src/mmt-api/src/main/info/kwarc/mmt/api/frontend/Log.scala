@@ -45,7 +45,7 @@ class Report extends Logger {
 
   /** output is categorized, the elements of group determine which categories are considered
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
-  private[mmt] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response", "lmh")
+  private[mmt] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response")
   /**  true if debug logging is enabled */
   def checkDebug = groups contains "debug"
   
@@ -56,7 +56,7 @@ class Report extends Logger {
    *  it provides a convenient way to hit a breakpoint at a specific call to "log"
    *  to use, set a breakpoint in this method and call "breakOnId(i)" after the call to "log" at which you want to break
    */
-  def breakOnId(id: Int) {
+  def breakOnId(id: Int): Unit = {
     if (id <= counter)
       return
   }
@@ -65,7 +65,7 @@ class Report extends Logger {
   def active : List[String] = groups.toList
 
   /** logs a message if logging is switched on for the group */
-  def apply(prefix: => String, msg: => String) {
+  def apply(prefix: => String, msg: => String): Unit = {
     lazy val caller = {
       val s = Thread.currentThread.getStackTrace
       //TODO this is not always the most helpful entry
@@ -89,19 +89,19 @@ class Report extends Logger {
   }
 
   /** logs an error */
-  def apply(e: Error) {
+  def apply(e: Error): Unit = {
     val debug = checkDebug
     if (groups.contains("error") || debug)
       handlers.foreach(_.apply(ind, e, debug))
   }
 
   /** flushes all handlers */
-  def flush {
+  def flush: Unit = {
     handlers.foreach(_.flush)
   }
 
   /** closes all handlers */
-  def cleanup {
+  def cleanup: Unit = {
     handlers.foreach(_.cleanup)
   }
 
@@ -109,14 +109,14 @@ class Report extends Logger {
   private var handlers: List[ReportHandler] = Nil
 
   /** adds a ReportHandler */
-  def addHandler(h: ReportHandler) {
+  def addHandler(h: ReportHandler): Unit = {
     log("logging to " + h)
     h.init
     handlers = (handlers ::: List(h)).distinct
   }
 
   /** removes all ReportHandlers with a certain id */
-  def removeHandler(id: String) {
+  def removeHandler(id: String): Unit = {
     handlers = handlers.filter(_.id != id)
   }
 
@@ -124,12 +124,12 @@ class Report extends Logger {
   private var ind = 0
 
   /** increase indentation */
-  private[frontend] def indent {
+  private[frontend] def indent: Unit = {
     ind += 1
   }
 
   /** decrease indentation */
-  private[frontend] def unindent {
+  private[frontend] def unindent: Unit = {
     if (ind >= 1) ind -= 1
   }
 
@@ -146,7 +146,6 @@ class Report extends Logger {
 }
 
 object Report {
-  val groups = List("user", "error", "controller", "extman", "library", "archive", "backend")
   val df = new java.text.SimpleDateFormat("HH:mm:ss.S")
 }
 
@@ -163,17 +162,16 @@ abstract class ReportHandler(val id: String) {
    * @param group generating component
    * @param msgParts the multi-line message
    */
-  def apply(ind: Int, caller: => String, group: String, msgParts: List[String])
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit
 
   /** logs as an error (categories "error" and "debug" for short and long message, respectively) */
-  def apply(ind: Int, e: Error, debug: Boolean) {
+  def apply(ind: Int, e: Error, debug: Boolean): Unit = {
     val caller = e.getStackTrace()(0).toString
     val (msg,content) = e match {
       case _: ContentError => (contentErrorHighlight(e.shortMsg), e.getCausedBy.isEmpty)
       case _ => (systemErrorHighlight(e.shortMsg), false)
     }
-    // only report real errors
-    if (e.level >= Level.Error) apply(ind, caller, "error", List(msg))
+    apply(ind, caller, "error", List(s"(${e.levelString}) " + msg))
     if (debug && !content) {
       apply(ind, caller, "debug", utils.stringToList(e.toStringLong, "\\n"))
     }
@@ -190,13 +188,13 @@ abstract class ReportHandler(val id: String) {
   def indentString(i: Int): String = Range(0, i).map(_ => "  ").mkString("")
 
   /** flushes the handler, nothing by default */
-  def flush {}
+  def flush: Unit = {}
 
   /** initializes the handler, nothing by default */
-  def init {}
+  def init: Unit = {}
 
   /** closes the handler, nothing by default */
-  def cleanup {}
+  def cleanup: Unit = {}
 
   /** returns the id */
   override def toString: String = id
@@ -204,7 +202,7 @@ abstract class ReportHandler(val id: String) {
 
 /** outputs to standard output */
 object ConsoleHandler extends ReportHandler("console") {
-  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
     msgParts.foreach { msg =>
       val m = indentString(ind) + group + ": " + msg
       println(m)
@@ -224,11 +222,11 @@ abstract class FileHandler(val filename: File) extends ReportHandler(filename.to
   protected val file = utils.File.Writer(filename)
   protected var alreadyClosed = false
 
-  override def flush {
+  override def flush: Unit = {
     file.flush
   }
 
-  override def cleanup {
+  override def cleanup: Unit = {
     if (!alreadyClosed) {
       file.close
       alreadyClosed = true
@@ -238,7 +236,7 @@ abstract class FileHandler(val filename: File) extends ReportHandler(filename.to
 
 /** outputs to a file */
 class TextFileHandler(filename: File, timestamps: Boolean) extends FileHandler(filename) {
-  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
     val t = if (timestamps) time + "\t" else ""
     msgParts.foreach { msg =>
       val m = t + indentString(ind) + group + ": " + msg
@@ -252,7 +250,7 @@ class TextFileHandler(filename: File, timestamps: Boolean) extends FileHandler(f
 
 /** outputs to a file in html syntax */
 class HtmlFileHandler(filename: File) extends FileHandler(filename) {
-  override def init {
+  override def init: Unit = {
     super.init
     val scrfile = filename.up / "logaux" / "script.js"
     val jqfile = filename.up / "logaux" / "jquery.js"
@@ -270,7 +268,7 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
     file.println(s"$pref\n$jquery$script$css</head><body>\n")
   }
 
-  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
     file.println( s"""<div class="log $group" style="margin-left: $ind%">""")
     file.println( s"""<div><span class="timestamp">$time</span><span class="caller">$caller</span></div>""")
     val msg = msgParts.mkString("<br/>")
@@ -279,9 +277,16 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
     flush
   }
 
-  override def apply(ind: Int, e: Error, debug: Boolean) {
-    file.println( s"""<div class="log error" style="margin-left: $ind%">""")
+  override def apply(ind: Int, e: Error, debug: Boolean): Unit = {
+    val (cls,refO) = e match {
+      case e: ContentError => ("content-error", e.sourceRef)
+      case _ => ("error", None)
+    }
+    file.println( s"""<div class="log $cls" style="margin-left: $ind%">""")
     file.println( s"""<div><span class="timestamp">$time</span><span class="error-short">${e.shortMsg}</span></div>""")
+    refO.foreach {ref =>
+      file.println(s"""<div class="sourceref"><span class="sourceref" data-mmt-ref="${ref.toString}">${ref.toString}</span></div>""")
+    }
     if (debug) {
       e.toStringLong.split("\\n").toList.foreach { line =>
         file.println( s"""<div class="error-long"><span>$line</span></div>""")
@@ -292,7 +297,7 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
 
   override def toString: String = "html " + filename
 
-  override def cleanup {
+  override def cleanup: Unit = {
     if (!alreadyClosed) {
       file.println("</body>\n</html>\n")
       super.cleanup
@@ -305,7 +310,7 @@ class RecordingHandler(id: String) extends ReportHandler(id) {
   private var memory: List[String] = Nil
   private var recording = false
 
-  def record {
+  def record: Unit = {
     recording = true
   }
 
@@ -314,11 +319,11 @@ class RecordingHandler(id: String) extends ReportHandler(id) {
     memory.reverse
   }
 
-  def clear {
+  def clear: Unit = {
     memory = Nil
   }
 
-  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
     if (recording) {
       msgParts.foreach { msg =>
         memory ::= indentString(ind) + group + ": " + msg

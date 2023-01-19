@@ -60,7 +60,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
   try {
     loadResource("/server-resources/readme.txt", "UTF-8") match {
       case Some(bufferedSource) =>
-         readmeText = Option(bufferedSource.getLines.toArray.mkString("\n"))
+         readmeText = Option(bufferedSource.getLines().toArray.mkString("\n"))
          bufferedSource.close       // close the file, since scala.io.Source doesn't close it
       case None => catalog.log("warning: /server-resources/readme.txt does not exist")
     }
@@ -110,7 +110,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     //override def buffered = true
     def resolve(req : HReqData) : Option[HLet] = {
       if (req.uriPath != "favicon.ico")
-        catalog.log(Time + "Query: " + req.uriPath + "?" + req.query + " ")
+        catalog.log(Time.toString + "Query: " + req.uriPath + "?" + req.query + " ")
 
       val response : Option[HLet] = req.uriPath match {
       case "favicon.ico" => Some(TextResponse("", None))  // ignore the browser's request for favicon.ico
@@ -125,7 +125,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.addStringLocation(java.net.URLDecoder.decode(req.query.substring("addLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => catalog.log(Time + msg)
+            case InexistentLocation(msg) => catalog.log(Time.toString + msg)
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
@@ -133,7 +133,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           try {
             catalog.deleteStringLocation(java.net.URLDecoder.decode(req.query.substring("deleteLocation=".length), "UTF-8"))
           } catch {
-            case InexistentLocation(msg) => catalog.log(Time + msg)
+            case InexistentLocation(msg) => catalog.log(Time.toString + msg)
           }
           Some(HTMLResponse(adminHtml.map(updateLocations).getOrElse(adminError).toString))
         }}
@@ -294,7 +294,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
           }
         }
         else if (req.query.isEmpty)
-            Some(TextResponse(catalog.getNamespaces.mkString("\n"), None))
+            Some(TextResponse(catalog.getNamespaces().mkString("\n"), None))
         else Some(TextResponse("Invalid query: " + req.query + "\nurl=URL expected", None))
       }
       case "getModules" => {
@@ -323,7 +323,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     * @param header optionally, a custom header tag, given as Pair(tag, content) that is added to the HTTP header
     */
   private def TextResponse(text : String, header : Option[(String, String)]) : HLet = new HSimpleLet {
-    def act(tk : HTalk) {
+    def act(tk : HTalk): Unit = {
       val out = text.getBytes("UTF-8")
       // !sending data in the header as well!
       // prepare data for sending within a header: replace \r with `r, \n with `n, ` with `o
@@ -347,7 +347,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     * @param text the HTML message that is sent in the HTTP body
     */
   private def HTMLResponse(text : String) : HLet = new HSimpleLet {
-    def act(tk : HTalk) {
+    def act(tk : HTalk): Unit = {
       val out = text.getBytes("UTF-8")
       tk.setContentLength(out.size) // if not buffered
             .setContentType("text/html; charset=utf8")

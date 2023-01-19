@@ -5,7 +5,8 @@ import frontend._
 import javax.swing._
 //import event._
 
-class ConfigPane(config: MMTConfig) extends {val ta = new JTextArea} with JScrollPane(ta) {
+private[gui] abstract class ConfigPaneEI(val ta: JTextArea) extends JScrollPane(ta)
+class ConfigPane(config: MMTConfig) extends ConfigPaneEI(new JTextArea) {
    def set = {
       ta.setText(config.toString)
    }

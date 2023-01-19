@@ -44,7 +44,7 @@ trait StructuralElement extends Content with NamedElement {
     * The origin must be set by overriding the field when creating the ContentElement.
     */
   private var origin: Origin = Original
-  def setOrigin(o: Origin) {
+  def setOrigin(o: Origin): Unit = {
     origin = o
   }
   def getOrigin = origin
@@ -63,7 +63,8 @@ trait StructuralElement extends Content with NamedElement {
       case m: DerivedModule => List(m.meta, m.tp)
       case n: NestedModule => n.module.headerInfo.attributes
       case c: Constant => List(c.alias, c.rl)
-      case s: Structure => List(s.from, s.isImplicit)
+      case s: Structure => List(s.from, s.isImplicit, s.isTotal)
+      case r: RuleConstant => Nil
       case d: DerivedDeclaration => List(d.tp)
     }
     HeaderInfo(feature, path, attributes)
@@ -123,7 +124,7 @@ trait StructuralElement extends Content with NamedElement {
       })
   }
   /** merge all properties of 'that' into 'this' except for components and declarations */
-  def merge(that: StructuralElement) {
+  def merge(that: StructuralElement): Unit = {
      this.metadata = that.metadata
   }
 }
@@ -153,13 +154,13 @@ trait ContentElement extends StructuralElement {
   def getDeclarations: List[ContentElement]
 
   /** recursively applies a function to all declarations in this element (in declaration order) */
-  def foreachDeclaration(f: ContentElement => Unit) {
+  def foreachDeclaration(f: ContentElement => Unit): Unit = {
     f(this)
     getDeclarations foreach { d => d.foreachDeclaration(f) }
   }
 
   /** recursively applies a function to all components in this element (in declaration order) */
-  def foreachComponent(f: (CPath, ComponentContainer) => Unit) {
+  def foreachComponent(f: (CPath, ComponentContainer) => Unit): Unit = {
     getComponents foreach { case DeclarationComponent(c, t) => f(path $ c, t) }
     getDeclarations foreach { d => d.foreachComponent(f) }
   }
@@ -186,7 +187,7 @@ trait Content extends metadata.HasMetaData with ClientProperties {
     *
     * potentially large [[StructuralElement]]s should override it with a memory-efficient implementation
     */
-  def toNode(rh: RenderingHandler) {
+  def toNode(rh: RenderingHandler): Unit = {
     rh(toNode)
   }
 }

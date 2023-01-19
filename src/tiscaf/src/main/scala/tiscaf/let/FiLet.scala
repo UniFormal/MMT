@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 22-08-2022: Remove syntax deprecations
 package tiscaf
 package let
 
@@ -26,7 +27,7 @@ import ExecutionContext.Implicits.global
 
 protected class FiLet(path : String, bufSize : Int, plainAsDefault : Boolean) extends HSimpleLet {
 
-  def act(tk : HTalk) {
+  def act(tk : HTalk): Unit = {
     val f = new java.io.File(path)
     if (f.exists && f.isFile) {
 

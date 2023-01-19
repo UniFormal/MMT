@@ -62,7 +62,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             else if (s.startsWith("tps."))  path ? s
             else {
                println("Theory Name: "+s)
-               sys.exit
+               sys.exit()
                // (path / LocalName("tpslogic")) ? s
             }
       }
@@ -87,7 +87,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             val tp = c._2
             val OptDef = defs.collectFirst{case (n,d) if n==c._1 => d}
             val OptNot = nots.collectFirst{case (n,d) if n==c._1 => d}
-            val c2 = Constant(th.toTerm,name,Nil,Some(tp),OptDef,None,OptNot.getOrElse(NotationContainer()))
+            val c2 = Constant(th.toTerm,name,Nil,Some(tp),OptDef,None,OptNot.getOrElse(NotationContainer.empty()))
             vars = Nil
             //println(c2)
             controller add c2
@@ -97,7 +97,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          th
       case _ =>
          println(" -- OTHER: "+m.getClass)
-         sys.exit
+         sys.exit()
    }
 
    def doDecl(d:Declaration)(implicit th: Theory): Unit = d match {
@@ -138,7 +138,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          symbols ::= ((id,tpterm))
          boundvars = Nil
       case _ => println("TODO Decl: "+d.getClass.getSimpleName + "\n" + d)
-               sys.exit
+               sys.exit()
    }
 
    def doObject(o: omobject)(implicit th: Theory) : Term = o match {
@@ -172,7 +172,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       case syntax.OMA(head, pars) =>
          ApplySpine(doObject(head),pars.map(doObject):_*)
       case _ => println("TODO Object: "+o.getClass.getSimpleName + "\n" + o)
-         sys.exit
+         sys.exit()
    }
 
    def doNotation(r:rendering) : NotationContainer = {

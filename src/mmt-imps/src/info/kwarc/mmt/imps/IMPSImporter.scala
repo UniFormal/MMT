@@ -79,7 +79,7 @@ class IMPSImporter extends Importer
       val json_source = Source.fromFile(file)
 
       try {
-        val fileLines = json_source.getLines
+        val fileLines = json_source.getLines()
         var contents: String = ""
         for (line <- fileLines) {
           contents = contents + line + "\n"
@@ -137,11 +137,11 @@ class IMPSImporter extends Importer
       } catch {
         case e : IMPSDependencyException =>
           logError("Failure: " + e.getMessage)
-          sys.exit
+          sys.exit()
 
         case e: ExtractError =>
           log(e.getMessage)
-          sys.exit
+          sys.exit()
       }
 
       val weight = Math.round(e.toString().length / 100.0) / 10.0
@@ -177,7 +177,7 @@ class IMPSImporter extends Importer
         log("Success", log_structure)
       }
       catch {
-        case e : IMPSDependencyException => logError("Failure! " + e.getMessage); sys.exit
+        case e : IMPSDependencyException => logError("Failure! " + e.getMessage); sys.exit()
       }
     }
 

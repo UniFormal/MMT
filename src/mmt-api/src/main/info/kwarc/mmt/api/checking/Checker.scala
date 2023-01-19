@@ -9,15 +9,15 @@ import ontology._
 
 /** type of continuation functions passed to an [[ObjectChecker]] to report dependencies */
 trait RelationHandler {
-   def apply(r: RelationalElement)
+   def apply(r: RelationalElement): Unit
 }
 
 object RelationHandler {
    /** does nothing */
-   def ignore = new RelationHandler {def apply(r: RelationalElement) {}}
+   def ignore = new RelationHandler {def apply(r: RelationalElement): Unit = {}}
 }
 
-class CheckingEnvironment(val simplifier: uom.Simplifier, val errorCont: ErrorHandler, val reCont: RelationHandler, val task: MMTTask) {
+case class CheckingEnvironment(simplifier: uom.Simplifier, errorCont: ErrorHandler, reCont: RelationHandler, task: MMTTask) {
   def simpEnv = new uom.SimplificationEnvironment(false, errorCont, task)
 }
 
@@ -27,6 +27,7 @@ class CheckingEnvironment(val simplifier: uom.Simplifier, val errorCont: ErrorHa
  * see also [[Checker]]
  */
 trait ObjectChecker extends Extension {
+  def lookup = controller.globalLookup
    /**
     * @param cu the checking unit to check
     * @param rules rules to use during checking
@@ -48,14 +49,14 @@ trait ObjectChecker extends Extension {
  */
 trait StructureChecker extends FormatBasedExtension {
    /** checks the entire StructuralElement */
-   def apply(e : StructuralElement)(implicit env: CheckingEnvironment)
+   def apply(e : StructuralElement)(implicit env: CheckingEnvironment): Unit
    /** checks the header of a StructuralElement, i.e., everything except for its body */
    def applyElementBegin(e : StructuralElement)(implicit ce: CheckingEnvironment): Unit
    /** checks the end of a StructuralElement (e.g., global conditions like totality of a view) */
    def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment): Unit
 
   /** checks a StructuralElement, given by its URI */
-   def apply(p: Path)(implicit env: CheckingEnvironment) {
+   def apply(p: Path)(implicit env: CheckingEnvironment): Unit = {
       apply(controller.get(p))
    }
 }
@@ -73,11 +74,11 @@ object NullChecker {
       }
    }
    class Structure extends Checker(new Objects) {
-      override def init(c: Controller){super.init(c); objectLevel.init(c)}
+      override def init(c: Controller): Unit = {super.init(c); objectLevel.init(c)}
       val id = "null"
-      def apply(e : StructuralElement)(implicit env: CheckingEnvironment) {}
-      def applyElementBegin(e : StructuralElement)(implicit ce: CheckingEnvironment) {}
-      def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment) {}
+      def apply(e : StructuralElement)(implicit env: CheckingEnvironment): Unit = {}
+      def applyElementBegin(e : StructuralElement)(implicit ce: CheckingEnvironment): Unit = {}
+      def applyElementEnd(e: ContainerElement[_])(implicit ce: CheckingEnvironment): Unit = {}
    }
 }
 

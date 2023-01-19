@@ -1,278 +1,572 @@
 package info.kwarc.mmt.stex.xhtml
 
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils.{File, MMTSystem, XMLEscaping}
-import info.kwarc.mmt.api.{LocalName, NamespaceMap, Path}
-import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
-import org.xml.sax.InputSource
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.utils.{File, URI, Unparsed, XMLEscaping}
+import info.kwarc.mmt.stex.STeXError
+import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 
-import java.io.StringReader
+import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.util.Try
 import scala.xml._
-import scala.xml.parsing.NoBindingFactoryAdapter
 
-object XHTML {
-  def text(s : String) = new XHTMLText(s)
-
-  def makeAttributes(ls : ((String,String),String)*) = ls.foldLeft(scala.xml.Null : MetaData){
-    case (e,(("",k),v)) =>
-      new UnprefixedAttribute(k,v,e)
-    case (e,((p,k),v)) =>
-      new PrefixedAttribute(p,k,v,e)
-  }
-
-  object Rules {
-    implicit val defaultrules : List[PartialFunction[Node,XHTMLNode]] = List(
-      {case e : Elem if e.label == "html" => new XHTMLDocument},
-      {case e : Elem if e.label == "math" => new XMHTMLMath},
-      {case e : Elem if e.label == "svg" =>
-        val ne = new XHTMLNode(Some(e)) {}
-        ne.attributes(("","xmlns")) = "http://www.w3.org/2000/svg"
-        ne
-      }
-    )
-  }
-  private lazy val parserFactory = {
-    val ret = new SAXFactoryImpl
-    ret.setNamespaceAware(true)
-    ret
-  }
-  private lazy val adapter = new NoBindingFactoryAdapter
-  private lazy val parser = parserFactory.newSAXParser()
-
-  def parse(f : File)(implicit rules : List[PartialFunction[Node,XHTMLNode]]) = {
-    val ret = adapter.loadXML(new InputSource(File.Reader(f)),parser)
-    apply(ret)
-  }
-
-  def applyString(s : String)(implicit rules : List[PartialFunction[Node,XHTMLNode]]) = {
-    val ret = adapter.loadXML(new InputSource(new StringReader(s)),parser)
-    apply(ret)
-  }
-
-  def apply(node : Node)(implicit rules : List[PartialFunction[Node,XHTMLNode]]) : List[XHTMLNode] = {
-    (Rules.defaultrules ::: rules).find(_.isDefinedAt(node)) match {
-      case Some(r) =>
-        val ret = r(node)
-        node.child.flatMap(apply).foreach(ret.add)
-        ret.children.foreach(_.cleanup)
-        List(ret)
-      case _ => node match {
-        case t : scala.xml.Text =>
-          val init = t.toString().takeWhile(_.isWhitespace)
-          val end = t.toString().reverse.takeWhile(_.isWhitespace).reverse
-          val content = t.toString().drop(init.length).dropRight(end.length)
-          List(init,content,end).filterNot(_.isEmpty).map(s => new XHTMLText(s))
-        case a : Atom[String] =>
-          List(new XHTMLText(a.data))
-        case e : Elem =>
-          val ret = new XHTMLNode(Some(node)) {}
-          node.child.flatMap(apply).foreach(ret.add)
-          ret.children.foreach(_.cleanup)
-          List(ret)
-        case _ =>
-          ???
-      }
-    }
-  }
-  val empty = scala.xml.Text("\u200E")
+abstract class HTMLRule {
+  protected def resource(n : HTMLNode) = n.attributes.get((n.namespace,"resource"))
+  protected def property(n : HTMLNode) = n.attributes.get((n.namespace,"property"))
+  val priority : Int = 0
+  def apply(s : HTMLParser.ParsingState,n:HTMLParser.HTMLNode) : Option[HTMLParser.HTMLNode]
 }
 
-abstract class XHTMLNode(initial_node : Option[Node] = None) {
-  def cleanup : Unit = {}
-  protected var _parent : Option[XHTMLNode] = None
-  def parent = _parent
-  protected def ancestors : List[XHTMLNode] = if (_parent.isDefined) _parent.get :: _parent.get.ancestors else Nil
-  def ismath = {
-    if (label == "mtext") false
-    else ancestors.collectFirst {
-      case _ : XMHTMLMath => true
-      case n : XHTMLNode if n.label == "mtext" => false
-    }.getOrElse(false)
+case class SimpleHTMLRule(name:String,f:HTMLParser.HTMLNode => HTMLParser.HTMLNode) extends HTMLRule {
+  override def apply(s: HTMLParser.ParsingState, n: HTMLParser.HTMLNode): Option[HTMLParser.HTMLNode] = {
+    if (property(n).contains("stex:" + name)) Some(f(n)) else None
   }
+}
 
-  def top : XHTMLNode = _parent match {
-    case None => this
-    case Some(p) => p.top
-  }
+class CustomHTMLNode(orig : HTMLParser.HTMLNode) extends HTMLParser.HTMLNode(orig.state,orig.namespace,orig.label) {
+  replace(orig)
+}
 
-  def getHead = top.get("head")().head
+object HTMLParser {
 
-  protected var prefix = initial_node.map(_.prefix).getOrElse("")
-  protected var _label = initial_node.map(_.label).getOrElse("")
-  def label = _label
-  val attributes = mutable.Map.empty[(String,String),String]
-  protected var scope = initial_node.map(_.scope).getOrElse(null)
-  protected var _children : List[XHTMLNode] = Nil
-  def children = _children
+  val ns_html = "http://www.w3.org/1999/xhtml"
+  val ns_mml = "http://www.w3.org/1998/Math/MathML"
+  val ns_stex = "http://kwarc.info/ns/sTeX"
+  val ns_mmt = "http://uniformal.github.io/MMT"
+  val ns_rustex = "http://kwarc.info/ns/RusTeX"
+  val ns_svg = "http://www.w3.org/2000/svg"
+  val empty = '\u200E'
 
-  private def fill(a : MetaData) : Unit = a match {
-    case UnprefixedAttribute(str, value, data) =>
-      attributes(("",str)) = value.toString()
-      fill(data)
-    case PrefixedAttribute(str, str1, value, data) =>
-      attributes((str,str1)) = value.toString()
-      fill(data)
-    case scala.xml.Null =>
-    case _ =>
-      ???
-  }
-  initial_node.foreach(n => fill(n.attributes))
+  class ParsingState(val controller : Controller, rules : List[HTMLRule]) {
+    val namespaces = mutable.Map.empty[String,String]
+    namespaces("xhtml") = ns_html
+    namespaces("mml") = ns_mml
+    namespaces("stex") = ns_stex
+    namespaces("mmt") = ns_mmt
+    namespaces("rustex") = ns_rustex
+    namespaces("svg") = ns_svg
 
-  def node : Node = Elem(prefix,_label,XHTML.makeAttributes(attributes.toSeq:_*),scope,true,children.map(_.node) :_*)
-
-  def add(s : String) : Unit = add(XHTML.text(s))
-  def add(n : Node) : Unit = add(XHTML(n)(Nil).head)
-  def add(e : XHTMLNode) : Unit = {
-    e._parent = Some(this)
-    _children = _children ::: List(e)
-  }
-
-  def addBefore(e : XHTMLNode,before : XHTMLNode) : Unit = _children.indexOf(before) match {
-    case -1 => _children = _children ::: List(e)
-      e._parent = Some(this)
-    case i => _children = _children.take(i) ::: e :: _children.drop(i)
-      e._parent = Some(this)
-  }
-  def addAfter(e : XHTMLNode,after : XHTMLNode) : Unit = _children.indexOf(after) match {
-    case -1 => _children = _children ::: List(e)
-      e._parent = Some(this)
-    case i => _children = _children.take(i+1) ::: e :: _children.drop(i+1)
-      e._parent = Some(this)
-  }
-
-  protected def delete(e : XHTMLNode) : Unit = _children = _children.filterNot(_ == e)
-  def delete : Unit = _parent.foreach(_.delete(this))
-
-  override def toString: String = node.toString()
-
-  def iterate(f : XHTMLNode => Unit) : Unit = {
-    f(this)
-    _children.foreach(_.iterate(f))
-  }
-
-  def get[A <: XHTMLNode](cls : Class[A]) : List[A] = { // You'd think this would be easier, but apparently it isn't
-    val all = get()()
-    def classes[B](b : Class[B]) : List[Any] = b :: (if (b.getSuperclass == null) Nil else classes(b.getSuperclass))
-    all.collect({
-      case a : A if classes(a.getClass) contains cls =>
-        a
-    })
-  }
-
-  def get(_label : String = "")(_attributes : (String,String,String)*) : List[XHTMLNode] = {
-    val matches = _label match {
-      case "" =>
-        _attributes match {
-          case Nil =>
-            (n : XHTMLNode) => true
+    var _top : Option[HTMLNode] = None
+    protected var _parent : Option[HTMLNode] = None
+    private var _namespace : String = ""
+    private val _rules : List[HTMLRule] = rules.sortBy(-_.priority)
+    private def applyRules(nn : HTMLNode) : HTMLNode = {
+      _rules.foreach{r =>
+        r(this,nn) match {
+          case Some(n) => return n
           case _ =>
-            (n : XHTMLNode) => _attributes.exists(t => n.attributes.get(t._1,t._2).contains(t._3))
         }
+      }
+      nn
+    }
+
+    protected def onTop(n : HTMLNode) : Option[HTMLNode] = None
+
+    def namespace = _namespace
+    def top = _top match {
+      case Some(e) => e
       case _ =>
-        _attributes match {
-          case Nil =>
-            (n : XHTMLNode) => n._label == _label
+        throwError("???")
+    }
+
+    private[HTMLParser] var header : String = ""
+    def throwError(s : String) = throw new STeXError(s,None,None)
+    def error(s : String) : Unit = {
+      println(s)
+      ???
+    }
+
+    object SourceReferences {
+      private val files = mutable.Map.empty[File, String]
+
+      private def toOffset(f: File, line: Int, col: Int): SourcePosition = {
+        var (o, l, c) = (0, 1, 0)
+        files.getOrElseUpdate(f, File.read(f)).foreach {
+          case _ if l > line =>
+            return SourcePosition(o, line, col)
+          case _ if l == line && col == c =>
+            return SourcePosition(o, line, col)
+          case '\n' =>
+            c = 0
+            l += 1
+            o += 1
           case _ =>
-            (n : XHTMLNode) => n._label == _label && _attributes.exists(t => n.attributes.get(t._1,t._2).contains(t._3))
+            o += 1
+            c += 1
         }
+        SourcePosition(-1, line, col)
+      }
+
+      private[ParsingState] def doSourceRef(str: String): SourceRef = {
+        var file: String = ""
+        var from: (Int, Int) = (0, 0)
+        var to: (Int, Int) = (0, 0)
+        str.split('#') match {
+          case Array(f, r) =>
+            file = f
+            r.drop(1).dropRight(1).split(')') match {
+              case Array(b, e) =>
+                b.split(';') match {
+                  case Array(l, c) =>
+                    from = (l.toInt, c.toInt)
+                  case _ =>
+                    print("")
+                    ???
+                }
+                e.drop(1).split(';') match {
+                  case Array(l, c) =>
+                    to = (l.toInt, c.toInt)
+                  case _ =>
+                    print("")
+                    ???
+                }
+              case _ =>
+                print("")
+                ???
+            }
+          case _ =>
+            print("")
+            ???
+        }
+        val fileuri = controller.backend.resolvePhysical(File(file)).map { case (archive, path) =>
+          path.foldLeft(archive.narrationBase)((u, s) => u / s)
+        }.getOrElse {
+          URI(File(file).toURI)
+        }
+        if (File(file).exists()) {
+          SourceRef(fileuri, SourceRegion(toOffset(File(file), from._1, from._2), toOffset(File(file), to._1, to._2)))
+        } else SourceRef.anonymous(file)
+      }
     }
-    get(matches)
-  }
-  protected def get(matches : XHTMLNode => Boolean) : List[XHTMLNode] = _children.filter(matches) ::: _children.flatMap(_.get(matches))
 
-
-  private var _id = 0
-  def generateId = {
-    _id += 1
-    "stexelem" + (_id-1)
-  }
-
-  def isEmpty : Boolean = _children.isEmpty || _children.forall(_.isEmpty)
-
-  def addOverlay(url:String): Unit = {
-    val t = this.top
-    attributes(("","class")) = attributes.get(("","class")) match {
-      case Some(s) => s + " stexoverlaycontainer"
-      case _ => "stexoverlaycontainer"
+    private[HTMLParser] def withParent[A](n : HTMLNode)(f : => A) = {
+      val oldparent = _parent
+      val oldnamespace = _namespace
+      _parent = Some(n)
+      _namespace = n.namespace
+      try { f } finally {_parent = oldparent; _namespace = oldnamespace}
     }
-    val id = t.generateId
-    attributes(("","onmouseover")) = "stexOverlayOn('"+id+"','"+url+"')"
-    attributes(("","onmouseout")) = "stexOverlayOff('"+id+"')"
-    attributes(("","onmouseclick")) = "alert('" + url + "')"
-    val overlay = XHTML.apply(<span style="position:relative">
-      <iframe src=" " class="stexoverlay" id={id}>{XHTML.empty}</iframe>
-    </span>)(Nil).head
-    if (!ismath) {
-      val p = parent.get
-      p.addAfter(overlay,this)
-      print("")
-    } else {
-      val tm = getTopMath
-      tm.parent.foreach(_.addAfter(overlay,tm))
-      print("")
+
+    private def bookkeep(n : HTMLNode) = {
+      val nn = if (_parent.isEmpty && _top.isEmpty) {
+        val nn = onTop(n).getOrElse(n)
+        _top = Some(nn)
+        nn.attributes.toList.filter(_._1._1 == "xmlns").foreach { t =>
+          nn.attributes.remove(t._1)
+          namespaces(t._1._2) = t._2
+        }
+        nn
+      } else{
+        val p = _parent.getOrElse(_top.get)
+        p._children ::= n
+        n._parent = Some(p)
+        n
+      }
+      nn.attributes.get((ns_stex,"sourceref")) match {
+        case Some(s) if s.contains("#(") =>
+          nn.attributes.remove((ns_stex,"sourceref"))
+          nn._sourceref = Some(SourceReferences.doSourceRef(s))
+        case None =>
+        case Some(s) =>
+          nn.attributes.remove((ns_stex,"sourceref"))
+          nn._sourceref = Some(SourceRef.fromURI(URI(s)))
+      }
+      nn.attributes.get((ns_rustex,"sourceref")) match {
+        case Some(s) if s.contains("#(") =>
+          nn.attributes.remove((ns_rustex,"sourceref"))
+          nn._sourceref = Some(SourceReferences.doSourceRef(s))
+        case None =>
+        case Some(s) =>
+          nn.attributes.remove((ns_rustex,"sourceref"))
+          nn._sourceref = Some(SourceRef.fromURI(URI(s)))
+      }
+      if (nn._sourceref.isEmpty && _parent.exists(_._sourceref.isDefined)) nn._sourceref = _parent.get._sourceref
+      val newn = applyRules(nn)
+      newn
+    }
+    private[HTMLParser] def openclose(n : HTMLNode) = {
+      val newn = bookkeep(n)
+      newn.onAddI
+    }
+    private[HTMLParser] def open(n : HTMLNode) = {
+      val newn = bookkeep(n)
+      _parent = Some(newn)
+      _namespace = newn.namespace
+    }
+    private[HTMLParser] def close(label : String) = {
+      if (!_parent.exists(_.label == label)) {
+        error("???")
+      }
+      val elem = _parent.get
+      elem.onAddI
+      _parent = elem._parent
+      _namespace = _parent.map(_.namespace).getOrElse("")
+      elem
+    }
+
+    private val void_elements = List(
+      "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"
+    )
+
+    private[HTMLParser] def present(n : HTMLNode,indent : Int = 0,forcenamespace : Boolean = false) : String = {
+      {if (_top.contains(n)) header else ""} +
+      {
+        if (n.startswithWS) "\n" + {if (indent>0) (0 until indent).map(_ => "  ").mkString else ""} else ""
+      } + {n match {
+        case t : HTMLText =>
+          t.toString() + {if(t.endswithWS) "\n" else ""}
+        case _ =>
+          "<" + n.label + {
+            if (!n._parent.exists(_.namespace == n.namespace) || forcenamespace) " xmlns=\"" + n.namespace + "\"" else ""
+          } + {
+            if (_top.contains(n)) namespaces.toList.map {
+              case (p,v) => " xmlns:" + p + "=\"" + v + "\""
+            }.mkString else ""
+          } + n.attributes.toList.reverse.map{
+            case ((ns,key),value) =>
+              {if (ns == n.namespace) " "
+              else if (namespaces.values.toList.contains(ns))
+                " " + namespaces.toList.collectFirst{case p if p._2 == ns => p._1}.get + ":"
+              else " " + ns + ":"
+              } + key + "=\"" + value.replace("\"","\'") + "\""
+          }.mkString + {
+            if (n._sourceref.isDefined && !n._parent.exists(_._sourceref == n._sourceref)) " " + "stex:sourceref=\"" + n._sourceref.get.toString + "\"" else ""
+          } + {
+            if (n.classes.nonEmpty) " class=\"" + n.classes.distinct.mkString(" ") + "\"" else ""
+          } + {
+            if(n._children.isEmpty && n.namespace == ns_html && void_elements.contains(n.label)) "/>" else {
+              ">" + n._children.reverse.map(present(_,indent+1)).mkString + {
+                {if (n.endswithWS) "\n" + {if (indent>0) (0 until indent).map(_ => "  ").mkString else ""} else ""} +
+                  "</" + n.label + ">"
+              }
+            }
+          }
+      }}
     }
   }
 
-  private def getTopMath : XHTMLNode = if (!parent.get.ismath) this else parent.get.getTopMath
-}
+  class HTMLNode(var state : ParsingState, val namespace : String, var label : String) {
+    override def toString: String = state.present(this)
 
-class XHTMLText(init : String) extends XHTMLNode() {
-  private var _text = init
-  def text = _text
+    val attributes = mutable.Map.empty[(String, String), String]
+    var classes : List[String] = Nil
+    private[HTMLParser] var _parent: Option[HTMLNode] = None
 
-  override def node: scala.xml.Text = scala.xml.Text(text)
+    def copy : HTMLNode = {
+      val ret = new HTMLNode(state,namespace, label)
+      ret.classes = classes
+      attributes.foreach(e => ret.attributes(e._1) = e._2)
+      children.foreach(c => ret.add(c.copy))
+      ret
+    }
 
-  override def isEmpty: Boolean = {
-    val trimmed = text.replace('\u2061',' ').trim
-    trimmed.isEmpty
+    def plaincopy: HTMLNode = {
+      val ret = new HTMLNode(state, namespace, label)
+      ret.classes = classes
+      attributes.foreach(e => ret.attributes(e._1) = e._2)
+      children.foreach(c => ret.add(c.plaincopy))
+      ret
+    }
+
+    def parent = _parent
+
+    private[HTMLParser] var _children: List[HTMLNode] = Nil
+
+    def children = _children.reverse
+
+    def isEmpty : Boolean = _children.forall(_.isEmpty)
+    def isVisible : Boolean = {
+      val a = attributes.get((HTMLParser.ns_stex,"visible"))
+      (a.contains("true") || a.isEmpty) && _parent.forall(_.isVisible)
+    }
+    def isMath : Boolean = namespace == HTMLParser.ns_mml
+
+    private[HTMLParser] def onAddI = onAdd
+
+    var startswithWS = false
+    var endswithWS = false
+    private[HTMLParser] var _sourceref: Option[SourceRef] = None
+    def sourceref = _sourceref
+
+    def addAttribute(key: String, value: String) = key.split(':') match {
+      case Array(a, b) =>
+        val ns = state.namespaces.getOrElse(a, a)
+        attributes((ns, b)) = value
+      case Array(a) =>
+        attributes((namespace, a)) = value
+      case _ =>
+        state.error("???")
+    }
+
+    def onAdd = {}
+
+    protected def replace(n: HTMLNode) = {
+      _parent = n._parent
+      startswithWS = n.startswithWS
+      _sourceref = n._sourceref
+      classes = n.classes
+      n.attributes.foreach{case ((a,b),c) => attributes((a,b)) = c}
+      state = n.state
+      if (state._top contains n) state._top = Some(this)
+      _parent.foreach(_._children.splitAt(_parent.get._children.indexOf(n)) match {
+        case (before, _ :: after) =>
+          _parent.get._children = before ::: this :: after
+        case _ =>
+          state.error("???")
+      })
+    }
+
+    def ancestors: List[HTMLNode] = _parent match {
+      case Some(p) => p :: p.ancestors
+      case _ => Nil
+    }
+
+    def collectAncestor[A](f: PartialFunction[HTMLNode, A]): Option[A] = _parent match {
+      case Some(f(a)) => Some(a)
+      case Some(e) => e.collectAncestor(f)
+      case _ => None
+    }
+
+    @tailrec
+    final def iterate(f: HTMLNode => Unit): Unit = {
+      f(this)
+      children match {
+        case a :: _ => a.iterate(f)
+        case _ => successor match {
+          case Some(s) => s.iterate(f)
+          case _ =>
+        }
+      }
+    }
+
+    @tailrec
+    final protected def successor: Option[HTMLNode] = parent match {
+      case Some(p) =>
+        val ch = p.children
+        ch.drop(ch.indexOf(this)).tail.headOption match {
+          case Some(h) => Some(h)
+          case None =>
+            p.successor
+        }
+      case _ => None
+    }
+
+    def get(_label : String = "")(_attributes : (String,String,String)*)(cls : String = "") : List[HTMLNode] = {
+      val matches = _label match {
+        case "" =>
+          _attributes match {
+            case Nil =>
+              cls match {
+                case "" => (n : HTMLNode) => true
+                case c => (n : HTMLNode) => n.classes.contains(c)
+              }
+            case _ =>
+              (n : HTMLNode) => _attributes.exists(t => n.attributes.get(t._1,t._2).contains(t._3)) && (cls match {
+                case "" => true
+                case c => n.classes.contains(c)
+              })
+          }
+        case _ =>
+          _attributes match {
+            case Nil =>
+              cls match {
+                case "" => (n : HTMLNode) => n.label == _label
+                case c => (n : HTMLNode) => n.label == _label && n.classes.contains(c)
+              }
+            case _ =>
+              (n : HTMLNode) => n.label == _label && _attributes.exists(t => n.attributes.get(t._1,t._2).contains(t._3)) && (cls match {
+                case "" => true
+                case c => n.classes.contains(c)
+              })
+          }
+      }
+      get(matches)
+    }
+    protected def get(matches : HTMLNode => Boolean) : List[HTMLNode] = _children.filter(matches) ::: _children.flatMap(_.get(matches))
+
+    def delete = _parent.foreach{p =>
+      p._children = p._children.filterNot(_ == this)
+    }
+    def add(n : Node): HTMLNode = add(n.toString())
+    def add(s : String): HTMLNode =
+      state.withParent(this){
+      apply(s)(state)
+      _children.head
+    }
+    def add(n : HTMLNode): Unit = {
+      n._parent.foreach(p => p._children = p._children.filterNot(_ == n))
+      n._parent = Some(this)
+      n.state = this.state
+      _children ::= n
+    }
+    def addAfter(n : Node, after : HTMLNode) : HTMLNode = addAfter(n.toString(),after)
+    def addAfter(s : String,after : HTMLNode) : HTMLNode = state.withParent(this){
+      apply(s)(state)
+      val c = _children.head
+      _children = _children.tail.take(_children.indexOf(after)-1) ::: c :: _children.drop(_children.indexOf(after))
+      c
+    }
+    def addAfter(n : HTMLNode, after : HTMLNode) : Unit = {
+      n._parent.foreach(p => p._children = p._children.filterNot(_ == n))
+      n._parent = Some(this)
+      n.state = this.state
+      _children = _children.take(_children.indexOf(after)+1) ::: n :: _children.drop(_children.indexOf(after)+1)
+    }
+    def addBefore(n : Node, before : HTMLNode) : HTMLNode = addBefore(n.toString(),before)
+    def addBefore(s : String,before : HTMLNode) : HTMLNode = state.withParent(this){
+      apply(s)(state)
+      val c = _children.head
+      _children = _children.tail.take(_children.indexOf(before)) ::: c :: _children.drop(_children.indexOf(before)+1)
+      c
+    }
+    def addABefore(n : HTMLNode, before : HTMLNode) : Unit = {
+      n._parent.foreach(p => p._children = p._children.filterNot(_ == n))
+      n._parent = Some(this)
+      n.state = this.state
+      _children = _children.take(_children.indexOf(before)) ::: n :: _children.drop(_children.indexOf(before))
+    }
+
+    def node = try {
+      XML.loadString(state.present(this,forcenamespace=true).trim.replace("&nbsp;","&amp;nbsp;"))
+    } catch {
+      case o: Throwable =>
+        println(o.toString)
+        throw o
+    }
+
   }
 
-  override def addOverlay(url:String): Unit = {
-    val t = this.top
-    val id = t.generateId
-    val newthis = XHTML.apply(
-      <span class="stexoverlaycontainer"
-            onmouseover={"stexOverlayOn('" + id + "','" + url + "')"}
-            onmouseout={"stexOverlayOff('" + id + "')"}
-            onmouseclick={"alert('" + url + "')"}
-      ></span>
-    )(Nil).head
-    val overlay = XHTML.apply(
-      <span style="position:relative">
-        <iframe src=" " class="stexoverlay" id={id}>
-          {XHTML.empty}
-        </iframe>
-      </span>
-    )(Nil).head
-    val p = parent.get
-    p.addBefore(overlay, this)
-    this.delete
-    p.addBefore(newthis,overlay)
-    newthis.add(this)
+  class HTMLText(state : ParsingState, val text : String) extends HTMLNode(state,"","") {
+    override def toString() = text//.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll("\"","&quot;")
+    override def isEmpty = toString() == "" || toString() == empty.toString
+
+    override def copy : HTMLText = {
+      new HTMLText(state,text)
+    }
+    override def plaincopy : HTMLText = {
+      new HTMLText(state,text)
+    }
   }
-}
 
-class XMHTMLMath(initial_node : Option[Node] = None) extends XHTMLNode(initial_node) {
-  override def node: Node = <math xmlnd="http://www.w3.org/1998/Math/MathML">{children.map(_.node)}</math>
-  override val ismath = true
-}
+  object HTMLNode {
+    def apply(state : ParsingState, label : String, xmlns : String = "") = label.split(':') match {
+      case Array(l) if xmlns.nonEmpty =>
+        new HTMLNode(state,xmlns,l)
+      case Array(nsa,l) if state.namespaces.contains(nsa) =>
+        new HTMLNode(state,state.namespaces(nsa),l)
+      case Array(l) =>
+        new HTMLNode(state,state.namespace,l)
+      case _ =>
+        ???
+    }
+  }
 
-class XHTMLDocument(initial_node : Option[Node] = None) extends XHTMLNode(initial_node) {
-  private val doc_prefix = "<!DOCTYPE html>"
+  def apply(file : File)(implicit state : ParsingState) = {
+    implicit val in = new Unparsed(File.read(file),s => throw new STeXError(s,None,None))
+    in.trim
+    doHeader
+    doNext
+    state.top
+  }
 
-  override def node: Node =
-    <html xmlns="http://www.w3.org/1999/xhtml"
-          xmlns:om="http://www.openmath.org/OpenMath"
-          xmlns:stex="http://www.mathhub.info"
-          xmlns:ml="http://www.w3.org/1998/Math/MathML"
-    >{children.map(_.node)}</html>
+  def apply(s : String)(implicit state : ParsingState) = {
+    implicit val in = new Unparsed(s.replace("&amp;nbsp;","&nbsp;"),s => throw new STeXError(s,None,None))
+    in.trim
+    doHeader
+    doNext
+    state.top
+  }
 
-  override def toString: String = doc_prefix + super.toString
-}
+  private def doHeader(implicit state : ParsingState,in : Unparsed): Unit = {
+    if (in.remainder.toString.length > 2 && (in.getnext(2).startsWith("<!") || in.getnext(2).startsWith("<?"))) {
+      val s = in.takeUntilChar('>', '\\')._1 + ">\n"
+      if (s.startsWith("<!")) state.header += s
+      in.trim
+      doHeader
+    }
+  }
 
-
-case class XHTMLSidebar(id:String,ls:Node*) extends XHTMLNode() {
-  override def node: Node = Elem(null,"span",XHTML.makeAttributes(),scala.xml.TopScope,true,
-    (<label for={id} class="sidenote-toggle">{XHTML.empty}</label><input type="checkbox" id={id} class="sidenote-toggle"/><span class="sidenote">{ls}</span>) :_*)
+  @tailrec
+  private def doNext(implicit state : ParsingState,in : Unparsed): Unit = if (!in.empty) {
+    val startWS = in.head.isWhitespace
+    in.trim
+    if (!in.empty) {
+      in.next() match {
+        case '<' if in.getnext(3).toString == "!--" =>
+          in.drop("!--")
+          in.takeUntilString("-->",Nil)
+        case '<' if in.head == '/' =>
+          in.next()
+          val label = in.takeWhile(_ != '>').trim
+          in.next()
+          val n = state.close(label)
+          n.endswithWS = startWS
+        case '<' =>
+          var label = in.takeWhile(c => !c.isWhitespace && c != '>')
+          if (in.head == '>') {
+            in.next()
+            if (label.endsWith("/")) {
+              label = label.init
+              val n = HTMLNode(state,label)
+              n.startswithWS = startWS
+              state.openclose(n)
+            } else {
+              val n = HTMLNode(state,label)
+              n.startswithWS = startWS
+              state.open(n)
+            }
+          } else {
+            var xmlns = ""
+            var classes : List[String] = Nil
+            var attributes : List[(String,String)] = Nil
+            var close = false
+            var done = false
+            while (!done) in.head match {
+              case '/' if in.getnext(2).toString == "/>" =>
+                in.drop("/>")
+                close = true
+                done = true
+              case '>' =>
+                done = true
+                in.next()
+              case c if c.isWhitespace =>
+                in.trim
+              case _ =>
+                val attr = in.takeWhile(_ != '=').trim
+                in.next()
+                val bgchar = if (in.head == '\"') '\"' else if (in.head == '\'') '\'' else
+                  state.error("???")
+                in.next()
+                val value = in.takeWhile(_ != bgchar).trim
+                in.next()
+                if (attr == "xmlns") xmlns = value
+                else if (attr == "class") classes = value.split(' ').map(_.trim).toList
+                else attributes ::= (attr,value)
+            }
+            val n = HTMLNode(state,label,xmlns)
+            n.startswithWS = startWS
+            attributes.foreach(p => n.addAttribute(p._1,p._2))
+            n.classes = classes
+            if (close) state.openclose(n) else state.open(n)
+          }
+        case c =>
+          var txt = s"${c}${in.takeWhileSafe(_ != '<')}"
+          val endWS = txt.lastOption.exists(_.isWhitespace)
+          txt = if (txt.trim == empty.toString) empty.toString else txt.trim/*Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
+            print("")
+            txt.trim
+          })*/
+          if (txt.nonEmpty) {
+            val n = new HTMLText(state, txt)
+            n.startswithWS = startWS
+            n.endswithWS = endWS
+            state.openclose(n)
+          }
+        case _ =>
+          state.error("???")
+      }
+      doNext
+    }
+  }
 }

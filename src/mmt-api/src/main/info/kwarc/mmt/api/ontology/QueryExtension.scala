@@ -86,10 +86,10 @@ class Infer extends QueryFunctionExtension("infer", ObjType, ObjType) {
     val (context, term) = argument match {
       case OMBIND(QueryEvaluator.free, cont, obj) => (outerCon ++ cont, obj)
       case t: Term => (outerCon, t)
-      case o: Obj => throw GetError("object has no type: " + o)
+      case o: Obj => throw LocalError("object has no type: " + o)
       case _ => throw ImplementationError("evaluation of ill-typed query")
     }
-    checking.Solver.infer(controller, context, term, None).getOrElse {throw GetError("error during type inference")}
+    checking.Solver.infer(controller, context, term, None).getOrElse {throw LocalError("error during type inference")}
   }
 }
 
@@ -117,9 +117,9 @@ class Simplify extends QueryFunctionExtension("simplify", ObjType, ObjType) {
     val mp = mpath(params)
     argument match {
       case OMBIND(QueryEvaluator.free, cont, body) =>
-        controller.simplifier(body, SimplificationUnit(Context(mp) ++ cont, false, true))
+        controller.simplifier(body, SimplificationUnit(Context(mp) ++ cont, false,false, true))
       case o: Obj =>
-        controller.simplifier(o, SimplificationUnit(Context(mp), false, true))
+        controller.simplifier(o, SimplificationUnit(Context(mp), false,false, true))
       case _ => throw ImplementationError("evaluation of ill-typed query")
     }
   }

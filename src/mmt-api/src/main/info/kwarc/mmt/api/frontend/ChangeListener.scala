@@ -8,32 +8,34 @@ import info.kwarc.mmt.api.utils.FilePath
  */
 trait ChangeListener extends Extension {
    /** called after adding the element */
-   def onAdd(c: StructuralElement) {}
+   def onAdd(c: StructuralElement): Unit = {}
    /** called after deleting the element
     *  @param old the now-deleted element
     */
-   def onDelete(old: StructuralElement) {}
+   def onDelete(old: StructuralElement): Unit = {}
    /** called after updating the element
     *  @param newElem the element after its update
     *  @param oldElem the element after its update
     *  defaults to onDelete + onAdd
     */
-   def onUpdate(oldElem: StructuralElement, newElem: StructuralElement) {
+   def onUpdate(oldElem: StructuralElement, newElem: StructuralElement): Unit = {
       onDelete(oldElem)
       onAdd(newElem)
    }
    /** called after clearing the Constant */
-   def onClear {}
+   def onClear: Unit = {}
    /** called after checking the element */
-   def onCheck(c: StructuralElement) {}
+   def onCheck(c: StructuralElement): Unit = {}
    /** called when navigating to an element */
-   def onNavigate(p: Path) {}
+   def onNavigate(p: Path): Unit = {}
+   /** called when navigating to a physical location */
+   def onNavigateSource(r: parser.SourceRef): Unit = {}
    /** called when a new archive is added */
-   def onArchiveOpen(a: Archive) {}
+   def onArchiveOpen(a: Archive): Unit = {}
    /** called when an archive is removed */
-   def onArchiveClose(a: Archive) {}
+   def onArchiveClose(a: Archive): Unit = {}
    /** called when a file was built */
-   def onFileBuilt(a: Archive, target: TraversingBuildTarget, path: FilePath, res: BuildResult) {}
+   def onFileBuilt(a: Archive, target: TraversingBuildTarget, path: FilePath, res: BuildResult): Unit = {}
 }
 
 /**
@@ -54,39 +56,43 @@ class Notify(listeners: List[ChangeListener], report: Report) {
      }
    }
 
-   def onAdd(c: StructuralElement) {
+   def onAdd(c: StructuralElement): Unit = {
       tryAll(_.onAdd(c))
    }
 
-   def onDelete(c: StructuralElement) {
+   def onDelete(c: StructuralElement): Unit = {
       tryAll(_.onDelete(c))
    }
 
-   def onUpdate(oldElem: StructuralElement, newElem: StructuralElement) {
+   def onUpdate(oldElem: StructuralElement, newElem: StructuralElement): Unit = {
       tryAll(_.onUpdate(oldElem, newElem))
    }
 
-   def onClear {
+   def onClear: Unit = {
       tryAll(_.onClear)
    }
 
-   def onCheck(c: StructuralElement) {
+   def onCheck(c: StructuralElement): Unit = {
       tryAll(_.onCheck(c))
    }
 
-   def onNavigate(p: Path) {
+   def onNavigate(p: Path): Unit = {
       tryAll(_.onNavigate(p))
    }
 
-   def onArchiveOpen(a: archives.Archive) {
+   def onNavigateSource(r: parser.SourceRef): Unit = {
+      tryAll(_.onNavigateSource(r))
+   }
+
+   def onArchiveOpen(a: archives.Archive): Unit = {
       tryAll(_.onArchiveOpen(a))
    }
 
-   def onArchiveClose(a: archives.Archive) {
+   def onArchiveClose(a: archives.Archive): Unit = {
       tryAll(_.onArchiveClose(a))
    }
 
-   def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath, res: BuildResult) {
+   def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath, res: BuildResult): Unit = {
       tryAll(_.onFileBuilt(a, t, p, res))
    }
 }
