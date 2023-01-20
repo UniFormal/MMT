@@ -133,6 +133,8 @@ object Circumfix extends Fixity {
   }
 }
 
+// TODO this should not exists as an object and as a case class
+// used for Mizar
 object PrePostfix extends Fixity {
   def apply(delim: Delimiter, prefixedArgsNum: Int, numArgs: Int, rightArgsBracketed: Boolean, implArgInds: List[Int]) : Mixfix = {
     val bracketed = rightArgsBracketed && (numArgs - prefixedArgsNum - implArgInds.length > 0)
@@ -190,7 +192,7 @@ object PrePostfix extends Fixity {
  * impl and expl do not have to agree with the number of arguments demanded by the type system.
  *  * Notation has more arguments than function type: Notation extensions may handle the extra arguments.
  *    Example: equal : {a:tp} tm (a => a => bool), impl = 1, expl = 2
- *  * Notation has less arguments than function type: Operator return a function.
+ *  * Notation has less arguments than function type: Operator returns a function.
  *    Example: union : {a:tp} tm (a set => a set => a set) where a set = a => bool, impl = 1, expl = 2
  */
 abstract class SimpleFixity extends Fixity {
@@ -214,13 +216,14 @@ abstract class SimpleFixity extends Fixity {
    }
 }
 
-case class PrePostfix(delim: Delimiter, prefixedArgsNum: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0)  extends SimpleFixity {
+/** delimiter after a certain argument */
+case class PrePostfix(delim: Delimiter, leftArgs: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0)  extends SimpleFixity {
   lazy val markers = if (expl != 0) {
-    val infixedArgMarkers = (impl until impl+prefixedArgsNum).map(i=>SimpArg(i+1)).toList
-    val suffixedArgsMarkers = (impl+prefixedArgsNum until impl+expl).map(i=>SimpArg(i+1)).toList
-    val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::suffixedArgsMarkers.+:(Delim(")"))} else {suffixedArgsMarkers}
-    infixedArgMarkers++(delim::suffMarkers)
-  } else argsWithOp(prefixedArgsNum) ::: implArgs
+    val leftArgMarkers = (impl until impl+leftArgs).map(i=>SimpArg(i+1)).toList
+    val rightArgsMarkers = (impl+leftArgs until impl+expl).map(i=>SimpArg(i+1)).toList
+    val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::rightArgsMarkers.+:(Delim(")"))} else {rightArgsMarkers}
+    leftArgMarkers++(delim::suffMarkers)
+  } else argsWithOp(leftArgs) ::: implArgs
   def asString = ("mixfix", simpleArgs)
   def addInitialImplicits(n: Int) = copy(impl = impl+n)
 }

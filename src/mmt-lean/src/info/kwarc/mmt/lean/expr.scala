@@ -228,11 +228,7 @@ sealed abstract class Expr(val varBound: Int, val hasLocals: Boolean, override v
         toShort(lcs_)
       case Var(i) => i.toString
       case Sort(level) => level.toShort
-      case Const(name, levels) =>
-        if (name.toString contains '\n') {
-           println("weird name: " + name)
-        }
-        name.toString
+      case Const(name, levels) => name.toString + (if (levels.isEmpty) "" else levels.map(_.toShort).mkString("(", " ", ")"))
       case App(a, b) => "(" + a.toShort + " " + b.toShort + ")"
       case Lam(dom, body) => "[" + dom.toShort + "] " + body.toShort
       case Pi(dom, body) => "{" + dom.toShort + "} " + body.toShort

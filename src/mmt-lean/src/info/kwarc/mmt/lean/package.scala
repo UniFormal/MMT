@@ -29,6 +29,8 @@ package info.kwarc.mmt
   * Environment and PreEnvironment store lists of the above, but they are not used. They are kept for reference only.
   *
   * The classes for expressions (Expr), levels (Level, = universes), and names (Name) are self-explanatory.
+  * de-Bruijn indices are used for bound variables,
+  * LocalConst (wrapped around the binding) is used for free variables that arise during traversal.
   * Names are hierarchic with Anon as the root and strings or numbers as parts.
   *
   * typechecker.scala, reduction.scala implement a type-checker for the AST.

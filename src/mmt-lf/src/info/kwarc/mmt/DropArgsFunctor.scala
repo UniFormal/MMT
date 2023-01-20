@@ -100,7 +100,7 @@ class DropArgsConnector(override val out: DropArgsFunctor) extends InwardsLinear
 
     List(assgn(c.path, Lambda.applyOrBody(
       bindingCtx,
-      ApplySpine.orSymbol(OMS(outc), applicationCtx.map(_.toTerm) : _*)
+      ApplyGeneral(OMS(outc), applicationCtx.map(_.toTerm))
     )))
   }
 }

@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.notations.{Mixfix, NotationContainer}
 import info.kwarc.mmt.api.objects.{Context, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.lf.{ApplySpine, Arrow, FunType, Lambda, Pi}
+import info.kwarc.mmt.lf.{ApplyGeneral, ApplySpine, Arrow, FunType, Lambda, Pi}
 
 import scala.collection.mutable
 
@@ -52,7 +52,7 @@ object ArgumentDropper {
   def clean(t: Term, dropped: DropInfo)(implicit lookup: Lookup): Term = {
     new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-        case ApplySpine.orSymbol(OMS(p), args) if dropped.get(p).exists(_.nonEmpty) =>
+        case ApplyGeneral(OMS(p), args) if dropped.get(p).exists(_.nonEmpty) =>
           val argsToRemove = dropped(p)
 
           val newArgs = args.zipWithIndex.filter {
@@ -61,7 +61,7 @@ object ArgumentDropper {
 
           if (args.size >= argsToRemove.max) { // (recall: argsToRemove has one-based argument positions)
             // All argument positions that we want to remove are given.
-            ApplySpine.orSymbol(OMS(p), newArgs : _*)
+            ApplyGeneral(OMS(p), newArgs)
           } else {
             // At least one argument position that we wanted to remove is not given,
             // hence reduce to eta-expanded case.
@@ -71,7 +71,7 @@ object ArgumentDropper {
             //          and traverse(etaExpand(c.path)) = `\u. \v. \w.  c v`.
             //          And we return the term `(\u. \v. \w.  c v) x y`, which beta-reduces to `\w.  c y` as desired.
             etaExpand(p)
-              .map(etaTerm => ApplySpine.orSymbol(traverse(etaTerm), args : _*))
+              .map(etaTerm => ApplyGeneral(traverse(etaTerm), args))
               .getOrElse(t) // default to original term in case eta-expansion fails
           }
 
