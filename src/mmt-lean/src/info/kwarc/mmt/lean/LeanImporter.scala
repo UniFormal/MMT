@@ -16,14 +16,13 @@ class LeanImporter extends NonTraversingImporter {
 
    def clean(a: Archive,in: FilePath) {}//TODO
 
-   val leanThy = DPath(URI("latin") / "lean") ? "Lean"
    def build(a: Archive, which: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
-     val thy = Theory(DPath(a.narrationBase), LocalName(in.segments:_*), Some(leanThy))
+     val thy = Theory(DPath(a.narrationBase), LocalName(in.segments:_*), Some(Lean.leanThy))
      val thyP = thy.path
      val doc = new Document(thy.parent)
      controller.add(thy)
      controller.add(MRef(doc.path, thyP))
-     val ll = new LeanToLF(leanThy, thyP)
+     val ll = new LeanToLF(thyP)
      // read Lean's export file
      val file = a/source/in
      val exportedCommands = TextExportParser.parseFile(file.toString)
@@ -53,9 +52,15 @@ class LeanImporter extends NonTraversingImporter {
    }
 }
 
-class LeanToLF(leanThy: MPath, lib: MPath) {
+object Lean {
+  val leanThy = DPath(URI("latin") / "lean") ? "Lean"
   def cic(s: String) = OMS(leanThy ? s)
+}
+import Lean._
 
+object LeanHOAS extends ChurchNestedHOASNotation(HOAS(leanThy ? "App", leanThy ? "Lam"), LF.hoas)
+
+class LeanToLF(lib: MPath) {
   def apply(n: Name): LocalName = n match {
     case Name.Str(p,n) => apply(p) / n
     case Name.Num(p,n) => apply(p) / n.toString
@@ -102,7 +107,8 @@ class LeanToLF(leanThy: MPath, lib: MPath) {
       val delim = Delim(n.op)
       val Pis(args,_) = ty
       val total = params.length + args.length
-      val impl = params.length + args.takeWhile(_.of.info != BinderInfo.Default).length // implicit: universe params and non-default arguments
+      // implicit: universe params and leading Lean-implicit (= non-default) arguments
+      val impl = params.length + args.takeWhile(_.of.info != BinderInfo.Default).length
       val expl = total - impl
       val fix = n match {
         case _:lean.Prefix => Prefix(delim, impl, expl)
