@@ -86,7 +86,7 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       subs = addImplicits(subs, 1)
       args = addImplicits(args, lastVar+1)
       // add implicit arguments between subs and vars
-      var lastSub = subs.lastOption.map(_.number).getOrElse(0)
+      val lastSub = subs.lastOption.map(_.number).getOrElse(0)
       val implsBeforeVar = ((lastSub+1) until firstVar).toList.map {i => ImplicitArg(i)}
       subs = subs ::: implsBeforeVar
       Arity(subs.distinct, vars.distinct, args.distinct)
@@ -135,14 +135,21 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
    }
    /** there are arguments before the first delimiter */
    def isLeftOpen = openArgs(false) > 0
+   /** the first definite delimiter (i.e., not just a sequence separator) */
+   private def firstDelim = markers.find {
+     case d: Delimiter => true
+     case _ => false
+   }
+   /** true if this notation tries to associate to the right (i.e., pull in arguments on the left), when breaking ties between notations of equal precedence */
+   def pullsFromLeft = isLeftOpen && (firstDelim match {
+     case Some(d: Delim) => !d.associatesToLeft
+     case _ => false
+   })
    /** there are arguments after the last delimiter */
    def isRightOpen = openArgs(true) > 0
 
    /** true if there is definitely a delimiter (i.e., not just a sequence separator) */
-   def hasDelimiter: Boolean = markers exists {
-     case _: Delimiter => true
-     case _ => false
-   }
+   def hasDelimiter: Boolean = firstDelim.isDefined
 
    /** @return true if this arity can present ComplexTerm(name, subs, vars, args) */
    def canHandle(subs: Int, vars: Int, args: Int) = {

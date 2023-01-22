@@ -11,18 +11,33 @@ import documents._
 import notations._
 import lf._
 
+/** This importer for lean libraries expects a single file in lean's low-level text export format.
+  * It uses the trepplein checker for lean to read the file.
+  *
+  * To produce the necessary output files, run (for the standard library that is part of lean)
+  * cd lean
+  * cd lib\lean\library
+  * ..\..\..\bin\lean.exe --export=..\..\..\library.out --recursive
+  * and accordingly for other libraries. Instead of "--recursive", a specific file path may be given.
+  *
+  * Then move the file library.out into the source folder of an archive and run this importer.
+  * It will produce a single theory for the entire export.
+  */
 class LeanImporter extends NonTraversingImporter {
    def key = "lean-omdoc"
 
    def clean(a: Archive,in: FilePath) {}//TODO
 
    def build(a: Archive, which: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
-     val thy = Theory(DPath(a.narrationBase), LocalName(in.segments:_*), Some(Lean.leanThy))
+     val ln = LocalName(in.stripExtension.segments:_*)
+     val thy = Theory(DPath(a.narrationBase), LocalName("theory"), Some(Lean.leanThy))
      val thyP = thy.path
-     val doc = new Document(thy.parent)
+     val doc = new Document(thy.parent / ln)
+     controller.add(doc)
      controller.add(thy)
      controller.add(MRef(doc.path, thyP))
      val ll = new LeanToLF(thyP)
+     var anonymousDeclCounter = 0
      // read Lean's export file
      val file = a/source/in
      val exportedCommands = TextExportParser.parseFile(file.toString)
@@ -30,36 +45,67 @@ class LeanImporter extends NonTraversingImporter {
      // reverse ensures the unicode notation comes first
      val notations = Map() ++ exportedCommands.collect {case ExportedNotation(not) => not.fn -> not}.reverse
      // translate all modifications into MMT declarations and add them
-     def add(d: Declaration) = controller.add(d)
-     modifications.foreach {
-       case d: AxiomMod =>
-         add(ll.constant(thyP, d.name, d.univParams, d.ty, None, notations.get(d.name)))
-       case d: DefMod =>
-         add(ll.constant(thyP, d.name, d.univParams, d.ty, Some(d.value), notations.get(d.name)))
-       case d =>
-         // other declarations are elaborated
-         val iC = d.compile(Environment.default) // environment only needed for checking, which we won't do
-         iC.decls.foreach {d =>
-           val dM = ll.constant(thyP, d.name, d.univParams, d.ty, None, None)
-           add(dM)
-         }
-         iC.rules.foreach {r =>
-           val rM = ll.rule(thyP, r)
-           add(rM)
-         }
+     def add(d: Declaration) = {
+       // log("adding " + d.name) // controller.presenter.asString(d))
+       controller.add(d)
+     }
+     // the Lean theory, needed so that the compilation methods can do some checks
+     var preenv: PreEnvironment = Environment.default
+     var progress = 0
+     val numMods = modifications.length
+     log(numMods + " declarations found")
+     modifications.foreach {m =>
+       progress += 1
+       if (progress % 100 == 0) log(progress + " declarations processed")
+       val mC = m.compile(preenv) // needed for inductive types etc.
+       preenv = preenv.addNow(mC) // maintain the lean environment
+       m match {
+         case d: AxiomMod =>
+           add(ll.constant(thyP,d.name,d.univParams,d.ty,None,notations.get(d.name)))
+         case d: DefMod =>
+           add(ll.constant(thyP,d.name,d.univParams,d.ty,Some(d.value),notations.get(d.name)))
+         case _ =>
+           // other declarations are elaborated
+           mC.decls.foreach {d =>
+             val dM = ll.constant(thyP,d.name,d.univParams,d.ty,None,None)
+             add(dM)
+           }
+           mC.rules.foreach {r =>
+             val name = r.lhs match {
+               case Apps(Const(n,_),_) =>
+                 val nr = ll(n) / "reduce"
+                 var i = 0
+                 while (thy.declares(nr / i.toString)) {
+                   i += 1
+                 }
+                 nr / i.toString
+               case _ =>
+                 // probably impossible
+                 anonymousDeclCounter += 1
+                 LocalName("_","reduce") / anonymousDeclCounter.toString
+             }
+             val rM = ll.rule(thyP,name,r)
+             add(rM)
+           }
+       }
+     }
+     if (anonymousDeclCounter > 0) {
+       log("generated names for " + anonymousDeclCounter.toString + " anonymous reduction rules")
      }
      importDocument(a, doc)
    }
 }
 
 object Lean {
-  val leanThy = DPath(URI("latin") / "lean") ? "Lean"
+  val leanThy = DPath(URI.scheme("latin") !/ "lean") ? "Lean"
   def cic(s: String) = OMS(leanThy ? s)
+  def cicA(s: String)(args: Term*) = ApplySpine(cic(s), args:_*)
 }
 import Lean._
 
 object LeanHOAS extends ChurchNestedHOASNotation(HOAS(leanThy ? "App", leanThy ? "Lam"), LF.hoas)
 
+/** straightforward translations of Lean to LF expressions */
 class LeanToLF(lib: MPath) {
   def apply(n: Name): LocalName = n match {
     case Name.Str(p,n) => apply(p) / n
@@ -79,7 +125,7 @@ class LeanToLF(lib: MPath) {
 
   def apply(e: Expr)(implicit vars: List[Binding]): Term = e match {
     case Const(n,ls) =>
-      ApplySpine(OMS(lib ? apply(n)),ls map apply: _*)
+      ApplyGeneral(OMS(lib ? apply(n)),ls.toList map apply)
     case lean.Var(i) =>
       val b = vars(i)
       OMV(apply(b.prettyName))
@@ -87,13 +133,35 @@ class LeanToLF(lib: MPath) {
       OMV(apply(of.prettyName))
     case Sort(l) => cic("Sort")(apply(l))
     case App(a,b) =>
-      cic("App")(apply(a),apply(b))
+      cicA("App")(apply(a),apply(b))
     case Lam(bind,bod) =>
-      cic("Lambda")(apply(bind.ty),Lambda(apply(bind.prettyName),cic("expr"),apply(bod)(bind :: vars)))
+      val bindFresh = makeFresh(bind)
+      cicA("Lambda")(apply(bind.ty),Lambda(apply(bindFresh.prettyName),cic("expr"),apply(bod)(bindFresh :: vars)))
     case info.kwarc.mmt.lean.Pi(bind,bod) =>
-      cic("Pi")(apply(bind.ty),Lambda(apply(bind.prettyName),cic("expr"),apply(bod)(bind :: vars)))
+      val tyT = apply(bind.ty)
+      if (bind.prettyName == Name.Anon) {
+        cicA("arrow")(tyT,apply(bod)(bind::vars)) // bind is not used but needed to make the indices fit
+      } else {
+        val bindFresh = makeFresh(bind)
+        val bdT = apply(bod)(bindFresh::vars)
+        cicA("Pi")(tyT, Lambda(apply(bindFresh.prettyName),cic("expr"), bdT))
+      }
     case Let(bind,df,bod) =>
-      cic("Let")(apply(bind.ty),apply(df),Lambda(apply(bind.prettyName),cic("expr"),apply(bod)(bind :: vars)))
+      val bindFresh = makeFresh(bind)
+      cicA("Let")(apply(bind.ty),apply(df),Lambda(apply(bindFresh.prettyName),cic("expr"),apply(bod)(bindFresh :: vars)))
+  }
+  // lean uses de-Bruijn indices and names are just suggestions; so we pick fresh names to avoid shadowing
+  def makeFresh(b: Binding)(implicit vars: List[Binding]) = {
+    val names = vars.map(_.prettyName)
+    val n = b.prettyName
+    val fresh = if (!(names contains n)) n else {
+      var i = 1
+      while (names contains (Name.Num(n,i))) {
+        i += 1
+      }
+      Name.Num(n,i)
+    }
+    b.copy(prettyName = fresh)
   }
 
   def levelDecl(n: LocalName) = VarDecl(n, cic("level"))
@@ -101,7 +169,7 @@ class LeanToLF(lib: MPath) {
   // name: {params} ty = [params] vl
   def constant(mod: MPath, name: Name, params: Vector[Param], ty: Expr, vl: Option[Expr], nota: Option[lean.Notation]): Constant = {
     val ctx = Context(params.map {p => levelDecl(apply(p.param))} :_*)
-    val tp = lf.Pi.applyOrBody(ctx, apply(ty)(Nil))
+    val tp = lf.Pi.applyOrBody(ctx, cicA("Expr")(apply(ty)(Nil)))
     val df = vl map {e => Lambda.applyOrBody(ctx,apply(e)(Nil))}
     val nt = nota map {n =>
       val delim = Delim(n.op)
@@ -121,21 +189,23 @@ class LeanToLF(lib: MPath) {
   }
 
   // c/reduce : {params} {r.ctx} r.constraints --> r.lhs == r.rhs
-  def rule(mod: MPath, r: ReductionRule) = {
-    val name = r.rhs match {
-      case App(Const(n,_),_) => apply(n)/"reduce"
-      case _ => LocalName(Nil) // probably impossible
+  def rule(mod: MPath, name: LocalName, r: ReductionRule) = {
+    // freshen the unbound variables in the context
+    implicit var ctxFresh: List[Binding] = Nil
+    r.ctx.toList.map {b =>
+      val bF = makeFresh(b)
+      ctxFresh :+= bF
+      bF
     }
     // we do not need the types of the variables if we assume we'll only reduce well-formed terms
-    val ctx = Context(r.ctx.map(b => VarDecl(apply(b.prettyName), cic("expr"))) :_*)
-    implicit val vars = r.ctx.toList
+    val ctxT = Context(ctxFresh.map(b => VarDecl(apply(b.prettyName), cic("expr"))) :_*)
     val constraints = r.defEqConstraints.map {case (x,y) => cic("equal")(apply(x), apply(y))}
     val conc = cic("equal")(apply(r.lhs), apply(r.rhs))
-    val tp1 = lf.Pi.applyOrBody(ctx, Arrow(constraints, conc))
+    val tp1 = lf.Pi.applyOrBody(ctxT, Arrow(constraints, conc))
     // ReductionRule does not have universe params. We should really collect them from its components.
     // But we lazily bind all free variables as levels (which may mask implementation errors).
     val params = tp1.freeVars.map(levelDecl)
-    val tp = lf.Pi.applyOrBody(Context(params:_*), tp1)
+    val tp = lf.Pi.applyOrBody(Context(params:_*), cicA("Expr")(tp1))
     Constant(OMMOD(mod), name, Nil, Some(tp), None, None)
   }
 

@@ -619,13 +619,13 @@ class NotationBasedPresenter extends ObjectPresenter {
                    *         -1: left-open argument; 0: middle argument; 1: right-open
                    * @return the result of recursing into the child
                    */
-                  def doChild(ac: ArityComponent, child: Obj, currentPosition: Int) = {
+                  def doChild(ac: ArityComponent, child: Obj, delimitation: Delimitation) = {
                      // the bracketing function
                      val precedence = ac.precedence match {
                        case Some(prec) => prec
                        case None => not.precedence //take the notation precedence as the default
                      }
-                     val brack = (childNot: TextNotation) => Presenter.bracket(precedence, currentPosition, childNot)
+                     val brack = (childNot: TextNotation) => Presenter.bracket(precedence, delimitation, childNot)
                      // the additional context of the child
                      val newCont: Context = ac match {
                         case a: ArgumentComponent =>
@@ -661,29 +661,30 @@ class NotationBasedPresenter extends ObjectPresenter {
                      while (markersLeft != Nil) {
                         val current = markersLeft.head
                         markersLeft = markersLeft.tail
-                        if (op.name.toString.contains("make"))
-                           true
+                        val delimitation = Delimitation(currentPosition, markersLeft.headOption)
                         val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[ArgumentMarker]
-                        //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {
                            case c: Arg =>
                               val child = if (c.number < firstArgNumber) subargs(c.number-1) else args(c.number-firstArgNumber)
-                              doChild(c, child, currentPosition)
+                              doChild(c, child, delimitation)
                               if (compFollows) doSpace(1)
                            case c @ ImplicitArg(n,_) =>
                               val child = if (n < firstArgNumber) subargs(n-1) else args(n-firstArgNumber)
                               doImplicit {
-                                 doChild(c, child, currentPosition)
+                                 doChild(c, child, delimitation)
                                  if (compFollows) doSpace(1)
                               }
                            case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
-                              doChild(c, context(n-firstVarNumber), currentPosition)
+                              doChild(c, context(n-firstVarNumber), delimitation)
                               if (compFollows) doSpace(1)
                            case d: Delimiter =>
                               val dE = d.expand(op, getAlias(op))
-                              val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
-                                 case c @ ImplicitArg(n,_) =>
-                                     () => doChild(c, args(n-firstArgNumber), 0); ()
+                              val unpImps = if (unplacedImplicitsDone) Nil else {
+                                unplacedImplicitsDone = true
+                                unplacedImplicits map {
+                                  case c @ ImplicitArg(n,_) =>
+                                    () => doChild(c, args(n-firstArgNumber), Delimitation(0,None)); ()
+                                }
                               }
                               val letters = dE.text.exists(_.isLetter)
                               if (letters && previous.isDefined && !previous.get.isInstanceOf[Delimiter]) doSpace(1)

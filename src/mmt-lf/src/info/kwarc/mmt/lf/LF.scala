@@ -200,7 +200,7 @@ object FunTerm {
 }
 
 /**
-  * like ApplySpine, but also covers the case n=0, akin to FunType
+  * like ApplySpine, but covers the case n=0 akin to FunType
   *
   * note that ApplySpine(f, Nil) != ApplyGeneral(f, Nil)
   */

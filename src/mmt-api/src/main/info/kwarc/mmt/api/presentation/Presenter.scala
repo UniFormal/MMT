@@ -97,14 +97,21 @@ abstract class Presenter(val objectLevel: ObjectPresenter)
   override def outDim: Dim = Dim("export", "presentation", key)
 }
 
+/**
+  * delimitation status of an argument within the outer notation
+  * @param position
+  *  -1: left-open argument
+  *   0: delimited argument
+  *   1: right-open argument
+  * @param next next marker, if any
+  */
+case class Delimitation(position: Int, next: Option[Marker])
+
 object Presenter {
    /**
     * a utility function that decides whether to place brackets
     * @param outerPrecedence the precedence of the outer notation
-    * @param delimitation delimitation status of an argument within the outer notation
-    *   -1: left-open argument
-    *   0: delimited argument
-    *   1: right-open argument
+    * @param delimitation delimitation status of the argument within the outer notation
     * @param innerNotation the notation used to render the argument
     * @return information on whether brackets should be placed
     *   < 0: brackets to be avoided
@@ -121,7 +128,7 @@ object Presenter {
     * - when multiple arguments occur without delimiter, brackets are usually needed
     * - generally, omitting brackets may screw up parsing
     */
-   def bracket(outerPrecedence: Precedence, delimitation: Int, innerNotation: TextNotation) : Int = {
+   def bracket(outerPrecedence: Precedence, delimitation: Delimitation, innerNotation: TextNotation) : Int = {
       val innerPrecedence = innerNotation.precedence
       if (outerPrecedence == Precedence.neginfinite || innerPrecedence == Precedence.infinite) {
          // brackets explicitly prevented
@@ -130,11 +137,24 @@ object Presenter {
          // inner notations brings its own brackets
          -1
       } else {
-         val yes = delimitation match {
-            //the = case puts brackets into x * (y / z) if * and / have the same precedence
-            case 1 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen) // || innerNotation.arity.numNormalArgs > 1) // the commented-out part does not seem to make sense but it is kept for inspiration
-            case 0 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen || innerNotation.isRightOpen)
-            case -1 => outerPrecedence >= innerPrecedence && (innerNotation.isRightOpen) // || innerNotation.arity.numNormalArgs > 1)
+         val rightAssocDelimFollowsInOuter = delimitation.next match {
+           case Some(d: Delim) => !d.associatesToLeft
+           case _ => false
+         }
+        val rightAssocDelimStartsInInner = innerNotation.pullsFromLeft
+         val yes = delimitation.position match {
+            case 1 =>
+              //the = case puts brackets into x * (y / z) if * and / have the same precedence
+              //the exception for right-associativity avoids brackets in a => (b => c)
+              (outerPrecedence > innerPrecedence && innerNotation.isLeftOpen) ||
+              (outerPrecedence == innerPrecedence && innerNotation.isLeftOpen && !rightAssocDelimStartsInInner)
+            case 0 =>
+              outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen || innerNotation.isRightOpen)
+            case -1 =>
+              //the = case omits brackets in (x * y) / z if * and / have the same precedence
+              //the exception for right-associativity adds brackets in (a => b) => c)
+              (outerPrecedence > innerPrecedence && innerNotation.isRightOpen) ||
+              (outerPrecedence == innerPrecedence && innerNotation.isRightOpen && rightAssocDelimFollowsInOuter)
             case _ => throw ImplementationError("illegal position")
          }
          if (yes) 1 else 0

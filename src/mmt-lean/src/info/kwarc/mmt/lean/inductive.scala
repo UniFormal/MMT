@@ -4,7 +4,9 @@ import Level.Param
 
 final case class CompiledIndMod(indMod: IndMod, env: PreEnvironment) extends CompiledModification {
   import indMod._
-  val tc = new TypeChecker(env.addNow(decl))
+  // FR: environment is needed for some inferences, but we set unsafe to speed that up.
+  // val tc = new TypeChecker(env.addNow(decl))
+  val tc = new TypeChecker(env.addNow(decl), unsafeUnchecked = true)
   import tc.NormalizedPis
 
   def name: Name = indMod.name
@@ -26,7 +28,8 @@ final case class CompiledIndMod(indMod: IndMod, env: PreEnvironment) extends Com
     val argInfos: List[ArgInfo] = arguments.map {
       case LocalConst(Binding(_, NormalizedPis(eps, Apps(recArgIndTy @ Const(indMod.name, _), recArgs)), _), _) =>
         require(recArgs.size >= numParams)
-        tc.requireDefEq(Apps(recArgIndTy, recArgs.take(numParams)), indTyWParams)
+        // change FR: this is called during compilation already, so we skip the check
+        // tc.requireDefEq(Apps(recArgIndTy, recArgs.take(numParams)), indTyWParams)
         Right((eps, recArgs.drop(numParams)))
       case nonRecArg => Left(nonRecArg)
     }

@@ -92,9 +92,15 @@ sealed class PreEnvironment protected (
     checkingTask -> new PreEnvironment(addDeclsFor(compiled), reductions ++ compiled.rules, checkingTask :: proofObligations)
   }
 
+  // FR: new method to allow for adding after compilation
+  def addNow(compiled: CompiledModification) = {
+    new PreEnvironment(addDeclsFor(compiled), reductions ++ compiled.rules, proofObligations)
+  }
+
   def addNow(mod: Modification): PreEnvironment = {
     val compiled = mod.compile(this)
-    compiled.check()
+    // FR change: this is called during compilation, so we skip checking to speed things up
+    // compiled.check()
     new PreEnvironment(addDeclsFor(compiled), reductions ++ compiled.rules, proofObligations)
   }
 
