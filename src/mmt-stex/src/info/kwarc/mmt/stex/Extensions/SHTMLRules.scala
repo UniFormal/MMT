@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFrame, SHTMLHeadTerm, SHTMLImportModule, SHTMLInputref, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLState, SHTMLSymbol, SHTMLTheory, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, TopLevelTerm}
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, TopLevelTerm}
 
 trait OMDocSHTMLRules { this : STeXServer =>
 
@@ -21,10 +21,34 @@ trait OMDocSHTMLRules { this : STeXServer =>
 
   lazy val importRules = List(
     UnknownPropertyRule,
+    SHTMLParsingRule("multiple-choice-block", (_, n, _) => SHTMLMCB(n)),
+    SHTMLParsingRule("mcc", (_, n, _) => SHTMLMCC(n)),
+    SHTMLParsingRule("mcc-solution", (_, n, _) => SHTMLMCSol(n)),
+    SHTMLParsingRule("fillinsol", (_, n, _) => SHTMLFillInSol(n)),
+    SHTMLParsingRule("solution", (_, n, _) => SHTMLSolution(n)),
+    SHTMLParsingRule("proof",(_,n,_) => SHTMLProof(n)),
+    SHTMLParsingRule("prooftitle", (_, n, _) => SHTMLProofTitle(n)),
+    SHTMLParsingRule("proofbody", (_, n, _) => SHTMLProofBody(n)),
+    SHTMLParsingRule("proofterm", (_, n, _) => SHTMLProofTerm(n)),
+    SHTMLParsingRule("subproof", (_, n, _) => SHTMLSubProof(n)),
+    SHTMLParsingRule("spfassumption", (_, n, _) => SHTMLProofAssumption(n)),
+    SHTMLParsingRule("spfstep", (_, n, _) => SHTMLProofStep(n)),
+    SHTMLParsingRule("spfeqstep", (_, n, _) => SHTMLProofEqStep(n)),
+    SHTMLParsingRule("spfconclusion", (_, n, _) => SHTMLProofConclusion(n)),
+    SHTMLParsingRule("proofmethod", (_, n, _) => SHTMLProofMethod(n)),
+    SHTMLParsingRule("argtypes", (_,n,_) => SHTMLArgTypes(n)),
     SHTMLParsingRule("bind", (str, n, _) => SHTMLBind(LocalName.parse(str),n)),
     SHTMLParsingRule("visible", (str, n, _) => SHTMLVisible(str != "false", n), 100),
-    SHTMLParsingRule("frame", (str, n, _) => SHTMLFrame(n)),
+    SHTMLParsingRule("frame", (str, n, _) => new SHTMLFrame(n)),
+    SHTMLParsingRule("section",(_,n,_) => SHTMLSection(n)),
+    SHTMLParsingRule("sectiontitle", (_, n, _) => SHTMLSectionTitle(n)),
+    SHTMLParsingRule("sectionlevel",(s,n,_) => SHTMLSectionLevel(s.toInt,n)),
+    SHTMLParsingRule("framenumber",(_,n,_) => SHTMLFrameNumber(n)),
     SHTMLParsingRule("theory", (str, n, _) => {
+      val mp = Path.parseM(str)
+      new SHTMLTheory(mp, n)
+    }),
+    SHTMLParsingRule("problem", (str, n, _) => {
       val mp = Path.parseM(str)
       new SHTMLTheory(mp, n)
     }),
@@ -92,6 +116,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("definition", (_, n, _) => SHTMLDefinition(n), -30),
     SHTMLParsingRule("assertion", (_, n, _) => SHTMLAssertion(n), -30),
     SHTMLParsingRule("type", (s, n, _) => SHTMLType(n),-10),
+    SHTMLParsingRule("statementtitle", (_,n,_) => SHTMLTitle(n),-20),
     SHTMLParsingRule("returntype", (s, n, _) => SHTMLReturnType(n),-10),
     SHTMLParsingRule("definiens", (s, n, _) => SHTMLDefiniens(n), -10),
     SHTMLParsingRule("conclusion", (s, n, _) => SHTMLConclusion(n), -10),

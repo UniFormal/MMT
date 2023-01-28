@@ -24,7 +24,8 @@ import scala.collection.mutable
 import scala.util.Try
 
 class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHandler, val dpath : DPath) extends HTMLParser.ParsingState(server.ctrl,rules) with SHTMLState[SHTMLNode] {
-  val doc = new Document(dpath)
+  var docs = List(new Document(dpath))
+  def doc = docs.head
   var missings: List[Path] = Nil // Search Stuff
 
   def getRules(context:Context) = try {
@@ -104,7 +105,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
     ntm = trav1(ntm,())
     implbinds = implbinds.sortBy(vd => self.getVariableContext.indexOf(vd) match {case -1 => 10000 case i => i})
     ntm = trav2(SHTML.implicit_binder(implbinds,ntm),())
-    if (tosolves.isEmpty) ntm else OMBIND(OMS(ParseResult.unknown),tosolves,ntm)
+    if (tosolves.isEmpty) ntm else OMBIND(OMS(ParseResult.unknown),tosolves.distinct,ntm)
 /*
     val implctx = mutable.Map.empty[LocalName, (Term,Option[Term])]
 

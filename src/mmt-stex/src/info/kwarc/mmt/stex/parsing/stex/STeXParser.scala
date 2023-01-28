@@ -430,8 +430,8 @@ object STeXRules {
       }
     }
   }
-  val patchdefinitionrule = new PatchRule("stexpatchdefinition")
-  val patchassertionrule = new PatchRule("stexpatchassertion")
+  val patchdefinitionrule = new PatchRule("stexstyledefinition")
+  val patchassertionrule = new PatchRule("stexstyleassertion")
 
   val stexinline = new InlineVerbRule("stexinline")
   val texcode = new MacroRule {

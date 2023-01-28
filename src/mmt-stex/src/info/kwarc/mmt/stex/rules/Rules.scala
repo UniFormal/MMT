@@ -107,8 +107,17 @@ object FieldRuler extends RulerRule {
             }
           case _ => None
         }
+      case Some(mt : MergedType) =>
+        mt.getOrig(field)(controller.globalLookup, new History(Nil)) match {
+          case Some(d) =>
+            cont(d.toTerm) match {
+              case s@Some(_) => s
+              case _ => Some(d)
+            }
+          case _ => None
+        }
       case Some(_) =>
-        ???
+        None
       case None =>
         None
     }

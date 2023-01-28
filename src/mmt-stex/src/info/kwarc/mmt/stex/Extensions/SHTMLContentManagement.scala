@@ -104,7 +104,7 @@ trait SHTMLContentManagement { this : STeXServer =>
   }
 
   private def toHTML(node : Node) : HTMLNode = {
-    val ncomp = HTMLParser.apply("<mrow>" + node.toString() + "</mrow>")(new HTMLParser.ParsingState(controller, presentationRules))
+    val ncomp = present("<mrow>" + node.toString() + "</mrow>")(None)
     var toremoves : List[HTMLNode] = Nil
     ncomp.iterate {
       case n if n.plain.attributes.contains((HTMLParser.ns_shtml,"visible")) =>

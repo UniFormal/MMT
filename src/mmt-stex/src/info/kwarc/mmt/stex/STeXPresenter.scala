@@ -194,7 +194,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
 
         def ret() = t match {
           case SHTML.informal(n) =>
-            val node = HTMLParser(n.toString())(new ParsingState(controller, server.presentationRules))
+            val node = server.present(n.toString())(None)
             node.plain.attributes((node.namespace, "mathbackground")) = "#ff0000"
             pc.out(node.toString)
             0

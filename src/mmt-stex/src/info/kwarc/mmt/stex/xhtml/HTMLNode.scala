@@ -157,7 +157,7 @@ class HTMLPlainNode(var _state: ParsingState, override val namespace: String, va
   private[xhtml] var _parent: Option[HTMLNode] = None
   var startswithWS = false
   var endswithWS = false
-  private[xhtml] var _sourceref: Option[SourceRef] = None
+  var _sourceref: Option[SourceRef] = None
 
   def copy: HTMLPlainNode = {
     val ret = new HTMLPlainNode(state, namespace, label)
@@ -242,7 +242,7 @@ class HTMLPlainNode(var _state: ParsingState, override val namespace: String, va
 class HTMLText(state: ParsingState, val text: String) extends HTMLPlainNode(state, "", "") {
   override def toString() = text //.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll("\"","&quot;")
 
-  override def isEmpty = toString() == "" || toString() == HTMLParser.empty.toString
+  override def isEmpty = toString() == "" || toString() == HTMLParser.empty.toString || toString() == "&#8205;"
 
   override def copy: HTMLText = {
     new HTMLText(state, text)

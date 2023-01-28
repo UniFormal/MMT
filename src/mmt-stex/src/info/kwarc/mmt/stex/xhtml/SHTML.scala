@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMMO
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude, RuleConstant, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, Path, Rule, RuleSet, StructuralElement}
+import info.kwarc.mmt.stex.Extensions.LateBinding
 import info.kwarc.mmt.stex.{SCtx, SHTML, SHTMLHoas, STeXServer, STerm}
 import info.kwarc.mmt.stex.rules.{BindingRule, ModelsOf, PreEqualRule, RulerRule, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
@@ -79,6 +80,7 @@ trait SHTMLObject {
 trait SHTMLState[SHTMLClass <: SHTMLObject] {
   val server : STeXServer
   var in_term : Boolean = false
+  val bindings = new LateBinding
   def addTitle(ttl:SHTMLClass) : Unit
   private var term_num = 0
   def termname = {
@@ -211,10 +213,18 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
   }
 }
 
-trait SHTMLODocument extends SHTMLObject {
+trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike {
   val path:DPath
+  var doc : Option[Document] = None
   sstate.foreach { s =>
-    if (path == s.doc.path) s.add(s.doc) else s.add(new Document(path))
+    if (path == s.doc.path) {
+      doc = Some(s.doc)
+      s.add(s.doc)
+    } else {
+      val d = new Document(path)
+      doc = Some(d)
+      s.add(d)
+    }
   }
 }
 trait SHTMLOVisible extends SHTMLObject {

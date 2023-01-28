@@ -80,6 +80,12 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
         browserRequest(request)
       case Some("browser") =>
         browserRequest(request)
+      case Some("img") =>
+        val f = RusTeX.mh.up / ".img" / (request.query + ".png")
+        if (f.exists()) {
+          ServerResponse.FileResponse(f)
+        }
+        else ServerResponse("Image file " + request.query + ".png not found", "text/plain")
       case _ =>
         ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs, "text/plain")
       /*case Some("declaration") =>

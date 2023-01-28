@@ -119,6 +119,7 @@ hr {
     width:fit-content;
     height:fit-content;
     max-width:100%;
+    vertical-align: text-bottom;
 }
 .matrix {
     display: inline-flex;

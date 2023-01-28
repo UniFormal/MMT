@@ -13,6 +13,7 @@ import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState}
 import info.kwarc.rustex.Params
 
+import java.io.FileOutputStream
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.sys.process.Process
@@ -29,6 +30,21 @@ object TeXError {
 object RusTeX {
   import info.kwarc.rustex.RusTeXBridge
   private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
+  lazy val mh = {
+    sys.env.get("MATHHUB") match {
+      case Some(v) =>
+        File(v) / ".rustex"
+      case _ => sys.env.get("HOME") match {
+        case Some(f) if (File(f) / ".stex" / "mathhub.path").exists() =>
+          val tf = File(f) / ".stex" / "mathhub.path"
+          val nf = File(File.read(tf).trim)
+          if (nf.exists()) nf else ???
+        case Some(f) => File(f) / "MathHub"
+        case _ => ???
+      }
+    }
+  }
+  def initialize = initializeBridge(mh)
 
   def initializeBridge(f : => File): Unit = this.synchronized {
     if (!RusTeXBridge.initialized) {
@@ -81,19 +97,7 @@ trait XHTMLParser extends TraversingBuildTarget {
   }
 
   def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
-    RusTeX.initializeBridge{
-      sys.env.get("MATHHUB") match {
-        case Some(v) =>
-          File(v) / ".rustex"
-        case _ => sys.env.get("HOME") match {
-          case Some(f) if (File(f) / ".stex" / "mathhub.path").exists() =>
-            val tf = File(f) / ".stex" / "mathhub.path"
-            val nf = File(File.read(tf).trim)
-            if (nf.exists()) nf else ???
-          case _ => ???
-        }
-      }
-    } // c_stex_module_
+    RusTeX.initialize
     var errored = false
     log("building " + inFile)
     val self = this
@@ -107,8 +111,8 @@ trait XHTMLParser extends TraversingBuildTarget {
       override def write_other(s: String): Unit = self.log(s,Some("rustex-other"))
       override def message(s: String): Unit = self.log(s,Some("rustex-msg"))
       def file_open(s: String): Unit = {
-        files ::= s
-        self.log(s,Some("rustex-file"))
+        files ::= s.trim
+        self.log(s.trim,Some("rustex-file"))
        /* if (s.contains("MathHub/smglom") && s.contains(".en.tex")) {
           println(s.trim)
         }*/
@@ -132,6 +136,27 @@ trait XHTMLParser extends TraversingBuildTarget {
         e.printStackTrace()
         throw e
     }
+    val imgdir = RusTeX.mh.up / ".img"
+    imgdir.mkdirs()
+    doc.get("img")()().foreach { n =>
+      n.plain.attributes.get((HTMLParser.ns_html,"src")) match {
+        case Some(s) if s.startsWith("data:image/png;base64,") =>
+          val ns = s.drop(22)
+          val bs = java.util.Base64.getDecoder.decode(ns)
+          val md = java.security.MessageDigest.getInstance("MD5").digest(bs)
+          val sb = new StringBuilder
+          md.foreach(b => sb ++= Integer.toHexString(0xFF & b))
+          val md5str = sb.mkString
+          val file = imgdir / (md5str + ".png")
+          file.createNewFile()
+          val out = new FileOutputStream(file.toString)
+          out.write(bs)
+          out.close()
+          n.plain.attributes((HTMLParser.ns_html,"src")) = "shtml/" + md5str
+        case _ =>
+      }
+    }
+
     doc.get("head")()().head.children.foreach(_.delete)
     outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
@@ -292,8 +317,8 @@ object PdfLatex {
     )
     supportfiles.foreach(f => if (f.exists()) f.delete())
   }
-  def pdflatex(file : File) : (Option[File],List[String]) = {
-    val pb = Process(Seq("pdflatex","-interaction","nonstopmode","-halt-on-error",file.stripExtension.getName),file.up)
+  def pdflatex(file : File,envs:(String,String)*) : (Option[File],List[String]) = {
+    val pb = Process(Seq("pdflatex","-interaction","nonstopmode","-halt-on-error",file.stripExtension.getName),file.up,envs:_*)
     val output = pb.lazyLines_!.toList
     if (output.exists(_.contains("!  ==> Fatal error"))) {
       val err = output.drop(output.indexWhere(_.startsWith("!")))
@@ -307,8 +332,8 @@ object PdfLatex {
     }
   }
   case class PdflatexError(errs : List[String]) extends Throwable
-  def buildSingle(bf: BuildTask) : File = {
-    pdflatex(bf.inFile) match {
+  def buildSingle(bf: BuildTask,envs:(String,String)*) : File = {
+    pdflatex(bf.inFile,envs:_*) match {
       case (Some(pdffile),Nil) =>
         File.copy(pdffile,bf.outFile,true)
         pdffile
@@ -411,7 +436,7 @@ class FullsTeX extends Importer with XHTMLParser {
     outFile.up.mkdirs()
     try {
       ilog("Building pdflatex " +  bt.inPath + " (first run)")
-      val pdffile = buildSingle(bt)
+      val pdffile = buildSingle(bt,("STEX_WRITESMS","true"))
       bt.outFile.delete()
       if (pdffile.setExtension(".bcf").exists()) {
         ilog("    -       biber " +  bt.inPath)
@@ -421,10 +446,10 @@ class FullsTeX extends Importer with XHTMLParser {
         Process(Seq("bibtex",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       }
       ilog("    -    pdflatex " + bt.inPath + " (second run)")
-      buildSingle(bt)
+      buildSingle(bt,("STEX_USESMS","true"))
       bt.outFile.delete()
       ilog("    -    pdflatex " + bt.inPath + " (final run)")
-      buildSingle(bt)
+      buildSingle(bt,("STEX_USESMS","true"))
       bt.outFile.delete()
       ilog("    -       omdoc " + bt.inPath)
       val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)

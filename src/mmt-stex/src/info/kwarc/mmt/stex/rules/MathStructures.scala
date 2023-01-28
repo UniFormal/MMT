@@ -736,8 +736,9 @@ object RecSubtype extends SubtypingRule with RecordRule {
 /** matches for a list of OMLs */
 object OMLList {
   def unapply(ts: List[Term]): Option[List[OML]] = {
-    val omls = ts map {
-      case o:OML => o
+    val omls = ts flatMap {
+      case o:OML => List(o)
+      case SHTML.flatseq(ls) => unapply(ls).getOrElse(Nil)
       case _ => return None
     }
     Some(omls)

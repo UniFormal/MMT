@@ -1,11 +1,13 @@
 package info.kwarc.mmt.stex.xhtml
 
-import info.kwarc.mmt.api.documents.DRef
+import info.kwarc.mmt.api.documents.{DRef, Document, SectionLevel}
 import info.kwarc.mmt.api.{DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.metadata.HasMetaData
-import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OML, OMMOD, OMS, OMV, Term}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMFOREIGN, OML, OMMOD, OMS, OMV, Term}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
+import info.kwarc.mmt.odk.OpenMath.OMForeign
+import info.kwarc.mmt.stex.Extensions.{ImportStep, LateBinding, SectionStep, SlideStep, StatementStep}
 import info.kwarc.mmt.stex.{SHTML, SHTMLHoas}
 
 import scala.util.Try
@@ -47,6 +49,22 @@ abstract class SHTMLNode(orig: HTMLNode,val key : Option[String] = None) extends
     orig match {
       case sn: SHTMLNode => sn.onAdd
       case _ =>
+        def filter(n: HTMLNode): Boolean = n match {
+          case t: HTMLText if t.text == "&#8205;" => false
+          case t: HTMLText if t.text == "&#160;" => false
+          case n: HTMLPlainNode if n.label == "mrow" => n._children.exists {
+            case t: HTMLText if t.text == "&#8205;" => false
+            case _ => true
+          }
+          case n: SHTMLVisible if n.plain.attributes.get((HTMLParser.ns_shtml, "visible")).contains("false") && n.children.isEmpty => false
+          case n: SHTMLVisible if n.plain.attributes.get((HTMLParser.ns_shtml, "visible")).contains("false") => n.children.exists {
+            case t: HTMLText if t.text == "&#8205;" || t.text == "&nbsp;" => false
+            case _ => true
+          }
+          case _ => true
+        }
+
+        plain._children = plain._children.filter(n => filter(n))
     }
   }
 
@@ -118,6 +136,17 @@ case class SHTMLParsingRule(key:String, newobj: (String,HTMLNode,Option[SHTMLSta
 
 case class SHTMLDocument(path : DPath, orig:HTMLNode) extends SHTMLNode(orig) with SHTMLODocument {
   override def copy = SHTMLDocument(path,orig.copy)
+
+  override def onAdd: Unit = {
+    super.onAdd
+    sstate.foreach { state =>
+      doc.foreach{d =>
+        val tm = state.bindings.term
+        //al num = state.bindings.toNum(state.server.ctrl)
+        d.metadata.update(LateBinding.sym,tm)
+      }
+    }
+  }
 }
 
 case class SHTMLVisible(visible:Boolean,orig:HTMLNode) extends SHTMLNode(orig,Some("visible")) with SHTMLOVisible {
@@ -144,6 +173,7 @@ class SHTMLTheory(val mp : MPath,orig:HTMLNode) extends SHTMLNode(orig,Some("the
   removed ::= "signature"
   plain.attributes.get((HTMLParser.ns_shtml, "language")).foreach(s => language = s)
   removed ::= "language"
+  removed ::= "problem"
 
   open
 
@@ -203,6 +233,10 @@ trait SHTMLSymbolLike extends SHTMLNode with SymbolLike {
   reorderargs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "reorderargs"), "")
   removed ::= "role"
   roles = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "role"), "").split(',').map(_.trim).toList
+}
+
+case class SHTMLArgTypes(orig:HTMLNode) extends SHTMLNode(orig,Some("argtypes")) {
+  def copy = SHTMLArgTypes(orig.copy)
 }
 
 class SHTMLSymbol(val path:GlobalName, orig:HTMLNode) extends SHTMLNode(orig,Some("symdecl"))
@@ -450,20 +484,6 @@ case class SHTMLArg(ind:Int,orig:HTMLNode) extends SHTMLNode(orig,Some("arg"))
 
   override def onAdd: Unit = {
     super.onAdd
-    def filter(n : HTMLNode) : Boolean = n match {
-      case t: HTMLText if t.text == "&#8205;" => false
-      case n:HTMLPlainNode if n.label == "mrow" => n._children.exists{
-        case t: HTMLText if t.text == "&#8205;" => false
-        case _ => true
-      }
-      case n:SHTMLVisible if n.plain.attributes.get((HTMLParser.ns_shtml,"visible")).contains("false") && n.children.isEmpty => false
-      case n:SHTMLVisible if n.plain.attributes.get((HTMLParser.ns_shtml, "visible")).contains("false") => n.children.exists {
-        case t : HTMLText if t.text == "&#8205;" || t.text == "&nbsp;" => false
-        case _ => true
-      }
-      case _ => true
-    }
-    plain._children = plain._children.filter(n => filter(n))
     this.close
   }
 }
@@ -634,6 +654,7 @@ case class SHTMLInputref(target:String,orig : HTMLNode) extends SHTMLNode(orig,S
         dref.setOrigin(GeneratedDRef)
         doSourceRef(dref)
         state.add(dref)
+        state.bindings.add(ImportStep(rtarget))
       }
     }
   }
@@ -652,18 +673,34 @@ abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(or
   removed ::= "id"
   id = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "id"), "")
 
+  var title : Option[SHTMLTitle] = None
+
   protected def copyII[A <: HTMLStatement](newst: A):A = {
     copyI(newst)
     newst.fors = fors
     newst.styles = styles
     newst.id = id
+    newst.title = title.map(_.copy)
     newst
   }
 
   override def onAdd: Unit = {
+    sstate.foreach { state =>
+      state.bindings.add(StatementStep)
+    }
     super.onAdd
   }
+}
 
+case class SHTMLTitle(orig:HTMLNode) extends SHTMLNode(orig,Some("statementtitle")) {
+  override def onAdd: Unit = {
+    super.onAdd
+    findAncestor{
+      case st:HTMLStatement => st
+    }.foreach(_.title = Some(this))
+  }
+
+  override def copy = SHTMLTitle(orig.copy)
 }
 
 case class SHTMLDefiniendum(path:GlobalName,orig:HTMLNode) extends SHTMLNode(orig,Some("definiendum")) {
@@ -736,11 +773,10 @@ with SHTMLMorphism {
         c
       case _ =>
         val c = Constant(structure.get.toTerm,name,Nil,None,None,None)
-        sstate.get.getO(gn) match {
+        /*sstate.get.getO(gn) match {
           case Some(oldc : Constant) =>
-            println("here")
           case _ =>
-        }
+        }*/
         c.metadata.update(SHTML.headterm,OMS(gn))
         sstate.get.add(c)
         c
@@ -798,22 +834,156 @@ case class SHTMLAssignment(path: GlobalName, orig: HTMLNode) extends SHTMLNode(o
           nc.metadata = orig.metadata
           state.update(nc)
           state.check(nc)
-          println("here")
         }
       }
     }
   }
 }
 
-case class SHTMLFrame(orig : HTMLNode) extends SHTMLNode(orig, Some("frame")) {
-  this.plain.classes ::= "frame"
+class SHTMLFrame(orig : HTMLNode) extends SHTMLNode(orig, Some("frame")) {
+  //this.plain.classes ::= "frame"
+  def init = sstate.foreach{state =>
+    state.bindings.add(SlideStep)
+  }
 
-  override def copy: HTMLNode = SHTMLFrame(orig.copy)
+  override def copy: HTMLNode = new SHTMLFrame(orig.copy) {
+    override def init = {}
+  }
+
+
+  init
+}
+case class SHTMLFrameNumber(orig:HTMLNode) extends SHTMLNode(orig,Some("framenumber")) {
+  def copy = SHTMLFrameNumber(orig.copy)
+}
+
+case class SHTMLSection(orig: HTMLNode) extends SHTMLNode(orig,Some("section")) {
+  val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "section")).map(_.trim.toInt)
+  def init = sstate.foreach{state =>
+    state.bindings.add(new SectionStep(lvl.getOrElse(-1)))
+    state match {
+      case s : SemanticState =>
+        val nd = new Document(s.doc.path / this.hashCode().toHexString, SectionLevel)
+        s.add(nd)
+        s.docs ::= nd
+      case _ =>
+    }
+    state.doc
+  }
+  var title : Option[SHTMLSectionTitle] = None
 
   override def onAdd: Unit = {
-    val ch = this.children
-    val inner = add(<div class="inner-frame"/>)
-    ch.foreach(inner.add)
     super.onAdd
+    sstate.foreach(_.bindings.close)
+    sstate match {
+      case Some(s : SemanticState) =>
+        val d = s.docs.head
+        title.foreach(t =>
+          d.metadata.update(SHTML.mmtmeta_path ? "title",OMFOREIGN(t.plain.node))
+        )
+        s.docs = s.docs.tail
+      case _ =>
+    }
   }
+
+  override def copy = {
+    val ret = new SHTMLSection(orig.copy) { override def init = {}}
+    ret.title=title.map(_.copy)
+    ret
+  }
+
+  init
+}
+case class SHTMLSectionLevel(lvl:Int,orig:HTMLNode) extends SHTMLNode(orig,Some("sectionlevel")) {
+  def copy = SHTMLSectionLevel(lvl,orig.copy)
+
+  override def onAdd: Unit = {
+    super.onAdd
+    sstate.foreach(_.bindings.topsec = lvl)
+  }
+}
+
+case class SHTMLSectionTitle(orig: HTMLNode) extends SHTMLNode(orig,Some("sectiontitle")) {
+  override def onAdd: Unit = {
+    super.onAdd
+    findAncestor{
+      case sec: SHTMLSection => sec
+    }.foreach(_.title = Some(this))
+  }
+  def copy= SHTMLSectionTitle(orig.copy)
+}
+
+trait ProofStep extends SHTMLNode {
+  var yields: Option[Term] = None
+}
+trait ProofEnv extends SHTMLNode with ProofStep {
+  val annotname : String = key.get
+  removed ::= "proofhide"
+  lazy val expanded = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "proofhide"), "") == "true"
+
+  lazy val fors = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, annotname), "").split(',').flatMap(
+    s => Try(Path.parseS(s.trim)).toOption
+  ).toList
+}
+case class SHTMLProof(orig:HTMLNode) extends SHTMLNode(orig,Some("proof"))
+  with ProofEnv {
+  def copy = SHTMLProof(orig.copy)
+}
+case class SHTMLSubProof(orig:HTMLNode) extends SHTMLNode(orig,Some("subproof"))
+  with ProofEnv {
+  def copy = SHTMLSubProof(orig.copy)
+}
+case class SHTMLProofMethod(orig:HTMLNode) extends SHTMLNode(orig,Some("proofmethod")){
+  def copy = SHTMLProofMethod(orig.copy)
+}
+case class SHTMLProofTerm(orig:HTMLNode) extends SHTMLNode(orig,Some("proofterm")) {
+  set_in_term
+  def copy = SHTMLProofTerm(orig.copy)
+
+  override def onAdd: Unit = {
+    super.onAdd
+    reset_in_term
+    sstate.foreach{state =>
+      findAncestor{case pe:ProofStep => pe}.foreach{ pe =>
+        pe.yields = Some(getTerm)
+      }
+    }
+  }
+}
+case class SHTMLProofStep(orig:HTMLNode) extends SHTMLNode(orig,Some("spfstep"))
+  with ProofStep {
+  def copy = SHTMLProofStep(orig.copy)
+}
+case class SHTMLProofConclusion(orig:HTMLNode) extends SHTMLNode(orig,Some("spfconclusion"))
+  with ProofStep {
+  def copy = SHTMLProofConclusion(orig.copy)
+}
+case class SHTMLProofEqStep(orig:HTMLNode) extends SHTMLNode(orig,Some("spfeqstep"))
+  with ProofStep {
+  def copy = SHTMLProofEqStep(orig.copy)
+}
+case class SHTMLProofAssumption(orig:HTMLNode) extends SHTMLNode(orig,Some("spfassumption"))
+  with ProofStep {
+  def copy = SHTMLProofAssumption(orig.copy)
+}
+case class SHTMLProofTitle(orig:HTMLNode) extends SHTMLNode(orig,Some("prooftitle")){
+  def copy=SHTMLProofTitle(orig.copy)
+}
+case class SHTMLProofBody(orig:HTMLNode) extends SHTMLNode(orig,Some("proofbody")){
+  def copy=SHTMLProofBody(orig.copy)
+}
+case class SHTMLFillInSol(orig:HTMLNode) extends SHTMLNode(orig,Some("fillinsol")){
+  def copy=SHTMLFillInSol(orig:HTMLNode)
+}
+case class SHTMLMCB(orig:HTMLNode) extends SHTMLNode(orig,Some("multiple-choice-block")){
+  def copy=SHTMLMCB(orig:HTMLNode)
+}
+case class SHTMLMCC(orig:HTMLNode) extends SHTMLNode(orig,Some("mcc")){
+  def copy=SHTMLMCC(orig:HTMLNode)
+}
+case class SHTMLMCSol(orig:HTMLNode) extends SHTMLNode(orig,Some("mcc-solution")){
+  def copy=SHTMLMCSol(orig:HTMLNode)
+}
+case class SHTMLSolution(orig: HTMLNode) extends SHTMLNode(orig,Some("solution")){
+  def copy=SHTMLSolution(orig)
 }

@@ -111,9 +111,8 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
               val newhtml = HTMLParser(html)(parsingstate(pars.eh))
               pars.eh.close
               client.log("html parsed")
-              val presentstate = new ParsingState(server.controller,server.stexserver.presentationRules)
-                this.html = Some(HTMLParser(newhtml.toString)(presentstate))
-                ((), "Done")
+              this.html = Some(server.stexserver.present(newhtml.toString)(None))
+              ((), "Done")
             }
           }
           val msg = new HTMLUpdateMessage

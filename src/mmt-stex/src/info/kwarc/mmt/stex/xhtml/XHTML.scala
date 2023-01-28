@@ -3,6 +3,7 @@ package info.kwarc.mmt.stex.xhtml
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, URI, Unparsed, XMLEscaping}
+import info.kwarc.mmt.stex.Extensions.LateBinding
 import info.kwarc.mmt.stex.STeXError
 
 import scala.annotation.tailrec

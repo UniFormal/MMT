@@ -489,7 +489,8 @@ object SHTML {
     val op = new {
       val opsym = mmtmeta_path ? "informalapply"
 
-      def apply(label: String, args: List[Term]) = {
+      def apply(label: String, args: List[Term]): Term = {
+        if (label == "math" && args.length == 1) args.head else
         OMA(OMS(opsym), StringLiterals(label) :: args)
       }
 

@@ -122,7 +122,7 @@ trait TeXRule {
               var curr: List[TeXTokenLike] = Nil
               var inbrackets = 0
               var break = false
-              while (!in.empty && !break) {
+              while ({in.trim;!in.empty} && !break) {
                 in.first match {
                   case ']' if inbrackets == 0 =>
                     children = children ::: List(new PlainText("]", in.offset, in.offset + 1))
@@ -138,6 +138,11 @@ trait TeXRule {
                     children = children ::: List(new PlainText(",", in.offset, in.offset + 1))
                     in.drop(1)
                     break = true
+                  case ',' =>
+                    children = children ::: List(new PlainText(",", in.offset, in.offset + 1))
+                    in.drop(1)
+                  case '{' =>
+                    curr ::= readGroup
                   case '[' =>
                     inbrackets += 1
                     in.drop(1)
