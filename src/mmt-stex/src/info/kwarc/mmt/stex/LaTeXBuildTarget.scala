@@ -57,7 +57,7 @@ object RusTeX {
     }
   }
   def parse(f : File,p:Params,memories:List[String] = Nil) = {
-    if (RusTeXBridge.initialized) this.synchronized {
+    if (RusTeXBridge.initialized) {
       val sb = RusTeXBridge.mainBridge
       sb.setMemories(memories)
       sb.setParams(p)
