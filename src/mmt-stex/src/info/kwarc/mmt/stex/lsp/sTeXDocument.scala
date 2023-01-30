@@ -124,7 +124,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
     }
   }
 
-  override val timercount: Int = 0
+  override val timercount: Int = 10
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
     Annotations.notifyOnChange()
   }

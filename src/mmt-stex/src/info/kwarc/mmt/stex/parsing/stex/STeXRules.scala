@@ -694,13 +694,17 @@ case class ProofMacro(name : String) extends MacroRule with ProofLike {
 case class MMTInterfaceRule(dict:Dictionary) extends EnvironmentRule("mmtinterface") {
   override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
     var children: List[TeXTokenLike] = Nil
-    val (pathstr,ch) = readArg
+    val (nametk,ch) = readArg
     children = ch
+    val (pathstr,ch2) = readArg
+    children = children ::: ch2
     val mmtpath = pathstr match {
-      case gr : Group =>
+      case gr: Group =>
         gr.content match {
-          case List(pt:PlainText) =>
-            try { Path.parseM(pt.str)} catch {
+          case List(pt: PlainText) =>
+            try {
+              Path.parseM(pt.str)
+            } catch {
               case t =>
                 throw LaTeXParseError("Module path expected")
             }
@@ -709,8 +713,6 @@ case class MMTInterfaceRule(dict:Dictionary) extends EnvironmentRule("mmtinterfa
         }
       case _ => throw LaTeXParseError("Missing MMT-URI")
     }
-    val (nametk,ch2) = readArg
-    children = children ::: ch2
     val name = nametk match {
       case gr: Group =>
         gr.content match {

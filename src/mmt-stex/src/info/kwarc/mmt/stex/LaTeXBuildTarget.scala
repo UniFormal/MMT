@@ -56,7 +56,7 @@ object RusTeX {
       RusTeXBridge.initialize(path.toString)
     }
   }
-  def parse(f : File,p:Params,memories:List[String] = Nil) = {
+  def parse(f : File,p:Params,memories:List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","true"))) = {
     if (RusTeXBridge.initialized) {
       val sb = RusTeXBridge.mainBridge
       sb.setMemories(memories)
@@ -65,7 +65,7 @@ object RusTeX {
     } else ""
   }
 
-  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil) = {
+  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","false"))) = {
     if (RusTeXBridge.initialized) this.synchronized {
       val sb = RusTeXBridge.mainBridge
       sb.setMemories(memories)
@@ -127,7 +127,7 @@ trait XHTMLParser extends TraversingBuildTarget {
         errorCont(TeXError(inFile.toURI.toString,msg,stacktrace,region))
       }
     }
-    val html = RusTeX.parse(inFile,params,List("c_stex_module_"))
+    val html = RusTeX.parse(inFile,params)//,List("c_stex_module_"))
     File.write(outFile.setExtension("shtml"),html)
     val doc = try { controller.library.synchronized {
       HTMLParser(outFile.setExtension("shtml"))(state)
