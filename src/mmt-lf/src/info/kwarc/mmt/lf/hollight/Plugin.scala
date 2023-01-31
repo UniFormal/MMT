@@ -5,4 +5,4 @@ import api._
 import lf._
 
 /** added by rule in HOL Light theory */
-object HOLLightHOAS extends notations.NestedHOASNotation(HOLLight.hoas, LF.hoas)
+object HOLLightHOAS extends notations.ChurchNestedHOASNotation(HOLLight.hoas, LF.hoas)

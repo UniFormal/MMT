@@ -133,6 +133,8 @@ object Circumfix extends Fixity {
   }
 }
 
+// TODO this should not exists as an object and as a case class
+// used for Mizar
 object PrePostfix extends Fixity {
   def apply(delim: Delimiter, prefixedArgsNum: Int, numArgs: Int, rightArgsBracketed: Boolean, implArgInds: List[Int]) : Mixfix = {
     val bracketed = rightArgsBracketed && (numArgs - prefixedArgsNum - implArgInds.length > 0)
@@ -190,7 +192,7 @@ object PrePostfix extends Fixity {
  * impl and expl do not have to agree with the number of arguments demanded by the type system.
  *  * Notation has more arguments than function type: Notation extensions may handle the extra arguments.
  *    Example: equal : {a:tp} tm (a => a => bool), impl = 1, expl = 2
- *  * Notation has less arguments than function type: Operator return a function.
+ *  * Notation has less arguments than function type: Operator returns a function.
  *    Example: union : {a:tp} tm (a set => a set => a set) where a set = a => bool, impl = 1, expl = 2
  */
 abstract class SimpleFixity extends Fixity {
@@ -214,13 +216,14 @@ abstract class SimpleFixity extends Fixity {
    }
 }
 
-case class PrePostfix(delim: Delimiter, prefixedArgsNum: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0)  extends SimpleFixity {
+/** delimiter after a certain argument */
+case class PrePostfix(delim: Delimiter, leftArgs: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0)  extends SimpleFixity {
   lazy val markers = if (expl != 0) {
-    val infixedArgMarkers = (impl until impl+prefixedArgsNum).map(i=>SimpArg(i+1)).toList
-    val suffixedArgsMarkers = (impl+prefixedArgsNum until impl+expl).map(i=>SimpArg(i+1)).toList
-    val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::suffixedArgsMarkers.+:(Delim(")"))} else {suffixedArgsMarkers}
-    infixedArgMarkers++(delim::suffMarkers)
-  } else argsWithOp(prefixedArgsNum) ::: implArgs
+    val leftArgMarkers = (impl until impl+leftArgs).map(i=>SimpArg(i+1)).toList
+    val rightArgsMarkers = (impl+leftArgs until impl+expl).map(i=>SimpArg(i+1)).toList
+    val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::rightArgsMarkers.+:(Delim(")"))} else {rightArgsMarkers}
+    leftArgMarkers++(delim::suffMarkers)
+  } else argsWithOp(leftArgs) ::: implArgs
   def asString = ("mixfix", simpleArgs)
   def addInitialImplicits(n: Int) = copy(impl = impl+n)
 }
@@ -435,107 +438,164 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
    }
 }
 
+abstract class NestedHOASNotation extends NotationExtension {
+  val obj: HOAS
+  val meta: HOAS
+
+  override def priority = 2
+
+  def isApplicable(t: Term) = t match {
+    case OMA(OMS(meta.apply), OMS(obj.apply) :: _) => true
+    case _ => false
+  }
+
+  private def metaapplication(op: GlobalName, args: List[Term])(implicit unknown: () => Term) : Term =
+    if (args.isEmpty) OMS(op) else OMA(OMS(meta.apply), OMS(op) :: args)
+
+  protected def application(f: Term, a: Term)(implicit unknown: () => Term) : Term
+
+  private def application(f: Term, args: List[Term])(implicit unknown: () => Term) : Term =
+    args.foldLeft(f) {case (sofar, next) => application(sofar, next)}
+
+  protected def binding(vd: VarDecl, scope: Term)(implicit unknown: () => Term): Term
+
+  private def binding(con: Context, scope: Term)(implicit unknown: () => Term): Term =
+    con.foldRight(scope) {case (next, sofar) => binding(next, sofar)}
+
+  def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)(implicit unknown: () => Term) : Term = {
+    // 2 components are considered to be meta-arguments
+    // - the subargs
+    // - if there are no variables, the leading implicit args
+    // the remaining args are considered object arguments
+    val numLeadingImplArgs = if (con.isEmpty) {
+      not.arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
+    } else
+      0
+    val metaargs = subs.map(_.target) ::: args.take(numLeadingImplArgs)
+    val objArgs = args.drop(numLeadingImplArgs)
+    val opmeta = metaapplication(op, metaargs)
+    if (con.isEmpty) {
+      application(opmeta, objArgs)
+    } else if (objArgs.length == 1) {
+      application(opmeta, binding(con, objArgs.head))
+    } else throw InvalidNotation("")
+  }
+  def constructTerm(fun: Term, args: List[Term]) = meta.apply(fun::args)
+
+  protected def unapplication(t: Term) : Option[(GlobalName, List[Term], List[Term])]
+
+  protected def unbinding(t: Term): (Context, Term)
+
+  protected val implicitsOfApply: Int
+  // does not work correctly for CurryNesting
+  def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = {
+    val (op, metaArgs, objArgs) = unapplication(t).getOrElse(return None)
+    getNotations(op).foldLeft[Option[PragmaticTerm]](None) {
+      (res,not) => if (res.isDefined) res else {
+        val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
+        val objArgInd = implicitsOfApply+3
+        val opMetaInd = implicitsOfApply+2
+        val objArgPos = paths.reverse.map(p => p / objArgInd)
+        val opMetaPath = paths.lastOption.getOrElse(Position.Init) / opMetaInd
+        val opMetaPos = if (metaArgs.isEmpty) List(opMetaPath)
+        else (0 until metaArgs.length+1).toList.map(i => opMetaPath / (i+1))
+        val arity = not.arity
+        val numLeadingImplArgs = if (arity.variables.isEmpty)
+          arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
+        else
+          0
+        val numSubArgs = metaArgs.length - numLeadingImplArgs
+        val subargs = metaArgs.take(numSubArgs)
+        val args = metaArgs.drop(numSubArgs) ::: objArgs
+        if (not.canHandle(subargs.length,0,args.length)) {
+          // List(), List(opMetaInd), ..., List(opMetaInd, ..., opMetaInd)
+          val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, not, opMetaPos ::: objArgPos)
+          Some(tP)
+        } else if (objArgs.length == 1) {
+          val (con, scope) = unbinding(objArgs.last)
+          if (not.canHandle(metaArgs.length, con.length, 1)) {
+            // List(), List(opMetaInd,2), ..., List(opMetaInd,2,...,opMetaInd,2)
+            val conPaths = (0 until con.length).toList.map(i => (0 until i).toList.flatMap(_ => List(opMetaInd,2)))
+            val conPos = conPaths.map(p => Position(objArgInd) / p / opMetaInd / 1)
+            val scopePos = Position(objArgInd) / conPaths.last / opMetaInd / 2
+            val tP = PragmaticTerm(op, metaArgs.map(Sub(OMV.anonymous, _)), con, List(scope), not, opMetaPos ::: conPos ::: List(scopePos))
+            Some(tP)
+          } else
+            None
+        } else None
+      }
+    }
+  }
+}
+
 /**
- * Church-style higher-order abstract (obj) syntax within LF-style higher-order abstract syntax (meta),
- *
- * e.g.,
- *  apply: tm A=>B -> tm B -> tm B
- *  lam  : (tm A -> tm B) -> tm A=>B
- *
- * assumption: notations give meta-arguments as arguments before context
- */
-class NestedHOASNotation(val obj: HOAS, val meta: HOAS) extends NotationExtension {
-   override def priority = 2
-   def isApplicable(t: Term) = t match {
-      case OMA(OMS(meta.apply), OMS(obj.apply) :: _) => true
-      case _ => false
-   }
+  * Church-style higher-order abstract (obj) syntax within LF-style higher-order abstract syntax (meta),
+  *
+  * e.g.,
+  *  apply: tm A=>B -> tm B -> tm B
+  *  lam  : (tm A -> tm B) -> tm A=>B
+  *
+  * assumption: notations give meta-arguments as arguments before context
+  */
+class ChurchNestedHOASNotation(val obj: HOAS, val meta: HOAS) extends NestedHOASNotation {
+  protected val implicitsOfApply = 2
+  protected def application(f: Term, a: Term)(implicit unknown: () => Term) : Term =
+    meta.apply(OMS(obj.apply), unknown(), unknown(), f, a)
 
-   private def metaapplication(op: GlobalName, args: List[Term])(implicit unknown: () => Term) : Term =
-      if (args.isEmpty) OMS(op) else OMA(OMS(meta.apply), OMS(op) :: args)
+  protected def binding(vd: VarDecl, scope: Term)(implicit unknown: () => Term): Term =
+    meta.apply(OMS(obj.bind), unknown(), unknown(), meta.bind(vd, List(scope)))
 
-   private def application(f: Term, a: Term)(implicit unknown: () => Term) : Term =
-      meta.apply(OMS(obj.apply), unknown(), unknown(), f, a)
+  protected def unapplication(t: Term) : Option[(GlobalName, List[Term], List[Term])] = t match {
+    case OMA(OMS(meta.apply), OMS(obj.apply) :: List(_, _, f, a)) => unapplication(f).map {
+      case (op, metaArgs, objArgs) => (op, metaArgs, objArgs ::: List(a))
+    }
+    case OMA(OMS(meta.apply), OMS(op) :: args) =>
+      Some((op, args, Nil))
+    case OMS(op) => Some((op, Nil, Nil))
+    case _ => None
+  }
+  protected def unbinding(t: Term): (Context, Term) = t match {
+    case OMA(OMS(meta.apply), OMS(obj.bind) :: List(_,_, OMBIND(OMS(meta.bind), Context(vd), s))) => unbinding(s) match {
+      case (con, scope) => (con ++ vd, scope)
+    }
+    case t => (Context(), t)
+  }
+}
 
-   private def application(f: Term, args: List[Term])(implicit unknown: () => Term) : Term =
-      args.foldLeft(f) {case (sofar, next) => application(sofar, next)}
+/**
+  * Curry-style higher-order abstract (obj) syntax within LF-style higher-order abstract syntax (meta),
+  *
+  * e.g.,
+  *  apply: tm -> tm -> tm
+  *  lam  : tp -> (tm -> tm) -> tm
+  *
+  * assumption: notations give meta-arguments as arguments before context
+  */
+// untested
+class CurryNestedHOASNotation(val obj: HOAS, val meta: HOAS) extends NestedHOASNotation {
+  protected val implicitsOfApply = 0
+  protected def application(f: Term, a: Term)(implicit unknown: () => Term) : Term =
+    meta.apply(OMS(obj.apply), f, a)
 
-   private def binding(vd: VarDecl, scope: Term)(implicit unknown: () => Term): Term =
-      meta.apply(OMS(obj.bind), unknown(), unknown(), meta.bind(vd, List(scope)))
+  protected def binding(vd: VarDecl, scope: Term)(implicit unknown: () => Term): Term = {
+    // the unknown type is 'tm', but we don't have access to its name here
+    meta.apply(OMS(obj.bind), vd.tp.get, meta.bind(vd.copy(tp=Some(unknown())), List(scope)))
+  }
 
-   private def binding(con: Context, scope: Term)(implicit unknown: () => Term): Term =
-      con.foldRight(scope) {case (next, sofar) => binding(next, sofar)}
+  protected def unapplication(t: Term) : Option[(GlobalName, List[Term], List[Term])] = t match {
+    case OMA(OMS(meta.apply), OMS(obj.apply) :: List(f, a)) => unapplication(f).map {
+      case (op, metaArgs, objArgs) => (op, metaArgs, objArgs ::: List(a))
+    }
+    case OMA(OMS(meta.apply), OMS(op) :: args) =>
+      Some((op, args, Nil))
+    case OMS(op) => Some((op, Nil, Nil))
+    case _ => None
+  }
 
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)(implicit unknown: () => Term) : Term = {
-         // 2 components are considered to be meta-arguments
-         // - the subargs
-         // - if there are no variables, the leading implicit args
-         // the remaining args are considered object arguments
-         val numLeadingImplArgs = if (con.isEmpty) {
-            not.arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
-         } else
-            0
-         val metaargs = subs.map(_.target) ::: args.take(numLeadingImplArgs)
-         val objArgs = args.drop(numLeadingImplArgs)
-         val opmeta = metaapplication(op, metaargs)
-         if (con.isEmpty) {
-            application(opmeta, objArgs)
-         } else if (objArgs.length == 1) {
-            application(opmeta, binding(con, objArgs.head))
-         } else throw InvalidNotation("")
-   }
-   def constructTerm(fun: Term, args: List[Term]) = meta.apply(fun::args)
-
-   private def unapplication(t: Term) : Option[(GlobalName, List[Term], List[Term])] = t match {
-      case OMA(OMS(meta.apply), OMS(obj.apply) :: List(_, _, f, a)) => unapplication(f).map {
-         case (op, metaArgs, objArgs) => (op, metaArgs, objArgs ::: List(a))
-      }
-      case OMA(OMS(meta.apply), OMS(op) :: args) =>
-         Some((op, args, Nil))
-      case OMS(op) => Some((op, Nil, Nil))
-      case _ => None
-   }
-   private def unbinding(t: Term): (Context, Term) = t match {
-      case OMA(OMS(meta.apply), OMS(obj.bind) :: List(_,_, OMBIND(OMS(meta.bind), Context(vd), s))) => unbinding(s) match {
-         case (con, scope) => (con ++ vd, scope)
-      }
-      case t => (Context(), t)
-   }
-
-   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = {
-      val (op, metaArgs, objArgs) = unapplication(t).getOrElse(return None)
-      getNotations(op).foldLeft[Option[PragmaticTerm]](None) {
-        (res,not) => if (res.isDefined) res else {
-          val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
-          val objArgPos = paths.reverse.map(p => p / 5)
-          val opMetaPath = paths.lastOption.getOrElse(Position.Init) / 4
-          val opMetaPos = if (metaArgs.isEmpty) List(opMetaPath)
-             else (0 until metaArgs.length+1).toList.map(i => opMetaPath / (i+1))
-          val arity = not.arity
-          val numLeadingImplArgs = if (arity.variables.isEmpty)
-                arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
-             else
-                0
-          val numSubArgs = metaArgs.length - numLeadingImplArgs
-          val subargs = metaArgs.take(numSubArgs)
-          val args = metaArgs.drop(numSubArgs) ::: objArgs
-          if (not.canHandle(subargs.length,0,args.length)) {
-             // List(), List(4), ..., List(4, ..., 4)
-             val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, not, opMetaPos ::: objArgPos)
-             Some(tP)
-          } else if (objArgs.length == 1) {
-             val (con, scope) = unbinding(objArgs.last)
-             if (not.canHandle(metaArgs.length, con.length, 1)) {
-                // List(), List(4,2), ..., List(4,2,...,4,2)
-                val conPaths = (0 until con.length).toList.map(i => (0 until i).toList.flatMap(_ => List(4,2)))
-                val conPos = conPaths.map(p => Position(5) / p / 4 / 1)
-                val scopePos = Position(5) / conPaths.last / 4 / 2
-                val tP = PragmaticTerm(op, metaArgs.map(Sub(OMV.anonymous, _)), con, List(scope), not, opMetaPos ::: conPos ::: List(scopePos))
-                Some(tP)
-             } else
-                None
-          } else None
-        }
-      }
-   }
+  protected def unbinding(t: Term): (Context, Term) = t match {
+    case OMA(OMS(meta.apply), OMS(obj.bind) :: List(a, OMBIND(OMS(meta.bind), Context(vd), s))) => unbinding(s) match {
+      case (con, scope) => (con ++ vd.copy(tp = Some(a)), scope)
+    }
+    case t => (Context(), t)
+  }
 }

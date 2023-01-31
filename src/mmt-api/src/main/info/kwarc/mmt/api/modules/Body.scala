@@ -99,7 +99,7 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
   def add(d : Declaration, at: AddPosition = AtEnd): Unit = {
     val existedAlready = addDecl(d)
     if (!existedAlready)
-      addRef(d, at, false)
+       addRef(d, at, false)
   }
 
   /** like add, but treats the second argument as the name of a [[NarrativeElement]] */

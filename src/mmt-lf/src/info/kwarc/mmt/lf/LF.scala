@@ -48,9 +48,7 @@ object Lambda extends LFSym("lambda") {
   def apply(name: LocalName, tp: Term, body: Term) = OMBIND(this.term, OMV(name) % tp, body)
   def apply(con: Context, body: Term) = OMBIND(this.term, con, body)
 
-  /**
-    * Behaves like [[apply(con, body)]] but returns `body` if `con` is empty.
-    */
+  // like apply, but skips the abstraction for empty context
   def applyOrBody(con: Context, body: Term): Term = if (con.isEmpty) body else apply(con, body)
 
   def unapply(t: Term): Option[(LocalName, Term, Term)] = t match {
@@ -62,6 +60,9 @@ object Lambda extends LFSym("lambda") {
       Some(n, a, newScope)
     case _ => None
   }
+
+  /** [x:tp] x */
+  def identity(tp: Term): Term = Lambda.apply(LocalName("x"), tp, OMV("x"))
 }
 
 /** provides apply/unapply methods for dependent function type formation
@@ -74,6 +75,9 @@ object Pi extends LFSym("Pi") {
   def apply(name: LocalName, tp: Term, body: Term) = OMBIND(this.term, OMV(name) % tp, body)
 
   def apply(con: Context, body: Term) = OMBIND(this.term, con, body)
+
+  // like apply, but skips the abstraction for empty context
+  def applyOrBody(con: Context, body: Term): Term = if (con.isEmpty) body else apply(con, body)
 
   def unapply(t: Term): Option[(LocalName, Term, Term)] = t match {
     case OMBIND(OMS(this.path), Context(VarDecl(n, None, Some(a), None, _), rest@_*), s) =>
@@ -112,6 +116,11 @@ object Arrow extends LFSym("arrow") {
 object Apply extends LFSym("apply") {
   def apply(f: Term, a: Term) = OMA(this.term, List(f, a))
 
+  def applyCurried(f: Term, as: List[Term]): Term = as match {
+    case Nil => f
+    case hd::tl => applyCurried(Apply(f,hd), tl)
+  }
+
   def unapply(t: Term): Option[(Term, Term)] = t match {
     case OMA(this.term, f :: a) =>
       if (a.length > 1) Some((OMA(this.term, f :: a.init), a.last))
@@ -123,22 +132,9 @@ object Apply extends LFSym("apply") {
 
 /** provides apply/unapply methods for application of a term to a list of arguments
   * the unapply method transparently handles associativity (currying) of application
-  *
-  * Deliberately does *not* handle empty argument lists!
-  * (Otherwise we would have ApplySpine.unapply(ApplySpine(f))) == None, a breach
-  *  of the apply/unapply idioms, I guess.)
   */
 object ApplySpine {
-  /**
-    * Applies an LF function `f` to a *non-empty* sequence of arguments `a`.
-    *
-    * The output is *not* curried, e.g. `apply(f, a, b) = OMA(?LFApply, f, a, b)`
-    * and not `OMA(OMA(?LFApply, f, a), b)` as one might expect.
-    *
-    * @see [[applyFullyCurried()]] if you want fully curried behavior
-    * @see [[applyOrSymbol()]] if you want the case of empty arguments be treated as just
-    *      returning `f` itself.
-    */
+  /** applies to a sequence of arguments (does not introduce currying) */
   def apply(f: Term, a: Term*): Term = OMA(Apply.term, f :: a.toList)
 
   def unapply(t: Term): Option[(Term, List[Term])] = t match {
@@ -149,110 +145,14 @@ object ApplySpine {
       }
     case _ => None
   }
-
-
-  /**
-    * Like [[apply]] but forces a fully curried representation.
-    * If in doubt, rather use [[apply]].
-    */
-  def applyFullyCurried(f: Term, a: List[Term]): Term = (a: @unchecked) match { // Scala cannot determine that this match is exhaustive
-    case Nil => throw ImplementationError("ApplySpine.applyFullyCurried called with no arguments")
-    case arg :: Nil => OMA(Apply.term, List(f, arg))
-    case args :+ arg => OMA(Apply.term, List(applyFullyCurried(f, args), arg))
-  }
-
-  /**
-    * Generalized apply/unapply functions from [[ApplySpine]] that also produce/match nullary application.
-    */
-  object orSymbol {
-    /**
-      * Applies an LF function `f` to a (possibly empty) sequence of arguments `a`.
-      *
-      * In case of no arguments, `f` itself is returned.
-      * Otherwise, the behavior equals [[ApplySpine.apply()]].
-      *
-      * @example Suppose you are writing code that synthesizes MMT terms at runtime. For example,
-      *          you might create constants (with path p) representing n-ary functions on-the-fly where n >= 0
-      *          is an integer.
-      *          Later on, you might decide to apply those functions to `arguments: List[Term]` that are synthesized,
-      *          too. Now, `arguments.size == n` should hold.
-      *          In case of `n == 0`, you want to output `OMS(p)`, in case of `n > 0`, you want to output
-      *          `ApplySpine(OMS(p), args : _*)`.
-      *          You can use this function to unify those cases:
-      *          {{{
-      *            ApplySpine.orSymbol(OMS(p), args : _ *)
-      *          }}}
-      */
-    def apply(f: Term, a: Term*): Term = if (a.isEmpty) f else ApplySpine(f, a : _*)
-
-    /**
-      * Matches `ApplySpine(f, args)` if possible and returns `(f, args)`, otherwise
-      * returns `(t, Nil)`.
-      *
-      * In particular, this function always matches! Beware of how you use it.
-      *
-      * @example Suppose you wanted to rewrite every reference of `p x y z`, where `p` stands for an [[OMS]]
-      *          of a [[GlobalName]] and `x`, `y`, `z` are arbitrary [[Term]]s.
-      *          E.g. the constant referenced by `p` had three parameters to begin with and you decided
-      *          to drop the first one. This would entail finding every pattern of `p x y z` and dropping
-      *          `x`.
-      *          But in terms you may also find the patterns `p`, `p x`, `p x y`.
-      *          To match all of those and `p x y z` uniformly, use this unapply function:
-      *
-      *          {{{
-      *            t match {
-      *              case ApplySymbol.orSymbol(OMS(`p`), args) => ???
-      *            }
-      *          }}}
-      */
-    def unapply(t: Term): Option[(Term, List[Term])] = t match {
-      case ApplySpine(f, args) => Some(f, args)
-      case t => Some(t, Nil)
-    }
-  }
 }
 
 /**
   * Helper object with apply/unapply for matching and constructing LF function types.
   *
   * The methods
-  * - automaticallycurry and uncurry.
-  * - and include the case n=0, in particular, unapply always matches!
-  *
-  * "Normal" LF function type:
-  * {{{
-  *    // Represent a1 -> ... -> an -> b
-  *    FunType(List((None, a1),...,(None, an)), b)
-  * }}}
-  *
-  * Dependently typed LF function type:
-  * {{{
-  *   // Pi x1:a1. ... Pi xn:an. b
-  *   FunType(List((Some(x1), a1),...,(Some(xn), an)), b)
-  * }}}
-  *
-  * You can also mix both styles.
-  *
-  * @example Say you want to check whether a given term (of a type component) is a function type to `prop`:
-  * {{{
-  *            val typeComponent: Term = ...
-  *            val propSymbol = GlobalName(...) // Give some specific MPath and LocalName
-  *            match typeComponent {
-  *              case FunType(args, OMS(propSymbol)) => ...
-  *              case _ => ...
-  *            }
-  * }}}
-  * @example Say you already have a type and now want to add dependent types in front of it
-  * {{{
-  *            // We have typeComponent and now want
-  *            // {x: S} typeComponent
-  *
-  *            val typeComponent: Term = ...
-  *            val dependentVariableType: Term = ...
-  *            val dependentTypes = List((Some(LocalName("x")), dependentVariableType))
-  *
-  *            val newTypeComponent = FunType(dependentTypes, typeComponent)
-  * }}}
+  * - automatically curry and uncurry.
+  * - include the case n=0, in particular, unapply always matches!
   */
 object FunType {
   def apply(in: List[(Option[LocalName], Term)], out: Term): Term = {
@@ -283,28 +183,7 @@ object FunType {
   }
 }
 
-/**
-  * Helper object with apply/unapply for matching and constructing LF functions, i.e. LF function type *inhabitants*.
-  *
-  * The methods automatically curry and uncurry.
-  *
-  * LF functions:
-  * {{{
-  *    // Represent [a1: t1] [a2: t2] ... [an: tn] b
-  *    // where ai is the bound variable and ti the given type
-  *    FunTerm(List((a1, t1), ..., (an, tn)), b)
-  * }}}
-  *
-  * @example Say you already have a (definiens) term and now want to add an abstraction over the variable `x`:
-  * {{{
-  *            val defComponent: Term = ...
-  *
-  *            val newTypeComponent = FunTerm(
-  *               List((LocalName("x"), typeOfX)),
-  *               defComponent
-  *            )
-  * }}}
-  */
+/** Like FunType but builds lambdas */
 object FunTerm {
   def apply(in: List[(LocalName, Term)], out: Term): Term = {
     in.foldRight(out)({
@@ -318,15 +197,10 @@ object FunTerm {
       Some((name, tp) :: remainingArgs, ultimateScope)
     case t => Some(Nil, t)
   }
-
-  /**
-    * Creates the identity function ''[x: tp] x''.
-    */
-  def identity(tp: Term): Term = Lambda.apply(LocalName("x"), tp, OMV("x"))
 }
 
 /**
-  * like ApplySpine, but also covers the case n=0, akin to FunType
+  * like ApplySpine, but covers the case n=0 akin to FunType
   *
   * note that ApplySpine(f, Nil) != ApplyGeneral(f, Nil)
   */

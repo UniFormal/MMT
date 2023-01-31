@@ -183,7 +183,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp, buildserver).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, lean, glf, lsp, buildserver).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -294,6 +294,10 @@ lazy val coq = (project in file("mmt-coq")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-coq"): _*)
 
+lazy val lean = (project in file("mmt-lean")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-lean"): _*)
+  
 lazy val lsp = (project in file("mmt-lsp")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lsp"): _*).
