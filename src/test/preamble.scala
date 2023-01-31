@@ -100,7 +100,7 @@ object MagicTest {
       home / "MMT" / "myformalizations", // Max Mac
 
       // Navid
-      home / "Desktop" / "mmt-archives",
+      home / "Desktop" / "kwarc" / "mmt-archives",
       // John
       home / "Documents" / "mmt_and_archives" / "archives",
       // alexander
