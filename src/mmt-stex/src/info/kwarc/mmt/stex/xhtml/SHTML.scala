@@ -447,17 +447,17 @@ trait SHTMLOSymbol extends SymbolLike {
       hoas.foreach(_.apply(c))
       if (macroname.nonEmpty) state.server.addMacroName(macroname,c)
       if (args.nonEmpty) state.server.addArity(args,c)
-      if (assoctype.nonEmpty) state.server.addAssoctype(assoctype,c)
-      if (reorderargs.nonEmpty) state.server.addReorder(reorderargs,c)
+      //if (assoctype.nonEmpty) state.server.addAssoctype(assoctype,c)
+      //if (reorderargs.nonEmpty) state.server.addReorder(reorderargs,c)
       doSourceRef(c)
       state.add(c)
       state.check(c)
-      if (assoctype == "pre") {
+      /*if (assoctype == "pre") {
         val rl = PreEqualRule.mpath
         val rc = RuleConstant(c.home,c.name / "pre_rule",OMA(OMMOD(rl),List(OMS(c.path))),None)
         state.add(rc)
         state.check(rc)
-      }
+      }*/
     }
   }
 }

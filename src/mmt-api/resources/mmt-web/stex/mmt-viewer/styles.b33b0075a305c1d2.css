@@ -13,6 +13,8 @@
     font-style: normal;
     font-weight: bold;
     font-size: xx-large;
+    margin-bottom: 50px;
+    margin-top: 50px;
 }
 .shtml-sec-part .shtml-title::before {
     content: 'Part ' counter(shtml-sec-part,upper-roman) '\a';
@@ -27,9 +29,11 @@
     font-style: normal;
     font-weight: bold;
     font-size: x-large;
+    margin-bottom: 20px;
+    margin-top: 20px;
 }
-.shtml-sec-part .shtml-title::before {
-    content: 'Chapter ' counter(shtml-sec-section,upper-roman);
+.shtml-sec-chapter .shtml-title::before {
+    content: 'Chapter ' counter(shtml-sec-chapter,upper-roman) ' - ';
     font-size: x-large;
     white-space: pre;
 }

@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
 import info.kwarc.mmt.odk.OpenMath.OMForeign
 import info.kwarc.mmt.stex.Extensions.{ImportStep, LateBinding, SectionStep, SlideStep, StatementStep}
+import info.kwarc.mmt.stex.rules.StringLiterals
 import info.kwarc.mmt.stex.{SHTML, SHTMLHoas}
 
 import scala.util.Try
@@ -525,6 +526,16 @@ case class SHTMLOMS(orig:HTMLNode) extends SHTMLNode(orig,Some("term"))
   override def copy: HTMLNode = SHTMLOMS(orig.copy)
 }
 
+case class SHTMLOMStr(orig:HTMLNode) extends SHTMLNode(orig,Some("omstr"))
+  with HTMLIsTerm {
+  val str = this.plain.attributes.getOrElse((HTMLParser.ns_shtml,"omstr"),"")
+  override def copy: HTMLNode = SHTMLOMStr(orig.copy)
+
+  override protected def getTermI: Option[Term] = {
+    Some(StringLiterals(str))
+  }
+}
+
 case class SHTMLOML(orig:HTMLNode) extends SHTMLNode(orig,Some("term"))
   with SHTMLOMIDorOMV with HTMLIsTerm with HasTypes with HasDefiniens {
   lazy val name = plain.attributes.get((HTMLParser.ns_shtml,"head")).map { s =>
@@ -673,6 +684,9 @@ abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(or
   removed ::= "id"
   id = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "id"), "")
 
+  removed ::= "inline"
+  val inline = this.plain.attributes.getOrElse((HTMLParser.ns_shtml,"inline"),"true").contains("true")
+
   var title : Option[SHTMLTitle] = None
 
   protected def copyII[A <: HTMLStatement](newst: A):A = {
@@ -685,8 +699,12 @@ abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(or
   }
 
   override def onAdd: Unit = {
+    if (id.isEmpty) {
+      id = this.hashCode().toHexString
+      this.plain.attributes((HTMLParser.ns_shtml,"id")) = id
+    }
     sstate.foreach { state =>
-      state.bindings.add(StatementStep)
+      if (!inline) state.bindings.add(StatementStep)
     }
     super.onAdd
   }
@@ -973,17 +991,21 @@ case class SHTMLProofBody(orig:HTMLNode) extends SHTMLNode(orig,Some("proofbody"
   def copy=SHTMLProofBody(orig.copy)
 }
 case class SHTMLFillInSol(orig:HTMLNode) extends SHTMLNode(orig,Some("fillinsol")){
-  def copy=SHTMLFillInSol(orig:HTMLNode)
+  def copy=SHTMLFillInSol(orig.copy)
 }
 case class SHTMLMCB(orig:HTMLNode) extends SHTMLNode(orig,Some("multiple-choice-block")){
-  def copy=SHTMLMCB(orig:HTMLNode)
+  def copy=SHTMLMCB(orig.copy)
 }
 case class SHTMLMCC(orig:HTMLNode) extends SHTMLNode(orig,Some("mcc")){
-  def copy=SHTMLMCC(orig:HTMLNode)
+  def copy=SHTMLMCC(orig.copy)
 }
 case class SHTMLMCSol(orig:HTMLNode) extends SHTMLNode(orig,Some("mcc-solution")){
-  def copy=SHTMLMCSol(orig:HTMLNode)
+  def copy=SHTMLMCSol(orig.copy)
 }
 case class SHTMLSolution(orig: HTMLNode) extends SHTMLNode(orig,Some("solution")){
-  def copy=SHTMLSolution(orig)
+  def copy=SHTMLSolution(orig.copy)
+}
+
+case class SHTMLIfInputref(orig:HTMLNode) extends SHTMLNode(orig,Some("ifinputref")){
+  def copy=SHTMLIfInputref(orig.copy)
 }

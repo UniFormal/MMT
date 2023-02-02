@@ -107,7 +107,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
         try {
           newobj(p._2, s, n)
         } catch {
-          case _ => None
+          case e =>
+            e.printStackTrace()
+            None
         }
       }
     }
@@ -473,13 +475,16 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   def present(str : String)(implicit withbindings : Option[LateBinding]) = {
+    val ifinputref = withbindings.isDefined
     val bindings = withbindings.getOrElse(new LateBinding)
     var statements : List[Statement] = Nil
     case class Statement(s : String,orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {super.onAdd}
       def copy = orig.copy
 
-      bindings.add(StatementStep)
+      val inline = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "inline"), "true").contains("true")
+
+      if (!inline) bindings.add(StatementStep)
       val styles = plain.attributes.getOrElse((HTMLParser.ns_shtml, "styles"), "").split(',').map(_.trim).toList.filterNot(_.isEmpty)
       plain.classes :::= ("shtml-" + s) :: styles.reverse.map(st => "shtml-" + s + "-" + st)
       val old = plain.attributes.getOrElse((plain.namespace,"style"),"")
@@ -550,6 +555,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     case class SecTitle(orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
         super.onAdd
+        if (this.label == "span") {this.plain._label = "div"}
         plain.classes ::= "shtml-title"
         if (isEmpty) plain.classes ::= "empty"
       }
@@ -725,6 +731,17 @@ trait SHTMLDocumentServer { this : STeXServer =>
     val ret = HTMLParser(str)(state)
     var toremoves: List[HTMLNode] = Nil
     ret.iterate{n =>
+      n.plain.attributes.get((HTMLParser.ns_shtml,"id")) match {
+        case Some(id) => n.plain.attributes((n.namespace,"id")) = id
+        case _ =>
+      }
+      n.plain.attributes.get((HTMLParser.ns_shtml,"ifinputref")) match {
+        case Some("true") if !ifinputref =>
+          toremoves ::= n
+        case Some("false") if ifinputref =>
+          toremoves ::= n
+        case _ =>
+      }
       n.plain._sourceref = None
       n.plain.attributes.keys.foreach {
         case (HTMLParser.ns_shtml, "visible") =>
@@ -925,8 +942,9 @@ class LateBinding {
     var slides = 0
     var topsect = -1
     def +=(c : Char) = sb += c
-    def mkString = topsect.toString + ";" + slides.toString + ";" +
-      Integer.toString(Integer.parseInt(sb.mkString,3),36)
+    def mkString = topsect.toString + ";" + slides.toString + ";" + {
+      BigInt(sb.mkString,3).toString(36)
+    }
   }
   private def toNumI(s : BindingStep)(implicit sb : StepBuilder,controller:Controller) : Unit = s match {
     case s : SectionStep =>
@@ -990,7 +1008,7 @@ object LateBinding {
       case Array(a, b, c) =>
         lb.topsec = a.toInt
         lb.slides = b.toInt
-        val num = Integer.toString(Integer.parseInt(c, 36), 3)
+        val num = BigInt(c.mkString, 36).toString(3)
         num.foreach(fromNumI)
       case _ =>
     }
