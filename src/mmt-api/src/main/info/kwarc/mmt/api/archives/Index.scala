@@ -29,7 +29,7 @@ trait GeneralImporter extends Extension {
           case SimpleStep(s) => s
           case _ => throw LocalError("document path contains complex step")
         }
-        FilePath(names)
+        if (names.isEmpty) FilePath("") else FilePath(names)
       case None => throw LocalError("document path must start with narration base")
     }
     val narrFile = (a / narration / docPath).setExtension("omdoc")

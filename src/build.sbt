@@ -183,7 +183,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, glf, lsp, buildserver).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, lean, glf, lsp, buildserver).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -294,6 +294,10 @@ lazy val coq = (project in file("mmt-coq")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-coq"): _*)
 
+lazy val lean = (project in file("mmt-lean")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-lean"): _*)
+  
 lazy val lsp = (project in file("mmt-lsp")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lsp"): _*).
@@ -498,12 +502,12 @@ lazy val stex = (project in file("mmt-stex")).
     libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.30",
 
     Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
-    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-queries-9.2.0.jar",
     Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
     Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
     Compile / unmanagedJars += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-core-9.2.0.jar",
-    Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-query-9.2.0.jar",
+    Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-queries-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-queryparser-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-sandbox-9.2.0.jar",
     Test / unmanagedJars += baseDirectory.value / "lib" / "lucene-grouping-9.2.0.jar",
