@@ -922,7 +922,6 @@ class LateBinding {
   def toNum(implicit controller:Controller) : String = {
     if (isEmpty) return topsec.toString + ";" + slides.toString + ";"
     implicit val sb : StepBuilder = new StepBuilder
-    sb.topsect = topsec
     steps.reverse.map(toNumI).mkString
     secs.reverse.foreach {s =>
       sb.sb += '1'
@@ -930,11 +929,12 @@ class LateBinding {
     }
     sb.mkString
   }
+  val sup = this
   private class StepBuilder {
     val sb : StringBuilder = new StringBuilder
-    var topsect = -1
+    var slides : Int = sup.slides
     def +=(c : Char) = sb += c
-    def mkString = topsect.toString + ";" + slides.toString + ";" + {
+    def mkString = topsec.toString + ";" + slides.toString + ";" + {
       LateBinding.encode(sb.mkString)
     }
   }
@@ -949,7 +949,9 @@ class LateBinding {
       sb += '0'
     case StatementStep => sb += '2'
     case ImportStep(d) => // TODO only if necessary
-      LateBinding.get(d).steps.reverse.foreach(toNumI)
+      val ib = LateBinding.get(d)
+      ib.steps.reverse.foreach(toNumI)
+      sb.slides += ib.slides
   }
   def merge(dp:DPath)(implicit controller:Controller) = {
     val lb = LateBinding.get(dp)//(lb : LateBinding) = {
