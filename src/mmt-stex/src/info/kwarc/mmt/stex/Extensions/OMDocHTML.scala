@@ -42,11 +42,13 @@ trait OMDocHTML { this : STeXServer =>
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + ns + "&language=" + lang)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
+              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
               ServerResponse(html, "text/html")
             } else {
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + s)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
+              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
               ServerResponse(html, "text/html")
             }
         }

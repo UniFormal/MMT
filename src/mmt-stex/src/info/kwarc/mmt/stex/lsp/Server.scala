@@ -397,7 +397,25 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
              var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
              html = html.replace("CONTENT_URL_PLACEHOLDER",(localServer / (":" + this.pathPrefix) / "document").toString + "?" + s )
              html = html.replace("BASE_URL_PLACEHOLDER","")
+             html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?" + s)
              ServerResponse(html, "text/html")
+         }
+       case Some("css") =>
+         request.query match {
+           case "" =>
+             ServerResponse("Empty Document path", "txt")
+           case s =>
+             self.documents.get(s) match {
+               case None =>
+                 ServerResponse("Empty Document path", "txt")
+               case Some(d) =>
+                 val ret = d.archive match {
+                   case None => ""
+                   case Some(a) =>
+                     stexserver.css(a.id)
+                 }
+                 ServerResponse(ret, "text/css")
+             }
          }
        case _ =>
          ServerResponse("Unknown key","txt")

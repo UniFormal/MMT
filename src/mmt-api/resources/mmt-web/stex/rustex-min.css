@@ -220,8 +220,10 @@ math {
     align-self: center;
     width:100%;
 }
-.inputref-container{
-    width:99%;
-    vertical-align: top;
-    display: inline-flex;
+.rustex-scaled{
+    width: var(--this-width);
+    min-width: var(--this-width);
+}
+.rustex-scaled>*:first-child {
+    --current-width:var(--this-width);
 }

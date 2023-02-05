@@ -1,10 +1,11 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.Presenter
-import info.kwarc.mmt.api.utils.{FilePath, MMTSystem, XMLEscaping}
+import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.{ExampleRelational, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
@@ -21,33 +22,6 @@ case class ErrorReturn(s : String) extends Throwable {
 
 class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML {
   def ctrl = controller
-
-  def resolveDocumentQuery(query : String) = query match {
-    case s if s.startsWith("group=") =>
-      val grp = s.drop(6)
-      (grp,None,FilePath(Nil))
-    case s if s.startsWith("archive=") =>
-      val (id,path) = {
-        s.drop(8).split('&') match {
-          case Array(s) => (s,FilePath(Nil))
-          case Array(s,r) if r.startsWith("filepath=") =>
-            (s,FilePath(r.drop(9).split('/').toList))
-          case _ =>
-            print("")
-            ???
-        }
-      }
-      val archive = controller.backend.getArchive(id) match {
-        case Some(a) => a
-        case _ => throw ErrorReturn("Archive " + id + " does not exist")
-      }
-      id.split('/') match {
-        case Array(grp,id) =>
-          (grp,Some(archive),path)
-        case Array(id) =>
-          ("",Some(archive),path)
-      }
-  }
 
   override def start(args: List[String]): Unit = {
     super.start(args)
@@ -68,11 +42,22 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
     controller.extman.addExtension(xhtmlPresenter)
   }
 
+  def iterateLibs(a : Archive)(fn : File => Unit): Unit = {
+    val lib = a.root / "lib"
+    if ((a.root / "lib").exists()) fn(lib)
+    def iter(f : File): Unit = if (f != RusTeX.mh && f != File("/")) {
+      val maybelib = f.up / "meta-inf" / "lib"
+      if (maybelib.exists()) fn(maybelib)
+      iter(f.up)
+    }
+    iter(a.root.up)
+  }
+
   lazy val htmlpres = new MMTsTeXPresenter(texPresenter,xhtmlPresenter)
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
-      case Some("document" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable") =>
+      case Some("document" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css") =>
         documentRequest(request)
       case Some("omdoc" | "omdocfrag" | "omdocuri") =>
         omdocRequest(request)

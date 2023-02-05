@@ -8,11 +8,14 @@ import info.kwarc.mmt.api.objects.{OMA, OMID, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
-import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
+import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse, WebQuery}
+import info.kwarc.mmt.stex.rules.NatLiterals
 import info.kwarc.mmt.stex.vollki.FullsTeXGraph
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.{ErrorReturn, SHTML, STeXServer}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, SHTMLFrame, SHTMLNode, SHTMLRule, SHTMLState}
+
+import scala.util.Try
 //import info.kwarc.mmt.stex.xhtml.{HTMLArg, HTMLComp, HTMLLanguageComponent, HTMLNode, HTMLParser, HasHead, NotationComponent}
 //import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
 
@@ -20,84 +23,66 @@ import scala.xml.parsing.XhtmlParser
 import scala.xml.{Elem, Node}
 
 trait SHTMLDocumentServer { this : STeXServer =>
-  protected def documentRequest(request: ServerRequest) : ServerResponse = {
-    var path = ""
-    implicit var lang : Option[String] = None
-    implicit var bindings : Option[LateBinding] = None
-    request.query.split('&').foreach {
-      case s if s.startsWith("language=") =>
-        if (s.length > 9) lang = Some(s.drop(9))
-      case s if s.startsWith("bindings=") =>
-        val is = s.drop(9)
-        bindings = Some(LateBinding.fromNum(is))
-      case s if s.startsWith("archive=") =>
-        path += s
-      case s if s.startsWith("filepath=") =>
-        path += "&" + s
-      case s => path = s
-    }
+  private case class DocParams(q: WebQuery) {
+    lazy val path = q.pairs.find(p => p._2.isEmpty && p._1.contains('?') && !p._1.endsWith("="))
+      .map(p => Path.parse(p._1))
+    lazy val language = q("language")
+    lazy val archive = q("archive").flatMap{id => controller.backend.getArchive(id)}
+    lazy val filepath = q("filepath")
+    lazy val bindings = q("bindings").map(LateBinding.fromNum)
+  }
+  private case class ErrorResponse(message:String) extends Throwable
+  protected def documentRequest(request: ServerRequest) : ServerResponse = try {
+    implicit val params : DocParams = DocParams(request.parsedQuery)
     request.path.lastOption match {
-      case Some("document") =>
-        path match {
-          case "" =>
-            ServerResponse("Empty Document path", "txt")
-          case s =>
-            val ret = doDocument(s)
-            val bd = ret.get("div")()("body").head
-            bd.plain.attributes.remove((bd.namespace, "style"))
-            bd.plain.attributes.remove((bd.namespace, "id"))
-            ServerResponse(ret.toString, "text/html")
-        }
-      case Some("documentTop") =>
-        request.query match {
-          case "" =>
-            ServerResponse("Empty Document path", "txt")
-          case s =>
-            ServerResponse(doDocument(s).toString, "text/html")
-        }
-      case Some("fragment") =>
-        request.query match {
-          case "" =>
-            ServerResponse("Empty fragment", "txt")
-          case ps =>
-            val npath = Path.parse(path)
-            doFragment(npath).getOrElse(
-              ServerResponse("Missing fragment","txt")
-            )
-        }
+      case Some("fulldocument") =>
+        var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+        html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/documentTop?" + request.query)
+        html = html.replace("BASE_URL_PLACEHOLDER", "")
+        html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
+        html = html.replace("CONTENT_CSS_PLACEHOLDER","/:" + this.pathPrefix + "/css?" + request.parsedQuery("archive").getOrElse(""))
+        ServerResponse(html, "text/html")
       case Some("symbol") =>
-        path match {
-          case "" =>
-            ServerResponse("Empty Document path", "txt")
-          case s =>
-            var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
-            html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/declaration?" + request.query)
-            html = html.replace("BASE_URL_PLACEHOLDER", "")
-            ServerResponse(html, "text/html")
-        }
+        var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+        html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/declaration?" + request.query)
+        html = html.replace("BASE_URL_PLACEHOLDER", "")
+        html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
+        ServerResponse(html, "text/html")
+      case Some("document") =>
+        val ret = doDocument
+        val bd = ret.get("div")()("body").head
+        bd.plain.attributes.remove((bd.namespace, "style"))
+        bd.plain.attributes.remove((bd.namespace, "id"))
+        ServerResponse(bd.toString.trim, "text/html")
+      case Some("documentTop") =>
+        ServerResponse(doDocument.toString.trim, "text/html")
+      case Some("fragment") =>
+        ServerResponse(doFragment.toString.trim, "text/html")
       case Some("declaration") =>
-        path match {
-          case "" =>
-            ServerResponse("Empty fragment", "txt")
-          case ps =>
-            val npath = Path.parse(path)
-            doDeclaration(npath)
-        }
+        doDeclaration
+      case Some("css") =>
+        ServerResponse(css(request.query),"text/css")
       case Some("variable") =>
         ServerResponse("<b>TODO</b>","text/html")
-      case Some("fulldocument") =>
-        path match {
-          case "" =>
-            ServerResponse("Empty Document path", "txt")
-          case s =>
-            var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
-            html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/documentTop?" + s)
-            html = html.replace("BASE_URL_PLACEHOLDER", "")
-            html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
-            ServerResponse(html, "text/html")
-        }
       case _ =>
         throw ErrorReturn("Unknown path: " + request.path.mkString)
+    }
+  } catch {
+    case ErrorResponse(s) =>
+    ServerResponse(s,"txt")
+  }
+  def css(a : String): String = {
+    controller.backend.getArchive(a) match {
+      case None => ""
+      case Some(a) =>
+        var retstr = ""
+        iterateLibs(a){f =>
+          val css = f / "lib.css"
+          if (css.exists()) {
+            retstr = File.read(css) + retstr
+          }
+        }
+        retstr
     }
   }
 
@@ -115,90 +100,54 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  def doDocument(uri: String)(implicit withbindings : Option[LateBinding],language: Option[String]) = {
-    val filecontent = getDocument(uri)
+  def doDocument(implicit dp:DocParams) = {
+    val filecontent = getDocument
     val body = filecontent.get("body")()().head
     body
   }
 
-  def getDocument(uri: String)(implicit withbindings : Option[LateBinding],language: Option[String]): HTMLNode = {
-    uri match {
-      case s if s.startsWith("group=") =>
-        val grp = s.drop(6)
-        val doc = this.emptydoc
-        doc._2.add(<b style="text-align: center">
-          {"Group: " + grp}
+  def getDocument(implicit dp:DocParams): HTMLNode = {
+    (dp.archive,dp.filepath) match {
+      case (None,_) => throw ErrorResponse("Archive not found")
+      case (Some(a),None) =>
+        val (doc, bd) = this.emptydoc
+        bd.add(<b style="text-align: center">
+          {a.id}
         </b>)
-        doc._1
-      case s if s.startsWith("archive=") =>
-        val (id, path) = {
-          s.drop(8).split('&') match {
-            case Array(s) => (s, FilePath(Nil))
-            case Array(s, r) if r.startsWith("filepath=") =>
-              (s, FilePath(r.drop(9).split('/').toList))
-            case _ =>
-              print("")
-              ???
-          }
+        a.properties.collectFirst {
+          case ("description", d) if (a.root / "META-INF" / d).exists() =>
+            bd.add(File.read(a.root / "META-INF" / d))
+          case ("description", d) if (a.root / "meta-inf" / d).exists() =>
+            bd.add(File.read(a.root / "meta-inf" / d))
+          case ("teaser", t) =>
+            bd.add("<div>" + t + "</div>")
         }
-        if (path.isEmpty) {
+        doc
+      case (Some(a),Some(path)) =>
+        val top = a / RedirectableDimension("xhtml")
+        val fn = top / path
+        if (fn.exists() && fn.isDirectory) {
+          if ((fn / "index.xhtml").exists()) {
+            val ret = present(File.read(fn / "index.xhtml"))(dp.bindings)
+            ret
+          } else {
+            val (doc, bd) = this.emptydoc
+            bd.add(<b>
+              {a.id + "/" + path}
+            </b>)
+            doc
+          }
+        } else if (fn.exists()) {
+          val ret = present(File.read(fn))(dp.bindings) //HTMLParser(fn)(state)
+          ret
+        }
+        else {
           val (doc, bd) = this.emptydoc
-          controller.backend.getArchive(id) match {
-            case None =>
-              bd.add(<b>
-                {"No archive with id " + id + " found!"}
-              </b>)
-            case Some(a) =>
-              bd.add(<b style="text-align: center">
-                {a.id}
-              </b>)
-              a.properties.collectFirst {
-                case ("description", d) if (a.root / "META-INF" / d).exists() =>
-                  bd.add(File.read(a.root / "META-INF" / d))
-                case ("description", d) if (a.root / "meta-inf" / d).exists() =>
-                  bd.add(File.read(a.root / "meta-inf" / d))
-                case ("teaser", t) =>
-                  bd.add("<div>" + t + "</div>")
-              }
-          }
+          bd.add(<b>
+            {"Document does not exist: " + a.id + "/" + path}
+          </b>)
           doc
-        } else {
-          controller.backend.getArchive(id) match {
-            case None =>
-              val (doc, bd) = this.emptydoc
-              bd.add(<b>
-                {"No archive with id " + id + " found!"}
-              </b>)
-              doc
-            case Some(a) =>
-              val top = a / RedirectableDimension("xhtml")
-              val fn = top / path
-              if (fn.exists() && fn.isDirectory) {
-                if ((fn / "index.xhtml").exists()) {
-                  val ret = present(File.read(fn / "index.xhtml"))
-                  ret
-                } else {
-                  val (doc, bd) = this.emptydoc
-                  bd.add(<b>
-                    {id + "/" + path}
-                  </b>)
-                  doc
-                }
-              } else if (fn.exists()) {
-                val ret = present(File.read(fn))//HTMLParser(fn)(state)
-                ret
-              }
-              else {
-                val (doc, bd) = this.emptydoc
-                bd.add(<b>
-                  {"Document does not exist: " + id + "/" + path}
-                </b>)
-                doc
-              }
-          }
         }
-      case _ =>
-        ???
     }
   }
 
@@ -296,22 +245,26 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  def doDeclaration(path: Path)(implicit withbindings : Option[LateBinding],language: Option[String]): ServerResponse = {
-    controller.getO(path) match {
-      case Some(c: Constant) =>
-        val (_, body) = this.emptydoc
-        body.add(doDeclHeader(c))
-        getFragment(path) match {
-          case Some(htm) =>
-            body.add(<hr/>)
-            body.add(htm)
+  def doDeclaration(implicit dp:DocParams): ServerResponse = {
+    dp.path match {
+      case None => throw ErrorResponse("Missing path")
+      case Some(path) =>
+        controller.getO(path) match {
+          case Some(c: Constant) =>
+            val (_, body) = this.emptydoc
+            body.add(doDeclHeader(c))
+            Try(getFragment).toOption match {
+              case Some(htm) =>
+                body.add(<hr/>)
+                body.add(htm)
+              case _ =>
+            }
+            ServerResponse("<body>" + body.toString.trim + "</body>", "text/html")
+          case Some(d) =>
+            ServerResponse("Not yet implemented: " + d.getClass.toString, "txt")
           case _ =>
+            ServerResponse("Declaration not found", "txt")
         }
-        ServerResponse("<body>" + body.toString + "</body>", "text/html")
-      case Some(d) =>
-        ServerResponse("Not yet implemented: " + d.getClass.toString, "txt")
-      case _ =>
-        ServerResponse("Declaration not found", "txt")
     }
   }
 
@@ -411,44 +364,43 @@ trait SHTMLDocumentServer { this : STeXServer =>
     </div>
   }
 
-  def doFragment(path: Path)(implicit withbindings : Option[LateBinding],language: Option[String]) = {
-    getFragment(path) match {
-      case Some(htm) =>
-        val (doc, body) = this.emptydoc
-        body.plain.attributes((HTMLParser.ns_html, "style")) = "background-color:white"
-        stripMargins(doc)
-        val border = body.add(<div style="font-size:small"/>)
-        //border.add(<font size="+2">{" ☞ "}</font>)
-        //border.add(<code>{path.toString}</code>)
-        //border.add(<hr/>)
-        border.add(htm)
-        val nbody = doc.get("body")()().head
-        Some(ServerResponse(nbody.toString, "text/html"))
-      case None =>
-        Some(ServerResponse("Empty fragment", "txt"))
-    }
+  def doFragment(implicit dp:DocParams) = {
+    val htm = getFragment
+    val (doc, body) = this.emptydoc
+    body.plain.attributes((HTMLParser.ns_html, "style")) = "background-color:white"
+    stripMargins(doc)
+    val border = body.add(<div style="font-size:small"/>)
+    //border.add(<font size="+2">{" ☞ "}</font>)
+    //border.add(<code>{path.toString}</code>)
+    //border.add(<hr/>)
+    border.add(htm)
+    doc.get("body")()().head
   }
 
-  def getFragment(path: Path)(implicit withbindings : Option[LateBinding],language : Option[String]) = {
-    path match {
-      case mp: MPath =>
+  def getFragment(implicit dp:DocParams) = {
+    val path = dp.path match {
+      case Some(mp: MPath) =>
         controller.simplifier(mp)
-      case gn: GlobalName =>
+        mp
+      case Some(gn: GlobalName) =>
         controller.simplifier(gn.module)
+        gn
+      case None => throw ErrorResponse("No path given")
     }
     controller.getO(path) match {
       case Some(elem) =>
         elem match {
           case c: Constant =>
-            Some(present(getFragmentDefault(c)))
+            present(getFragmentDefault(c))(dp.bindings)
           case _ =>
-            ???
+            throw ErrorResponse("No symbol with path " + path + " found")
         }
-      case _ => None
+      case _ =>
+        throw ErrorResponse("No symbol with path " + path + " found")
     }
   }
 
-  def getFragmentDefault(c : Constant)(implicit language:Option[String]) : String = {
+  def getFragmentDefault(c : Constant)(implicit dp:DocParams) : String = {
     this.getSymdocs(c.path) match { // TODO language
       case a :: _ => a.toString()
       case _ =>
@@ -479,8 +431,12 @@ trait SHTMLDocumentServer { this : STeXServer =>
     val bindings = withbindings.getOrElse(new LateBinding)
     var statements : List[Statement] = Nil
     case class Statement(s : String,orig: HTMLNode) extends SHTMLNode(orig) {
-      override def onAdd = {super.onAdd}
+      override def onAdd = {
+        super.onAdd
+        title.foreach(_.plain.classes ::= "shtml-title-" + s)
+      }
       def copy = orig.copy
+      var title:Option[STitle] = None
 
       val inline = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "inline"), "true").contains("true")
 
@@ -494,8 +450,8 @@ trait SHTMLDocumentServer { this : STeXServer =>
     case class STitle(orig : HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
         super.onAdd
-        plain.classes ::= "shtml-title"
         if (isEmpty) plain.classes ::= "empty"
+        findAncestor{case s:Statement => s}.foreach(_.title = Some(this))
       }
       def copy = STitle(orig.copy)
     }
@@ -510,28 +466,51 @@ trait SHTMLDocumentServer { this : STeXServer =>
         super.onAdd
       }
     }
-    case class Section(orig:HTMLNode) extends SHTMLNode(orig) {
-      val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "section")).map(_.trim.toInt)
+    case class SkipSection(orig:HTMLNode) extends SHTMLNode(orig) {
+      val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "skipsection")).map(_.trim.toInt)
 
       def init = {
-        bindings.add(new SectionStep(lvl.getOrElse(-1)))
-        val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
-        bindings.currlvl match {
-          case 1 =>
-            this.plain.classes ::= "shtml-sec-part"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-part " + bindings.secnum.toString + ";" + old
-          case 2 =>
-            this.plain.classes ::= "shtml-sec-chapter"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-chapter " + bindings.secnum.toString + ";" + old
-          case 3 =>
-            this.plain.classes ::= "shtml-sec-section"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-section " + bindings.secnum.toString + ";" + old
-          case 4 =>
-            this.plain.classes ::= "shtml-sec-subsection"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-subsection " + bindings.secnum.toString + ";" + old
-          case _ =>
+        bindings.add(new BlindSectionStep(lvl.getOrElse(-1)))
+      }
+
+      override def onAdd: Unit = {
+        super.onAdd
+        bindings.close
+      }
+
+      override def copy = {
+        new SkipSection(orig.copy) {
+          override def init = {}
         }
       }
+
+      init
+    }
+
+      case class Section(orig: HTMLNode) extends SHTMLNode(orig) {
+        val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "section")).map(_.trim.toInt)
+
+        def init = {
+          bindings.add(new SectionStep(lvl.getOrElse(-1)))
+          val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
+          bindings.currlvl match {
+            case 1 =>
+              this.plain.classes ::= "shtml-sec-part"
+              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-part " + bindings.secnum.toString + ";" + old
+            case 2 =>
+              this.plain.classes ::= "shtml-sec-chapter"
+              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-chapter " + bindings.secnum.toString + ";" + old
+            case 3 =>
+              this.plain.classes ::= "shtml-sec-section"
+              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-section " + bindings.secnum.toString + ";" + old
+            case 4 =>
+              this.plain.classes ::= "shtml-sec-subsection"
+              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-subsection " + bindings.secnum.toString + ";" + old
+            case _ =>
+              this.plain.classes ::= "shtml-sec-paragraph"
+              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-paragraph " + bindings.secnum.toString + ";" + old
+          }
+        }
       override def onAdd: Unit = {
         super.onAdd
         bindings.close
@@ -555,9 +534,12 @@ trait SHTMLDocumentServer { this : STeXServer =>
     case class SecTitle(orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
         super.onAdd
-        if (this.label == "span") {this.plain._label = "div"}
-        plain.classes ::= "shtml-title"
-        if (isEmpty) plain.classes ::= "empty"
+        val n = if (this.plain.parent.exists(_.plain.classes.contains("paragraph"))) {
+          this.plain.parent.get
+        } else this
+        if (n.label == "span") {n.plain._label = "div"}
+        n.plain.classes ::= "shtml-sectitle"
+        if (n.isEmpty) n.plain.classes ::= "empty"
       }
 
       def copy = SecTitle(orig.copy)
@@ -687,6 +669,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       PresentationRule("statementtitle", (_, _, node) => Some(STitle(node))),
       PresentationRule("sectiontitle", (_, _, node) => Some(SecTitle(node))),
       PresentationRule("section", (_, _, node) => Some(Section(node))),
+      PresentationRule("skipsection", (_, _, node) => Some(SkipSection(node))),
       PresentationRule("sectionlevel",(s,_,n) => Some(SectionLevel(s.toInt,n))),
       PresentationRule("term", (_, _, node) => {
         overlay(node);
@@ -720,7 +703,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
                 this.getTitle(d).foreach(n => node.add(n))
               case _ =>
             }
-            bindings.merge(LateBinding.get(dp)(controller))
+            bindings.merge(dp)(controller)//LateBinding.get(dp)(controller))
           case _ =>
         }
         None
@@ -867,7 +850,7 @@ sealed trait BindingStep {
   def term : Term
 }
 class LateBinding {
-  private var secs: List[SectionStep] = Nil
+  private var secs: List[SectionStepLike] = Nil
   var topsec = -1
   private var steps: List[BindingStep] = Nil
   private[Extensions] var slides : Int = 0
@@ -892,7 +875,16 @@ class LateBinding {
         case (-1,i) => topsec = i
         case _ =>
       }
-      if (secnum < 4) nextstatement = 0
+      if (currlvl < 4) nextstatement = 0
+    case s:BlindSectionStep =>
+      secs ::= s
+      seccounts = 0 :: seccounts
+      (topsec, s.lvl) match {
+        case (-1, -1) => topsec = 0
+        case (-1, i) => topsec = i
+        case _ =>
+      }
+      //if (secnum < 4) nextstatement = 0
     case SlideStep => slides += 1
     case StatementStep =>
       nextstatement += 1
@@ -912,6 +904,7 @@ class LateBinding {
     ???
   } else {
     val s = secs.head
+    if (currlvl < 4) s.steps = Nil
     secs = secs.tail
     seccounts = seccounts.tail
     secs match {
@@ -924,7 +917,7 @@ class LateBinding {
     "(" + s.steps.reverse.map(_.toString).mkString
   }.mkString
 
-  def term = OMA(OMS(LateBinding.sym),steps.reverse.map(_.term))
+  def term = OMA(OMS(LateBinding.sym),NatLiterals(slides) :: steps.reverse.map(_.term))
 
   def toNum(implicit controller:Controller) : String = {
     if (isEmpty) return topsec.toString + ";" + slides.toString + ";"
@@ -939,11 +932,10 @@ class LateBinding {
   }
   private class StepBuilder {
     val sb : StringBuilder = new StringBuilder
-    var slides = 0
     var topsect = -1
     def +=(c : Char) = sb += c
     def mkString = topsect.toString + ";" + slides.toString + ";" + {
-      BigInt(sb.mkString,3).toString(36)
+      LateBinding.encode(sb.mkString)
     }
   }
   private def toNumI(s : BindingStep)(implicit sb : StepBuilder,controller:Controller) : Unit = s match {
@@ -951,27 +943,59 @@ class LateBinding {
       sb += '1'
       s.steps.reverse.foreach(toNumI)
       sb += '0'
+    case s: BlindSectionStep =>
+      sb += '3'
+      s.steps.reverse.foreach(toNumI)
+      sb += '0'
     case StatementStep => sb += '2'
     case ImportStep(d) => // TODO only if necessary
       LateBinding.get(d).steps.reverse.foreach(toNumI)
   }
-  def merge(lb : LateBinding) = {
+  def merge(dp:DPath)(implicit controller:Controller) = {
+    val lb = LateBinding.get(dp)//(lb : LateBinding) = {
     lb.steps.reverse.foreach(mergeI)
-    lb.secs.reverse.foreach(secs ::= _)
+    lb.secs.reverse.foreach{s =>
+      add(s)
+      s.steps.reverse.foreach(mergeI)
+    }
     slides += lb.slides
     if (topsec == -1) topsec = lb.topsec
   }
-  def mergeI(s : BindingStep) : Unit = s match {
+  def mergeI(s : BindingStep)(implicit controller:Controller) : Unit = s match {
     case ss : SectionStep =>
-      add(ss)
+      add(new SectionStep(ss.lvl))
       ss.steps.reverse.foreach(mergeI)
       close
+    case ss : BlindSectionStep =>
+      add(new BlindSectionStep(ss.lvl))
+      ss.steps.reverse.foreach(mergeI)
+      close
+    case ImportStep(path) =>
+      merge(path)
     case i => add(i)
   }
 
 }
 object LateBinding {
   val sym = SHTML.mmtmeta_path ? "bindings"
+
+  private val str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  private def radixify(i : BigInt): String = {
+    if (i < 62) str(i.toInt).toString else {
+      val r = (i % 62).toInt
+      val d = i / 62
+      radixify(d) + str(r).toString
+    }
+  }
+  private def deradixify(s : String): BigInt = {
+    if (s.isEmpty) BigInt(0) else if (s.length == 1) {
+      BigInt(str.indexOf(s.head))
+    } else {
+      (deradixify(s.init) * 62) + str.indexOf(s.last)
+    }
+  }
+  def encode(s : String) = radixify(BigInt(s,4))
+  def decode(s : String) = deradixify(s).toString(4)
 
   def get(dp : DPath)(implicit controller:Controller) = {
     controller.getO(dp) match {
@@ -1008,7 +1032,7 @@ object LateBinding {
       case Array(a, b, c) =>
         lb.topsec = a.toInt
         lb.slides = b.toInt
-        val num = BigInt(c.mkString, 36).toString(3)
+        val num = decode(c)
         num.foreach(fromNumI)
       case _ =>
     }
@@ -1019,11 +1043,13 @@ object LateBinding {
     case '0' => lb.close
     //case '2' => lb.add(SlideStep)
     case '2' => lb.add(StatementStep)
+    case '3' => lb.add(new BlindSectionStep(-1))
   }
 
   def fromTerm(tm : Term) : Option[LateBinding] = tm match {
-    case OMA(OMS(`sym`),ls) =>
+    case OMA(OMS(`sym`),NatLiterals(i) :: ls) =>
       implicit val lb : LateBinding = new LateBinding
+      lb.slides = i.toInt
       try {
         ls.foreach(fromTermI)
       } catch {
@@ -1038,6 +1064,10 @@ object LateBinding {
       lb.add(new SectionStep(-1))
       ls.foreach(fromTermI)
       lb.close
+    case OMA(OMS(SectionStep.blind), ls) =>
+      lb.add(new BlindSectionStep(-1))
+      ls.foreach(fromTermI)
+      lb.close
     case OMS(SlideStep.sym) =>
       lb.add(SlideStep)
     case OMS(StatementStep.sym) =>
@@ -1047,14 +1077,22 @@ object LateBinding {
     case _ => throw Cancel
   }
 }
-class SectionStep(val lvl : Int) extends BindingStep {
+trait SectionStepLike extends BindingStep {
+  private[Extensions] var steps: List[BindingStep] = Nil
+
+}
+class SectionStep(val lvl : Int) extends SectionStepLike {
   def term = OMA(OMS(SectionStep.sym), steps.reverse.map(_.term))
 
-  private[Extensions] var steps: List[BindingStep] = Nil
   override def toString: String = "(" + steps.reverse.map(_.toString).mkString + ")"
+}
+class BlindSectionStep(val lvl : Int) extends SectionStepLike {
+  def term = OMA(OMS(SectionStep.blind), steps.reverse.map(_.term))
+  override def toString: String = "[" + steps.reverse.map(_.toString).mkString + "]"
 }
 object SectionStep {
   val sym = SHTML.mmtmeta_path ? "bindings/section"
+  val blind = SHTML.mmtmeta_path ? "bindings/blindsection"
 
 }
 case object SlideStep extends BindingStep {

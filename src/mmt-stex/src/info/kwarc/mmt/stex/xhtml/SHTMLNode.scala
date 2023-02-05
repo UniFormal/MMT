@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMFOREIGN, OM
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
 import info.kwarc.mmt.odk.OpenMath.OMForeign
-import info.kwarc.mmt.stex.Extensions.{ImportStep, LateBinding, SectionStep, SlideStep, StatementStep}
+import info.kwarc.mmt.stex.Extensions.{BlindSectionStep, ImportStep, LateBinding, SectionStep, SlideStep, StatementStep}
 import info.kwarc.mmt.stex.rules.StringLiterals
 import info.kwarc.mmt.stex.{SHTML, SHTMLHoas}
 
@@ -874,7 +874,26 @@ class SHTMLFrame(orig : HTMLNode) extends SHTMLNode(orig, Some("frame")) {
 case class SHTMLFrameNumber(orig:HTMLNode) extends SHTMLNode(orig,Some("framenumber")) {
   def copy = SHTMLFrameNumber(orig.copy)
 }
+case class SHTMLBlindSection(orig:HTMLNode) extends SHTMLNode(orig,Some("skipsection")) {
+  val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "skipsection")).map(_.trim.toInt)
+  def init = sstate.foreach { state =>
+    state.bindings.add(new BlindSectionStep(lvl.getOrElse(-1)))
+  }
 
+  override def onAdd: Unit = {
+    super.onAdd
+    sstate.foreach(_.bindings.close)
+  }
+
+  override def copy = {
+    val ret = new SHTMLBlindSection(orig.copy) {
+      override def init = {}
+    }
+    ret
+  }
+
+  init
+}
 case class SHTMLSection(orig: HTMLNode) extends SHTMLNode(orig,Some("section")) {
   val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "section")).map(_.trim.toInt)
   def init = sstate.foreach{state =>

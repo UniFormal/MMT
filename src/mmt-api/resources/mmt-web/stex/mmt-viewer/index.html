@@ -8,8 +8,6 @@
       var bodyelem = document.getElementById('rustexbody');
       var parent = bodyelem.offsetParent.offsetParent;
       var pwidth = parent.offsetWidth - ((Number(bodyelem.style.paddingLeft.replace(/px$/, '')) + Number(bodyelem.style.paddingRight.replace(/px$/, ''))));
-      /*var docwidth = Number(window.getComputedStyle(bodyelem, null).getPropertyValue("width").replace(/px$/,"")); //bodyelem.offsetWidth;// - ((Number(bodyelem.style.paddingLeft.replace(/px$/, '')) + Number(bodyelem.style.paddingRight.replace(/px$/, ''))));
-      var offwidth = bodyelem.offsetWidth*/
       var maxwidth = Number(bodyelem.style.maxWidth.replace(/px$/, ''));
       if (pwidth < maxwidth) {
         bodyelem.style.setProperty('--current-width',pwidth + "px");
@@ -36,10 +34,12 @@
   <title>sTeX Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="/stex/mmt-viewer/styles.b33b0075a305c1d2.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.4946e0893fa5d8cd.css"></head>
+<link rel="stylesheet" href="/stex/mmt-viewer/styles.fa3cb0c23ee4b300.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.4946e0893fa5d8cd.css">
+<link rel="stylesheet" href="CONTENT_CSS_PLACEHOLDER">
+</head>
 
 <body>
   <div id="root"></div>
-<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.e7ea3970f35d3a98.js" type="module"></script><script src="/stex/mmt-viewer/main.4114298f48aa4c42.js" type="module"></script></body>
+<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.e7ea3970f35d3a98.js" type="module"></script><script src="/stex/mmt-viewer/main.7a0578ec5536e238.js" type="module"></script></body>
 
 </html>
