@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.rules
 import info.kwarc.mmt.api.{ParametricRule, Rule, RuleSet}
 import info.kwarc.mmt.api.checking.{History, InferenceAndTypingRule, InhabitableRule, Solver, SubtypingRule, UniverseRule}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects.{Stack, Term}
+import info.kwarc.mmt.api.objects.{Stack, Term, Typing}
 
 object UniverseRule extends ParametricRule {
   case class UnivRule(pattern : Pattern) extends UniverseRule(pattern.head) with UsesPatterns {
@@ -50,6 +50,15 @@ object HasType extends ParametricRule {
         }
         (tp,Some(true))
       case (tmp(ls),None) =>
+        if (!covered) {
+          ls.foreach {
+            case (ov, tm) =>
+              tmp.variables.find(_._1 == ov).map(_._2).get match {
+                case Some(tp) => solver.check(Typing(stack,tm,tp))
+                case None => solver.inferType(tm,covered)
+              }
+          }
+        }
         val ret = tpp.instantiate(ls)
         (ret,ret.map(_ => true))
       case _ => (None,None)

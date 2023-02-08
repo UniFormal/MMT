@@ -133,6 +133,9 @@ trait SymDeclRuleLike extends MacroRule {
         case s if s.startsWith("argtypes=") =>
           ret = ret.filterNot(_ == l)
         // TODO
+        case s if s.startsWith("role=") =>
+          ret = ret.filterNot(_ == l)
+        // TODO
         case s if s.startsWith("op=") || s.startsWith("prec=") || !s.contains('=') =>
         case _ =>
           print("")
@@ -694,6 +697,8 @@ case class ProofMacro(name : String) extends MacroRule with ProofLike {
 case class MMTInterfaceRule(dict:Dictionary) extends EnvironmentRule("mmtinterface") {
   override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
     var children: List[TeXTokenLike] = Nil
+    val (opts, cho) = readOptArg
+    children = cho
     val (nametk,ch) = readArg
     children = ch
     val (pathstr,ch2) = readArg

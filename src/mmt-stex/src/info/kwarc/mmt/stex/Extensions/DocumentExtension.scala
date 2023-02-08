@@ -29,10 +29,15 @@ trait SHTMLDocumentServer { this : STeXServer =>
     lazy val language = q("language")
     lazy val archive = q("archive").flatMap{id => controller.backend.getArchive(id)}
     lazy val filepath = q("filepath")
-    lazy val bindings = q("bindings").map(LateBinding.fromNum)
+    lazy val bindings = {
+      val bnds = q("bindings").map(LateBinding.fromNum)
+      log("Bindings: " + q("bindings") + " --> " + bnds.map(_.toString).getOrElse("None"))
+      bnds
+    }
   }
   private case class ErrorResponse(message:String) extends Throwable
   protected def documentRequest(request: ServerRequest) : ServerResponse = try {
+    log("Here: " + request.query + "\n" + request.parsedQuery.pairs.map(p => p._1 + " == " + p._2).mkString("\n"))
     implicit val params : DocParams = DocParams(request.parsedQuery)
     request.path.lastOption match {
       case Some("fulldocument") =>
@@ -493,6 +498,10 @@ trait SHTMLDocumentServer { this : STeXServer =>
         def init = {
           bindings.add(new SectionStep(lvl.getOrElse(-1)))
           val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
+          withbindings match {
+            case Some(wb) => plain.attributes((plain.namespace,"data-with-bindings")) = bindings.toString
+            case None => plain.attributes((plain.namespace,"data-with-bindings")) = "None"
+          }
           bindings.currlvl match {
             case 1 =>
               this.plain.classes ::= "shtml-sec-part"
@@ -920,7 +929,7 @@ class LateBinding {
   def term = OMA(OMS(LateBinding.sym),NatLiterals(slides) :: steps.reverse.map(_.term))
 
   def toNum(implicit controller:Controller) : String = {
-    if (isEmpty) return topsec.toString + ";" + slides.toString + ";"
+    if (isEmpty) return topsec.toString + "_" + slides.toString + "_"
     implicit val sb : StepBuilder = new StepBuilder
     steps.reverse.map(toNumI).mkString
     secs.reverse.foreach {s =>
@@ -934,7 +943,7 @@ class LateBinding {
     val sb : StringBuilder = new StringBuilder
     var slides : Int = sup.slides
     def +=(c : Char) = sb += c
-    def mkString = topsec.toString + ";" + slides.toString + ";" + {
+    def mkString = topsec.toString + "_" + slides.toString + "_" + {
       LateBinding.encode(sb.mkString)
     }
   }
@@ -1027,7 +1036,7 @@ object LateBinding {
 
   def fromNum(s: String): LateBinding = {
     implicit val lb: LateBinding = new LateBinding
-    s.split(';') match {
+    s.split('_') match {
       case Array(a,b) =>
         lb.topsec = a.toInt
         lb.slides = b.toInt

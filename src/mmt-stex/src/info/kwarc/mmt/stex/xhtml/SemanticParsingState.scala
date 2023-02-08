@@ -42,7 +42,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
       new MutableRuleSet
   }
   def applyTerm(tm: Term)(implicit self:SHTMLNode): Term = {
-    val rules = getRules(self.getRuleContext).get(classOf[HTMLTermRule])
+    val rules = getRules(self.getRuleContext).get(classOf[HTMLTermRule]).toList.sortBy(_.priority)
     rules.foldLeft(tm)((it,f) => f.apply(it)(this,self,applyTerm(_)).getOrElse(it))
   }
 
@@ -87,9 +87,9 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
               implbinds ++= vd
             case None =>
               val tpn = getUnknownTp
-              nobinds ::= tpn
               tosolves ++= VarDecl(tpn)
-              implbinds ++= VarDecl(x, OMV(tpn))
+              val vd = VarDecl(x, OMV(tpn))
+              implbinds ++= vd//OMV(tpn))
           }
           v
         case _ => Traverser(this,t)
@@ -103,9 +103,10 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
       }
     }
     ntm = trav1(ntm,())
+    tosolves = tosolves.distinct
     implbinds = implbinds.sortBy(vd => self.getVariableContext.indexOf(vd) match {case -1 => 10000 case i => i})
     ntm = trav2(SHTML.implicit_binder(implbinds,ntm),())
-    if (tosolves.isEmpty) ntm else OMBIND(OMS(ParseResult.unknown),tosolves.distinct,ntm)
+    if (tosolves.isEmpty) ntm else OMBIND(OMS(ParseResult.unknown),tosolves,ntm)
 /*
     val implctx = mutable.Map.empty[LocalName, (Term,Option[Term])]
 

@@ -7,10 +7,10 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMMOD, OMS, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude, RuleConstant, RuleConstantInterpreter, Structure}
-import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, Path, Rule, RuleSet, StructuralElement}
+import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, ParametricRule, Path, Rule, RuleSet, StructuralElement}
 import info.kwarc.mmt.stex.Extensions.LateBinding
 import info.kwarc.mmt.stex.{SCtx, SHTML, SHTMLHoas, STeXServer, STerm}
-import info.kwarc.mmt.stex.rules.{BindingRule, ModelsOf, PreEqualRule, RulerRule, StringLiterals}
+import info.kwarc.mmt.stex.rules.{BinRRule, BindingRule, ConjRule, ModelsOf, PreEqualRule, PreRule, Reorder, RulerRule, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
 import scala.collection.mutable
@@ -428,6 +428,13 @@ trait SymbolLike extends HasTypes with HasDefiniens with HasMacroName with HasRo
           Some(rt)
       }
   }
+
+  def addRule(c: Constant, name: String, rule: ParametricRule, args: List[Term]): Unit = sstate.foreach { state =>
+    val rl = rule.mpath
+    val rc = RuleConstant(c.home, LocalName(c.name.toString + "_$_" + name), OMA(OMMOD(rl), args), None)
+    state.add(rc)
+    state.check(rc)
+  }
 }
 trait SHTMLOSymbol extends SymbolLike {
   val path : GlobalName
@@ -449,15 +456,23 @@ trait SHTMLOSymbol extends SymbolLike {
       if (args.nonEmpty) state.server.addArity(args,c)
       //if (assoctype.nonEmpty) state.server.addAssoctype(assoctype,c)
       //if (reorderargs.nonEmpty) state.server.addReorder(reorderargs,c)
+      if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, c)
+      if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, c)
       doSourceRef(c)
       state.add(c)
       state.check(c)
-      /*if (assoctype == "pre") {
-        val rl = PreEqualRule.mpath
-        val rc = RuleConstant(c.home,c.name / "pre_rule",OMA(OMMOD(rl),List(OMS(c.path))),None)
-        state.add(rc)
-        state.check(rc)
-      }*/
+      /*if (reorderargs.nonEmpty) addRule(c, "reorder", Reorder, List(StringLiterals(reorderargs)))
+      assoctype match {
+        case "" =>
+        case "pre" =>
+          addRule(c, "pre", PreRule, List(c.toTerm))
+        case "conj" =>
+          addRule(c, "conj", ConjRule, List(c.toTerm))
+        case "bin"|"binr" =>
+          addRule(c, "binr", BinRRule, List(c.toTerm))
+        case _ =>
+          print("TODO")
+      } */
     }
   }
 }
@@ -514,6 +529,8 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         hoas.foreach(_.apply(vd))
         if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
         if (args.nonEmpty) state.server.addArity(args, vd)
+        if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, vd)
+        if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
         doSourceRef(vd)
         if (bind) state.markAsBound(vd)
         gr.variables ++= vd

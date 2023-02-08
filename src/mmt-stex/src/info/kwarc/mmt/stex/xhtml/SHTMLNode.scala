@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.xhtml
 import info.kwarc.mmt.api.documents.{DRef, Document, SectionLevel}
 import info.kwarc.mmt.api.{DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.metadata.HasMetaData
-import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMFOREIGN, OML, OMMOD, OMS, OMV, Term}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMFOREIGN, OML, OMMOD, OMS, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
 import info.kwarc.mmt.odk.OpenMath.OMForeign
@@ -53,7 +53,7 @@ abstract class SHTMLNode(orig: HTMLNode,val key : Option[String] = None) extends
         def filter(n: HTMLNode): Boolean = n match {
           case t: HTMLText if t.text == "&#8205;" => false
           case t: HTMLText if t.text == "&#160;" => false
-          case n: HTMLPlainNode if n.label == "mrow" => n._children.exists {
+          case n: HTMLPlainNode if n.label == "mrow" && n.attributes.keys.forall(_._1 != HTMLParser.ns_shtml) => n._children.exists {
             case t: HTMLText if t.text == "&#8205;" => false
             case _ => true
           }
@@ -291,7 +291,8 @@ case class SHTMLBind(name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some(
     }.foreach {gl =>
       val vars = gl.getVariables
       vars.findLast(_.name == name).foreach{ vd =>
-        val nvd = state.markAsBound(vd.copy())
+        val nvd = state.markAsBound(VarDecl(vd.name,vd.feature,vd.tp,vd.df,vd.not))
+        vd.metadata.getAll.foreach(nvd.metadata.update)
         gl.variables ++= nvd
       }
     }
@@ -387,20 +388,24 @@ case class SHTMLConclusion(orig:HTMLNode) extends SHTMLNode(orig,Some("conclusio
               state.getO(p) match {
                 case Some(c : Constant) =>
                   var judg: Option[(Term,Option[SHTMLHoas.HoasRule])] = None
-                  try {
-                    self.getRuleContext.getIncludes.foreach { i =>
-                      state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
-                        case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("judgment") =>
-                          state.getRuler(c.toTerm) match {
-                            case Some(r) =>
-                              judg = Some((c.toTerm, SHTMLHoas.get(r)))
-                            case _ => judg = Some((c.toTerm, None))
+                  findAncestor {case st : HTMLStatement => st} match {
+                    case Some(s) if s.styles.contains("decl") =>
+                    case _ =>
+                      try {
+                        self.getRuleContext.getIncludes.foreach { i =>
+                          state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
+                            case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("judgment") =>
+                              state.getRuler(c.toTerm) match {
+                                case Some(r) =>
+                                  judg = Some((c.toTerm, SHTMLHoas.get(r)))
+                                case _ => judg = Some((c.toTerm, None))
+                              }
+                            case _ =>
                           }
-                        case _ =>
+                        }
+                      } catch {
+                        case e: info.kwarc.mmt.api.Error => state.error(e)
                       }
-                    }
-                  } catch {
-                    case e : info.kwarc.mmt.api.Error => state.error(e)
                   }
                   def doTerm(tm : Term) : Term = tm match {
                     case OMBIND(OMS(ParseResult.unknown),ctx,bd) =>
@@ -851,7 +856,7 @@ case class SHTMLAssignment(path: GlobalName, orig: HTMLNode) extends SHTMLNode(o
           val nc = Constant(orig.home, orig.name, orig.alias, orig.tp, Some(state.applyTopLevelTerm(defi)), orig.rl)
           nc.metadata = orig.metadata
           state.update(nc)
-          state.check(nc)
+          //state.check(nc)
         }
       }
     }

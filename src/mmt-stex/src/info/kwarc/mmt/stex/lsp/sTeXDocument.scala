@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument, LSPServer}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
@@ -64,9 +65,6 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
     eh.open
   }
 
-
-
-
   def parsingstate(eh: STeXLSPErrorHandler) = {
     new SemanticState(server.stexserver,server.stexserver.importRules,eh,DPath(URI(uri)))
   }
@@ -124,7 +122,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
     }
   }
 
-  override val timercount: Int = 10
+  override val timercount: Int = 0
   override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
     Annotations.notifyOnChange()
   }

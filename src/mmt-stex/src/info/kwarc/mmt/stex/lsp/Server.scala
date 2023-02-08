@@ -12,8 +12,8 @@ import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams, WorkspaceFoldersOptions, WorkspaceServerCapabilities, WorkspaceSymbol, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest, JsonSegment}
 
-import java.util.concurrent.CompletableFuture
-import scala.concurrent.Future
+import java.util.concurrent.{CompletableFuture, TimeUnit}
+import scala.concurrent.{Await, Future}
 
 class MainFileMessage {
   var mainFile: String = null
@@ -61,6 +61,7 @@ class BuildMessage {
 trait STeXClient extends LSPClient {
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
   @JsonRequest def openFile(msg:HTMLUpdateMessage): CompletableFuture[Unit]
+  @JsonRequest def ping(): CompletableFuture[String]
   @JsonNotification def updateMathHub(): Unit
 }
 final class STeXLSPWebSocket extends SandboxedWebSocket(classOf[STeXClient],classOf[STeXLSPServer]) {
@@ -294,12 +295,25 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
 
    private var bootToken : Option[Int] = None
+   def doPing: Unit = Future {
+     Thread.sleep(10000)
+     while (true) {
+       Thread.sleep(1000)
+       try {
+         client.client.ping().get(3, TimeUnit.SECONDS)
+       } catch {
+         case _: java.util.concurrent.TimeoutException =>
+           sys.exit()
+       }
+     }
+   }(scala.concurrent.ExecutionContext.global)
 
    override def initialized(params: InitializedParams): Unit = {
      super.initialized(params)
      bootToken = Some(params.hashCode())
      controller.extman.addExtension(SearchResultServer)
      startProgress(bootToken.get,"Starting sTeX/MMT","Initializing...")
+     doPing
    }
 
    @JsonRequest("sTeX/getMathHubContent")
@@ -426,7 +440,11 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
 object Socket {
   def main(args : Array[String]) : Unit = {
-    val lsp = new STeXLSP
+    val lsp = new STeXLSP {
+      override def newServer(style: RunStyle): STeXLSPServer = new STeXLSPServer(style) {
+        override def doPing: Unit = {}
+      }
+    }
     val controller = Run.controller
     List("lsp"
       , "lsp-stex"
