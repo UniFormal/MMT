@@ -30,9 +30,9 @@ class LeanImporter extends NonTraversingImporter {
 
    def build(a: Archive, which: Build, in: FilePath, errorCont: Option[ErrorHandler]) {
      val ln = LocalName(in.stripExtension.segments:_*)
-     val thy = Theory(DPath(a.narrationBase), LocalName("theory"), Some(Lean.leanThy))
+     val thy = Theory(Lean.leanBase, ln, Some(Lean.leanThy))
      val thyP = thy.path
-     val doc = new Document(thy.parent / ln)
+     val doc = new Document(DPath(a.narrationBase) / ln)
      controller.add(doc)
      controller.add(thy)
      controller.add(MRef(doc.path, thyP))
@@ -97,7 +97,8 @@ class LeanImporter extends NonTraversingImporter {
 }
 
 object Lean {
-  val leanThy = DPath(URI.scheme("latin") !/ "lean") ? "Lean"
+  val leanBase = DPath(URI.scheme("latin") !/ "lean")
+  val leanThy = leanBase ? "Lean"
   def cic(s: String) = OMS(leanThy ? s)
   def cicA(s: String)(args: Term*) = ApplySpine(cic(s), args:_*)
 }
@@ -118,9 +119,9 @@ class LeanToLF(lib: MPath) {
   def apply(l: Level): Term = l match {
     case Param(n) => OMV(apply(n))
     case Zero => cic("Zero")
-    case Succ(l) => cic("Succ")(apply(l))
-    case Max(l,m) => cic("Max")(apply(l),apply(m))
-    case IMax(l,m) => cic("IMax")(apply(l),apply(m))
+    case Succ(l) => cicA("Succ")(apply(l))
+    case Max(l,m) => cicA("Max")(apply(l),apply(m))
+    case IMax(l,m) => cicA("IMax")(apply(l),apply(m))
   }
 
   def apply(e: Expr)(implicit vars: List[Binding]): Term = e match {
@@ -131,7 +132,7 @@ class LeanToLF(lib: MPath) {
       OMV(apply(b.prettyName))
     case LocalConst(of,_) =>
       OMV(apply(of.prettyName))
-    case Sort(l) => cic("Sort")(apply(l))
+    case Sort(l) => cicA("Sort")(apply(l))
     case App(a,b) =>
       cicA("App")(apply(a),apply(b))
     case Lam(bind,bod) =>

@@ -105,7 +105,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                     case _ =>
                       applyChecked(materialize(Context.empty,v.to,None,Some(v.toC)))
                   }
-                case _: Structure =>
+                case s: Structure =>
+                  s.df match {
+                    case Some(AnonymousMorphismCombinator(_)) =>
+                    case _ =>
+                      flattenExternally(s, None, rulesO)
+                  }
               }
             case _ =>
           }
@@ -253,6 +258,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               add(c)
             }
           case _ =>
+            // other definientia are flattened in applyElementBeginWithParent
         }
       case dm: DerivedModule =>
         // TODO do we need to do something here?
