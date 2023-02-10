@@ -80,7 +80,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
     }
 
     val outTheory = Theory.empty(outPath.doc, outPath.name, newMeta)
-    outTheory.setOrigin(GeneratedFrom(thy.path, this))
+    outTheory.setOrigin(GeneratedFrom(thy.path, this, None))
     interp.add(outTheory)
 
     Some(outTheory)
@@ -111,7 +111,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
       OMMOD(applyModulePath(view.from.toMPath)), OMMOD(applyModulePath(view.to.toMPath)),
       view.isImplicit
     )
-    outView.setOrigin(GeneratedFrom(view.path, this))
+    outView.setOrigin(GeneratedFrom(view.path, this, None))
     interp.add(outView)
 
     Some(outView)
@@ -143,7 +143,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
         dfC = TermContainer.empty(),
         s.isImplicit, s.isTotal
       )
-      outStructure.setOrigin(GeneratedFrom(s.path, this))
+      outStructure.setOrigin(GeneratedFrom(s.path, this, None))
       interp.add(outStructure)
       Some(outStructure)
     case _ => None
@@ -217,7 +217,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
       isImplicit = if (container.isInstanceOf[Theory]) true else false, // theory includes are always implicit
       isTotal = include.total
     )
-    s.setOrigin(GeneratedFrom(structure.path, this))
+    s.setOrigin(GeneratedFrom(structure.path, this, None))
 
     // TODO hack to prevent: "add error: a declaration for the name [...] already exists [...]"
     //      when refactoring the whole framework, we should fix this anyway in the course of doing so

@@ -56,11 +56,11 @@ import SimplificationRuleGenerator._
 
 class SimplificationRuleGenerator extends ChangeListener {
   override val logPrefix = "simp-rule-gen"
-  private def getGeneratedRule(p: Path): Option[GeneratedDepthRule] = {
+  private def getGeneratedRule(p: Path): Option[RuleConstant] = {
      p match {
         case p: GlobalName =>
            controller.globalLookup.getO(p / SimplifyTag) match {
-              case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[GeneratedDepthRule])
+              case Some(r: RuleConstant) => Some(r)
               case _ => None
            }
         case _ => None
@@ -69,7 +69,7 @@ class SimplificationRuleGenerator extends ChangeListener {
 
   override def onAdd(e: StructuralElement): Unit = {onCheck(e)}
   override def onDelete(e: StructuralElement): Unit = {
-     getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
+     getGeneratedRule(e.path).foreach {r => controller.delete(r.path)}
   }
   override def onCheck(e: StructuralElement): Unit = {
        val c = e match {
@@ -77,12 +77,16 @@ class SimplificationRuleGenerator extends ChangeListener {
              val name = c.name
              if (c.tpC.analyzed.isDefined) {
                 // check if an up-to-date rule for this constant exists already: if so break, otherwise delete it
-                getGeneratedRule(c.path) foreach {r =>
-                   if (r.validSince >= c.tpC.lastChangeAnalyzed) {
+                getGeneratedRule(c.path) foreach {rc =>
+                   val stillValid = rc.getOrigin match {
+                     case gf: GeneratedFrom => gf.validSince.exists(_ >= c.tpC.lastChangeAnalyzed)
+                     case _ => false
+                   }
+                   if (stillValid) {
                       log(s"rule for $name is up-to-date")
                       return
                    } else
-                      controller.delete(rulePath(r))
+                      controller.delete(rc.path)
                 }
                 c
              } else {
@@ -191,7 +195,7 @@ class SimplificationRuleGenerator extends ChangeListener {
      val ruleName = c.name / SimplifyTag
      def addSimpRule(r: Rule): Unit = {
          val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(r))
-         ruleConst.setOrigin(GeneratedFrom(c.path, this))
+         ruleConst.setOrigin(GeneratedFrom(c.path, this, Some(c.tpC.lastChangeAnalyzed)))
          controller.add(ruleConst)
          log("generated rule: " + r.toString)
      }
@@ -262,7 +266,7 @@ class SimplificationRuleGenerator extends ChangeListener {
            }
            val rule = new GeneratedSolutionRule(c, desc, names, vPosition, bfrPositions, aftPositions)
            val rc = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule)) //TODO nicer type
-           rc.setOrigin(GeneratedFrom(c.path, this))
+           rc.setOrigin(GeneratedFrom(c.path, this, Some(c.tpC.lastChangeAnalyzed)))
            controller.add(rc)
            log(desc)
         case _ =>
@@ -280,9 +284,6 @@ class SimplificationRuleGenerator extends ChangeListener {
  */
 class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalName], names: OuterInnerNames, val rhs: Term) extends MatchingSimplificationRule(names.outer) {
     override def toString = desc
-    /** timestamp to avoid regenerating this rule when 'from' has not changed */
-    val validSince = from.tpC.lastChangeAnalyzed
-
     /** the groups of indices of equal elements in 'names.before ::: names.inside ::: names.after'
      *  indices are counted from 0
      */
@@ -410,7 +411,7 @@ class RewriteRule(h: GlobalName, templateVars: List[LocalName], templateStep: Ma
     // invariant: stepsLeft.length == termsLeft.length
     var stepsLeft: List[MatchStep] = List(templateStep)
     var termsLeft: List[Term] = List(goal)
-    var solutions: List[Solution] = templateVars map {n => new Solution(n)}
+    val solutions: List[Solution] = templateVars map {n => new Solution(n)}
     while (stepsLeft.nonEmpty) {
       val term = termsLeft.head
       termsLeft = termsLeft.tail

@@ -106,7 +106,7 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
       to = OMMOD(out.applyModulePath(thy.path)),
       isImplicit = false
     )
-    outView.setOrigin(GeneratedFrom(thy.path, this))
+    outView.setOrigin(GeneratedFrom(thy.path, this, None))
     interp.add(outView)
 
     Some(outView)
@@ -201,7 +201,7 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
       from = newFrom,
       df = Some(newDf)
     )
-    outputInclude.setOrigin(GeneratedFrom(structure.path, this))
+    outputInclude.setOrigin(GeneratedFrom(structure.path, this, None))
     interp.add(outputInclude)
     interp.endAdd(outputInclude)
   }

@@ -543,7 +543,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           rci.createRule(rc)
         case _ =>
       }
-      val eS = e.translate(simp,contE)
+      // val eS = e.translate(simp,contE)
       controller.add(e, at)
       e match {
         case ce: ContainerElement[_] => controller.endAdd(ce)
