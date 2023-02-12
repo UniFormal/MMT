@@ -123,7 +123,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          TreeBuilder.buildTreeDoc(root, doc)
          tree
       } catch {
-        case e: Throwable =>
+        case e: Exception =>
           val msg = e.getClass.toString + ": " + e.getMessage
           val pe = ParseError("unknown error: " + msg).setCausedBy(e)
           log(msg)
@@ -177,7 +177,7 @@ object MMTSideKick {
          a match {
             case m: JAsset =>
                asset = Some(m)
-               m.getEnd.getOffset+1 < end
+               m.getEnd.getOffset < end
             case _ => false
          }
       }) {

@@ -135,7 +135,7 @@ object DropFirstArgument extends LinearDropArgsHeuristic {
 object DropNoLongerUsedArgument extends LinearDropArgsHeuristic {
   override def apply(c: Constant, cleanedTp: Option[Term], cleanedDf: Option[Term], dropped: DropInfo)(implicit library: Library): Set[ArgPath] = {
     c.getOrigin match {
-      case GeneratedFrom(source: GlobalName, _) =>
+      case GeneratedFrom(source: GlobalName, _, _) =>
         val oldc = util.Try(library.getConstant(source)).getOrElse(return Set())
 
         (oldc.tp zip cleanedTp).map {

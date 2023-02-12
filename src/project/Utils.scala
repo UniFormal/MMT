@@ -105,7 +105,7 @@ class Utils(base: File) {
   /** executes a shell command (in the src folder) */
   def runscript(command: List[String], home: File = src, waitFor: Boolean = true) {
     println("running: " + command.mkString(" "))
-    val pb = sys.process.Process(command, home.getAbsoluteFile)
+    val pb = sys.process.Process(command.mkString(" "), home.getAbsoluteFile)
     if (waitFor) pb.! else pb.run(false)
   }
 
