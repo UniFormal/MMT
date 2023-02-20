@@ -85,18 +85,27 @@ abstract class NavigationTreeBuilder(controller:Controller) {
     case VerbalizationNotationComponent => "notation (verbalization)"
   }
 
-  private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
+  /** @param parentReg the region of the parent node in the tree
+    * @param e the object at the child node
+    * @return the region of e (if any and if a subregion of parent), else an invalid region
+    */
+  private def getRegion(parentReg: SourceRegion,e: metadata.HasMetaData) : SourceRegion = {
+    SourceRef.get(e).flatMap {ref =>
+      val reg = ref.region
+      if (parentReg contains reg) Some(reg) else None
+    }.getOrElse(SourceRegion.none)
+  }
 
   /* build the sidekick outline tree: document node */
   def buildTreeDoc(node: DefaultMutableTreeNode, doc: Document): Unit = {
-    val reg = getRegion(doc) getOrElse SourceRegion(SourcePosition(0,0,0),SourcePosition(0,0,0))
+    val reg = SourceRef.get(doc).map(_.region) getOrElse SourceRegion.none
     val child = new DefaultMutableTreeNode(makeDocument(doc,reg))
     node.add(child)
     doc.getDeclarations foreach {
       case d: Document =>
         buildTreeDoc(child, d)
       case r: NRef =>
-        val rReg = getRegion(r) getOrElse reg
+        val rReg = getRegion(reg,r)
         val rChild = new DefaultMutableTreeNode(makeNRef(r.target,rReg))
         r match {
           case d: DRef =>
@@ -117,8 +126,8 @@ abstract class NavigationTreeBuilder(controller:Controller) {
   }
 
   /* build the sidekick outline tree: module node */
-  private def buildTreeMod(node: DefaultMutableTreeNode, mod: Module, context: Context, defaultReg: SourceRegion): Unit = {
-    val reg = getRegion(mod) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+  private def buildTreeMod(node: DefaultMutableTreeNode, mod: Module, context: Context, parentReg: SourceRegion): Unit = {
+    val reg = getRegion(parentReg,mod)
     val child = new DefaultMutableTreeNode(makeModule(mod,reg))
     node.add(child)
     buildTreeComps(child, mod, context, reg)
@@ -140,8 +149,8 @@ abstract class NavigationTreeBuilder(controller:Controller) {
     }
   }
   /** build the sidekick outline tree: declaration (in a module) node */
-  private def buildTreeDecl(node: DefaultMutableTreeNode, parent: ContainerElement[_ <: Declaration], dec: Declaration, context: Context, defaultReg: SourceRegion): Unit = {
-    val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+  private def buildTreeDecl(node: DefaultMutableTreeNode, parent: ContainerElement[_ <: Declaration], dec: Declaration, context: Context, parentReg: SourceRegion): Unit = {
+    val reg = getRegion(parentReg,dec)
     dec match {
       case nm: NestedModule =>
         buildTreeMod(node, nm.module, context, reg)
@@ -162,40 +171,40 @@ abstract class NavigationTreeBuilder(controller:Controller) {
     if (elab.nonEmpty) {
       val elabChild = new DefaultMutableTreeNode(makeSection("-- elaboration --"))
       child.add(elabChild)
-      elab foreach {e => buildTreeDecl(elabChild, parent, e, context, defaultReg)}
+      elab foreach {e => buildTreeDecl(elabChild, parent, e, context, parentReg)}
     }
   }
 
   /** add child nodes for all components of an element */
-  private def buildTreeComps(node: DefaultMutableTreeNode, ce: ContentElement, context: Context, defaultReg: SourceRegion): Unit = {
+  private def buildTreeComps(node: DefaultMutableTreeNode, ce: ContentElement, context: Context, parentReg: SourceRegion): Unit = {
     ce.getComponents foreach {
       case DeclarationComponent(comp, cont: AbstractTermContainer) if cont.get.isDefined =>
-        buildTreeComp(node, ce.path $ comp, cont.get.get, context, defaultReg)
+        buildTreeComp(node, ce.path $ comp, cont.get.get, context, parentReg)
       case NotationComponent(comp, cont) =>
-        buildTreeNot(node, ce.path, cont, comp, defaultReg)
+        buildTreeNot(node, ce.path, cont, comp, parentReg)
       case _ =>
     }
   }
 
   /** build the sidekick outline tree: component of a (module or symbol level) declaration */
-  private def buildTreeComp(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion): Unit = {
-    val reg = getRegion(t) getOrElse SourceRegion.none
+  private def buildTreeComp(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, parentReg: SourceRegion): Unit = {
+    val reg = getRegion(parentReg,t)
     val child = new DefaultMutableTreeNode(makeComponent(t,context,parent,reg))//,t,context,parent,parent.component.toString,reg))
     node.add(child)
-    buildTreeTerm(child, parent, t, context, defaultReg)
+    buildTreeTerm(child, parent, t, context, parentReg)
   }
 
   /** build the sidekick outline tree: notations */
-  private def buildTreeNot(node: DefaultMutableTreeNode, owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, defaultReg: SourceRegion): Unit = {
-    val reg = getRegion(cont(comp).get) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+  private def buildTreeNot(node: DefaultMutableTreeNode, owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, parentReg: SourceRegion): Unit = {
+    val reg = getRegion(parentReg,cont(comp).get)
     val child = new DefaultMutableTreeNode(makeNotation(owner,cont,comp,reg))
     node.add(child)
   }
 
   /** build the sidekick outline tree: context node (each VarDecl is added individually) */
-  private def buildTreeCont(node: DefaultMutableTreeNode, parent: CPath, con: Context, context: Context, defaultReg: SourceRegion): Unit = {
+  private def buildTreeCont(node: DefaultMutableTreeNode, parent: CPath, con: Context, context: Context, parentReg: SourceRegion): Unit = {
     con mapVarDecls {case (previous, vd @ VarDecl(_, _, tp, df, _)) =>
-      val reg = getRegion(vd) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+      val reg = getRegion(parentReg,vd)
       val currentContext = context ++ previous
       val child = new DefaultMutableTreeNode(makeVariableInContext(currentContext,vd,parent,reg))
       node.add(child)
@@ -206,11 +215,11 @@ abstract class NavigationTreeBuilder(controller:Controller) {
   }
 
   /** build the sidekick outline tree: (sub)term node */
-  private def buildTreeTerm(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, _unused_defaultReg: SourceRegion): Unit = {
+  private def buildTreeTerm(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, parentReg: SourceRegion): Unit = {
     var extraLabel = ""
-    val reg = getRegion(t) getOrElse {
+    val reg = getRegion(parentReg,t)
+    if (reg == SourceRegion.none) {
       extraLabel = " [not in source]" // lack of source region indicates inferred subterms
-      SourceRegion.none
     }
     val tP = controller.pragmatic.mostPragmatic(t)
     val label = tP match {
@@ -225,7 +234,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
       case ComplexTerm(op, _,_,_) => op.name.last.toStr(true)
       case OMA(OMID(p),_) => p.name.last.toStr(true)
       case OMBINDC(OMID(p),_,_) => p.name.last.toStr(true)
-      case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but throws errors!
+      case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but does
     }
     val asset = makeTerm(t,tP,context,parent,label+extraLabel,reg)// new MMTObjAsset(mmt, t, tP, context, parent, label+extraLabel, reg)
     val child = new DefaultMutableTreeNode(asset)
@@ -272,7 +281,7 @@ trait MMTAsset {
 /**
   * a node for URIs
   */
-trait MMTURIAsset extends {
+trait MMTURIAsset extends MMTAsset {
   val path : Path
   protected val label = path.last
   def getScope = path match {

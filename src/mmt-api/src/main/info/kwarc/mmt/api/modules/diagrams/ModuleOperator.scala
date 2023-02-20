@@ -460,7 +460,7 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
         throw ImplementationError(s"Linear operator ${this.getClass.getSimpleName} translated constant to container " +
           s"${decl.path.module}` which is different than the intended one `$outContainerPath`.")
       }
-      decl.setOrigin(GeneratedFrom(c.path, this))
+      decl.setOrigin(GeneratedFrom(c.path, this, None))
 
       interp.add(decl)
       // call endAdd where applicable (esp. important when decl is a structure or include)
