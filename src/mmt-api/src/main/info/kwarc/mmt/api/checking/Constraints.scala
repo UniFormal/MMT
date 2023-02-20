@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.presentation.Presenter
+import info.kwarc.mmt.api.utils.Union
 import objects._
 
 class BranchInfo(val history: History, val backtrack: Branchpoint)
@@ -52,6 +53,18 @@ case class Comment(text: () => String) extends HistoryEntry {
    override def toString = text()
    def present(implicit cont: Obj => String) = text()
 }
+import info.kwarc.mmt.api.utils.{Left,Right};
+case class Interpolated(s : Union[String,Obj]*) extends HistoryEntry {
+  override def toString = s.map {
+    case Left(value) => value
+    case Right(value) => value.toString
+  }.mkString
+
+  override def present(implicit cont: Obj => String): String = s.map {
+    case Left(value) => value
+    case Right(o) => cont(o)
+  }.mkString
+}
 
 /**
  * The History is a branch in the tree of decisions, messages, and judgements that occurred during type-checking
@@ -71,7 +84,7 @@ class History(var steps: List[HistoryEntry]) {
      new History(IndentedHistoryEntry(e,inc)::steps)
    }
    /** shortcut for adding a Comment leaf */
-   def +(s: => String) : History = this + new Comment(() => s)
+   def +(s: => String) : History = this + Comment(() => s)
    /** appends a child to the leaf */
    def +=(e: HistoryEntry): Unit = {steps ::= IndentedHistoryEntry(e,inc)}
    /** appends another history to the leaf */

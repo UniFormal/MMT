@@ -229,12 +229,16 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   override def declaration(params: DeclarationParams): List[Location] = {
     val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
     as.flatMap(_.getDeclaration).map { case (s,i,j) =>
-      new Location(s,new lsp4j.Range({
+      new Location({
+        if (s.startsWith("file:///")) s else
+          if (s.startsWith("file:/")) "file:///" + s.drop(6)
+          else s
+      },new lsp4j.Range({
         val (l,p) =doc.get._doctext.toLC(i)
-        new Position(l,p)
+        new Position(l,Math.max(p,0))
       },{
         val (l,p) = doc.get._doctext.toLC(j)
-        new Position(l,p)
+        new Position(l,Math.max(p,0))
       }))
     }
   }
@@ -256,14 +260,14 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   override def semanticTokensFull(params: SemanticTokensParams): SemanticTokens = {
     documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc : DocumentType@unchecked) =>
-        doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHighlights) match {
+        doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHighlights) } match {
           case Nil =>
             null
           case ls =>
             val ret = computeHighlights(ls.map(is => Highlight(is._1,is._2,is._3,is._4,is._5)))
             log("textDocument/semanticTokens/full return: " + ret.length)
             new SemanticTokens(ret.asJava)
-        }}
+        }
       case _ => null
     }
   }
@@ -271,7 +275,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   override def hover(params: HoverParams): Hover = {
     documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc : DocumentType@unchecked) =>
-        doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHovers) match {
+        doc.synchronized{ doc.Annotations.getAll.flatMap(_.getHovers)} match {
           case Nil =>
             null
           case ls =>
@@ -282,7 +286,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
               h.setContents(new MarkupContent(MarkupKind.MARKDOWN,f(())))
               h
             }.orNull
-        }}
+        }
       case _ => null
     }
   }
@@ -290,16 +294,14 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   override def foldingRange(params: FoldingRangeRequestParams): List[FoldingRange] = {
     documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc: DocumentType@unchecked) =>
-        doc.synchronized {
-          val annots = doc.Annotations.getAll
-          if (annots.isEmpty) null
-          else {
-            annots.collect{
-              case a if a.foldable =>
-                val (start,_) = doc._doctext.toLC(a.offset)
-                val (end,_) = doc._doctext.toLC(a.end)
-                new FoldingRange(start,end)
-            }
+        val annots = doc.synchronized { doc.Annotations.getAll }
+        if (annots.isEmpty) null
+        else {
+          annots.collect{
+            case a if a.foldable =>
+              val (start,_) = doc._doctext.toLC(a.offset)
+              val (end,_) = doc._doctext.toLC(a.end)
+              new FoldingRange(start,end)
           }
         }
       case _ => Nil
@@ -310,41 +312,39 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   override def documentSymbol(params: DocumentSymbolParams): List[(Option[SymbolInformation],Option[DocumentSymbol])] = {
     documents.synchronized{documents.get(params.getTextDocument.getUri)} match {
       case Some(doc: DocumentType@unchecked) =>
-        doc.synchronized {
-          val annots = doc.Annotations.getAll
-          if (annots.isEmpty) Nil
-          else {
-            var dones: List[doc.Annotation] = Nil
+        val annots = doc.synchronized { doc.Annotations.getAll }
+        if (annots.isEmpty) Nil
+        else {
+          var dones: List[doc.DocAnnotation] = Nil
 
-            def toSymbol(a: doc.Annotation) = {
-              val (sl, sc) = doc._doctext.toLC(a.offset)
-              val (el, ec) = doc._doctext.toLC(a.end)
-              val range = new lsp4j.Range(new Position(sl, sc), new Position(el, ec))
-              new DocumentSymbol(a.symbolname, a.symbolkind, range, range, "")
-            }
-
-            def inSymbol(a: DocumentSymbol, b: doc.Annotation): Unit = {
-              dones ::= b
-              b.children.foreach { c =>
-                if (c.symbolkind != null && c.symbolname != "") {
-                  val n = toSymbol(c)
-                  if (a.getChildren != null)
-                    a.setChildren((a.getChildren.asScala.toList ::: n :: Nil).asJava)
-                  else a.setChildren(List(n).asJava)
-                  inSymbol(n, c)
-                } else inSymbol(a, c)
-              }
-            }
-
-            val ret = annots.flatMap {
-              case a if !dones.contains(a) && a.symbolkind != null && a.symbolname != "" =>
-                val s = toSymbol(a)
-                inSymbol(s, a)
-                List(s)
-              case _ => Nil
-            }
-            ret.map(e => (None,Some(e)))
+          def toSymbol(a: doc.DocAnnotation) = {
+            val (sl, sc) = doc._doctext.toLC(a.offset)
+            val (el, ec) = doc._doctext.toLC(a.end)
+            val range = new lsp4j.Range(new Position(sl, sc), new Position(el, ec))
+            new DocumentSymbol(a.symbolname, a.symbolkind, range, range, "")
           }
+
+          def inSymbol(a: DocumentSymbol, b: doc.DocAnnotation): Unit = {
+            dones ::= b
+            b.children.foreach { c =>
+              if (c.symbolkind != null && c.symbolname != "") {
+                val n = toSymbol(c)
+                if (a.getChildren != null)
+                  a.setChildren((a.getChildren.asScala.toList ::: n :: Nil).asJava)
+                else a.setChildren(List(n).asJava)
+                inSymbol(n, c)
+              } else inSymbol(a, c)
+            }
+          }
+
+          val ret = annots.flatMap {
+            case a if !dones.contains(a) && a.symbolkind != null && a.symbolname != "" =>
+              val s = toSymbol(a)
+              inSymbol(s, a)
+              List(s)
+            case _ => Nil
+          }
+          ret.map(e => (None,Some(e)))
         }
       case _ => Nil
     }

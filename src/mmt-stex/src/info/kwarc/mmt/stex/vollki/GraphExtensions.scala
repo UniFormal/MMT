@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.vollki
 
-import info.kwarc.mmt.api.{DPath, MPath, NamespaceMap, Path, StructuralElement}
+import info.kwarc.mmt.api.{DPath, GlobalName, MPath, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Theory, View}
@@ -11,11 +11,127 @@ import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, 
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
 import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser
+import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
+
+import scala.util.Try
 //import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, empty}
 import info.kwarc.mmt.stex.{SHTML, STeXServer}
 
 import scala.collection.{Set, mutable}
 import scala.xml.{Elem, Node, XML}
+
+class VollKi(server:STeXServer) extends ServerExtension("vollki") {
+  import server._
+
+  def apply(request: ServerRequest): ServerResponse = {
+    val path = request.parsedQuery("path").flatMap(s => Try(Path.parseS(s)).toOption)
+    val language = request.parsedQuery("lang") match {
+      case Some(l) => l
+      case None => "en"
+    }
+    request.path.lastOption match {
+      case Some(":vollki") =>
+        var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+        html = html.replace("TOUR_ID_PLACEHOLDER", path.map(_.toString).getOrElse(""))
+        html = html.replace("BASE_URL_PLACEHOLDER", "")
+        html = html.replace("CONTENT_URL_PLACEHOLDER", "")
+        html = html.replace("USER_MODEL_PLACEHOLDER", "")
+        html = html.replace("LANGUAGE_PLACEHOLDER", language)
+        html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + server.pathPrefix + "/css?None")
+        ServerResponse(html, "text/html")
+      case Some("frag") =>
+        path.flatMap(getSymdocs(_,language).headOption).map{n =>
+          present(n.toString,true)(None)
+        } match {
+          case Some(ht) => ServerResponse(ht.toString,"text/html")
+          case None =>ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
+        }
+      case Some("list") =>
+        ServerResponse.JsonResponse(JSONArray())
+      case Some("tour") =>
+        path match {
+          case Some(n) =>
+            val ret = guidedTour(n, language)
+            ServerResponse.JsonResponse(ret)
+          case None =>
+            ServerResponse("Unknown query: " + request.query, "text/plain")
+        }
+    }
+
+  }
+
+  def guidedTour(sym:GlobalName,language:String) = {
+    val map = mutable.HashMap.empty[GlobalName, Deps]
+    def getDep(s: GlobalName): Deps = map.getOrElse(s, {
+      val dep = new Deps(s)
+      map(s) = dep
+      dep.fill
+      dep
+    })
+
+    class Dones {
+      class MutList(var ls: List[Deps] = Nil, var count: Int = 0)
+
+      val map = mutable.HashMap.empty[Deps, MutList]
+    }
+    class Deps(val symbol:GlobalName) {
+      var dependencies : Set[Deps] = Set.empty
+      lazy val doc = getSymdocs(symbol,language).headOption
+      lazy val html = doc.map{d =>
+        HTMLParser(d.toString())(new ParsingState(controller, Nil))
+      }
+      def fill : Unit = {
+        var syms : List[GlobalName] = Nil
+        html.toList.foreach { html =>
+          html.iterate{ n =>
+            n.plain.attributes.get((HTMLParser.ns_shtml,"definiendum")) match {
+              case Some(s) => Try({map(Path.parseS(s)) = this})
+              case _ =>
+                n.plain.attributes.get((HTMLParser.ns_shtml, "term")) match {
+                  case Some("OMID") =>
+                    n.plain.attributes.get((HTMLParser.ns_shtml, "head")) match {
+                      case Some(p) => Try({
+                        syms ::= Path.parseS(p)
+                      })
+                      case _ =>
+                    }
+                  case _ =>
+                    n.plain.attributes.get((HTMLParser.ns_shtml,"comp")) match {
+                      case Some(p) => Try({
+                        syms ::= Path.parseS(p)
+                      })
+                      case _ =>
+                    }
+                }
+            }
+          }
+        }
+        syms.distinct.foreach(s => dependencies += getDep(s))
+      }
+      def getSorted = {
+        val d = new Dones()
+        getSortedI(d)
+        JSONArray(d.map.toList.sortBy(_._2.count).map(p => JSONObject(
+          ("id", JSONString(p._1.symbol.toString)),
+          ("title", JSONString(p._1.symbol.name.toString())),
+          ("successors", JSONArray(p._2.ls.map(c => JSONString(c.symbol.toString)): _*))
+        )): _*)
+      }
+      private def getSortedI(d : Dones = new Dones()): Unit = if (!d.map.contains(this)){
+        val ls = new d.MutList()
+        ls.count = dependencies.size
+        d.map(this) = ls
+        dependencies.foreach {dep => if (dep.html.isDefined) {
+          dep.getSortedI(d)
+          val c = d.map(dep)
+          c.ls ::= this
+          ls.count += c.count
+        }}
+      }
+    }
+    getDep(sym).getSorted
+  }
+}
 
 class STeXGraphPopulator extends Extension { /*
   override def start(args: List[String]): Unit = {

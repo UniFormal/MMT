@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.parsing
-
+/*
 import info.kwarc.mmt.api.Level
 import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api.utils.File
@@ -402,4 +402,4 @@ object LaTeXRules {
     verbatim,lstlisting,lstinline,inlineverb,verb,iffalse,
     new NoLintRule("url")
   )
-}
+}*/

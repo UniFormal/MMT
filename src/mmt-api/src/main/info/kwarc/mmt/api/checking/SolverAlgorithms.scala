@@ -174,7 +174,9 @@ trait SolverAlgorithms {self: Solver =>
 
      // continuation if we have inferred the type of tm
      def checkAfterInference(tmI: Term, tpS: Term, h: History): Boolean = {
-       check(Subtyping(stack, tmI, tpS))(h + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
+       check(Subtyping(stack, tmI, tpS))(h +
+         Interpolated(Left("inferred type must conform to expected type; the term is: "),Right(tm))
+       )
      }
      // the foundation-independent cases
      tp match {
@@ -535,7 +537,7 @@ trait SolverAlgorithms {self: Solver =>
     */
    override def inferType(tm: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
      log("inference: " + presentObj(tm) + " : ?")
-     history += "inferring type of " + presentObj(tm)
+     history += Interpolated(Left("inferring type of "), Right(tm))
      // return previously inferred type, if any (previously unsolved variables are substituted)
      InferredType.get(tm) match {
         case Some((bp,tmI)) if getCurrentBranch.descendsFrom(bp) =>
@@ -637,7 +639,10 @@ trait SolverAlgorithms {self: Solver =>
         }
      }
      log("inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed"))
-     history += "inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed")
+     history += Interpolated(Left("inferred: "),Right(tm),Left(" : "),res match {
+       case Some(s) => Right(s)
+       case None => Left("failed")
+     })
      //remember inferred type
      if (!isDryRun) {
        res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
@@ -783,7 +788,7 @@ trait SolverAlgorithms {self: Solver =>
      if (checkingUnit.isKilled) {
        return tm
      }
-     history += "trying to simplify " + presentObj(tm)
+     history += Interpolated(Left("trying to simplify "),Right(tm))
      val tmS = tm match {
        case OMS(p) =>
          val d = getDef(p)

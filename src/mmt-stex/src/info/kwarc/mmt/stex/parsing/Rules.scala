@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.parsing
-
+/*
 import info.kwarc.mmt.lsp.SyncedDocUnparsed
 
 import scala.collection.mutable
@@ -304,3 +304,5 @@ class NoLintRule(name: String) extends SimpleMacroRule(name, 1) {
     }
   }
 }
+
+ */

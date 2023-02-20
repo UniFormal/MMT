@@ -1,5 +1,11 @@
 package info.kwarc.mmt.stex.parsing.stex
 
+import info.kwarc.mmt.api.MPath
+import info.kwarc.mmt.stex.lsp.sTeXDocument
+import info.kwarc.mmt.stex.parsing.{Begin, Environment, TeXTokenLike}
+
+
+/*
 import info.kwarc.mmt.api.{GlobalName, Level, LocalName, MPath, Path, SourceError}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.URI
@@ -9,13 +15,7 @@ import org.eclipse.lsp4j.SymbolKind
 
 import scala.collection.mutable
 
-trait HasAnnotations extends TeXTokenLike {
-  def doAnnotations(in:sTeXDocument) : Unit
-}
 
-abstract class TeXModuleLike(pm:PlainMacro,val mp:MPath,ch:List[TeXTokenLike],rl:EnvironmentRule) extends MacroApplication(pm,ch,rl) {
-  val sig : String
-}
 class StructureModuleBegin(pm:PlainMacro, mp:MPath, val dom:DictionaryModule, ch:List[TeXTokenLike], val rl:StructureLikeRule)
   extends TeXModuleLike(pm,mp,ch,rl) {
   val sig = ""
@@ -309,3 +309,5 @@ case class MathStructure(bg:MathStructureMacro,en:TeXTokenLike,ch:List[TeXTokenL
     mace.addCodeLens(bg.mp.toString,"",Nil,end.startoffset,end.endoffset)
   }
 }
+
+ */

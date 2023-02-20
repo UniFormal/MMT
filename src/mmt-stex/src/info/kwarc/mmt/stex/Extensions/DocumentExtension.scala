@@ -41,6 +41,23 @@ trait SHTMLDocumentServer { this : STeXServer =>
     implicit val params : DocParams = DocParams(request.parsedQuery)
     request.path.lastOption match {
       case Some("fulldocument") =>
+        var html = MMTSystem.getResourceAsString("mmt-web/stex/tabs.html")
+        html = html.replace("%%HTMLSOURCE%%",this.pathPrefix + "/fullhtml?" + request.query)
+        html = html.replace("%%OMDOCSOURCE%%", this.pathPrefix + "/omdoc?" + request.query)
+        html = html.replace("%%PDFSOURCE%%", this.pathPrefix + "/pdf?" + request.query)
+        ServerResponse(html, "text/html")
+      case Some("pdf") =>
+        val a = params.archive.getOrElse{
+          return ServerResponse("No archive given", "txt")
+        }
+        val path = params.filepath.getOrElse {
+          return ServerResponse("No path given", "txt")
+        }
+        val file = a / RedirectableDimension("export") / "pdf" / path.replace(".omdoc",".pdf").replace(".xhtml",".pdf")
+        if (File(file).exists()) {
+          ServerResponse.FileResponse(file)
+        } else ServerResponse("No pdf found", "txt")
+      case Some("fullhtml") =>
         var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
         html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/documentTop?" + request.query)
         html = html.replace("BASE_URL_PLACEHOLDER", "")
@@ -70,7 +87,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case Some("variable") =>
         ServerResponse("<b>TODO</b>","text/html")
       case _ =>
-        throw ErrorReturn("Unknown path: " + request.path.mkString)
+        throw ErrorResponse("Unknown path: " + request.path.mkString)
     }
   } catch {
     case ErrorResponse(s) =>
@@ -273,7 +290,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  def doDeclHeader(c: Constant): Elem = {
+  def doDeclHeader(c: Constant)(implicit dp:DocParams): Elem = {
     <div>
       <table>
         <tr>
@@ -284,11 +301,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
             {c.path.toString}
           </code>
           </td> <td>
-          {if (controller.extman.get(classOf[FullsTeXGraph.type]).contains(FullsTeXGraph)) {
-            <a href={"/:vollki?path=" + c.parent.toString} target="_blank" style="pointer-events:all;color:blue">
+            <a href={"/:vollki?path=" + c.path.toString + "&lang=" + dp.language.getOrElse("en")} target="_blank" style="pointer-events:all;color:blue">
               {"> Guided Tour"}
             </a>
-          } else <span></span>}
         </td>
         </tr>
       </table> <hr/>
@@ -334,7 +349,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
                   {this.htmlpres.doNotation(n.plain.node)}
                 </math>
                 case None => <span></span>
-              })}{td(if (n.in.path != c.parent) n.in.path.toString else "(here)")}
+              })}{td(if (!n.in.exists(_.path == c.parent)) n.in.map(_.path.toString).getOrElse("(elsewhere)") else "(here)")}
               </tr>
             )}
             </table>
@@ -406,7 +421,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   def getFragmentDefault(c : Constant)(implicit dp:DocParams) : String = {
-    this.getSymdocs(c.path) match { // TODO language
+    this.getSymdocs(c.path,dp.language.getOrElse("en")) match { // TODO language
       case a :: _ => a.toString()
       case _ =>
         val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
@@ -431,7 +446,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     doc.plain.attributes((HTMLParser.ns_html, "style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
   }
 
-  def present(str : String)(implicit withbindings : Option[LateBinding]) = {
+  def present(str : String,remove:Boolean=true)(implicit withbindings : Option[LateBinding]) = {
     val ifinputref = withbindings.isDefined
     val bindings = withbindings.getOrElse(new LateBinding)
     var statements : List[Statement] = Nil
@@ -738,7 +753,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       n.plain.attributes.keys.foreach {
         case (HTMLParser.ns_shtml, "visible") =>
           toremoves ::= n
-        case (HTMLParser.ns_shtml, p) =>
+        case (HTMLParser.ns_shtml, p) if remove =>
           n.plain.attributes.remove((HTMLParser.ns_shtml, p))
         case _ =>
       }

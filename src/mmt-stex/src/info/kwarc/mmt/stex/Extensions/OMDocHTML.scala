@@ -1,10 +1,12 @@
 package info.kwarc.mmt.stex.Extensions
 
+import info.kwarc.mmt.api.checking.{History, HistoryEntry}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.OMS
+import info.kwarc.mmt.api.presentation.{Presenter, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, NestedModule, Structure}
-import info.kwarc.mmt.api.{DPath, DefComponent, GlobalName, MPath, Path, TypeComponent}
+import info.kwarc.mmt.api.{CPath, DPath, DefComponent, GlobalName, MPath, Path, StructuralElement, TypeComponent}
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.rules.ModelsOf
@@ -312,7 +314,7 @@ trait OMDocHTML { this : STeXServer =>
   private def doOMSNotation(not : STeXNotation,doin : Boolean,lang:Option[String]) = <tr>
       <td style="padding-right:5px;padding-left:5px;text-align:center">{not.id}</td>
       <td style="padding-right:5px;padding-left:5px;text-align:center"><math xmlns={HTMLParser.ns_mml}><mrow>{not.present(Nil)}</mrow></math></td>
-      <td style="padding-right:5px;padding-left:5px;text-align:center">{if (doin) <a href={doLink(not.in.path, lang)} style="color:blue">?{not.in.path.name}</a>}</td>
+      <td style="padding-right:5px;padding-left:5px;text-align:center">{if (doin) <a href={doLink(not.in.get.path, lang)} style="color:blue">?{not.in.get.path.name}</a>}</td>
     </tr>
   private def doComplexNotation(not : STeXNotation,args:List[List[Node]],doin : Boolean,lang:Option[String]) = <tr>
     <td style="padding-right:5px;padding-left:5px;text-align:center">{not.id}</td>
@@ -321,7 +323,7 @@ trait OMDocHTML { this : STeXServer =>
       case Some(n) => <math xmlns={HTMLParser.ns_mml}><mrow>{n.plain.node}</mrow></math>
       case _ => "(None)"
     }}</td>
-    <td style="padding-right:5px;padding-left:5px;text-align:center">{if (doin) <a href={doLink(not.in.path, lang)} style="color:blue">?{not.in.path.name}</a>}</td>
+    <td style="padding-right:5px;padding-left:5px;text-align:center">{if (doin) <a href={doLink(not.in.get.path, lang)} style="color:blue">?{not.in.get.path.name}</a>}</td>
   </tr>
   private def doNotations(c : Constant,arity:String,lang:Option[String]) : NodeSeq = {
     if (arity.isEmpty) {
@@ -336,11 +338,11 @@ trait OMDocHTML { this : STeXServer =>
                 <th style="padding-right:5px;padding-left:5px;text-align:center">in</th>
               </tr>
               {
-                val ins = ls.collect { case n if n.in.path == c.path.module => n }
+                val ins = ls.collect { case n if n.in.get.path == c.path.module => n }
                 ins.map { doOMSNotation(_, false, lang) }
               }
               {
-                val ins = ls.collect { case n if n.in.path != c.path.module => n }
+                val ins = ls.collect { case n if n.in.get.path != c.path.module => n }
                 ins.map { doOMSNotation(_,true,lang)}
               }
             </table>
@@ -372,11 +374,11 @@ trait OMDocHTML { this : STeXServer =>
                 <th>in</th>
               </tr>
               {
-                val ins = ls.collect { case n if n.in.path == c.path.module => n }
+                val ins = ls.collect { case n if n.in.get.path == c.path.module => n }
                 ins.map { doComplexNotation(_,args,false,lang)}
               }
               {
-                val ins = ls.collect { case n if n.in.path != c.path.module => n }
+                val ins = ls.collect { case n if n.in.get.path != c.path.module => n }
                 ins.map { doComplexNotation(_,args,true,lang)}
               }
             </table>
@@ -391,6 +393,109 @@ trait OMDocHTML { this : STeXServer =>
       val p = new STeXPresenterML
       controller.extman.addExtension(p)
       p
+  }
+  lazy val presenter = new Presenter(xhtmlPresenter) {
+    val key: String = "stexpres"
+    /**
+      * @param e          the element to present
+      * @param standalone if true, include appropriate header and footer
+      * @param rh         output stream
+      */
+    override def apply(e: StructuralElement, standalone: Boolean)(implicit rh: RenderingHandler): Unit = {
+      // TODO
+      ???
+    }
+    def doHistories(cp:CPath,h:History*) = {
+      implicit val sb = new StringBuilder()
+      sb.append(
+      "<div style=\"font-weight:bold;\">" + cp.toString + "</div><hr/>"
+      )
+      h.foreach{h =>
+        sb.append("<ul>")
+        new HistoryTree().from(h).present
+        sb.append("</ul>")
+      }
+      sb.mkString
+    }
+
+    import info.kwarc.mmt.api.checking._
+    import info.kwarc.mmt.api.utils.{Union,Left,Right}
+
+    val self = this
+    private class HistoryTree(var steps : List[Union[HistoryTree,HistoryEntry]] = Nil,val lvl : Int = 0) {
+      def from(h:History) = {
+        doSteps(h.getSteps.map(Right(_)))
+        steps match {
+          case List(Left(ht)) => ht
+          case _ =>
+            this
+        }
+      }
+      private def doSteps(ls : List[Union[HistoryTree,HistoryEntry]]) : Unit = {
+        var ils = ls
+        def doNested(top:Union[HistoryTree,HistoryEntry],lvl:Int) = {
+          var done = false
+          var ret : List[Union[HistoryTree,HistoryEntry]] = List(top)
+          var endlvl = lvl
+          while(!done && ils.nonEmpty) {
+            val h :: t = ils
+            ils = t
+            h match {
+              case Left(ht) if ht.lvl < lvl =>
+                endlvl = ht.lvl
+                ret ::= Left(ht)
+                done = true
+              case Right(IndentedHistoryEntry(e,l)) if l < lvl =>
+                endlvl = l
+                ret ::= Right(e)
+                done = true
+              case Right(IndentedHistoryEntry(e,_)) =>
+                ret ::= Right(e)
+              case o =>
+                ret ::= o
+            }
+          }
+          ils ::= Left(new HistoryTree(ret,endlvl))
+        }
+        while (ils.nonEmpty) {
+          val h :: t = ils
+          ils = t
+          if (t.isEmpty) steps ::= h else {
+            h match {
+              case Left(ht) if ht.lvl > 0 =>
+                doNested(Left(ht), ht.lvl)
+              case Right(IndentedHistoryEntry(e, lvl)) if lvl > 0 =>
+                doNested(Right(e), lvl)
+              case Right(IndentedHistoryEntry(e, _)) =>
+                steps ::= Right(e)
+              case o =>
+                steps ::= o
+            }
+          }
+        }
+      }
+
+      def present(implicit sb: StringBuilder): Unit = {
+        sb.append("<li><div>")
+        steps.head match {
+          case Left(ht) =>
+            ht.present
+          case Right(st) =>
+            sb.append(st.present(self.objectLevel.asString(_)))
+        }
+        sb.append("</div>")
+        sb.append("<ul>")
+        steps.tail.foreach {
+          case Left(ht) =>
+            ht.present
+          case Right(st) =>
+            sb.append("<li><div>")
+            sb.append(st.present(self.objectLevel.asString(_)))
+            sb.append("</div></li>")
+        }
+        sb.append("</ul></li>")
+      }
+    }
   }
 
   lazy val texPresenter = controller.extman.get(classOf[STeXPresenterTex]) match {

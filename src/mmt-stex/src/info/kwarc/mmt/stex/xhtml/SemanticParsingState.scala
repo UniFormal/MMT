@@ -129,26 +129,26 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
     //val ntp = implicits(SHTML.implicit_binder(impls,ntm),())
     //if (implctx.isEmpty) ntp else OMBIND(OMS(ParseResult.unknown),implctx.map(p => VarDecl(p._1,None,p._2._2,None,None)).toList,ntp)
   }
-  def addNotation(path: GlobalName, id: String, opprec: Int, component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
+  def addNotation(path: GlobalName, id: String, opprec: Int,argprecs:List[Int], component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
     context.findAncestor {
       case t: ModuleLike =>
         val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({ return () }))
-        server.addNotation(th,path,id,opprec,component.asInstanceOf[HTMLNode].plaincopy,op.map(_.asInstanceOf[HTMLNode].plaincopy))
+        server.addNotation(th,path,id,opprec,argprecs,component.asInstanceOf[HTMLNode].plaincopy,op.map(_.asInstanceOf[HTMLNode].plaincopy))
     }
   }
 
-  override def addVarNotation(name:LocalName, id: String, opprec: Int, component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
+  override def addVarNotation(name:LocalName, id: String, opprec: Int,argprecs:List[Int], component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
     context.getVariableContext.find(_.name == name).foreach(vd =>
-      server.addVarNotation(vd, id, opprec, component.asInstanceOf[HTMLNode].plaincopy, op.map(_.asInstanceOf[HTMLNode].plaincopy))
+      server.addVarNotation(vd, id, opprec,argprecs, component.asInstanceOf[HTMLNode].plaincopy, op.map(_.asInstanceOf[HTMLNode].plaincopy))
     )
   }
-  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node)(implicit context: SHTMLNode): Unit = {
+  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node,language:String)(implicit context: SHTMLNode): Unit = {
     context.findAncestor {
       case t: ModuleLike =>
         val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({
           return ()
         }))
-        server.addSymdoc(th,fors,html)
+        server.addSymdoc(th,fors,html,language)
     }
   }
 

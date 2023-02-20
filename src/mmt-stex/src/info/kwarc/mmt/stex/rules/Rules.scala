@@ -6,13 +6,13 @@ import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.{ElaborationOf, GlobalName, LocalName, ParametricRule, ParseError, Rule, RuleSet}
 import info.kwarc.mmt.api.objects.OMS
 import info.kwarc.mmt.api.symbols.{Constant, Structure}
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardNat, StandardString}
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardInt, StandardNat, StandardString}
 import info.kwarc.mmt.stex.Extensions.Symbols
 import info.kwarc.mmt.stex.xhtml.{SHTMLNode, SHTMLObject, SHTMLState, SemanticState}
 import info.kwarc.mmt.stex.{IsSeq, SCtx, SHTML, SHTMLHoas, SOMBArg, STerm}
 
 object StringLiterals extends RepresentedRealizedType(OMS(SHTML.string),StandardString)
-object NatLiterals extends RepresentedRealizedType(OMS(SHTML.int),StandardNat)
+object NatLiterals extends RepresentedRealizedType(OMS(SHTML.int),StandardInt)
 
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.objects.Conversions._
@@ -144,24 +144,43 @@ object StructureRuler extends RulerRule {
   override def apply(controller: Controller, cont: Term => Option[HasMetaData], term: Term): Option[HasMetaData] = term match {
     case OMS(a) =>
       controller.getO(a) match {
-        case Some(c : Constant) if c.name.length > 1 =>
+        case Some(c: Constant) if c.name.length > 1 =>
           c.getOrigin match {
             case ElaborationOf(source) =>
               controller.getO(source) match {
-                case Some(s : Structure) =>
-                  s.getMostSpecific(a.name) match {
-                    case Some((c: Constant,_)) =>
+                case Some(s: Structure) =>
+                  s.getMostSpecific(c.name.drop(1)) match {
+                    case Some((c: Constant, _)) =>
                       c.metadata.getValues(SHTML.headterm) match {
                         case List(OMS(np)) =>
+                          /*controller.getO(np).foreach{o =>
+                            o.metadata.getAll.foreach(c.metadata.add(_))
+                          }
+                          c.metadata.update(SHTML.headterm,OMS(np))
+                          Some(c)*/
                           controller.getO(np)
-                        case _ => None
+                        case _ => Some(c)
                       }
-                    case _ => None
+                    case None =>
+                      s.getDeclarations.find(_.name.endsWith(c.name.drop(1))) match {
+                        case Some(c: Constant) =>
+                          c.metadata.getValues(SHTML.headterm) match {
+                            case List(OMS(np)) =>
+                              /*controller.getO(np).foreach { o =>
+                                o.metadata.getAll.foreach(c.metadata.add(_))
+                              }
+                              c.metadata.update(SHTML.headterm, OMS(np))
+                              Some(c)*/
+                            controller.getO(np)
+                            case _ => Some(c)
+                          }
+                        case _ => Some(c)
+                      }
+                    case _ => Some(c)
                   }
-                case _ =>
-                  None
+                case _ => Some(c)
               }
-            case _ => None
+            case _ => Some(c)
           }
         case _ => None
       }
@@ -340,7 +359,7 @@ object ParenthesisRule extends HTMLTermRule {
 
 object MiMoVariableRule extends HTMLTermRule {
   override def apply(tm: Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode,cont:Term => Term): Option[Term] = tm match {
-    case SHTML.informal(n) if n.label == "mi" && n.child.length == 1 && MnRule(tm).isEmpty =>
+    case SHTML.informal(n) if n.label == "mi" && n.child.length == 1 && n.child.head.toString().length <= 2 && MnRule(tm).isEmpty =>
       Some(OMV(n.child.head.toString()))
     case _ => None
   }
@@ -447,7 +466,7 @@ object ImplicitsRule extends HTMLTermRule {
           case Some(SHTML.implicit_binder.spine(ctx,_)) =>
             val ret = SHTMLHoas.OmaSpine(h,f,ctx.map(_ => state.markAsUnknown(OMV(state.getUnknown))) ::: args) //doBinr(h, f, args)
             tm.metadata.getAll.foreach(ret.metadata.add(_))
-            ret.metadata.update(SHTML.implicit_binder.path,OMS(SHTML.implicit_binder.path))
+            ret.metadata.update(SHTML.implicit_binder.path,NatLiterals(ctx.length))
             Some(ret)
           case _ => None
         }
@@ -459,7 +478,7 @@ object ImplicitsRule extends HTMLTermRule {
           case Some(SHTML.implicit_binder.spine(ctx, _)) =>
             val ret = h.HOMB(f, ctx.map(_ => STerm(state.markAsUnknown(OMV(state.getUnknown)))) ::: args) //doBinr(h, f, args)
             tm.metadata.getAll.foreach(ret.metadata.add(_))
-            ret.metadata.update(SHTML.implicit_binder.path, OMS(SHTML.implicit_binder.path))
+            ret.metadata.update(SHTML.implicit_binder.path, NatLiterals(ctx.length))
             Some(ret)
           case _ => None
         }

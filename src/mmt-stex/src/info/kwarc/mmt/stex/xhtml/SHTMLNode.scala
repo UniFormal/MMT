@@ -584,6 +584,8 @@ with SHTMLONotation {
   removed ::= "notationfragment"
   id = this.plain.attributes.getOrElse((HTMLParser.ns_shtml,"notationfragment"),"")
   opprec = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "precedence"), "0").toInt
+  removed ::= "argprecs"
+  argprecs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "argprecs"), "").split(',').map(_.toInt).toList
   override def onAdd: Unit = {
     super.onAdd
     close(path)
@@ -597,6 +599,8 @@ case class SHTMLVarNotation(name:LocalName,orig:HTMLNode) extends SHTMLNode(orig
   removed ::= "notationfragment"
   id = this.plain.attributes.getOrElse((HTMLParser.ns_shtml,"notationfragment"),"")
   opprec = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "precedence"), "0").toInt
+  removed ::= "argprecs"
+  argprecs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "argprecs"), "").split(',').map(_.toInt).toList
   override def onAdd: Unit = {
     super.onAdd
     closeVar(name)
@@ -742,7 +746,10 @@ case class SHTMLParagraph(orig:HTMLNode) extends HTMLStatement("paragraph",orig)
   override def onAdd: Unit = {
     super.onAdd
     if (styles.contains("symdoc")) {
-      sstate.foreach(_.addSymdoc(fors,id,this.plain.node.head))
+      sstate.foreach{s =>
+        val lang = findAncestor{ case hl : HasLanguage => hl.language}.getOrElse("en")
+        s.addSymdoc(fors,id,this.plain.node.head,lang)
+      }
     }
   }
 }
@@ -763,7 +770,10 @@ case class SHTMLDefinition(orig:HTMLNode) extends HTMLStatement("definition",ori
 
   override def onAdd: Unit = {
     super.onAdd
-    sstate.foreach(_.addSymdoc(fors,id,this.plain.node.head))
+    sstate.foreach { s =>
+      val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
+      s.addSymdoc(fors, id, this.plain.node.head, lang)
+    }
   }
 }
 case class SHTMLAssertion(orig:HTMLNode) extends HTMLStatement("assertion",orig) {
@@ -773,7 +783,10 @@ case class SHTMLAssertion(orig:HTMLNode) extends HTMLStatement("assertion",orig)
 
   override def onAdd: Unit = {
     super.onAdd
-    sstate.foreach(_.addSymdoc(fors, id, this.plain.node.head))
+    sstate.foreach { s =>
+      val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
+      s.addSymdoc(fors, id, this.plain.node.head, lang)
+    }
   }
 }
 

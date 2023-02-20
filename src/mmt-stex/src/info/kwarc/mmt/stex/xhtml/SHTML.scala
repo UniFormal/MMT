@@ -93,27 +93,7 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
   def endAdd[T <: StructuralElement](ce: ContainerElement[T]) : Unit
 
   def getRuler(tm:Term)(implicit self:SHTMLClass) : Option[HasMetaData] = {
-    val rules = try {
-      RuleSet.collectRules(server.ctrl, self.getRuleContext).get(classOf[RulerRule]).toList
-    } catch {
-      case _: GetError =>
-        Nil
-    }
-    def get(tm : Term) : Option[HasMetaData] = rules.collectFirst{
-      case rl if rl(server.ctrl,get,tm).isDefined =>
-        rl(server.ctrl,get,tm).get
-    }
-    get(tm) match {
-      case Some(c) => Some(c)
-      case _ => tm match {
-        case OMS(gn) => getO(gn) match {
-          case Some(c : Constant) => Some(c)
-          case _ => None
-        }
-        case OMV(x) => self.getVariableContext.findLast(_.name == x)
-        case _ => None
-      }
-    }
+    server.getRuler(tm,self.getRuleContext ++ self.getVariableContext)
   }
   def update(se: StructuralElement)
   def error(s:String): Unit
@@ -178,10 +158,10 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
         VarDecl(LocalName("argh"), df = tm)
     }
   }
-  def addNotation(path: GlobalName, id:String,opprec:Int,component:SHTMLONotationComponent,op:Option[SHTMLOOpNotationComponent])(implicit context : SHTMLClass) : Unit
+  def addNotation(path: GlobalName, id:String,opprec:Int,argprecs:List[Int],component:SHTMLONotationComponent,op:Option[SHTMLOOpNotationComponent])(implicit context : SHTMLClass) : Unit
 
-  def addVarNotation(name:LocalName, id: String, opprec: Int, component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLClass): Unit
-  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node)(implicit context : SHTMLClass) : Unit
+  def addVarNotation(name:LocalName, id: String, opprec: Int,argprecs:List[Int], component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLClass): Unit
+  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node,language:String)(implicit context : SHTMLClass) : Unit
   def addExample(fors : List[GlobalName],id:String,html:scala.xml.Node)(implicit context : SHTMLClass) : Unit
   def markAsUnknown(v: OMV): OMV = {
     v.metadata.update(ParseResult.unknown, OMS(ParseResult.unknown))
@@ -667,14 +647,20 @@ trait SHTMLONotation extends SHTMLObject {
   var opprec : Int = 0
   var component: Option[SHTMLONotationComponent] = None
   var opcomponent: Option[SHTMLOOpNotationComponent] = None
+  var argprecs : List[Int] = Nil
   def close(path: GlobalName): Unit = {
-    sstate.foreach(s => component.foreach(c =>
-      s.addNotation(path,id,opprec,c,opcomponent)
-    ))
+    sstate.foreach(s => component.foreach { c =>
+      val npath = s.getO(path).flatMap{_.path match {
+        case gn:GlobalName =>
+          Some(gn)
+        case _ => None
+      }}.getOrElse(path)
+      s.addNotation(npath, id, opprec, argprecs,c, opcomponent)
+    })
   }
   def closeVar(name:LocalName) = {
     sstate.foreach(s => component.foreach(c =>
-      s.addVarNotation(name,id,opprec,c,opcomponent)
+      s.addVarNotation(name,id,opprec,argprecs,c,opcomponent)
     ))
   }
 }

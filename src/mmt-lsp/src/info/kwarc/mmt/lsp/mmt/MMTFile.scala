@@ -29,7 +29,7 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
     super.onUpdate(changes)
   }
 
-  override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
+  override def onChange(annotations: List[(Delta, DocAnnotation)]): Unit = {
     print("")
   }
 
@@ -225,7 +225,7 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
       }
       getElems(d)
     }
-    client.documentErrors(controller,this,uri,errorCont.getErrors:_*)
+    client.documentErrors(this,errorCont.getErrors:_*)
     errorCont.reset
   }
 

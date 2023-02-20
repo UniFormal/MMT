@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, SandboxedWebSocket, TextDocumentServer, WithAnnotations, WithAutocomplete}
-import info.kwarc.mmt.stex.parsing.stex.STeXSuperficialParser
+import info.kwarc.mmt.stex.parsing.stex.STeXParser
 import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams, WorkspaceFoldersOptions, WorkspaceServerCapabilities, WorkspaceSymbol, WorkspaceSymbolParams}
@@ -91,6 +91,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
   with WithAutocomplete[STeXClient]
   with WithAnnotations[STeXClient,sTeXDocument]
  {
+   override def presenter = stexserver.presenter
    override def newDocument(uri: String): sTeXDocument = {
      //val mf = client.client.getMainFile
      //val file = mf.join().mainFile
@@ -98,7 +99,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      new sTeXDocument(uri,this.client,this)
    }
    var mathhub_top : Option[File] = None
-   lazy val parser = new STeXSuperficialParser(controller)
+   lazy val parser = new STeXParser(controller)
    var localServer : URI = null
 
    override def completion(doc: String, line: Int, char: Int): List[Completion] = Nil
@@ -368,7 +369,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
 
    override def connect: Unit = {
-     controller.extman.addExtension(lspdocumentserver)
+     controller.extman.addExtension(htmlserver.get)
      localServer = controller.server.get.baseURI
      client.log("Connected to sTeX!")
    }
@@ -384,8 +385,18 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    val self = this
 
-   lazy val lspdocumentserver = new ServerExtension("stexlspdocumentserver") {
+   override lazy val htmlserver = Some(new ServerExtension("stexlspdocumentserver") {
      override def apply(request: ServerRequest): ServerResponse = request.path.lastOption match {
+       case Some("lsperror") =>
+         var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+         html = html.replace("CONTENT_URL_PLACEHOLDER", (localServer / (":" + this.pathPrefix) / "geterror").toString + "?" + request.query)
+         html = html.replace("BASE_URL_PLACEHOLDER", "")
+         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?None")
+         ServerResponse(html, "text/html")
+       case Some("geterror") =>
+         val ue = client.diags(client.diags.length - (1 + request.query.toInt))._2.get
+         val ret = self.presenter.doHistories(ue.cp,ue.histories.reverse :_*)
+         ServerResponse(ret,"text/html")
        case Some("document") =>
          request.query match {
            case "" =>
@@ -404,6 +415,22 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
              }
          }
        case Some("fulldocument") =>
+         request.query match {
+           case "" =>
+             ServerResponse("Empty Document path", "txt")
+           case s =>
+             self.documents.get(s) match {
+               case None =>
+                 ServerResponse("Empty Document path", "txt")
+               case Some(d) =>
+                 var html = MMTSystem.getResourceAsString("mmt-web/stex/tabs.html")
+                 html = html.replace("%%HTMLSOURCE%%", (localServer / (":" + this.pathPrefix) / "fullhtml").toString + "?" + s)
+                 html = html.replace("%%OMDOCSOURCE%%", localServer.toString + "/:" + stexserver.pathPrefix + "/omdoc?archive=" + d.archive.map(_.id).getOrElse("NONE") + "&filepath=" + d.relfile.map(_.setExtension("omdoc")).getOrElse("NONE"))
+                 html = html.replace("%%PDFSOURCE%%", localServer.toString + "/:" + stexserver.pathPrefix + "None")
+                 ServerResponse(html, "text/html")
+             }
+         }
+       case Some("fullhtml") =>
          request.query match {
            case "" =>
              ServerResponse("Empty Document path","txt")
@@ -434,8 +461,14 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        case _ =>
          ServerResponse("Unknown key","txt")
      }
-   }
+   })
+}
 
+object SemanticHighlighting {
+  val module = 0
+  val declaration = 1
+  val symbol = 2
+  val variable = 3
 }
 
 object Socket {

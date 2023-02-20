@@ -1,14 +1,15 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.checking.History
+import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, RenderingHandler, VarData}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
-import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GlobalName, LocalName, StructuralElement, presentation}
+import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GetError, GlobalName, LocalName, RuleSet, StructuralElement, presentation}
 import info.kwarc.mmt.stex
 import info.kwarc.mmt.stex.Extensions.NotationExtractor
-import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType}
+import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, NatLiterals, RulerRule}
 import info.kwarc.mmt.stex.xhtml.HTMLParser
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
@@ -175,116 +176,280 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     XML.loadString(s"<mrow>${sb.get}</mrow>").head.child
   }
 
+  private def undoPre(h :  SHTMLHoas.HoasRule,f : Term,args:List[SOMBArg]) : List[SOMBArg] = args match {
+    case SCtx(Context(vd)) :: STerm(SHTMLHoas.Omb(`h`,`f`,iargs)) :: Nil =>
+      val ret = undoPre(h,f,iargs)
+      ret.headOption match {
+        case Some(SCtx(ctx)) =>
+          SCtx(Context(vd) ++ ctx) :: ret.tail
+        case _ => args
+      }
+    case STerm(t) :: SCtx(Context(vd)) :: STerm(SHTMLHoas.Omb(`h`, `f`, iargs)) :: Nil =>
+      val ret = undoPre(h, f, iargs)
+      ret.headOption match {
+        case Some(STerm(`t`)) =>
+          ret.tail.headOption match {
+            case Some(SCtx(ctx)) =>
+              STerm(t) :: SCtx(Context(vd) ++ ctx) :: ret.tail.tail
+            case _ => args
+          }
+        case _ => args
+      }
+    case _ => args
+  }
+  private def undoBin(h : Option[SHTMLHoas.HoasRule],f : Term,pre:List[Term],ls:List[Term],post:List[Term]): List[Term] = ls match {
+    case List(SHTMLHoas.OmaSpine(`h`,`f`,ls),b) if ls.startsWith(pre) && ls.endsWith(post) =>
+      undoBin(h,f,pre,ls.drop(pre.length).dropRight(post.length),post) ::: b :: Nil
+    case List(SHTMLHoas.OmaSpine(`h`,`f`,ls)) if ls.startsWith(pre) && ls.endsWith(post) =>
+      undoBin(h,f,pre,ls.drop(pre.length).dropRight(post.length),post)
+    case _ =>
+      ls
+  }
+  private def normalizeTerm(t : Term)(implicit pc: PresentationContext) = {
+    val (ruler,head) = {
+      (t match {
+        case SHTMLHoas.Omb(_, f, _) =>
+          Some(f)
+        case SHTMLHoas.OmaSpine(_, f, _) =>
+          Some(f)
+        case OMBIND(f, _, _) =>
+          Some(f)
+        case _ =>
+          None
+      }) match {
+        case None =>
+          (None,None)
+        case Some(t@OMS(p)) =>
+          (server.getRuler(t, pc.getContext),controller.getO(p))
+        case Some(t) =>
+          (server.getRuler(t, pc.getContext), None)
+      }
+    }
+    val nots = head.toList.flatMap(server.getNotations) ::: ruler.toList.flatMap(server.getNotations)
+    var rett = t match {
+      case SHTML.implicit_binder.spine(ctx,tm) =>
+        OMBIND(OMS(SHTML.implicit_binder.path),ctx,tm)
+      case _ =>
+        t
+    }
+
+    def implicitsFromTerm(tm: Term) = tm match {
+      case SHTML.implicit_binder.spine(ctx, _) => ctx.length
+      case _ => 0
+    }
+
+    val implnum = ruler match {
+      case Some(c: Constant) if c.tp.isDefined =>
+        implicitsFromTerm(c.tp.get)
+      case Some(vd: VarDecl) if vd.tp.isDefined =>
+        implicitsFromTerm(vd.tp.get)
+      case _ =>
+        0
+    }
+
+    ruler match {
+      case Some(o) =>
+        (rett,server.getAssoctype(o),server.getArity(o)) match {
+          case (SHTMLHoas.Omb(h,f,args),Some("pre"),_) =>
+            rett = h.HOMB(f,undoPre(h,f,args))
+            rett = h.HOMB(f, undoPre(h, f, args))
+          case (SHTMLHoas.OmaSpine(h,f,ls),Some("bin"|"binr"|"conj"),Some("a")) =>
+            val (pre,args) = ls.splitAt(implnum)
+            rett = SHTMLHoas.OmaSpine(h,f,pre ::: SHTML.flatseq(undoBin(h,f,pre,args,Nil)) :: Nil)
+          case (SHTMLHoas.OmaSpine(h, f, ls), Some("bin" | "binr" | "conj"), Some("ai")) =>
+            val (pre, args) = ls.splitAt(implnum)
+            rett = SHTMLHoas.OmaSpine(h, f, pre ::: SHTML.flatseq(undoBin(h, f, pre, args.init, List(args.last))) :: args.last :: Nil)
+          case (SHTMLHoas.OmaSpine(h, f, ls), Some("bin" | "binr" | "conj"), Some(a)) =>
+            println(a)
+            rett = SHTMLHoas.OmaSpine(h, f, undoBin(h, f, Nil, ls, Nil))
+          case _ =>
+        }
+      case _ =>
+    }
+
+    val impls = if (implnum == 0) Nil else {rett match {
+      case SHTMLHoas.OmaSpine(h, OMS(p), args) =>
+        val is = args.take(implnum)
+        rett = SHTMLHoas.OmaSpine(h, OMS(p), args.drop(implnum))
+        is
+      case SHTMLHoas.Omb(h, OMS(p), args) =>
+        val is = args.take(implnum).map(_.asInstanceOf[STerm].tm)
+        rett = h.HOMB(OMS(p), args.drop(implnum))
+        is
+      case _ => Nil
+    }}
+
+    (ruler,impls,nots,rett)
+  }
+
   override def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pc: PresentationContext): Int = {
-    lazy val default = {
+    def default(implicit pc: PresentationContext) = {
       super.recurse(obj, bracket)
     }
     obj match {
       case ctx: Context =>
-        if (ctx.length == 0) 0
-        else if (ctx.length == 1) recurse(ctx.variables.head) else {
-          recurse(ctx.variables.head)
-          pc.out({
-            <mi>,</mi>
-          }.toString())
-          recurse(Context(ctx.variables.tail: _*))
+        pc.out("<mrow><mo stretchy=\"true\">{</mo>")
+        var vars = ctx.variables
+        try {
+          while (vars.nonEmpty) {
+            recurse(vars.head)
+            vars = vars.tail
+            if (vars.nonEmpty) pc.out("<mo>,</mo>")
+          }
+        } finally {
+          pc.out("<mo stretchy=\"true\">}</mo></mrow>")
         }
+        0
+      case vd : VarDecl =>
+        val notations = server.getNotations(vd)
+        val arity = server.getArity(vd)
+        pc.out("<mrow>")
+        arity match {
+          case Some("") | None =>
+            notations match {
+              // TODO get notation id
+              case not :: _ =>
+                // TODO parentheses
+                pc.out(not.present(Nil).toString())
+              case Nil => pc.out("<mi>" + vd.name + "</mi>")
+            }
+          case _ =>
+            // TODO get notation id
+            notations.find(_.op.isDefined) match {
+              case Some(not) =>
+                // TODO parentheses
+                pc.out(not.op.get.toString)
+              case _ => pc.out("<mi>" + vd.name + "</mi>")
+            }
+        }
+        vd.tp.foreach{tp =>
+          pc.out("<mo>:</mo>")
+          recurse(tp)
+        }
+        vd.df.foreach { t =>
+          pc.out("<mo>:=</mo>")
+          recurse(t)
+        }
+        pc.out("</mrow>")
+        0
       case tm: Term =>
-        val t = tm //val (is, ar, t) = implicits(tm)(pc.getContext)
+        val (ruler,is,notations,t) = normalizeTerm(tm)
 
         def ret() = t match {
           case SHTML.informal(n) =>
             val node = server.present(n.toString())(None)
             node.plain.attributes((node.namespace, "mathbackground")) = "#ff0000"
             pc.out(node.toString)
-            0
           case SHTML.informal.op(label, args) =>
             pc.out("<" + label + " mathbackground=\"#ff0000\"" + ">")
             args.foreach(recurse(_))
             pc.out("</" + label + ">")
-            0
-          case SHTMLHoas.Omb(_,OMS(p), args) =>
-            controller.getO(p) match {
-              case Some(c: Constant) =>
-                server.getArity(c) match {
-                  case Some(arity) if arity.length == args.length =>
-                    server.getNotations(p) match {
-                      // TODO get notation id
-                      case not :: _ =>
-                        val nargs = arity.zip(args).map {
-                          case ('a', STerm(SHTML.flatseq(ls))) =>
-                            ls.map { recurseI(_) }
-                          case ('i', STerm(tm)) =>
-                            List(recurseI(tm))
-                          case ('b',SCtx(Context(v))) =>
-                            List(recurseI(v))
-                          case ('B', SCtx(ctx)) =>
-                            ctx.map { recurseI(_) }
-                        }
-                        pc.out(not.present(nargs.toList).toString())
-                      case _ => default
+          case SHTMLHoas.Omb(_, f, args) =>
+            // TODO attach f somewhere?
+            val arity = ruler.flatMap(server.getArity).getOrElse("")
+            val nctx = pc.context ::: args.flatMap{case SCtx(ctx) => ctx case _ => Context.empty}
+              .map(VarData(_,None,pc.pos))
+            notations match {
+              // TODO get notation id
+              case not :: _ =>
+                val nargs = arity.zip(args).map {
+                  case ('a', STerm(SHTML.flatseq(ls))) =>
+                    ls.map {
+                      recurseI(_)(pc.copy(context = nctx))
                     }
-                  case _ => default
+                  case ('i', STerm(tm)) =>
+                    List(recurseI(tm)(pc.copy(context = nctx)))
+                  case ('b', SCtx(Context(v))) =>
+                    List(recurseI(v)(pc.copy(context = nctx)))
+                  case ('B', SCtx(ctx)) =>
+                    ctx.map {
+                      recurseI(_)(pc.copy(context = nctx))
+                    }
                 }
-              case _ => default
+                pc.out(not.present(nargs.toList).toString())
+              case _ => default(pc.copy(context = nctx))
             }
-          case SHTMLHoas.OmaSpine(_,OMS(p), args) =>
-            controller.getO(p) match {
-              case Some(c: Constant) =>
-                server.getArity(c) match {
-                  case Some(arity) if arity.length == args.length =>
-                    server.getNotations(p) match {
-                      // TODO get notation id
-                      case not :: _ =>
-                        val nargs = arity.zip(args).map {
-                          case ('a', SHTML.flatseq(ls)) =>
-                            ls.map { recurseI(_) }
-                          case ('i', tm) => List(recurseI(tm))
-                        }
-                        pc.out(not.present(nargs.toList).toString())
-                      case _ => default
+          case OMBIND(f, ctx, bd) =>
+            // TODO attach f somewhere?
+            val args = List(SCtx(ctx),STerm(bd))
+            val arity = ruler.flatMap(server.getArity).getOrElse("")
+            val nctx = pc.context ::: ctx.map(VarData(_, None, pc.pos))
+            notations match {
+              // TODO get notation id
+              case not :: _ =>
+                val nargs = arity.zip(args).map {
+                  case ('a', STerm(SHTML.flatseq(ls))) =>
+                    ls.map {
+                      recurseI(_)(pc.copy(context = nctx))
                     }
-                  case _ => default
+                  case ('i', STerm(tm)) =>
+                    List(recurseI(tm)(pc.copy(context = nctx)))
+                  case ('b', SCtx(Context(v))) =>
+                    List(recurseI(v)(pc.copy(context = nctx)))
+                  case ('B', SCtx(ctx)) =>
+                    ctx.map {
+                      recurseI(_)(pc.copy(context = nctx))
+                    }
                 }
+                pc.out(not.present(nargs.toList).toString())
+              case _ => default(pc.copy(context = nctx))
+            }
+          case SHTMLHoas.OmaSpine(_, f, args) =>
+            // TODO attach f somewhere?
+            val arity = ruler.flatMap(server.getArity).getOrElse("")
+            notations match {
+              // TODO get notation id
+              case not :: _ =>
+                val nargs = arity.zip(args).map {
+                  case ('a', SHTML.flatseq(ls)) =>
+                    ls.map {
+                      recurseI(_)
+                    }
+                  case ('a', tm) =>
+                    // TODO
+                    List(recurseI(tm))
+                  case ('i', tm) => List(recurseI(tm))
+                }
+                pc.out(not.present(nargs.toList).toString())
               case _ => default
             }
           case OMS(p) =>
-            controller.getO(p) match {
-                case Some(c : Constant) =>
-                  server.getArity(c) match {
-                    case Some("")|None =>
-                    server.getNotations(p) match {
-                      // TODO get notation id
-                      case not :: _ =>
-                        // TODO parentheses
-                        pc.out(not.present(Nil).toString())
-                      case Nil => default
-                    }
-                  case _ =>
-                    // TODO get notation id
-                    server.getNotations(p).find(_.op.isDefined) match {
-                      case Some(not) =>
-                        // TODO parentheses
-                        pc.out(not.op.get.toString)
-                      case _ => default
-                    }
+            val ruler = server.getRuler(t,pc.getContext)
+            val arity = ruler.flatMap(server.getArity)
+            arity match {
+              case Some("") | None =>
+                notations match {
+                  // TODO get notation id
+                  case not :: _ =>
+                    // TODO parentheses
+                    pc.out(not.present(Nil).toString())
+                  case Nil => default
                 }
-              case _ => default
+              case _ =>
+                // TODO get notation id
+                notations.find(_.op.isDefined) match {
+                  case Some(not) =>
+                    // TODO parentheses
+                    pc.out(not.op.get.toString)
+                  case _ => default
+                }
             }
-          case _ => default
+          case _ =>
+            default
         }
-
-        ret() /* if (is.isEmpty) ret() else {
-          pc.out("<munder><munder accentunder=\"true\"><mrow>")
+        if (is.isEmpty) ret() else {
+          pc.out("<munder><munder><mrow>")
           ret()
-          pc.out("</mrow><mo>&#x23DF;</mo></munder><mrow>")
-          recurse(is.head.obj)
-          is.tail.foreach { a =>
-            pc.out("<mo>,</mo>")
-            recurse(a.obj)
+          pc.out("</mrow><mo>⏟</mo></munder><mrow>")
+          var implicits = is
+          while (implicits.nonEmpty) {
+            val h :: t = implicits
+            implicits = t
+            recurse(h)
+            if (implicits.nonEmpty) pc.out("<mo>,</mo>")
           }
           pc.out("</mrow></munder>")
-        } */
+        }
         0
       case _ =>
         default

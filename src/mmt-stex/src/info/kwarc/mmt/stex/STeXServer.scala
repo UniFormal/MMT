@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.{ExampleRelational, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.vollki.FullsTeXGraph
+import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, VollKi}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.xhtml._
 
@@ -40,6 +40,8 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
 
     controller.extman.addExtension(texPresenter)
     controller.extman.addExtension(xhtmlPresenter)
+    controller.extman.addExtension(presenter)
+    controller.extman.addExtension(new VollKi(this))
   }
 
   def iterateLibs(a : Archive)(fn : File => Unit): Unit = {
@@ -57,7 +59,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
-      case Some("document" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css") =>
+      case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css") =>
         documentRequest(request)
       case Some("omdoc" | "omdocfrag" | "omdocuri") =>
         omdocRequest(request)
