@@ -56,6 +56,41 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
           case None =>
             ServerResponse("Unknown query: " + request.query, "text/plain")
         }
+      case Some("deps") =>
+        path match {
+          case Some(p) =>
+            getSymdocs(p, language).headOption match {
+              case None =>
+                ServerResponse.JsonResponse(JSONArray())
+              case Some(doc) =>
+                val html = HTMLParser(doc.toString())(new ParsingState(controller, Nil))
+                var syms: List[GlobalName] = Nil
+                html.iterate { n =>
+                  n.plain.attributes.get((HTMLParser.ns_shtml, "definiendum")) match {
+                    case Some(s) if s!= p.toString => Try({ syms ::= Path.parseS(s) })
+                    case _ =>
+                      n.plain.attributes.get((HTMLParser.ns_shtml, "term")) match {
+                        case Some("OMID") =>
+                          n.plain.attributes.get((HTMLParser.ns_shtml, "head")) match {
+                            case Some(p2) if p2 != p.toString => Try({ syms ::= Path.parseS(p2) })
+                            case _ =>
+                          }
+                        case _ =>
+                          n.plain.attributes.get((HTMLParser.ns_shtml, "comp")) match {
+                            case Some(p2) if p2 != p.toString => Try({ syms ::= Path.parseS(p2) })
+                            case _ =>
+                          }
+                      }
+                  }
+                }
+                ServerResponse.JsonResponse(JSONArray(
+                  syms.distinct.map(p => JSONString(p.toString)) :_*
+                ))
+            }
+          case None =>
+            ServerResponse("Unknown query: " + request.query, "text/plain")
+        }
+
     }
 
   }
@@ -106,7 +141,11 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
             }
           }
         }
-        syms.distinct.foreach(s => dependencies += getDep(s))
+        syms.distinct.foreach(getDep(_) match {
+          case o if o == this =>
+          case o => dependencies += o
+        })
+        //syms.distinct.foreach(s => dependencies += getDep(s))
       }
       def getSorted = {
         val d = new Dones()

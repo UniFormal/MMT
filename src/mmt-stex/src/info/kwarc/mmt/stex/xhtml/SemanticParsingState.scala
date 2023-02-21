@@ -43,7 +43,21 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   }
   def applyTerm(tm: Term)(implicit self:SHTMLNode): Term = {
     val rules = getRules(self.getRuleContext).get(classOf[HTMLTermRule]).toList.sortBy(_.priority)
-    rules.foldLeft(tm)((it,f) => f.apply(it)(this,self,applyTerm(_)).getOrElse(it))
+    val ret = rules.foldLeft(tm)((it,f) => f.apply(it)(this,self,applyTerm(_)).getOrElse(it))
+    ret match {
+      case OMV(x) =>
+        self.getVariableContext.findLast(_.name == x) match {
+          case Some(vd) =>
+            vd.metadata.getValues(SHTML.headterm).headOption match {
+              case Some(OMS(p)) =>
+                self.plain.attributes((HTMLParser.ns_mmt, "variable")) = p.toString
+              case _ =>
+            }
+          case _ =>
+        }
+      case _ =>
+    }
+    ret
   }
 
   def applyTopLevelTerm(tm: Term)(implicit self:SHTMLNode) : Term = {

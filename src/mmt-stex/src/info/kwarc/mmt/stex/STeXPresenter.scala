@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
 import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GetError, GlobalName, LocalName, RuleSet, StructuralElement, presentation}
 import info.kwarc.mmt.stex
 import info.kwarc.mmt.stex.Extensions.NotationExtractor
-import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, NatLiterals, RulerRule}
+import info.kwarc.mmt.stex.rules.{Getfield, ModelsOf, ModuleType, IntLiterals, RulerRule}
 import info.kwarc.mmt.stex.xhtml.HTMLParser
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
@@ -205,6 +205,17 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     case _ =>
       ls
   }
+
+  var downwards_precedence = 2147483647
+  def with_precedence[A](i:Int)(f : => A): A = {
+    val oldprec = downwards_precedence
+    try {
+      downwards_precedence = i
+      f
+    } finally {
+      downwards_precedence = oldprec
+    }
+  }
   private def normalizeTerm(t : Term)(implicit pc: PresentationContext) = {
     val (ruler,head) = {
       (t match {
@@ -309,7 +320,6 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             notations match {
               // TODO get notation id
               case not :: _ =>
-                // TODO parentheses
                 pc.out(not.present(Nil).toString())
               case Nil => pc.out("<mi>" + vd.name + "</mi>")
             }
@@ -317,7 +327,6 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             // TODO get notation id
             notations.find(_.op.isDefined) match {
               case Some(not) =>
-                // TODO parentheses
                 pc.out(not.op.get.toString)
               case _ => pc.out("<mi>" + vd.name + "</mi>")
             }
@@ -352,21 +361,29 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             notations match {
               // TODO get notation id
               case not :: _ =>
-                val nargs = arity.zip(args).map {
-                  case ('a', STerm(SHTML.flatseq(ls))) =>
-                    ls.map {
-                      recurseI(_)(pc.copy(context = nctx))
+                val nargs = arity.zip(args).zipWithIndex.map {
+                  case (('a', STerm(SHTML.flatseq(ls))),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      ls.map {
+                        recurseI(_)(pc.copy(context = nctx))
+                      }
                     }
-                  case ('i', STerm(tm)) =>
-                    List(recurseI(tm)(pc.copy(context = nctx)))
-                  case ('b', SCtx(Context(v))) =>
-                    List(recurseI(v)(pc.copy(context = nctx)))
-                  case ('B', SCtx(ctx)) =>
-                    ctx.map {
-                      recurseI(_)(pc.copy(context = nctx))
+                  case (('i', STerm(tm)),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      List(recurseI(tm)(pc.copy(context = nctx)))
+                    }
+                  case (('b', SCtx(Context(v))),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      List(recurseI(v)(pc.copy(context = nctx)))
+                    }
+                  case (('B', SCtx(ctx)),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      ctx.map {
+                        recurseI(_)(pc.copy(context = nctx))
+                      }
                     }
                 }
-                pc.out(not.present(nargs.toList).toString())
+                pc.out(not.present(nargs.toList,downwards_precedence).toString())
               case _ => default(pc.copy(context = nctx))
             }
           case OMBIND(f, ctx, bd) =>
@@ -377,21 +394,29 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             notations match {
               // TODO get notation id
               case not :: _ =>
-                val nargs = arity.zip(args).map {
-                  case ('a', STerm(SHTML.flatseq(ls))) =>
-                    ls.map {
-                      recurseI(_)(pc.copy(context = nctx))
+                val nargs = arity.zip(args).zipWithIndex.map {
+                  case (('a', STerm(SHTML.flatseq(ls))),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      ls.map {
+                        recurseI(_)(pc.copy(context = nctx))
+                      }
                     }
-                  case ('i', STerm(tm)) =>
-                    List(recurseI(tm)(pc.copy(context = nctx)))
-                  case ('b', SCtx(Context(v))) =>
-                    List(recurseI(v)(pc.copy(context = nctx)))
-                  case ('B', SCtx(ctx)) =>
-                    ctx.map {
-                      recurseI(_)(pc.copy(context = nctx))
+                  case (('i', STerm(tm)),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      List(recurseI(tm)(pc.copy(context = nctx)))
+                    }
+                  case (('b', SCtx(Context(v))),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      List(recurseI(v)(pc.copy(context = nctx)))
+                    }
+                  case (('B', SCtx(ctx)),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      ctx.map {
+                        recurseI(_)(pc.copy(context = nctx))
+                      }
                     }
                 }
-                pc.out(not.present(nargs.toList).toString())
+                pc.out(not.present(nargs.toList,downwards_precedence).toString())
               case _ => default(pc.copy(context = nctx))
             }
           case SHTMLHoas.OmaSpine(_, f, args) =>
@@ -400,17 +425,22 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             notations match {
               // TODO get notation id
               case not :: _ =>
-                val nargs = arity.zip(args).map {
-                  case ('a', SHTML.flatseq(ls)) =>
-                    ls.map {
-                      recurseI(_)
+                val nargs = arity.zip(args).zipWithIndex.map {
+                  case (('a', SHTML.flatseq(ls)),p) =>
+                    with_precedence(not.argprecs(p)) {
+                      ls.map {
+                        recurseI(_)
+                      }
                     }
-                  case ('a', tm) =>
+                  case (('a', tm),p) =>
                     // TODO
-                    List(recurseI(tm))
-                  case ('i', tm) => List(recurseI(tm))
+                    with_precedence(not.argprecs(p)) {
+                      List(recurseI(tm))
+                    }
+                  case (('i', tm),p) =>
+                    with_precedence(not.argprecs(p)) {List(recurseI(tm))}
                 }
-                pc.out(not.present(nargs.toList).toString())
+                pc.out(not.present(nargs.toList,downwards_precedence).toString())
               case _ => default
             }
           case OMS(p) =>

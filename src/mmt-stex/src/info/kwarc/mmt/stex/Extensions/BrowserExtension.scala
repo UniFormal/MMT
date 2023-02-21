@@ -16,6 +16,8 @@ trait SHTMLBrowser { this : STeXServer =>
         html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "true")
         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
         ServerResponse(html, "html")
+      case _ =>
+        documentRequest(request.copy(path=request.path.init ::: List("fullhtml")))
       /*case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
         request.query match {
           case "" =>

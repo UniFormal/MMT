@@ -19,7 +19,7 @@ object STeXRules {
     SkipCommand("stexstyleparagraph", "onn"),
     SkipCommand("stexstyleexample", "onn"),
     SkipCommand("stexstyleproblem", "onn"),
-    VarDefRule(dict),
+    VarDefRule(dict),VarSeqRule(dict),
     SDefinitionRule(dict),SAssertionRule(dict),SParagraphRule(dict),
     InlineDefRule(dict),InlineAssRule(dict:Dictionary)
   )
@@ -480,6 +480,80 @@ case class VarDefRule(dict:Dictionary) extends SymDeclRuleLike with NotationRule
     ret
   }
 }
+class SeqApp(syminfo: SymdeclInfo,notinfo:Option[NotationInfo]) extends STeXMacro {
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    //in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,syminfo.path.toString)
+    plain.foreach { plain =>
+      val pa = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant,syminfo.path.toString)
+      pa.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
+      pa.setSemanticHighlightingClass(SemanticHighlighting.variable)
+      pa.setHover("Variable Sequence " + syminfo.path.name.toString + (notinfo match {
+        case Some(nt) => "#" + nt.id
+        case _ => ""
+      }))
+    }
+  }
+}
+case class VarseqApp(notinfo:NotationInfo,range:List[TeXTokenLike], dict:Dictionary) extends SemanticMacro with NotationMacro {
+  val syminfo = notinfo.syminfo
+  val reftokens = Nil
+  val alternatives = Nil
+  val name = notinfo.syminfo.macroname
+
+  override def doText(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    new SeqApp(syminfo,Some(notinfo))
+  }
+  override def doMath(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    new SeqApp(syminfo, Some(notinfo))
+  }
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,syminfo.path.toString)
+    a.setHover("Variable Sequence " + syminfo.path.name.toString)
+    plain.foreach {plain =>
+      val pa = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant)
+      pa.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
+      pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+    }
+  }
+}
+case class VarSeqRule(dict:Dictionary) extends SymDeclRuleLike with NotationRuleLike with NonFormalRule with MacroRule {
+  val name = "varseq"
+
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    import parser._
+    val maybename = readArgument.asname
+    val opts = readOptAgument
+    val name = opts.flatMap(_.consumeStr("name")).getOrElse(maybename)
+    val path = DPath(URI.scheme("varseq")) ? "" ? name
+    opts.foreach { o =>
+      o.drop("assoc", "reorder", "role", "argtypes")
+    }
+    opts.flatMap(_.consume("type")).foreach(tks => parser.latex.inMath{ parser.reparse(tks) })
+    val defi = opts.flatMap(_.consume("def"))
+    val defined = defi.isDefined
+    if (!dict.formalOnly && defined) {
+      defi.foreach(parser.reparse)
+    }
+    // TODO maybe check type / def?
+    val returns = opts.flatMap(_.consume("return"))
+    var argstr = opts.flatMap(_.consumeStr("args")).getOrElse("i")
+    if (argstr.nonEmpty && argstr.forall(_.isDigit)) {
+      argstr = (1 to argstr.toInt).map(_ => 'i').mkString
+    } else argstr.foreach { c =>
+      if (c != 'i' && c != 'a' && c != 'b' && c != 'B') throw LaTeXParseError("Invalid character in args: " + c)
+    }
+    val si = new SymdeclInfo(maybename,path,argstr,dict.getFile,parser.trigger.startoffset,parser.children.head.endoffset,defined,returns)
+    val range = parser.readArgument
+    val not = parseOptsNot(si,opts)
+    val ret = VarseqApp(not,range.asList,dict)
+    opts.foreach(_.asKeyVals.foreach { p =>
+      ret.addError("Unknown argument: " + p._1.mkString.trim)
+    })
+    parser.latex.addRule(ret)
+    ret
+  }
+}
+
 case class NotationRule(dict:Dictionary) extends NotationRuleLike with SymRefRuleLike {
   val name = "notation"
 
@@ -585,9 +659,10 @@ trait StatementRule extends SymDeclRuleLike with SymRefRuleLike {
   protected val doass: Boolean
   def parseStatement[A <: TeXTokenLike](implicit parser: ParseState[A]) = {
     val opts = parser.readOptAgument
-    opts.flatMap(_.getStr("name")) match {
+    val sym = opts.flatMap(_.getStr("name")) match {
       case Some(_) if dict.getModuleOpt.isEmpty =>
         parser.trigger.addError("\"name\" argument only allowed in modules")
+        None
       case Some(_) =>
         val (sym,makemacro) = opts.get.consumeStr("macroname") match {
           case Some(macroname) =>
@@ -599,16 +674,18 @@ trait StatementRule extends SymDeclRuleLike with SymRefRuleLike {
         val ret = new SymdeclApp(sym, dict)
         addExportRule(ret)
         if (makemacro) addExportRule(ret.cloned)
+        Some(ret)
       case _ =>
+        None
     }
     (opts,opts.flatMap(_.consumeStr("for")).map{s =>
       s.split(',').toList.map(_.trim).map(s => (s,dict.resolveName(s)(parser)))
-    }.getOrElse(Nil))
+    }.getOrElse(Nil),sym)
   }
 }
 abstract class InlineStatementRule extends StatementRule with MacroRule {
   override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
-    val (opts, fors) = parseStatement
+    val (opts, fors,sym) = parseStatement
     parser.latex.inGroup{
       def dofors = {
         defrules.foreach(parser.latex.addRule(_))
@@ -623,7 +700,7 @@ abstract class InlineStatementRule extends StatementRule with MacroRule {
       }
       if (doexs) exrules.foreach(parser.latex.addRule(_))
       if (doass) assrules.foreach(parser.latex.addRule(_))
-      val ret = new MacroApplication
+      val ret = sym.getOrElse(new MacroApplication)
       fors.foreach {
         case (s, Nil) =>
           ret.addError("No symbol " + s + " found")
@@ -633,9 +710,22 @@ abstract class InlineStatementRule extends StatementRule with MacroRule {
     }
   }
 }
+case class StatementEnv(begin:Begin.BeginMacro,symopt:SymdeclApp,val dict:Dictionary) extends STeXEnvironment(begin) {
+
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Function, symbolname = symopt.syminfo.path.toString)
+    a.addCodeLens(symopt.syminfo.path.toString, "", Nil, startoffset, endoffset)
+    val pa = in.Annotations.add(begin, begin.startoffset, begin.endoffset - begin.startoffset, SymbolKind.Constant)
+    pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+    end.foreach{end =>
+      val pa = in.Annotations.add(end, end.startoffset, end.endoffset - end.startoffset, SymbolKind.Constant)
+      pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+    }
+  }
+}
 abstract class StatementEnvRule extends StatementRule with EnvironmentRule {
   override def applyStart(implicit parser: ParseState[Begin.BeginMacro]): Environment = {
-    val (opts, fors) = parseStatement
+    val (opts, fors,sym) = parseStatement
 
     def dofors = {
       defrules.foreach(parser.latex.addRule(_))
@@ -649,7 +739,7 @@ abstract class StatementEnvRule extends StatementRule with EnvironmentRule {
     }
     if (doexs) exrules.foreach(parser.latex.addRule(_))
     if (doass) assrules.foreach(parser.latex.addRule(_))
-    val ret = new Environment(parser.trigger)
+    val ret = sym.map(s => StatementEnv(parser.trigger,s,dict)).getOrElse(new Environment(parser.trigger))
     fors.foreach {
       case (s, Nil) =>
         ret.addError("No symbol " + s + " found")

@@ -396,7 +396,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        case Some("geterror") =>
          val ue = client.diags(client.diags.length - (1 + request.query.toInt))._2.get
          val ret = self.presenter.doHistories(ue.cp,ue.histories.reverse :_*)
-         ServerResponse(ret,"text/html")
+         ServerResponse("<body>" + ret + "</body>","text/html")
        case Some("document") =>
          request.query match {
            case "" =>

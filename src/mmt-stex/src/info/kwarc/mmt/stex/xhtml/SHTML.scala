@@ -193,9 +193,16 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
   }
 }
 
-trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike {
+trait ModuleLike extends SHTMLObject with HasRuleContext {
+  def mp : MPath
+  var signature_theory: Option[Theory] = None
+  var language_theory: Option[Theory] = None
+}
+trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike with HasLanguage with ModuleLike {
   val path:DPath
   var doc : Option[Document] = None
+  def mp = path ? LocalName(language)
+
   sstate.foreach { s =>
     if (path == s.doc.path) {
       doc = Some(s.doc)
@@ -205,6 +212,22 @@ trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike {
       doc = Some(d)
       s.add(d)
     }
+  }
+
+  def open: Unit = sstate.foreach { state =>
+    if (language.isEmpty) language = "en"
+    //if (language != "") {
+    val lang = Theory(path, LocalName(language), None)
+    state.server.addLanguage(language, lang)
+    doSourceRef(lang)
+    language_theory = Some(lang)
+    state.add(lang)
+    doc.foreach{d =>
+      state.add(MRef(d.path,lang.path))
+    }
+  }
+  def close: Unit = {
+    language_theory.foreach(t => sstate.foreach { s => s.endAdd(t) })
   }
 }
 trait SHTMLOVisible extends SHTMLObject {
@@ -227,11 +250,6 @@ trait HasRuleContext extends SHTMLObject with SHTMLGroupLike {
   def addToContext(ctx : Context) = _context = _context ++ ctx
 }
 
-trait ModuleLike extends SHTMLObject with HasRuleContext {
-  val mp : MPath
-  var signature_theory: Option[Theory] = None
-  var language_theory: Option[Theory] = None
-}
 trait SHTMLOTheory extends HasLanguage with ModuleLike {
   val mp : MPath
   var metatheory: Option[MPath] = None
@@ -240,7 +258,7 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
   lazy val hoas : Option[SHTMLHoas.HoasRule] = sstate.flatMap(_.getMetaRules(classOf[SHTMLHoas.HoasRule]).headOption)
 
   def open: Unit = sstate.foreach { state =>
-    val pth = findAncestor { case th: ModuleLike => th }
+    val pth = findAncestor { case th: ModuleLike if th.signature_theory.isDefined => th }
     metatheory.foreach { p =>
       state.getO(p) match {
         case None =>
@@ -434,8 +452,6 @@ trait SHTMLOSymbol extends SymbolLike {
       hoas.foreach(_.apply(c))
       if (macroname.nonEmpty) state.server.addMacroName(macroname,c)
       if (args.nonEmpty) state.server.addArity(args,c)
-      //if (assoctype.nonEmpty) state.server.addAssoctype(assoctype,c)
-      //if (reorderargs.nonEmpty) state.server.addReorder(reorderargs,c)
       if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, c)
       if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, c)
       doSourceRef(c)
@@ -481,6 +497,21 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
           case th: SHTMLOTheory => th.hoas
         }.flatten
         val vd = VarDecl(name, None, tp, df, None)
+        findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
+          case Some(t) =>
+            val cname = newname(t, name)
+            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), rl)
+            hoas.foreach(_.apply(c))
+            if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
+            if (args.nonEmpty) state.server.addArity(args, c)
+            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, c)
+            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, c)
+            vd.metadata.update(SHTML.headterm, c.toTerm)
+            doSourceRef(c)
+            state.add(c)
+            state.check(c)
+          case None =>
+        }
         hoas.foreach(_.apply(vd))
         if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
         if (args.nonEmpty) state.server.addArity(args, vd)
@@ -492,6 +523,11 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         gr.variables ++= vd
       }
     }
+  }
+  def newname(t : Theory, n : LocalName) : LocalName = {
+    if (t.isDeclared(n)) {
+      newname(t,LocalName.parse(n.toString + "\'"))
+    } else n
   }
   def close: Unit = {
     sstate.foreach { state =>
@@ -506,6 +542,21 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
           case th: SHTMLOTheory => th.hoas
         }.flatten
         val vd = VarDecl(name,None,tp,df,None)
+        findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
+          case Some(t) =>
+            val cname = newname(t, name)
+            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), rl)
+            hoas.foreach(_.apply(c))
+            if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
+            if (args.nonEmpty) state.server.addArity(args, c)
+            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, c)
+            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, c)
+            vd.metadata.update(SHTML.headterm, c.toTerm)
+            doSourceRef(c)
+            state.add(c)
+            state.check(c)
+          case None =>
+        }
         hoas.foreach(_.apply(vd))
         if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
         if (args.nonEmpty) state.server.addArity(args, vd)

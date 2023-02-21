@@ -12,7 +12,7 @@ import info.kwarc.mmt.stex.xhtml.{SHTMLNode, SHTMLObject, SHTMLState, SemanticSt
 import info.kwarc.mmt.stex.{IsSeq, SCtx, SHTML, SHTMLHoas, SOMBArg, STerm}
 
 object StringLiterals extends RepresentedRealizedType(OMS(SHTML.string),StandardString)
-object NatLiterals extends RepresentedRealizedType(OMS(SHTML.int),StandardInt)
+object IntLiterals extends RepresentedRealizedType(OMS(SHTML.int),StandardInt)
 
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.objects.Conversions._
@@ -330,7 +330,7 @@ object MnRule extends HTMLTermRule {
     case SHTML.informal(n) if n.label == "mi" && n.child.length == 1 && n.attribute("mathvariant").exists(_.head.toString() == "normal") =>
       val str = n.child.head.toString()
       if (str.forall(_.isDigit)) {
-        Some(NatLiterals.parse(str))
+        Some(IntLiterals.parse(str))
       } else None
     case _ => None
   }
@@ -352,8 +352,15 @@ object ParenthesisRule extends HTMLTermRule {
     }
   }
   override def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode,cont:Term => Term) : Option[Term] = tm match {
-    case SHTML.informal.op("mrow",List(open(_),t,close(_))) => Some(t)
+    case SHTML.informal.op("mrow",List(open(_),t,close(_))) => Some(SHTML.parens(t))
     case _ => None
+  }
+}
+
+object ParensIdentityRule extends ComputationRule(SHTML.parens.sym) {
+  override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+    case SHTML.parens(t) => Simplify(t)
+    case _ => Simplifiability.NoRecurse
   }
 }
 
@@ -466,7 +473,7 @@ object ImplicitsRule extends HTMLTermRule {
           case Some(SHTML.implicit_binder.spine(ctx,_)) =>
             val ret = SHTMLHoas.OmaSpine(h,f,ctx.map(_ => state.markAsUnknown(OMV(state.getUnknown))) ::: args) //doBinr(h, f, args)
             tm.metadata.getAll.foreach(ret.metadata.add(_))
-            ret.metadata.update(SHTML.implicit_binder.path,NatLiterals(ctx.length))
+            ret.metadata.update(SHTML.implicit_binder.path,IntLiterals(ctx.length))
             Some(ret)
           case _ => None
         }
@@ -478,7 +485,7 @@ object ImplicitsRule extends HTMLTermRule {
           case Some(SHTML.implicit_binder.spine(ctx, _)) =>
             val ret = h.HOMB(f, ctx.map(_ => STerm(state.markAsUnknown(OMV(state.getUnknown)))) ::: args) //doBinr(h, f, args)
             tm.metadata.getAll.foreach(ret.metadata.add(_))
-            ret.metadata.update(SHTML.implicit_binder.path, NatLiterals(ctx.length))
+            ret.metadata.update(SHTML.implicit_binder.path, IntLiterals(ctx.length))
             Some(ret)
           case _ => None
         }

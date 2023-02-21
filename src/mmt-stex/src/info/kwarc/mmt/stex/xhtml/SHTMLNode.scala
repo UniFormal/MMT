@@ -137,9 +137,15 @@ case class SHTMLParsingRule(key:String, newobj: (String,HTMLNode,Option[SHTMLSta
 
 case class SHTMLDocument(path : DPath, orig:HTMLNode) extends SHTMLNode(orig) with SHTMLODocument {
   override def copy = SHTMLDocument(path,orig.copy)
+  path.last.split('.').init.lastOption match {
+    case Some(s@("en"|"de"|"ar"|"bg"|"ru"|"fi"|"ro"|"tr"|"fr")) /* TODO */ => language = s
+    case _ =>
+  }
+  open
 
   override def onAdd: Unit = {
     super.onAdd
+    close
     sstate.foreach { state =>
       doc.foreach{d =>
         val tm = state.bindings.term

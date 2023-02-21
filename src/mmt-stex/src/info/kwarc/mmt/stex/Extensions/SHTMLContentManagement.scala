@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, Rel
 import info.kwarc.mmt.api.opaque.OpaqueXML
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.stex.{SHTML, STeXServer}
-import info.kwarc.mmt.stex.rules.{NatLiterals, RulerRule, StringLiterals}
+import info.kwarc.mmt.stex.rules.{IntLiterals, RulerRule, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, HTMLText}
 
 import scala.xml.{Node, NodeSeq}
@@ -90,7 +90,7 @@ trait SHTMLContentManagement { this : STeXServer =>
   }
 
   private def addNotationTo(parent:HasMetaData,sym:GlobalName,id: String, opprec: Int,argprecs:List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
-    val init = List(StringLiterals(id), NatLiterals(opprec),SHTML.flatseq(argprecs.map(NatLiterals(_))), OMFOREIGN(toNode(component)))
+    val init = List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(argprecs.map(IntLiterals(_))), OMFOREIGN(toNode(component)))
     parent.metadata.add(MetaDatum(meta_notation, OMA(OMS(sym), op match {
       case Some(op) => init ::: List(OMFOREIGN(toNode(op)))
       case _ => init
@@ -99,10 +99,10 @@ trait SHTMLContentManagement { this : STeXServer =>
   def getNotations(p : HasMetaData): List[STeXNotation] = p match {
     case c: Constant => getNotationsC(c)
     case o => o.metadata.getValues(meta_notation).flatMap{
-      case OMA(OMS(p), List(StringLiterals(id), NatLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
-        Some(STeXNotation(p.toString, None, id, opprec.toInt,precs.map(NatLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
-      case OMA(OMS(p), List(StringLiterals(id), NatLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp))) =>
-        Some(STeXNotation(p.toString, None, id, opprec.toInt,precs.map(NatLiterals.unapply(_).get.toInt), toHTML(comp), None))
+      case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
+        Some(STeXNotation(p.toString, None, id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
+      case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp))) =>
+        Some(STeXNotation(p.toString, None, id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
       case _ => None
     }
   }
@@ -120,10 +120,10 @@ trait SHTMLContentManagement { this : STeXServer =>
     ret.flatMap {
       controller.getO(_) match {
         case Some(t: Theory) => t.metadata.getValues(meta_notation).flatMap {
-          case OMA(OMS(`path`), List(StringLiterals(id), NatLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
-            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt,precs.map(NatLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
-          case OMA(OMS(`path`), List(StringLiterals(id), NatLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp))) =>
-            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt,precs.map(NatLiterals.unapply(_).get.toInt), toHTML(comp), None))
+          case OMA(OMS(`path`), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
+            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
+          case OMA(OMS(`path`), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp))) =>
+            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
           case _ => None
         }
         case _ => Nil
@@ -224,7 +224,7 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
   }
 
 
-  def present(args:List[List[NodeSeq]]) = {
+  def present(args:List[List[NodeSeq]],withprec:Int=0) = {
     if (args.isEmpty) {notation.plain.node} else {
       def replace(old:HTMLNode,news:NodeSeq) = {
         old.plain.parent.foreach { p =>
@@ -278,7 +278,13 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
           else n.plain.attributes((HTMLParser.ns_shtml, "varcomp")) = sym
         case _ =>
       }
-      nnot.node
+      if (opprec > withprec)
+        <mrow>
+          <mo class="opening" stretchy="true">(</mo>
+          {nnot.node}
+          <mo class="closing" stretchy="true">)</mo>
+        </mrow>
+      else nnot.node
     }
   }
 }

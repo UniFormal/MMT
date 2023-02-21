@@ -476,6 +476,15 @@ object SHTML {
 
   val headterm = mmtmeta_path ? "headsymbol"
 
+  val parens = new {
+    val sym = meta_path ? "internal parentheses"
+    def apply(tm:Term) = OMA(OMS(sym),List(tm))
+    def unapply(tm:Term) = tm match {
+      case OMA(OMS(`sym`),List(t)) => Some(t)
+      case _ => None
+    }
+  }
+
   val of_type = new {
     val sym = meta_path ? "of type"
     def unapply(tm:Term) = tm match {

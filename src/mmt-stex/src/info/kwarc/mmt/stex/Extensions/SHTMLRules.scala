@@ -20,7 +20,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
   }
 
   lazy val importRules = List(
-    UnknownPropertyRule,
+    //UnknownPropertyRule,
     SHTMLParsingRule("multiple-choice-block", (_, n, _) => SHTMLMCB(n)),
     SHTMLParsingRule("mcc", (_, n, _) => SHTMLMCC(n)),
     SHTMLParsingRule("mcc-solution", (_, n, _) => SHTMLMCSol(n)),

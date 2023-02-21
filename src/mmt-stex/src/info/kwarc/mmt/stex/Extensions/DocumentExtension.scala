@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse, WebQuery}
-import info.kwarc.mmt.stex.rules.NatLiterals
+import info.kwarc.mmt.stex.rules.IntLiterals
 import info.kwarc.mmt.stex.vollki.FullsTeXGraph
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.{ErrorReturn, SHTML, STeXServer}
@@ -260,6 +260,15 @@ trait SHTMLDocumentServer { this : STeXServer =>
         e.plain.attributes((elem.namespace, "data-overlay-link-hover")) = urlshort
         e.plain.attributes((elem.namespace, "data-overlay-link-click")) = urllong
       }} else if (hasAttribute(e,"varcomp")) {
+        elem.plain.attributes.get((HTMLParser.ns_mmt,"variable")) match {
+          case Some(str) =>
+            val lang = getLanguage(e)
+            val urlshort = "/:" + this.pathPrefix + "/variable?" + str + "&language=" + lang
+            val urllong = "/:" + this.pathPrefix + "/variable?" + str + "&language=" + lang
+            e.plain.attributes((elem.namespace, "data-overlay-link-hover")) = urlshort
+            e.plain.attributes((elem.namespace, "data-overlay-link-click")) = urllong
+          case _ =>
+        }
         e.plain.classes ::= "varcomp" // TODO
       } else if (hasAttribute(e,"definiendum")) {
         e.plain.classes ::= "definiendum" // TODO
@@ -941,7 +950,7 @@ class LateBinding {
     "(" + s.steps.reverse.map(_.toString).mkString
   }.mkString
 
-  def term = OMA(OMS(LateBinding.sym),NatLiterals(slides) :: steps.reverse.map(_.term))
+  def term = OMA(OMS(LateBinding.sym),IntLiterals(slides) :: steps.reverse.map(_.term))
 
   def toNum(implicit controller:Controller) : String = {
     if (isEmpty) return topsec.toString + "_" + slides.toString + "_"
@@ -1073,7 +1082,7 @@ object LateBinding {
   }
 
   def fromTerm(tm : Term) : Option[LateBinding] = tm match {
-    case OMA(OMS(`sym`),NatLiterals(i) :: ls) =>
+    case OMA(OMS(`sym`),IntLiterals(i) :: ls) =>
       implicit val lb : LateBinding = new LateBinding
       lb.slides = i.toInt
       try {
