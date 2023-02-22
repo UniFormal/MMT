@@ -301,7 +301,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      while (true) {
        Thread.sleep(1000)
        try {
-         client.client.ping().get(3, TimeUnit.SECONDS)
+         client.client.ping().get(30, TimeUnit.SECONDS)
        } catch {
          case _: java.util.concurrent.TimeoutException =>
            sys.exit()

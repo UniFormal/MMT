@@ -356,8 +356,12 @@ class LaTeXParser(stringin:SyncedDocUnparsed,initrules : List[TeXRule] = TeXRule
         In.take.asInstanceOf[MathToken]
       case _ =>
         val curr = In.offset
-        In.drop(break)
-        MathToken(break, curr)
+        val ret = MathToken(break, curr)
+        try{ In.drop(break) } catch {
+          case ParseError(s) =>
+            ret.addError(s)
+        }
+        ret
     }
     Math(ret, starttk, endtk)
   }
@@ -517,7 +521,7 @@ class LaTeXParser(stringin:SyncedDocUnparsed,initrules : List[TeXRule] = TeXRule
     PlainMacro(name,start,stringin.offset)
   }
 
-  private val breakchars = ",[]{}=\\$%.-_|?!()/;:+*~#'&§"
+  private val breakchars = ",[]{}=\\$%.-_|?!()/;:+*~#'&§@"
   def readText(break: => Boolean = { false }): PlainText = safely {
     In.ls.headOption match {
       case Some(pt:PlainText) =>

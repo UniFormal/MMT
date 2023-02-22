@@ -1,11 +1,13 @@
 package info.kwarc.mmt.stex.parsing.stex
 
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{DPath, GlobalName, Level, MPath, Path}
+import info.kwarc.mmt.api.{ComplexStep, DPath, GlobalName, Level, LocalName, MPath, Path}
 import info.kwarc.mmt.lsp.Annotation
 import info.kwarc.mmt.stex.lsp.{SemanticHighlighting, sTeXDocument}
-import info.kwarc.mmt.stex.parsing.{Begin, Environment, EnvironmentRule, Group, Grouped, LaTeXParseError, MacroApplication, MacroRule, OptionalArgument, ParseState, PlainMacro, Single, SkipCommand, TeXRule, TeXRules, TeXTokenLike}
+import info.kwarc.mmt.stex.parsing.{Begin, End, Environment, EnvironmentRule, Group, Grouped, LaTeXParseError, LaTeXParser, MacroApplication, MacroRule, OptionalArgument, ParseState, PlainMacro, PlainText, RuleContainer, Single, SkipCommand, TeXRule, TeXRules, TeXTokenLike}
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
+
+import scala.collection.mutable
 
 object STeXRules {
   def allRules(dict: Dictionary) : List[TeXRule] = List(
@@ -25,7 +27,10 @@ object STeXRules {
   )
   def moduleRules(dict:Dictionary) : List[TeXRule] = List(
     SymDeclRule(dict),SymDefRule(dict),NotationRule(dict),TextSymDeclRule(dict),
-    ImportModuleRule(dict),MathStructureRule(dict),ExtStructureRule(dict)
+    ImportModuleRule(dict),MathStructureRule(dict),ExtStructureRule(dict),
+    CopyModRule(dict),CopyModuleRule(dict),
+    InterpretModRule(dict), InterpretModuleRule(dict),
+    RealizeRule(dict),RealizationRule(dict)
   )
 }
 
@@ -185,6 +190,10 @@ case class UseModuleRule(dict : Dictionary) extends ImportModuleRuleLike with No
 class SymdeclInfo(val macroname:String,val path:GlobalName,val args:String,val file:String,val start:Int,val end:Int,var defined:Boolean,val ret:Option[List[TeXTokenLike]]) {
   def arity = args.length
   var isDocumented = false
+
+  def copy(macroname : String = this.macroname,path:GlobalName = this.path, args:String = this.args,file:String=this.file,start:Int = this.start,end:Int=this.end,defined:Boolean=this.defined,ret:Option[List[TeXTokenLike]] = this.ret) = {
+    new SymdeclInfo(macroname,path, args, file, start, end, defined, ret)
+  }
 }
 case class NotationInfo(syminfo:SymdeclInfo,id:String,notation:List[TeXTokenLike],opnotation:Option[List[TeXTokenLike]])
 trait SymRefRuleLike extends STeXRule {
@@ -859,6 +868,309 @@ case class ExtStructureRule(dict:Dictionary) extends MathStructureDeclRule {
       }
     }
     env
+  }
+}
+
+trait MMTStructure extends STeXRule {
+  val domain : DictionaryModule
+  lazy val rules = domain.getRules(dict.getLanguage)
+  val structname : String
+  val parent = dict.getModule
+  val (isimplicit,path) = structname match {
+    case "" => (true,parent.path ?LocalName(ComplexStep(domain.path)))
+    // TODO check implicits
+    case o => (false,parent.path ?LocalName.parse(o))
+  }
+  val name = path.toString
+
+  val elaboration = mutable.HashMap.empty[GlobalName,(Option[String],Option[LocalName],Option[List[TeXTokenLike]])]
+  def rename[A <: TeXTokenLike](orig:String, alias:Option[String], macroname:String)(implicit parser: ParseState[A]) = {
+    getInDomain(orig).headOption.map { si =>
+      elaboration.get(si.path) match {
+        case None =>
+          elaboration(si.path) = (Some(macroname),alias.map(LocalName.parse),None)
+          si
+        case Some((s,n,d)) if s.isEmpty && n.isEmpty =>
+          elaboration(si.path) = (Some(macroname),alias.map(LocalName.parse),d)
+          si
+        case Some(_) =>
+          // TODO error
+          si
+      }
+    }
+  }
+  def assign[A <: TeXTokenLike](orig:String,defi:List[TeXTokenLike])(implicit parser: ParseState[A]) = {
+    getInDomain(orig).headOption.map { si =>
+      elaboration.get(si.path) match {
+        case None =>
+          elaboration(si.path) = (None, None, Some(defi))
+          si
+        case Some((s, n, d)) if d.isEmpty =>
+          elaboration(si.path) = (s,n,Some(defi))
+          si
+        case Some(_) =>
+          // TODO error
+          si
+      }
+    }
+  }
+
+  def getInDomain[A <: TeXTokenLike](orig:String)(implicit parser: ParseState[A]) = {
+    val groups = parser.latex.groups
+    try {
+      parser.latex.groups = List(new RuleContainer)
+      rules.foreach(parser.latex.addRule(_))
+      dict.resolveName(orig)
+    } finally {
+      parser.latex.groups = groups
+    }
+  }
+
+  def elaborate(istotal : Boolean) = {
+    val syms = rules.collect{case sm:SemanticMacro => sm.syminfo}.distinct
+    val rets = syms.foreach { sm =>
+      elaboration.get(sm.path) match {
+        case Some((m,n,d)) =>
+          val newpath = n match {
+            case Some(name) => parent.path ? name
+            case None if isimplicit => sm.path
+            case None => parent.path ? (path.name / sm.path.name)
+          }
+          val si = sm.copy(macroname = m.getOrElse(newpath.toString),path = newpath,defined = sm.defined || d.isDefined)
+          val ret = new SymdeclApp(si,dict)
+          addExportRule(ret)
+          if (si.macroname != newpath.toString) addExportRule(ret.cloned)
+          ret
+        case None /* TODO if istotal? */ =>
+          val newpath = if (isimplicit) sm.path else parent.path ? (path.name / sm.path.name)
+          val si = sm.copy(macroname = newpath.toString, path = newpath)
+          val ret = new SymdeclApp(si, dict)
+          addExportRule(ret)
+          ret
+      }
+    }
+  }
+}
+
+trait MMTStructureRule extends SymDeclRuleLike with SymRefRuleLike {
+  def parseDomain[A <: TeXTokenLike](implicit parser: ParseState[A]) = {
+    val maybearchive = parser.readOptAgument.map(_.asname)
+    val domainstr = parser.readArgument.asname
+    maybearchive match {
+      case Some(a) => dict.requireModule(dict.resolveMPath(a,domainstr),a,domainstr)
+      case _ => dict.moduleOrStructure(domainstr)
+    }
+  }
+  def parseContent[A <: TeXTokenLike](struct: MMTStructure)(implicit parser: ParseState[A]): Unit = {
+    class Triple {
+      var name = ""
+      var defi: List[TeXTokenLike] = Nil
+      var alias = ""
+      var in = 0
+      def process = {
+        name = name.trim
+        alias = alias.trim
+        if (alias.startsWith("[")) {
+          val als = alias.drop(1).split(']')
+          // TODO check als.length == 2
+          struct.rename(name,Some(als.head.trim),als(1).trim)
+        } else if (alias.nonEmpty) struct.rename(name,None,alias)
+        if (defi.nonEmpty) struct.assign(name,defi.reverse)
+      }
+      def processMaybe = if (name.nonEmpty) process
+    }
+    var current = new Triple
+    parser.readArgument.asList.foreach {
+      case PlainText(",",_,_) =>
+        current.process
+        current = new Triple
+      case PlainText("@", _, _) =>
+        // TODO check duplicate, name non-empty
+        current.in = 2
+      case PlainText("=", _, _) =>
+        // TODO check duplicate, name non-empty
+        current.in = 1
+      case p if current.in == 0 =>
+        current.name += p.toString
+      case p if current.in == 2 =>
+        current.alias += p.toString
+      case p if current.in == 1 =>
+        current.defi ::= p
+    }
+    current.processMaybe
+  }
+
+  def rules: List[TeXRule] = List(
+    RenameDeclRule(dict),AssignDeclRule(dict)
+  )
+}
+
+case class RenameDeclRule(dict : Dictionary) extends STeXRule with MacroRule {
+  val name = "renamedecl"
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    parser.latex.collectFirstRule { case e:MMTStructureEnv => e}.flatMap { struct =>
+      val orig = parser.readArgument.asname
+      val alias = parser.readOptAgument.map(_.asname)
+      val macroname = parser.readArgument.asname
+      struct.rename(orig,alias, macroname).map { sym =>
+        new STeXMacro {
+          override def doAnnotations(in: sTeXDocument): Unit = {
+            val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Constant, sym.path.toString)
+            plain.foreach { plain =>
+              val pa = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Constant)
+              pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+            }
+
+          }
+        }
+      }
+    }.getOrElse(new MacroApplication)
+  }
+}
+
+case class AssignDeclRule(dict : Dictionary) extends STeXRule with MacroRule {
+  val name = "assign"
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    parser.latex.collectFirstRule { case e:MMTStructureEnv => e}.flatMap { struct =>
+      val orig = parser.readArgument.asname
+      val defi = parser.readArgument.asList
+      struct.assign(orig,defi).map { sym =>
+        new STeXMacro {
+          override def doAnnotations(in: sTeXDocument): Unit = {
+            val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Constant, sym.path.toString)
+            plain.foreach { plain =>
+              val pa = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Constant)
+              pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+            }
+
+          }
+        }
+      }
+    }.getOrElse(new MacroApplication)
+  }
+}
+
+trait InlineStructure extends MacroApplication with STeXMacro with MMTStructure {
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Constant, path.toString)
+    a.setHover("Structure " + path.name.toString + ": " + domain.path.toString)
+    plain.foreach { plain =>
+      val pa = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Constant)
+      pa.addCodeLens(path.toString, "", Nil, plain.startoffset, plain.endoffset)
+      pa.setDeclaration(domain.file.get.toString, domain.macr.startoffset, domain.macr.endoffset)
+      pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+    }
+  }
+}
+trait MMTStructureEnv extends STeXEnvironment with MMTStructure {
+  val begin:Begin.BeginMacro
+  var end:Option[End.EndMacro]
+  override def doAnnotations(in: sTeXDocument): Unit = {
+    val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Constant, path.toString)
+    a.setHover("Structure " + path.name.toString + ": " + domain.path.toString)
+    val bg = in.Annotations.add(begin, begin.startoffset, begin.endoffset - begin.startoffset, SymbolKind.Constructor, "structure")
+    bg.addCodeLens(path.toString, "", Nil, begin.startoffset, begin.endoffset)
+    bg.setDeclaration(domain.file.get.toString, domain.macr.startoffset, domain.macr.endoffset)
+    bg.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+    end.foreach { plain =>
+      val pa = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Constant)
+      pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
+    }
+  }
+}
+
+case class CopyMod(structname : String,domain:DictionaryModule,dict:Dictionary) extends InlineStructure
+case class CopyModule(structname : String,domain:DictionaryModule,dict:Dictionary,begin:Begin.BeginMacro) extends STeXEnvironment(begin) with MMTStructureEnv
+case class CopyModRule(dict : Dictionary) extends MMTStructureRule with MacroRule {
+  val name = "copymod"
+
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    val structstr = parser.readArgument.asname
+    val dom = parseDomain
+    val struct = CopyMod(structstr,dom,dict)
+    parseContent(struct)
+    struct.elaborate(false)
+    struct
+  }
+}
+
+case class CopyModuleRule(dict:Dictionary) extends MMTStructureRule with EnvironmentRule {
+  val envname = "copymodule"
+  override def applyStart(implicit parser: ParseState[Begin.BeginMacro]): Environment = {
+    val structstr = parser.readArgument.asname
+    val dom = parseDomain
+    val struct = CopyModule(structstr,dom,dict,parser.trigger)
+    rules.foreach(rl => parser.latex.addRule(rl))
+    parser.latex.addRule(struct)
+    struct
+  }
+
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+    case cm: CopyModule =>
+      cm.elaborate(false)
+      cm
+    case e => e
+  }
+}
+
+case class InterpretModRule(dict : Dictionary) extends MMTStructureRule with MacroRule {
+  val name = "interpretmod"
+
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    val structstr = parser.readArgument.asname
+    val dom = parseDomain
+    val struct = CopyMod(structstr,dom,dict)
+    parseContent(struct)
+    struct.elaborate(true)
+    struct
+  }
+}
+
+case class InterpretModuleRule(dict:Dictionary) extends MMTStructureRule with EnvironmentRule {
+  val envname = "interpretmodule"
+  override def applyStart(implicit parser: ParseState[Begin.BeginMacro]): Environment = {
+    val structstr = parser.readArgument.asname
+    val dom = parseDomain
+    val struct = CopyModule(structstr,dom,dict,parser.trigger)
+    rules.foreach(rl => parser.latex.addRule(rl))
+    parser.latex.addRule(struct)
+    struct
+  }
+
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+    case cm: CopyModule =>
+      cm.elaborate(true)
+      cm
+    case e => e
+  }
+}
+case class RealizeRule(dict : Dictionary) extends MMTStructureRule with MacroRule {
+  val name = "realize"
+
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    val dom = parseDomain
+    val struct = CopyMod("",dom,dict)
+    parseContent(struct)
+    struct.elaborate(true)
+    struct
+  }
+}
+
+case class RealizationRule(dict:Dictionary) extends MMTStructureRule with EnvironmentRule {
+  val envname = "realization"
+  override def applyStart(implicit parser: ParseState[Begin.BeginMacro]): Environment = {
+    val dom = parseDomain
+    val struct = CopyModule("",dom,dict,parser.trigger)
+    rules.foreach(rl => parser.latex.addRule(rl))
+    parser.latex.addRule(struct)
+    struct
+  }
+
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+    case cm: CopyModule =>
+      cm.elaborate(true)
+      cm
+    case e => e
   }
 }
 

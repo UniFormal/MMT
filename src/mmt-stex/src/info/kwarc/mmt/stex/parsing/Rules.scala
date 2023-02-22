@@ -102,7 +102,7 @@ class ParseState[A <: TeXTokenLike](val latex: LaTeXParser, val trigger: A) {
     latex.In.first match {
       case '[' =>
         children ::= latex.next()
-        val ret = latex.readNoRules {latex.In.first == ']'}
+        val ret = readOptI
         ret.foreach( children ::= _)
         if (latex.In.first == ']') {
           children ::= latex.next()
@@ -113,6 +113,14 @@ class ParseState[A <: TeXTokenLike](val latex: LaTeXParser, val trigger: A) {
       case _ =>
         None
     }
+  }
+  private def readOptI : List[TeXTokenLike] = {
+    val ret = latex.readNoRules{ latex.In.first == '[' || latex.In.first == ']'}
+    if (latex.In.first == '[')
+      ret ::: latex.next() :: {
+        readOptI ::: latex.next() :: readOptI
+      }
+    else ret
   }
 
   def reparse(tks:List[TeXTokenLike]) = {

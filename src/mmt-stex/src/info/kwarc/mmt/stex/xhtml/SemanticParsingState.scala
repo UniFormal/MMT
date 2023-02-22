@@ -153,7 +153,12 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
 
   override def addVarNotation(name:LocalName, id: String, opprec: Int,argprecs:List[Int], component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLNode): Unit = {
     context.getVariableContext.find(_.name == name).foreach(vd =>
-      server.addVarNotation(vd, id, opprec,argprecs, component.asInstanceOf[HTMLNode].plaincopy, op.map(_.asInstanceOf[HTMLNode].plaincopy))
+      vd.metadata.getValues(SHTML.headterm).headOption match {
+        case Some(OMS(p)) =>
+          addNotation(p,id,opprec,argprecs,component,op)
+        case _ =>
+          server.addVarNotation(vd, id, opprec, argprecs, component.asInstanceOf[HTMLNode].plaincopy, op.map(_.asInstanceOf[HTMLNode].plaincopy))
+      }
     )
   }
   def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node,language:String)(implicit context: SHTMLNode): Unit = {
@@ -184,6 +189,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   def add(se : StructuralElement) = try {controller.library.add(se)} catch {
     case NotFound(p,f) =>
       error("Not found " + p.toString)
+    case AddError(e,msg) if msg.startsWith("redundancy, an equivalent declaration") =>
     case AddError(e,msg) =>
       error("Error adding " + e.path.toString + ": " + msg)
   }

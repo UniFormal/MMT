@@ -500,7 +500,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
           case Some(t) =>
             val cname = newname(t, name)
-            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), rl)
+            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), Some(("variable" :: rl.toList).mkString(" ")) )
             hoas.foreach(_.apply(c))
             if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
             if (args.nonEmpty) state.server.addArity(args, c)
@@ -511,14 +511,14 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
             state.add(c)
             state.check(c)
           case None =>
+            hoas.foreach(_.apply(vd))
+            if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
+            if (args.nonEmpty) state.server.addArity(args, vd)
+            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, vd)
+            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
         }
-        hoas.foreach(_.apply(vd))
-        if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
-        if (args.nonEmpty) state.server.addArity(args, vd)
-        if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, vd)
-        if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
+        vd.metadata.update(SHTML.flatseq.sym, OMS(SHTML.flatseq.sym))
         doSourceRef(vd)
-        vd.metadata.update(SHTML.flatseq.sym,OMS(SHTML.flatseq.sym))
         if (bind) state.markAsBound(vd)
         gr.variables ++= vd
       }
@@ -545,7 +545,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
           case Some(t) =>
             val cname = newname(t, name)
-            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), rl)
+            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), Some(("variable" :: rl.toList).mkString(" ")))
             hoas.foreach(_.apply(c))
             if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
             if (args.nonEmpty) state.server.addArity(args, c)
@@ -556,12 +556,12 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
             state.add(c)
             state.check(c)
           case None =>
+            hoas.foreach(_.apply(vd))
+            if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
+            if (args.nonEmpty) state.server.addArity(args, vd)
+            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, vd)
+            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
         }
-        hoas.foreach(_.apply(vd))
-        if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
-        if (args.nonEmpty) state.server.addArity(args, vd)
-        if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, vd)
-        if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
         doSourceRef(vd)
         if (bind) state.markAsBound(vd)
         gr.variables ++= vd

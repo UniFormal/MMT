@@ -199,7 +199,16 @@ trait SHTMLContentManagement { this : STeXServer =>
           case Some(c: Constant) => Some(c)
           case _ => None
         }
-        case OMV(x) => ctx.findLast(_.name == x)
+        case OMV(x) => ctx.findLast(_.name == x) match {
+          case Some(vd) => vd.metadata.getValues(SHTML.headterm).headOption match {
+            case Some(OMS(p)) => controller.getO(p) match {
+              case Some(c : Constant) => Some(c)
+              case _ => Some(vd)
+            }
+            case _ => Some(vd)
+          }
+          case None => None
+        }
         case _ => None
       }
     }
