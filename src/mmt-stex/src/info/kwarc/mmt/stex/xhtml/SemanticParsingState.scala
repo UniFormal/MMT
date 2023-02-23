@@ -182,8 +182,10 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   }
 
   def addTitle(ttl: SHTMLNode) : Unit = {
+    doctitle = Some(ttl)
     server.addTitle(doc,ttl.plain.node.head)
   }
+  private var doctitle: Option[SHTMLNode] = None
 
   def addMissing(p : Path) = missings ::= p
   def add(se : StructuralElement) = try {controller.library.add(se)} catch {
@@ -254,11 +256,10 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   object Search {
     def makeDocument(outdir: File, source: File, archive: Archive) = {
       val doc = new SearchDocument(outdir, source, archive, dpath)
-      /*
       val body = maindoc.get()()("body").head
-      doc.add("content", makeString(body), body.children.map(_.toString).mkString, title.toList.flatMap { t =>
+      doc.add("content", makeString(body), body.children.map(_.toString).mkString, doctitle.toList.flatMap { t =>
         val nt = t.copy
-        nt.attributes.remove((nt.namespace, "style"))
+        nt.plain.attributes.remove((nt.namespace, "style"))
         List(("title", makeString(nt)), ("titlesource", nt.toString))
       }: _*)
       definitions.foreach(d => doc.add("definition", makeString(d.copy), d.toString,
@@ -273,15 +274,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
         ("for", d.fors.mkString(",")) ::
           d.path.map(p => ("path", p.toString)).toList: _*
       ))
-
-       */
       doc
-    }
-/*
-    private def makeString(node: HTMLParser.HTMLNode): String = {
-      val sb = new mutable.StringBuilder()
-      recurse(node)(sb)
-      sb.mkString.trim
     }
 
     def addDefi(df: HTMLStatement) = definitions ::= df
@@ -294,14 +287,20 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
     private var assertions: List[HTMLStatement] = Nil
     private var examples: List[HTMLStatement] = Nil
 
+    private def makeString(node: HTMLNode): String = {
+      val sb = new mutable.StringBuilder()
+      recurse(node)(sb)
+      sb.mkString.trim
+    }
+
     @tailrec
     private def recurse(node: HTMLNode)(implicit sb: mutable.StringBuilder): Unit = {
       node match {
-        case txt: HTMLParser.HTMLText =>
+        case txt: HTMLText =>
           sb ++= txt.toString().trim + " "
         case _ =>
       }
-      (node.attributes.get((node.namespace, "style")) match {
+      (node.plain.attributes.get((node.namespace, "style")) match {
         case Some(s) if s.replace(" ", "").contains("display:none") =>
           getNext(node, false)
         case _ => getNext(node)
@@ -313,7 +312,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
 
     private def getNext(node: HTMLNode, withchildren: Boolean = true): Option[HTMLNode] = node.children match {
       case h :: _ if withchildren => Some(h)
-      case _ => node.parent match {
+      case _ => node.plain.parent match {
         case Some(p) =>
           val children = p.children
           children.indexOf(node) match {
@@ -323,8 +322,6 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
         case _ => None
       }
     }
-
- */
   }
 
 

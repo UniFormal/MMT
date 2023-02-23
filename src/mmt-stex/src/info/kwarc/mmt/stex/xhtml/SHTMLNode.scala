@@ -689,6 +689,7 @@ case class SHTMLInputref(target:String,orig : HTMLNode) extends SHTMLNode(orig,S
 
 abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(orig,Some(kind))
   with SHTMLStatement with SHTMLSymbolLike {
+  var path: Option[GlobalName] = None
 
   removed ::= "styles"
   var styles = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "styles"), "").split(',').map(_.trim).toList
@@ -755,6 +756,11 @@ case class SHTMLParagraph(orig:HTMLNode) extends HTMLStatement("paragraph",orig)
       sstate.foreach{s =>
         val lang = findAncestor{ case hl : HasLanguage => hl.language}.getOrElse("en")
         s.addSymdoc(fors,id,this.plain.node.head,lang)
+        s match {
+          case s:SemanticState =>
+            s.Search.addDefi(this)
+          case _ =>
+        }
       }
     }
   }
@@ -767,6 +773,11 @@ case class SHTMLExample(orig:HTMLNode) extends HTMLStatement("example",orig) {
   override def onAdd: Unit = {
     super.onAdd
     sstate.foreach(_.addExample(fors, id, this.plain.node.head))
+    sstate match {
+      case Some(s: SemanticState) =>
+        s.Search.addExample(this)
+      case _ =>
+    }
   }
 }
 case class SHTMLDefinition(orig:HTMLNode) extends HTMLStatement("definition",orig) {
@@ -779,6 +790,11 @@ case class SHTMLDefinition(orig:HTMLNode) extends HTMLStatement("definition",ori
     sstate.foreach { s =>
       val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
       s.addSymdoc(fors, id, this.plain.node.head, lang)
+      sstate match {
+        case Some(s: SemanticState) =>
+          s.Search.addDefi(this)
+        case _ =>
+      }
     }
   }
 }
@@ -792,6 +808,11 @@ case class SHTMLAssertion(orig:HTMLNode) extends HTMLStatement("assertion",orig)
     sstate.foreach { s =>
       val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
       s.addSymdoc(fors, id, this.plain.node.head, lang)
+      sstate match {
+        case Some(s: SemanticState) =>
+          s.Search.addAssertion(this)
+        case _ =>
+      }
     }
   }
 }
