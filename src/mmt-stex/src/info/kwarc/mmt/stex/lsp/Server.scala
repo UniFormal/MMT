@@ -297,7 +297,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    private var bootToken : Option[Int] = None
    def doPing: Unit = Future {
-     Thread.sleep(10000)
+     Thread.sleep(30000)
      while (true) {
        Thread.sleep(1000)
        try {

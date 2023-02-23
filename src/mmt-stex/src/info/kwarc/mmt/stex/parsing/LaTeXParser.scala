@@ -24,7 +24,7 @@ trait TeXTokenLike {
   def asPlain : String = toString
 }
 object TeXTokenLike {
-  def cleanstring(s : String) : String = s.replaceAll("\\s+"," ")
+  def cleanstring(s : String) : String = s.replaceAll("[\\s\r\n]+"," ")
 }
 case class PlainText(str : String, startoffset:Int,endoffset:Int) extends TeXTokenLike {
   override def toString: String = str

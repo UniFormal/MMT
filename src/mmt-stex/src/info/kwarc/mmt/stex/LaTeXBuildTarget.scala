@@ -57,7 +57,7 @@ object RusTeX {
     }
   }
   def parse(f : File,p:Params,memories:List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","true"))) = {
-    if (RusTeXBridge.initialized) {
+    if (this.synchronized {RusTeXBridge.initialized}) {
       val sb = RusTeXBridge.mainBridge
       sb.setMemories(memories)
       sb.setParams(p)
@@ -65,8 +65,8 @@ object RusTeX {
     } else ""
   }
 
-  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","false"))) = {
-    if (RusTeXBridge.initialized) this.synchronized {
+  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","false"))) =  {
+    if (this.synchronized { RusTeXBridge.initialized }) {
       val sb = RusTeXBridge.mainBridge
       sb.setMemories(memories)
       sb.setParams(p)
