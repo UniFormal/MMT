@@ -216,7 +216,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
 
    @JsonNotification("sTeX/parseWorkspace")
-   def parseWorkspace() : Unit = withProgress(this,"Quickparsing Workspace"){ update =>
+   def parseWorkspace() : Unit = Future {withProgress(this,"Quickparsing Workspace"){ update =>
      var allfiles : List[File] = Nil
      allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
        allfiles.zipWithIndex.foreach {
@@ -241,7 +241,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
            }
        }
      ((),"Done")
-   }
+   }}(scala.concurrent.ExecutionContext.global)
 
    @JsonNotification("sTeX/setMathHub")
    def setMathHub(msg:MathHubMessage) : Unit = {
@@ -314,7 +314,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      bootToken = Some(params.hashCode())
      controller.extman.addExtension(SearchResultServer)
      startProgress(bootToken.get,"Starting sTeX/MMT","Initializing...")
-     //doPing
+     doPing
    }
 
    @JsonRequest("sTeX/getMathHubContent")
@@ -528,12 +528,16 @@ object Main {
     controller.handleLine("log+ lsp-stex-server")
     controller.handleLine("log+ lsp-stex-server-methodcall")*/
     val mathhub_dir = File(args.head)
-    val port = args(1)
+    var port = args(1)
     if (mathhub_dir.exists()) {
       controller.handleLine("mathpath archive " + mathhub_dir.toString)
       controller.handleLine("lmh root " + mathhub_dir.toString)
     }
     controller.handleLine("server on " + port)
+    while (controller.server.isEmpty) {
+      port += 1
+      controller.handleLine("server on " + port)
+    }
     val end = new STeXLSP
     controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
     controller.extman.addExtension(new TrivialBuildManager)
