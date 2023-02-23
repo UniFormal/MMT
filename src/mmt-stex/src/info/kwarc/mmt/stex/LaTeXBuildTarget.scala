@@ -299,6 +299,8 @@ object PdfLatex {
       pdffile.setExtension("blg"),
       pdffile.setExtension("out"),
       pdffile.setExtension("idx"),
+      pdffile.setExtension("ilg"),
+      pdffile.setExtension("ind"),
       pdffile.setExtension("mw"),
       pdffile.setExtension("nav"),
       pdffile.setExtension("snm"),

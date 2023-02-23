@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.{ExampleRelational, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
+import info.kwarc.mmt.stex.lsp.RemoteLSP
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, VollKi}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
@@ -73,6 +74,13 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
           ServerResponse.FileResponse(f)
         }
         else ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+      case Some("getupdates"|"allarchives"|"allarchfiles"|"archfile"|"search") =>
+        controller.extman.get(classOf[RemoteLSP]).headOption match {
+          case Some(remote) =>
+            remote.serverReturn(request)
+          case _ =>
+            ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs, "text/plain")
+        }
       case _ =>
         ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs, "text/plain")
       /*case Some("declaration") =>

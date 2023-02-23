@@ -528,7 +528,7 @@ object Main {
     controller.handleLine("log+ lsp-stex-server")
     controller.handleLine("log+ lsp-stex-server-methodcall")*/
     val mathhub_dir = File(args.head)
-    var port = args(1)
+    var port = args(1).toInt
     if (mathhub_dir.exists()) {
       controller.handleLine("mathpath archive " + mathhub_dir.toString)
       controller.handleLine("lmh root " + mathhub_dir.toString)
