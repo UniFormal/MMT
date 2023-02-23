@@ -58,12 +58,22 @@
 	</ACTION>
 	<ACTION NAME="mmt-show-normalization">
 		<CODE>
-		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, false);
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, false, true);
 		</CODE>
 	</ACTION>
 	<ACTION NAME="mmt-normalize-selection">
 		<CODE>
-		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, true);
+		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, true, true);
+		</CODE>
+	</ACTION>
+	<ACTION NAME="mmt-show-normalization-onestep">
+		<CODE>
+			jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, false, false);
+		</CODE>
+	</ACTION>
+	<ACTION NAME="mmt-normalize-selection-onestep">
+		<CODE>
+			jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).editActions().showNormalization(view, true, false);
 		</CODE>
 	</ACTION>
 </ACTIONS>
