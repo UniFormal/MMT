@@ -312,7 +312,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    override def initialized(params: InitializedParams): Unit = {
      super.initialized(params)
      bootToken = Some(params.hashCode())
-     controller.extman.addExtension(SearchResultServer)
+     controller.extman.addExtension(searchresultserver)
      startProgress(bootToken.get,"Starting sTeX/MMT","Initializing...")
      doPing
    }
