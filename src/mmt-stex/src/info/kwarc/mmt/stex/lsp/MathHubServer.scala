@@ -2,7 +2,7 @@ package info.kwarc.mmt.stex.lsp
 
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.frontend.Extension
-import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, URLEscaping}
+import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem, URLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.STeXServer
@@ -42,7 +42,18 @@ class SearchResultServer extends Extension {
 
   def serverReturn(request: ServerRequest): ServerResponse = request.path.lastOption match {
     case Some("searchresult") =>
+      var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+      html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + server.pathPrefix + "/searchresultI?" + request.query)
+      html = html.replace("BASE_URL_PLACEHOLDER", "")
+      html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
+      html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + server.pathPrefix + "/css?" + request.parsedQuery("archive").getOrElse(""))
+      ServerResponse(html, "text/html")
+    case Some("searchresultI") =>
       val i = request.parsedQuery("num").get.toInt
+      val ret = server.present(locals(i), true)(None)
+      ServerResponse.apply(ret.toString, "text/html")
+
+      /*
       val (html, body) = server.emptydoc
       html.get("head")()().head.add(new HTMLText(body.state,
         """<link rel="stylesheet" href="/stex/rustex-min.css"></link>"""
@@ -58,7 +69,9 @@ class SearchResultServer extends Extension {
       body.get("div")()("paragraph").foreach { par =>
         par.plain.attributes.remove((par.namespace, "style"))
       }
-      ServerResponse.apply(html.toString, "text/html")
+      ServerResponse.apply(body.toString, "text/html")
+
+       */
     case _ =>
       ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs, "text/plain")
   }
@@ -107,7 +120,7 @@ trait MathHubServer { this : STeXLSPServer =>
     }
   }
 
-  def searchI(q : String,tps:List[String]) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {
+  def searchI(q : String,tps:List[String],syms: Boolean) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {
     val archs = controller.backend.getArchives.map(_.id)
     val url = URLEscaping.apply(remoteServer + "/search?skiparchs=" + archs.mkString(",") + "&types=" + tps.mkString(",") + "&query=" + q)
     val attempt = Try(io.Source.fromURL(url)("UTF8"))
@@ -133,7 +146,7 @@ trait MathHubServer { this : STeXLSPServer =>
        })
        tr.getOrElse(Nil)
      } else Nil
-    val local = searcher.search(q,10,tps)
+    val local = searcher.search(q,10,tps,infors = syms)
     searchresultserver.locals = Nil
     val localres = local.map {
       case res =>

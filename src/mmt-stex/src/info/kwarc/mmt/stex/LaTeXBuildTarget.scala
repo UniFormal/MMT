@@ -305,6 +305,7 @@ object PdfLatex {
       pdffile.setExtension("nav"),
       pdffile.setExtension("snm"),
       pdffile.setExtension("vrb"),
+      pdffile.setExtension("sms2"),
       pdffile.setExtension("hd"),
       pdffile.setExtension("glo"),
       pdffile.setExtension("bcf"),

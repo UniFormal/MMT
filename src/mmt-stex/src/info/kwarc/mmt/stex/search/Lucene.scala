@@ -108,16 +108,17 @@ class Searcher(controller:Controller) {
   }
   addArchive(controller.backend.getArchives :_*)
 
-  def search(s : String, results : Int = 10, types:List[String]=Nil, skiparchives:List[String] = Nil) : List[SearchResult] = {
+  def search(s : String, results : Int = 10, types:List[String]=Nil, skiparchives:List[String] = Nil,infors:Boolean = false) : List[SearchResult] = {
     val gs = new GroupingSearch("DocURI").setGroupSort(Sort.RELEVANCE).setCachingInMB(4.0,true).setAllGroups(true)
       .setGroupDocsLimit(10).setGroupDocsOffset(0).setSortWithinGroup(Sort.RELEVANCE)
     var qs = ""
     types match {
-      case Nil => qs = "(text: " + s + ") OR (title: " + s + ")"
+      case Nil if infors => qs = "(for:" + s + ")"
+      case Nil => qs = "(text: " + s + ") OR (title: " + s + ")" + {if (infors) " OR (for:" + s + ")" else ""}
       case List("title") => qs = "(title: " + s + ")"
       case ls =>
         qs = ls.map(f => "(type: \"" + f + "\")").mkString("("," OR ",")")
-        qs += " AND ((text: " + s + ") OR (title: " + s + "))"
+        qs += " AND ((text: " + s + ") OR (title: " + s + ")" + {if (infors) " OR (for:" + s + ")" else ""} + ")"
     }
     val query = new QueryParser("text",Lucene.analyzer).parse(qs)
     val search = skiparchives match {

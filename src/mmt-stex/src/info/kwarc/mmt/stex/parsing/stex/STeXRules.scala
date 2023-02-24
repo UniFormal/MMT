@@ -386,8 +386,8 @@ case class TextSymDeclRule(dict:Dictionary) extends SymDeclRuleLike with MacroRu
   val name = "textsymdecl"
 
   override def apply(implicit parser: ParseState[PlainMacro]): TextSymdeclApp = {
-    val (_si, o) = parseNameAndOpts(true)
-    val si = new SymdeclInfo(_si.macroname,_si.path.module ? (_si.path.name.toString + "-sym"),_si.args,_si.file,_si.start,_si.end,_si.defined,_si.ret)
+    val (si, o) = parseNameAndOpts(true)
+    //val si = new SymdeclInfo(_si.macroname,_si.path.module ? (_si.path.name.toString + "-sym"),_si.args,_si.file,_si.start,_si.end,_si.defined,_si.ret)
     val ret = TextSymdeclApp(si,dict)
     o.foreach(_.asKeyVals.foreach { p =>
       ret.addError("Unknown argument: " + p._1.mkString.trim)

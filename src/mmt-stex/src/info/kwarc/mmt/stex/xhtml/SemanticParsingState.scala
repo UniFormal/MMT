@@ -263,15 +263,15 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
         List(("title", makeString(nt)), ("titlesource", nt.toString))
       }: _*)
       definitions.foreach(d => doc.add("definition", makeString(d.copy), d.toString,
-        ("for", d.fors.mkString(",")) ::
+        ("for", d.fors.mkString(", ")) ::
           d.path.map(p => ("path", p.toString)).toList: _*
       ))
       assertions.foreach(d => doc.add("assertion", makeString(d.copy), d.toString,
-        ("for", d.fors.mkString(",")) ::
+        ("for", d.fors.mkString(", ")) ::
           d.path.map(p => ("path", p.toString)).toList: _*
       ))
       examples.foreach(d => doc.add("example", makeString(d.copy), d.toString,
-        ("for", d.fors.mkString(",")) ::
+        ("for", d.fors.mkString(", ")) ::
           d.path.map(p => ("path", p.toString)).toList: _*
       ))
       doc

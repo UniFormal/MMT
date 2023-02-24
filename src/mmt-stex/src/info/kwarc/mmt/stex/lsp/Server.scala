@@ -50,6 +50,7 @@ class SearchParams {
   var defis = true
   var asserts = true
   var exs = true
+  var syms = true
 }
 
 class BuildMessage {
@@ -207,8 +208,8 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    @JsonRequest("sTeX/search")
    def search(p : SearchParams) : CompletableFuture[LSPSearchResults] = Completable {
-     val tps = if (p.defis) List("definition") else if (p.exs) List("example") else if (p.asserts) List("assertion") else Nil
-     val (local,remote) = searchI(p.query,tps)
+     var tps = if (p.defis) List("definition") else if (p.exs) List("example") else if (p.asserts) List("assertion") else Nil
+     val (local,remote) = searchI(p.query,tps,p.syms)
      val ret = new LSPSearchResults
      ret.locals = local
      ret.remotes = remote

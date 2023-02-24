@@ -81,7 +81,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
           case _ =>
             ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs, "text/plain")
         }
-      case Some("searchresult") =>
+      case Some("searchresult"|"searchresultI") =>
         controller.extman.get(classOf[SearchResultServer]).headOption match {
           case Some(remote) =>
             remote.serverReturn(request)
