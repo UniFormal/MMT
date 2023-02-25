@@ -50,12 +50,12 @@ class EditActions(mmtplugin: MMTPlugin) {
     *
     * @param replace if true, replace selected asset; otherwise, show popup
     */
-  def showNormalization(view: JEditView, replace: Boolean): Unit = {
+  def showNormalization(view: JEditView, replace: Boolean, fully: Boolean): Unit = {
     val (as, selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
     as match {
       case oa: JObjAsset =>
         val obj = oa.obj
-        val objN = mmtplugin.controller.simplifier(obj, SimplificationUnit(oa.context, true,true, true))
+        val objN = mmtplugin.controller.simplifier(obj, SimplificationUnit(oa.context, true, true, fully))
         val objNS = mmtplugin.asString(objN)
         val textArea = view.getTextArea
         if (selected && replace) {
