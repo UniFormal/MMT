@@ -3,6 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>MMT Viewer</title>
+    <script>
+        const HTMLSOURCE = "%%HTMLSOURCE%%";
+        const OMDOCSOURCE = "%%OMDOCSOURCE%%";
+        const PDFSOURCE = "%%PDFSOURCE%%";
+        function openTab(evt, value) {
+            // Declare all variables
+            var i, tabcontent;
+            tabcontent = document.getElementsByClassName("tab");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            document.getElementById("htmliframe").src = "";
+            document.getElementById("omdociframe").src = "";
+            document.getElementById("pdfiframe").src = "";
+
+            if (value==="HTML") {
+                document.getElementById("htmlframe").style.display = "block";
+                document.getElementById("htmliframe").src = HTMLSOURCE;
+            } else if (value==="OMDOC") {
+                document.getElementById("omdocframe").style.display = "block";
+                document.getElementById("omdociframe").src = OMDOCSOURCE;
+            } else if (value==="PDF") {
+                document.getElementById("pdfframe").style.display = "block";
+                document.getElementById("pdfiframe").src = PDFSOURCE;
+            }
+        }
+    </script>
     <style>
         .tabbed figure {
             display: block;
@@ -52,21 +79,24 @@
     <input id="omdoctab" type="radio" name="tabs"/>
     <input id="pdftab" type="radio" name="tabs"/>
     <nav>
-        <label for="htmltab" style="margin-left: 5px">HTML</label>
-        <label for="omdoctab">OMDoc</label>
-        <label for="pdftab">PDF</label>
+        <label for="htmltab" id="htmlbutton" style="margin-left: 5px" onclick="openTab(event,'HTML');">HTML</label>
+        <label for="omdoctab" onclick="openTab(event,'OMDOC');">OMDoc</label>
+        <label for="pdftab" onclick="openTab(event,'PDF');">PDF</label>
     </nav>
     <figure>
-        <div class="htmltab">
-            <iframe src="%%HTMLSOURCE%%"></iframe>
+        <div id="htmlframe" class="htmltab tab">
+            <iframe src="" id="htmliframe"></iframe>
         </div>
-        <div class="omdoctab">
-            <iframe src="%%OMDOCSOURCE%%"></iframe>
+        <div id="omdocframe" class="omdoctab tab">
+            <iframe src="" id="omdociframe"></iframe>
         </div>
-        <div class="pdftab">
-            <iframe src="%%PDFSOURCE%%"></iframe>
+        <div id="pdfframe" class="pdftab tab">
+            <iframe src="" id="pdfiframe"></iframe>
         </div>
     </figure>
+    <script>
+        document.getElementById("htmlbutton").click();
+    </script>
 </div>
 </body>
 </html>

@@ -23,7 +23,8 @@ object STeXRules {
     SkipCommand("stexstyleproblem", "onn"),
     VarDefRule(dict),VarSeqRule(dict),
     SDefinitionRule(dict),SAssertionRule(dict),SParagraphRule(dict),
-    InlineDefRule(dict),InlineAssRule(dict:Dictionary)
+    InlineDefRule(dict),InlineAssRule(dict:Dictionary),
+    InputrefRule(dict)
   )
   def moduleRules(dict:Dictionary) : List[TeXRule] = List(
     SymDeclRule(dict),SymDefRule(dict),NotationRule(dict),TextSymDeclRule(dict),
@@ -130,7 +131,7 @@ case class InheritModuleRule(dm : DictionaryModule,export:Boolean) extends STeXM
     val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Module,symbolname = "import")
     a.addCodeLens(dm.path.toString,"",Nil,startoffset,endoffset)
     dm.file.foreach {f =>
-      a.setDeclaration(f.toURI.toString,dm.macr.startoffset,dm.macr.endoffset)
+      a.addDefinition(f.toURI.toString,dm.macr.startoffset,dm.macr.endoffset)
     }
     this.plain.foreach {plain =>
       in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Module,symbolname = "import")
@@ -149,6 +150,30 @@ trait ImportModuleRuleLike extends STeXRule with MacroRule {
   }
 }
 
+case class InputrefRule(dict:Dictionary) extends STeXRule with MacroRule with NonFormalRule {
+  val name = "inputref"
+
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    parser.readChar('*')
+    val archive = parser.readOptAgument.map(_.asname).getOrElse("")
+    val path = parser.readArgument.asname
+    val file = dict.resolveFilePath(archive,path)
+    val ret = new MacroApplication with STeXMacro {
+      if (!file.exists()) addError("File not found: " + file.toString)
+
+      override def doAnnotations(in: sTeXDocument): Unit = {
+        val a = in.Annotations.add(this,this.startoffset,endoffset - startoffset,SymbolKind.File)
+        if (file.exists()) {
+          a.addDefinition(file.toString,0,0)
+          a.addCodeLens(file.toString,"",Nil,startoffset,endoffset)
+        }
+        a.setSemanticHighlightingClass(SemanticHighlighting.file)
+      }
+    }
+    ret
+  }
+}
+
 case class UseStructureRule(dict:Dictionary) extends STeXRule with MacroRule with NonFormalRule {
   val name = "usestructure"
 
@@ -162,7 +187,7 @@ case class UseStructureRule(dict:Dictionary) extends STeXRule with MacroRule wit
         val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, symbolname = "usestructure")
         a.addCodeLens(path, "", Nil, startoffset, endoffset)
         dm.file.foreach { f =>
-          a.setDeclaration(f.toURI.toString, dm.macr.startoffset, dm.macr.endoffset)
+          a.addDefinition(f.toURI.toString, dm.macr.startoffset, dm.macr.endoffset)
         }
         this.plain.foreach { plain =>
           in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Module, symbolname = "usestructure")
@@ -219,7 +244,7 @@ class SemanticMacroApp(syminfo: SymdeclInfo,notinfo:Option[NotationInfo] = None)
     //in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,syminfo.path.toString)
     plain.foreach { plain =>
       val pa = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant,syminfo.path.toString)
-      pa.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
+      pa.addDefinition(syminfo.file,syminfo.start,syminfo.end)
       pa.setSemanticHighlightingClass(SemanticHighlighting.symbol)
       pa.setHover(syminfo.path.toString + (notinfo match {
         case Some(nt) => "#" + nt.id
@@ -421,7 +446,7 @@ class VarApp(syminfo: SymdeclInfo,notinfo:Option[NotationInfo]) extends STeXMacr
     //in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,syminfo.path.toString)
     plain.foreach { plain =>
       val pa = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant,syminfo.path.toString)
-      pa.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
+      pa.addDefinition(syminfo.file,syminfo.start,syminfo.end)
       pa.setSemanticHighlightingClass(SemanticHighlighting.variable)
       pa.setHover("Variable " + syminfo.path.name.toString + (notinfo match {
         case Some(nt) => "#" + nt.id
@@ -448,7 +473,7 @@ case class VardefApp(notinfo:NotationInfo, dict:Dictionary) extends SemanticMacr
     a.setHover("Variable " + syminfo.path.name.toString)
     plain.foreach {plain =>
       val pa = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant)
-      pa.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
+      pa.addDefinition(syminfo.file,syminfo.start,syminfo.end)
       pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
     }
   }
@@ -494,7 +519,7 @@ class SeqApp(syminfo: SymdeclInfo,notinfo:Option[NotationInfo]) extends STeXMacr
     //in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Constant,syminfo.path.toString)
     plain.foreach { plain =>
       val pa = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant,syminfo.path.toString)
-      pa.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
+      pa.addDefinition(syminfo.file,syminfo.start,syminfo.end)
       pa.setSemanticHighlightingClass(SemanticHighlighting.variable)
       pa.setHover("Variable Sequence " + syminfo.path.name.toString + (notinfo match {
         case Some(nt) => "#" + nt.id
@@ -520,7 +545,7 @@ case class VarseqApp(notinfo:NotationInfo,range:List[TeXTokenLike], dict:Diction
     a.setHover("Variable Sequence " + syminfo.path.name.toString)
     plain.foreach {plain =>
       val pa = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant)
-      pa.setDeclaration(syminfo.file,syminfo.start,syminfo.end)
+      pa.addDefinition(syminfo.file,syminfo.start,syminfo.end)
       pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
     }
   }
@@ -592,10 +617,11 @@ class SymrefApp(dict:Dictionary,val alternatives:List[SymdeclInfo],asPlainString
     a.setHover(alternatives.head.path.toString + {
       if (trivial) "" else "\n\nYields: " + asPlainString
     })
-    this.plain.foreach {plain =>
+    a.addDefinition(alternatives.head.file,alternatives.head.start,alternatives.head.end)
+    a.setSemanticHighlightingClass(SemanticHighlighting.symbol)
+    /*this.plain.foreach {plain =>
       val pla = in.Annotations.add(plain,plain.startoffset,plain.endoffset - plain.startoffset,SymbolKind.Constant,alternatives.head.path.toString)
-      pla.setSemanticHighlightingClass(SemanticHighlighting.symbol)
-    }
+    }*/
     annotateWithAlternatives(a, in)
   }
 }
@@ -743,7 +769,7 @@ abstract class StatementEnvRule extends StatementRule with EnvironmentRule {
     dodefs match {
       case Some(true) =>
         dofors
-      case None if opts.toList.flatMap(_.consumeStr("type").toList.flatMap(_.split(',').toList.map(_.trim))).contains("symdoc") => dofors
+      case None if opts.toList.flatMap(o => (o.consumeStr("type").toList ::: o.consumeStr("style").toList).flatMap(_.split(',').toList.map(_.trim))).contains("symdoc") => dofors
       case _ =>
     }
     if (doexs) exrules.foreach(parser.latex.addRule(_))
@@ -1057,7 +1083,7 @@ trait InlineStructure extends MacroApplication with STeXMacro with MMTStructure 
     plain.foreach { plain =>
       val pa = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Constant)
       pa.addCodeLens(path.toString, "", Nil, plain.startoffset, plain.endoffset)
-      pa.setDeclaration(domain.file.get.toString, domain.macr.startoffset, domain.macr.endoffset)
+      pa.addDefinition(domain.file.get.toString, domain.macr.startoffset, domain.macr.endoffset)
       pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
     }
   }
@@ -1070,7 +1096,7 @@ trait MMTStructureEnv extends STeXEnvironment with MMTStructure {
     a.setHover("Structure " + path.name.toString + ": " + domain.path.toString)
     val bg = in.Annotations.add(begin, begin.startoffset, begin.endoffset - begin.startoffset, SymbolKind.Constructor, "structure")
     bg.addCodeLens(path.toString, "", Nil, begin.startoffset, begin.endoffset)
-    bg.setDeclaration(domain.file.get.toString, domain.macr.startoffset, domain.macr.endoffset)
+    bg.addDefinition(domain.file.get.toString, domain.macr.startoffset, domain.macr.endoffset)
     bg.setSemanticHighlightingClass(SemanticHighlighting.declaration)
     end.foreach { plain =>
       val pa = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Constant)

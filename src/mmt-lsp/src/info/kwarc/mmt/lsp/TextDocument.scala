@@ -29,8 +29,10 @@ trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[Cli
       log("Document not found: " + uri)
       return
     })}
-    params.getContentChanges.asScala.foreach {change =>
-      doc.update(change.getRange,change.getText)
+    doc.synchronized {
+      params.getContentChanges.asScala.foreach { change =>
+        doc.update(change.getRange, change.getText)
+      }
     }
   }
 

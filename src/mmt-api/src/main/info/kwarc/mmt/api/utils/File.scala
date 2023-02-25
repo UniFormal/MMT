@@ -293,7 +293,7 @@ object File {
    */
   def Reader(f: File): BufferedReader = {
     val fC = Compress.name(f)
-    val compress = !f.exists && fC.exists
+    val compress = (f.isDirectory || !f.exists) && fC.exists
     val fileName = if (compress) fC else f
     val in = Compress.in(new FileInputStream(fileName.toJava), compress)
     StreamReading.Reader(in)

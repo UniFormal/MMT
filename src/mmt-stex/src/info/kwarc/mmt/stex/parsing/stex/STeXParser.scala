@@ -173,13 +173,6 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     case _ =>
   }
 
-  def resolveMPath(archiveid: String, path: String): MPath = {
-    val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse {
-      throw LaTeXParseError("Archive missing: " + archiveid)
-    })
-    resolveMPath(archive, path)
-  }
-
   def moduleOrStructure(pathorname: String) : DictionaryModule = {
     def default = requireModule(resolveMPath("",pathorname),"",pathorname)
     if (pathorname.contains('?'))
@@ -204,6 +197,23 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
       case _ => false
     }.getOrElse{
       throw LaTeXParseError("No structure " + name + " found")
+    }
+  }
+
+  def resolveMPath(archiveid: String, path: String): MPath = {
+    val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse {
+      throw LaTeXParseError("Archive missing: " + archiveid)
+    })
+    resolveMPath(archive, path)
+  }
+
+  def resolveFilePath(archiveid: String, path: String): File = {
+    val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse {
+      throw LaTeXParseError("Archive missing: " + archiveid)
+    })
+    archive match {
+      case Some(a) => a / source / (if (path.endsWith(".tex")) path else path + ".tex")
+      case _ => current_file.get.resolve(if (path.endsWith(".tex")) path else path + ".tex")
     }
   }
 

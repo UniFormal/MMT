@@ -396,15 +396,13 @@ trait OMDocHTML { this : STeXServer =>
   }
   lazy val presenter = new Presenter(xhtmlPresenter) {
     val key: String = "stexpres"
-    /**
-      * @param e          the element to present
-      * @param standalone if true, include appropriate header and footer
-      * @param rh         output stream
-      */
+
     override def apply(e: StructuralElement, standalone: Boolean)(implicit rh: RenderingHandler): Unit = {
       // TODO
       ???
     }
+
+
     def doHistories(cp:CPath,h:History*) = {
       implicit val sb = new StringBuilder()
       sb.append(

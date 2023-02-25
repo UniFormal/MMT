@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex.lsp
 
+import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem, URLEscaping}
@@ -154,6 +155,21 @@ trait MathHubServer { this : STeXLSPServer =>
         r.local = true
         r.archive = res.archive
         r.sourcefile = res.sourcefile
+        res.module match {
+          case Some(mod) =>
+            controller.backend.getArchive(r.archive) match {
+              case Some(a) =>
+                val ns = a.ns.map(_.toString).orElse(a.properties.get("source-base"))
+                ns match {
+                  case Some(p) if mod.toString.startsWith(p) =>
+                    r.module = mod.toString.drop(p.length)
+                    if (r.module.startsWith("/")) r.module = r.module.drop(1)
+                  case _ =>
+                }
+              case _ =>
+            }
+          case _ =>
+        }
         r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=local&num=" + searchresultserver.locals.length
         val html = res.fragments.collectFirst{case p if p._1 != "title" => p._3}.getOrElse(res.fragments.head._3)
         searchresultserver.locals ::= html

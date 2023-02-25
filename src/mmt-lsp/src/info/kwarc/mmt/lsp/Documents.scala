@@ -270,9 +270,9 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,protected
 
   case class Delta(oldStart : Int, oldEnd : Int, newText : String)
 
-  protected def updateNow: Unit = {
+  protected def updateNow: Unit = synchronized {
     Timer.busy = true
-    val deltas = synchronized {
+    val deltas =  {
       val changes = {
         val ch = _changes
         _changes = Nil

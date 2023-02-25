@@ -38,6 +38,7 @@ class LSPSearchResult {
   var local : Boolean = false
   var html : String = null
   var fileuri : String = null
+  var module: String = null
 }
 
 class LSPSearchResults {
@@ -105,8 +106,6 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    override def completion(doc: String, line: Int, char: Int): List[Completion] = Nil
 
-   override val scopes: List[String] = List("stex-module","stex-symdecl","stex-constant","stex-variable")
-   override val modifiers: List[String] = List("deprecated")
 
    override def shutdown: Any = style match {
      case LocalStyle => scala.sys.exit()
@@ -463,6 +462,9 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          ServerResponse("Unknown key","txt")
      }
    })
+
+   override val scopes: List[String] = List("stex-module", "stex-symdecl", "stex-constant", "stex-variable","stex-file")
+   override val modifiers: List[String] = List("deprecated")
 }
 
 object SemanticHighlighting {
@@ -470,6 +472,7 @@ object SemanticHighlighting {
   val declaration = 1
   val symbol = 2
   val variable = 3
+  val file = 4
 }
 
 object Socket {

@@ -262,30 +262,54 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
         nt.plain.attributes.remove((nt.namespace, "style"))
         List(("title", makeString(nt)), ("titlesource", nt.toString))
       }: _*)
-      definitions.foreach(d => doc.add("definition", makeString(d.copy), d.toString,
-        ("for", d.fors.mkString(", ")) ::
-          d.path.map(p => ("path", p.toString)).toList: _*
+      definitions.foreach(d => doc.add("definition", makeString(d._1.copy), d.toString,
+        ("for", d._1.fors.mkString(", ")) ::
+          d._1.path.map(p => ("path", p.toString)).toList ::: (d._2 match {
+          case Some(mp) => List(("module",mp.toString))
+          case _ => Nil
+        }): _*
       ))
-      assertions.foreach(d => doc.add("assertion", makeString(d.copy), d.toString,
-        ("for", d.fors.mkString(", ")) ::
-          d.path.map(p => ("path", p.toString)).toList: _*
+      assertions.foreach(d => doc.add("assertion", makeString(d._1.copy), d.toString,
+        ("for", d._1.fors.mkString(", ")) ::
+          d._1.path.map(p => ("path", p.toString)).toList ::: (d._2 match {
+          case Some(mp) => List(("module", mp.toString))
+          case _ => Nil
+        }): _*
       ))
-      examples.foreach(d => doc.add("example", makeString(d.copy), d.toString,
-        ("for", d.fors.mkString(", ")) ::
-          d.path.map(p => ("path", p.toString)).toList: _*
+      examples.foreach(d => doc.add("example", makeString(d._1.copy), d.toString,
+        ("for", d._1.fors.mkString(", ")) ::
+          d._1.path.map(p => ("path", p.toString)).toList ::: (d._2 match {
+          case Some(mp) => List(("module", mp.toString))
+          case _ => Nil
+        }): _*
       ))
       doc
     }
 
-    def addDefi(df: HTMLStatement) = definitions ::= df
+    def addDefi(df: HTMLStatement)(implicit self:SHTMLNode) = {
+      val mod = self.findAncestor {
+        case t: SHTMLOTheory => t.mp
+      }
+      definitions ::= (df,mod)
+    }
 
-    def addAssertion(ass: HTMLStatement) = assertions ::= ass
+    def addAssertion(ass: HTMLStatement)(implicit self:SHTMLNode) = {
+      val mod = self.findAncestor {
+        case t: SHTMLOTheory => t.mp
+      }
+      assertions ::= (ass,mod)
+    }
 
-    def addExample(ex: HTMLStatement) = examples ::= ex
+    def addExample(ex: HTMLStatement)(implicit self:SHTMLNode) = {
+      val mod = self.findAncestor {
+        case t: SHTMLOTheory => t.mp
+      }
+      examples ::= (ex,mod)
+    }
 
-    private var definitions: List[HTMLStatement] = Nil
-    private var assertions: List[HTMLStatement] = Nil
-    private var examples: List[HTMLStatement] = Nil
+    private var definitions: List[(HTMLStatement,Option[MPath])] = Nil
+    private var assertions: List[(HTMLStatement,Option[MPath])] = Nil
+    private var examples: List[(HTMLStatement,Option[MPath])] = Nil
 
     private def makeString(node: HTMLNode): String = {
       val sb = new mutable.StringBuilder()
