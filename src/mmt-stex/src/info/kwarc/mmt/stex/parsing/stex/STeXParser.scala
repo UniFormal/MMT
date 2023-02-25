@@ -280,17 +280,15 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
           current_file.get.up / p
       }
       val lang = getLanguage
-      val file = if (abs.setExtension("tex").exists()) abs.setExtension("tex")
+      val nabs = abs / name
+      val file = if (nabs.setExtension("tex").exists()) nabs.setExtension("tex")
+      else if (nabs.setExtension(lang + ".tex").exists()) nabs.setExtension(lang + ".tex")
+      else if (nabs.setExtension("en.tex").exists()) nabs.setExtension("en.tex")
+      else if (abs.setExtension("tex").exists()) abs.setExtension("tex")
       else if (abs.setExtension(lang + ".tex").exists()) abs.setExtension(lang + ".tex")
       else if (abs.setExtension("en.tex").exists()) abs.setExtension("en.tex")
       else {
-        val nabs = abs / name
-        if (nabs.setExtension("tex").exists()) nabs.setExtension("tex")
-        else if (nabs.setExtension(lang + ".tex").exists()) nabs.setExtension(lang + ".tex")
-        else if (nabs.setExtension("en.tex").exists()) nabs.setExtension("en.tex")
-        else {
-          throw LaTeXParseError("No candidate file for module " + mp + " found")
-        }
+        throw LaTeXParseError("No candidate file for module " + mp + " found")
       }
       if (readfiles contains file) {
         throw LaTeXParseError("No module " + mp + " found")
@@ -299,9 +297,11 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
         readfiles ::= file
         parser.applyFormally(file, archive)
       }
-      all_modules.getOrElse(mp, {
-        throw LaTeXParseError("No module " + mp + " found")
-      })
+      all_modules.get(mp) match {
+        case Some(m) => m
+        case None =>
+          throw LaTeXParseError("No module " + mp + " found in file " + file)
+      }
     })
   }
 

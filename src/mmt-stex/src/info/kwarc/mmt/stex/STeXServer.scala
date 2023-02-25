@@ -48,7 +48,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
   def iterateLibs(a : Archive)(fn : File => Unit): Unit = {
     val lib = a.root / "lib"
     if ((a.root / "lib").exists()) fn(lib)
-    def iter(f : File): Unit = if (f != RusTeX.mh && f != File("/")) {
+    def iter(f : File): Unit = if (f != RusTeX.mh && f != f.up) {
       val maybelib = f.up / "meta-inf" / "lib"
       if (maybelib.exists()) fn(maybelib)
       iter(f.up)

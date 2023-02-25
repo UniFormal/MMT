@@ -6,13 +6,15 @@
   <script type="text/javascript">
     addEventListener("resize", (e) => {
       var bodyelem = document.getElementById('rustexbody');
-      var parent = bodyelem.offsetParent.offsetParent;
-      var pwidth = parent.offsetWidth - ((Number(bodyelem.style.paddingLeft.replace(/px$/, '')) + Number(bodyelem.style.paddingRight.replace(/px$/, ''))));
-      var maxwidth = Number(bodyelem.style.maxWidth.replace(/px$/, ''));
-      if (pwidth < maxwidth) {
-        bodyelem.style.setProperty('--current-width',pwidth + "px");
-      } else {
-        bodyelem.style.setProperty('--current-width',maxwidth + "px");
+      if (bodyelem !== null) {
+        var parent = bodyelem.offsetParent.offsetParent;
+        var pwidth = parent.offsetWidth - ((Number(bodyelem.style.paddingLeft.replace(/px$/, '')) + Number(bodyelem.style.paddingRight.replace(/px$/, ''))));
+        var maxwidth = Number(bodyelem.style.maxWidth.replace(/px$/, ''));
+        if (pwidth < maxwidth) {
+          bodyelem.style.setProperty('--current-width', pwidth + "px");
+        } else {
+          bodyelem.style.setProperty('--current-width', maxwidth + "px");
+        }
       }
     });
     function preloadFunc() {

@@ -105,7 +105,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
               val newhtml = HTMLParser(html)(state)
               pars.eh.close
               client.log("html parsed")
-              this.html = Some(server.stexserver.present(newhtml.toString)(None))
+              this.html = Some(server.stexserver.present(newhtml.toString)(None).get("body")()().head)
               ((), "Done")
             }
           }
