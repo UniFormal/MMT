@@ -20,9 +20,9 @@ import info.kwarc.mmt.api.objects.Conversions._
 object Rules {
 
   def getBoundVars(tm : Term) : (List[(LocalName,Option[Term])],Term) = tm match {
-    case SHTMLHoas.bound(_,_,ln,tp,bd) =>
+    case SHTMLHoas.bound(_,_,x,bd) =>
       val ret = getBoundVars(bd)
-      ((ln,tp) :: ret._1,ret._2)
+      ((x.name,x.tp) :: ret._1,ret._2)
     case _ => (Nil,tm)
   }
 }
@@ -63,8 +63,8 @@ class Pattern(original : Term) {
   }
 
   def instantiate(ls : List[(LocalName,Term)],tm : Term = original) : Option[Term] = tm match {
-    case SHTMLHoas.bound(_,_,ln,_,bd) if ls.exists(_._1 == ln) => instantiate(ls,bd ^? (ln / ls.find(_._1 == ln).get._2))
-    case SHTMLHoas.bound(_,_,_,_,_) => None
+    case SHTMLHoas.bound(_,_,x,bd) if ls.exists(_._1 == x.name) => instantiate(ls,bd ^? (x.name / ls.find(_._1 == x.name).get._2))
+    case SHTMLHoas.bound(_,_,_,_) => None
     case _ => Some(ls.foldLeft(tm)((t,p) => t ^? (p._1 / p._2)))
   }
 }
@@ -435,7 +435,7 @@ object ReorderRule extends HTMLTermRule {
             case r@Reorder.ReorderRule(p, str) if p == obj.path => str
           }
           ruleOpt.flatMap(applyOMA(tm, _,h, f, args)) */
-        case Some(o : Obj) =>
+        case Some(o) =>
           state.server.getReorder(o) match {
             case Some(ls) =>
               applyOMA(tm,ls,h,f,args)
@@ -452,7 +452,7 @@ object ReorderRule extends HTMLTermRule {
           }
           ruleOpt.flatMap(applyOMB(tm, _,h, f, args))
        */
-        case Some(o:Obj) =>
+        case Some(o) =>
           state.server.getReorder(o) match {
             case Some(ls) =>
               applyOMB(tm, ls, h, f, args)
@@ -668,6 +668,9 @@ object AssocRule extends HTMLTermRule {
     case IsSeq(Nil,SHTML.flatseq(ls),rest) if ls.nonEmpty && ls.length + rest.length >= 2  =>
       val ils = ls ::: rest
       ils.init.foldRight(ils.last){case (acc,b) => SHTMLHoas.OmaSpine(h,f,List(acc,b))}
+    case IsSeq(impls, SHTML.flatseq(ls), rest) if ls.nonEmpty && ls.length + rest.length >= 2 && impls.forall(x => x.isInstanceOf[OMV] && state.isUnknown(x.asInstanceOf[OMV])) =>
+      val ils = ls ::: rest
+      ils.init.foldRight(ils.last) { case (acc, b) => SHTMLHoas.OmaSpine(h, f, List(acc, b)) }
     case IsSeq(Nil,OMV(v),rest) =>
       val fcont = self.getVariableContext
       val x = Context.pickFresh(fcont, LocalName("foldrightx"))._1

@@ -423,10 +423,9 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                case None =>
                  ServerResponse("Empty Document path", "txt")
                case Some(d) =>
-                 var html = MMTSystem.getResourceAsString("mmt-web/stex/tabs.html")
+                 var html = MMTSystem.getResourceAsString("mmt-web/stex/tabsnopdf.html")
                  html = html.replace("%%HTMLSOURCE%%", (localServer / (":" + this.pathPrefix) / "fullhtml").toString + "?" + s)
                  html = html.replace("%%OMDOCSOURCE%%", localServer.toString + "/:" + stexserver.pathPrefix + "/omdoc?archive=" + d.archive.map(_.id).getOrElse("NONE") + "&filepath=" + d.relfile.map(_.setExtension("omdoc").toString.replace('\\','/')).getOrElse("NONE"))
-                 html = html.replace("%%PDFSOURCE%%", localServer.toString + "/:" + stexserver.pathPrefix + "None")
                  ServerResponse(html, "text/html")
              }
          }

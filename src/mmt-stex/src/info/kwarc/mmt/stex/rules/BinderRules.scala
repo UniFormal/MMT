@@ -12,15 +12,15 @@ object PiLikeRuleInh extends ParametricRule {
 
   case class PiLikeRuleInhI(hhead: GlobalName) extends InhabitableRule(hhead) {
     override def applicable(t: Term): Boolean = t match {
-      case SHTMLHoas.bound(_,OMS(`hhead`), _, _, _) => true
+      case SHTMLHoas.bound(_,OMS(`hhead`), _, _) => true
       case SHTMLHoas.OmaSpine(_,OMS(`hhead`),List(_,_)) => true
       case _ => false
     }
 
     def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
-      case SHTMLHoas.bound(_,OMS(`hhead`), x, Some(tp), tm) =>
-        solver.check(Inhabitable(stack, tp))
-        Some(solver.check(Inhabitable(stack ++ x % tp, tm)))
+      case SHTMLHoas.bound(_,OMS(`hhead`), x, tm) if x.tp.isDefined =>
+        solver.check(Inhabitable(stack, x.tp.get))
+        Some(solver.check(Inhabitable(stack ++ x, tm)))
       case SHTMLHoas.OmaSpine(_,OMS(`hhead`),List(a,b)) =>
         solver.check(Inhabitable(stack, a))
         Some(solver.check(Inhabitable(stack, b)))
@@ -39,26 +39,26 @@ object LambdaLikeRule extends ParametricRule {
   case class LambdaTypingRule(lambda:GlobalName,pi:GlobalName) extends InferenceAndTypingRule(lambda,pi) {
     def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean]) = {
       (tm,tp) match {
-        case (SHTMLHoas.bound(h,OMS(`lambda`),x,Some(xtp),bd),None) =>
+        case (SHTMLHoas.bound(h,OMS(`lambda`),x,bd),None) if x.tp.isDefined =>
           if (!covered) {
-            solver.check(Inhabitable(stack,xtp))
+            solver.check(Inhabitable(stack,x.tp.get))
           }
-          solver.inferType(bd,covered)(stack ++ x%xtp,history) match {
+          solver.inferType(bd,covered)(stack ++ x,history) match {
             case Some(tp) =>
-              (Some(SHTMLHoas.bound(h,OMS(`pi`),x,Some(xtp),tp)),Some(true))
+              (Some(SHTMLHoas.bound(h,OMS(`pi`),x,tp)),Some(true))
             case _ => (None,None)
           }
-        case (SHTMLHoas.bound(h, OMS(`lambda`), x, Some(xtp), bd), Some(SHTMLHoas.bound(h2,OMS(`pi`),x2,Some(xtp2),bd2))) if h == h2 =>
+        case (SHTMLHoas.bound(h, OMS(`lambda`), x, bd), Some(SHTMLHoas.bound(h2,OMS(`pi`),x2,bd2))) if h == h2 && x.tp.isDefined && x2.tp.isDefined =>
           if (!covered) {
-            solver.check(Inhabitable(stack, xtp))
-            solver.check(Equality(stack, xtp, xtp2, None))
-            (solver.safeSimplifyUntil(xtp)(SHTML.flatseq.tp.unapply)._1, solver.safeSimplifyUntil(xtp2)(SHTML.flatseq.tp.unapply)._1) match {
+            solver.check(Inhabitable(stack, x.tp.get))
+            solver.check(Equality(stack, x.tp.get, x2.tp.get, None))
+            (solver.safeSimplifyUntil(x.tp.get)(SHTML.flatseq.tp.unapply)._1, solver.safeSimplifyUntil(x2.tp.get)(SHTML.flatseq.tp.unapply)._1) match {
               case (SHTML.flatseq.tp(_), SHTML.flatseq.tp(_)) =>
-                solver.check(Typing(stack ++ x % xtp, bd, bd2 ^? (x2 / OMV(x))))
+                solver.check(Typing(stack ++ x, bd, bd2 ^? (x2.name / OMV(x.name))))
               case (_, SHTML.flatseq.tp(_)) =>
-                solver.check(Typing(stack ++ x % xtp, bd, bd2 ^? (x2 / SHTML.flatseq(List(OMV(x))))))
+                solver.check(Typing(stack ++ x, bd, bd2 ^? (x2.name / SHTML.flatseq(List(OMV(x.name))))))
               case _ =>
-                solver.check(Typing(stack ++ x % xtp, bd, bd2 ^? (x2 / OMV(x))))
+                solver.check(Typing(stack ++ x, bd, bd2 ^? (x2.name / OMV(x.name))))
             }
           }
           (tp,Some(true))
@@ -79,31 +79,31 @@ object LambdaLikeArrowRule extends ParametricRule {
   case class LambdaTypingRule(lambda:GlobalName,arr:GlobalName) extends InferenceAndTypingRule(lambda,arr) {
 
     override def applicable(t: Term): Boolean = t match {
-      case SHTMLHoas.bound(h,OMS(`lambda`),x,Some(xtp),bd) => true
+      case SHTMLHoas.bound(h,OMS(`lambda`),x,bd) if x.tp.isDefined => true
       case _ => false
     }
     def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean]) = {
       (tm,tp) match {
-        case (SHTMLHoas.bound(h,OMS(`lambda`),x,Some(xtp),bd),None) =>
+        case (SHTMLHoas.bound(h,OMS(`lambda`),x,bd),None) if x.tp.isDefined =>
           if (!covered) {
-            solver.check(Inhabitable(stack, xtp))
+            solver.check(Inhabitable(stack, x.tp.get))
           }
-          solver.inferType(bd,covered)(stack ++ x%xtp,history) match {
+          solver.inferType(bd,covered)(stack ++ x,history) match {
             case Some(tp) if !tp.freeVars.contains(x) =>
-              (Some(SHTMLHoas.OmaSpine(h,OMS(`arr`),List(xtp,tp))),Some(true))
+              (Some(SHTMLHoas.OmaSpine(h,OMS(`arr`),List(x.tp.get,tp))),Some(true))
             case _ => (None,None)
           }
-        case (SHTMLHoas.bound(h, OMS(`lambda`), x, Some(xtp), bd), Some(SHTMLHoas.OmaSpine(h2,OMS(`arr`),List(xtp2,bd2)))) if h == h2 =>
+        case (SHTMLHoas.bound(h, OMS(`lambda`), x, bd), Some(SHTMLHoas.OmaSpine(h2,OMS(`arr`),List(xtp2,bd2)))) if h == h2 && x.tp.isDefined =>
           if (!covered) {
-            solver.check(Inhabitable(stack, xtp))
-            solver.check(Equality(stack, xtp, xtp2, None))
-            (solver.safeSimplifyUntil(xtp)(SHTML.flatseq.tp.unapply)._1, solver.safeSimplifyUntil(xtp2)(SHTML.flatseq.tp.unapply)._1) match {
+            solver.check(Inhabitable(stack, x.tp.get))
+            solver.check(Equality(stack, x.tp.get, xtp2, None))
+            (solver.safeSimplifyUntil(x.tp.get)(SHTML.flatseq.tp.unapply)._1, solver.safeSimplifyUntil(xtp2)(SHTML.flatseq.tp.unapply)._1) match {
               case (SHTML.flatseq.tp(_), SHTML.flatseq.tp(_)) =>
-                solver.check(Typing(stack ++ x % xtp, bd, bd2))
+                solver.check(Typing(stack ++ x, bd, bd2))
               case (_, SHTML.flatseq.tp(_)) =>
-                solver.check(Typing(stack ++ x % xtp, bd, bd2))
+                solver.check(Typing(stack ++ x, bd, bd2))
               case _ =>
-                solver.check(Typing(stack ++ x % xtp, bd, bd2))
+                solver.check(Typing(stack ++ x, bd, bd2))
             }
           }
           (tp,Some(true))
@@ -158,16 +158,16 @@ object ApplyRule extends ParametricRule {
   case class ApplyTypingRule(app:GlobalName,pi:GlobalName) extends InferenceAndTypingRule(app,pi) {
 
     def makeOMB(args : List[SOMBArg],tp : Term,rettp:Option[Term])(implicit solver : Solver,stack : Stack, history : History,covered : Boolean) : (Option[Term],Option[Boolean]) = (args.headOption,tp) match {
-      case (Some(SCtx(Context(vd, rest@_*))),SHTMLHoas.bound(_, OMS(`pi`), x, Some(tp), r)) if !r.freeVars.contains(x) =>
-        if (!covered) vd.tp.foreach(t => solver.check(Subtyping(stack,t,tp)))
+      case (Some(SCtx(Context(vd, rest@_*))),SHTMLHoas.bound(_, OMS(`pi`), x, r)) if !r.freeVars.contains(x.name) && x.tp.isDefined =>
+        if (!covered) vd.tp.foreach(t => solver.check(Subtyping(stack,t,x.tp.get)))
         if (rest.isEmpty) {
           makeOMB(args.tail,r,rettp)(solver,stack ++ vd,history,covered)
         } else {
           makeOMB(SCtx(Context(rest:_*)) :: args.tail,r,rettp)(solver,stack ++ vd,history,covered)
         }
-      case (Some(STerm(t)), SHTMLHoas.bound(_, OMS(`pi`), x, Some(tp), r)) =>
-        if (!covered) solver.check(Typing(stack,t,tp,None))
-        makeOMB(args.tail,r ^? (x / t),rettp)
+      case (Some(STerm(t)), SHTMLHoas.bound(_, OMS(`pi`), x, r)) if x.tp.isDefined =>
+        if (!covered) solver.check(Typing(stack,t,x.tp.get,None))
+        makeOMB(args.tail,r ^? (x.name / t),rettp)
       case (None,r) =>
         rettp.foreach{tp =>
           solver.check(Subtyping(stack,r,tp))
@@ -186,9 +186,9 @@ object ApplyRule extends ParametricRule {
     }
 
     def makeOMA(args: List[Term], tp: Term, rettp: Option[Term])(implicit solver: Solver, stack: Stack, history: History, covered: Boolean): (Option[Term], Option[Boolean]) = (args.headOption, piify(tp)) match {
-      case (Some(a), SHTMLHoas.bound(_, OMS(`pi`), x, Some(tp), r)) =>
-        if (!covered) solver.check(Typing(stack, a, tp, None))
-        val rtp = r ^? (x / a)
+      case (Some(a), SHTMLHoas.bound(_, OMS(`pi`), x, r)) if x.tp.isDefined =>
+        if (!covered) solver.check(Typing(stack, a, x.tp.get, None))
+        val rtp = r ^? (x.name / a)
         /*val rtp = solver.inferType(a,covered) match {
           case Some(tpA) => (seq(tpA), seq(tp)) match {
             case (SHTML.flatseq.tp(_), SHTML.flatseq.tp(_)) =>
@@ -271,21 +271,21 @@ object ApplyRule extends ParametricRule {
   case class ApplyCompRule(app : GlobalName,lambda:GlobalName) extends ComputationRule(app) {
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       tm match {
-        case OMA(OMS(`app`),List(f @ SHTMLHoas.bound(_,OMS(`lambda`),x,Some(tp),bd),a)) =>
+        case OMA(OMS(`app`),List(f @ SHTMLHoas.bound(_,OMS(`lambda`),x,bd),a)) if x.tp.isDefined =>
           if (!covered) {
             check.inferType(f)
-            check.check(Typing(stack,a,tp,None))
+            check.check(Typing(stack,a,x.tp.get,None))
           }
           val tpA = check.inferType(a).getOrElse {
             return Simplifiability.NoRecurse
           }
-          (check.safeSimplifyUntil(tpA)(SHTML.flatseq.tp.unapply)._1, check.safeSimplifyUntil(tp)(SHTML.flatseq.tp.unapply)._1) match {
+          (check.safeSimplifyUntil(tpA)(SHTML.flatseq.tp.unapply)._1, check.safeSimplifyUntil(x.tp.get)(SHTML.flatseq.tp.unapply)._1) match {
             case (SHTML.flatseq.tp(_),SHTML.flatseq.tp(_)) =>
-              Simplify(bd ^? (x / a))
+              Simplify(bd ^? (x.name / a))
             case (_,SHTML.flatseq.tp(_)) =>
-              Simplify(bd ^? (x / SHTML.flatseq(List(a))))
+              Simplify(bd ^? (x.name / SHTML.flatseq(List(a))))
             case _ =>
-              Simplify(bd ^? (x / a))
+              Simplify(bd ^? (x.name / a))
           }
         case OMA(OMS(`app`),List(f,_)) =>
           RecurseOnly(tm.subobjects.indexWhere(_._2 == f) :: Nil)
@@ -304,14 +304,14 @@ object ApplyRule extends ParametricRule {
 object PreEqualRule extends ParametricRule {
   case class PreEqualityRule(head : GlobalName) extends TermBasedEqualityRule {
     override def applicable(tm1: Term, tm2: Term): Boolean = (tm1,tm2) match {
-      case (SHTMLHoas.bound(_,OMS(`head`),_,Some(_),_),SHTMLHoas.bound(_,OMS(`head`),_,Some(_),_)) => true
+      case (SHTMLHoas.bound(_,OMS(`head`),x,_),SHTMLHoas.bound(_,OMS(`head`),y,_)) => x.tp.isDefined && y.tp.isDefined
       case _ => false
     }
 
     override def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History): Option[Continue[Boolean]] = (tm1,tm2) match {
-      case (SHTMLHoas.bound(_,OMS(`head`),x1,Some(t1),bd1),SHTMLHoas.bound(_,OMS(`head`),x2,Some(t2),bd2)) =>
-        check.check(Equality(stack,t1,t2,None))
-        Some(Continue(check.check(Equality(stack ++ (x1%t1),bd1,bd2 ^? (x2/OMV(x1)),None))))
+      case (SHTMLHoas.bound(_,OMS(`head`),x1,bd1),SHTMLHoas.bound(_,OMS(`head`),x2,bd2)) =>
+        check.check(Equality(stack,x1.tp.get,x2.tp.get,None))
+        Some(Continue(check.check(Equality(stack ++ x1,bd1,bd2 ^? (x2.name/OMV(x1.name)),None))))
       case _ => None
     }
   }

@@ -217,7 +217,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     }
   }
   private def normalizeTerm(t : Term)(implicit pc: PresentationContext) = {
-    val (ruler,head) = {
+    val (ruler,head,isvar) = {
       (t match {
         case SHTMLHoas.Omb(_, f, _) =>
           Some(f)
@@ -225,15 +225,19 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
           Some(f)
         case OMBIND(f, _, _) =>
           Some(f)
+        case OMS(c) => Some(OMS(c))
+        case OMV(x) => Some(OMV(x))
         case _ =>
           None
       }) match {
         case None =>
-          (None,None)
+          (None,None,false)
         case Some(t@OMS(p)) =>
-          (server.getRuler(t, pc.getContext),controller.getO(p))
+          (server.getRuler(t, pc.getContext),controller.getO(p),false)
+        case Some(t@OMV(p)) =>
+          (server.getRuler(t, pc.getContext), None,true)
         case Some(t) =>
-          (server.getRuler(t, pc.getContext), None)
+          (server.getRuler(t, pc.getContext), None,false)
       }
     }
     val nots = head.toList.flatMap(server.getNotations) ::: ruler.toList.flatMap(server.getNotations)
@@ -290,9 +294,10 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
       case _ => Nil
     }}
 
-    (ruler,impls,nots,rett)
+    (ruler,impls,nots,rett,isvar)
   }
 
+  private def present(n : Node) = server.present(n.toString(),true)(None)
   override def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pc: PresentationContext): Int = {
     def default(implicit pc: PresentationContext) = {
       super.recurse(obj, bracket)
@@ -320,14 +325,14 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             notations match {
               // TODO get notation id
               case not :: _ =>
-                pc.out(not.present(Nil).toString())
+                pc.out(present(not.present(Nil,isvar=true)).toString())
               case Nil => pc.out("<mi>" + vd.name + "</mi>")
             }
           case _ =>
             // TODO get notation id
             notations.find(_.op.isDefined) match {
               case Some(not) =>
-                pc.out(not.op.get.toString)
+                pc.out(present(not.present(Nil, isvar = true)).toString())
               case _ => pc.out("<mi>" + vd.name + "</mi>")
             }
         }
@@ -342,7 +347,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         pc.out("</mrow>")
         0
       case tm: Term =>
-        val (ruler,is,notations,t) = normalizeTerm(tm)
+        val (ruler,is,notations,t,isvar) = normalizeTerm(tm)
 
         def ret() = t match {
           case SHTML.informal(n) =>
@@ -383,7 +388,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
                       }
                     }
                 }
-                pc.out(not.present(nargs.toList,downwards_precedence).toString())
+                pc.out(present(not.present(nargs.toList,downwards_precedence,isvar)).toString())
               case _ => default(pc.copy(context = nctx))
             }
           case OMBIND(f, ctx, bd) =>
@@ -416,7 +421,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
                       }
                     }
                 }
-                pc.out(not.present(nargs.toList,downwards_precedence).toString())
+                pc.out(present(not.present(nargs.toList,downwards_precedence,isvar)).toString())
               case _ => default(pc.copy(context = nctx))
             }
           case SHTMLHoas.OmaSpine(_, f, args) =>
@@ -440,10 +445,10 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
                   case (('i', tm),p) =>
                     with_precedence(not.argprecs(p)) {List(recurseI(tm))}
                 }
-                pc.out(not.present(nargs.toList,downwards_precedence).toString())
+                pc.out(present(not.present(nargs.toList,downwards_precedence,isvar)).toString())
               case _ => default
             }
-          case OMS(p) =>
+          case OMS(_)|OMV(_) =>
             val ruler = server.getRuler(t,pc.getContext)
             val arity = ruler.flatMap(server.getArity)
             arity match {
@@ -452,7 +457,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
                   // TODO get notation id
                   case not :: _ =>
                     // TODO parentheses
-                    pc.out(not.present(Nil).toString())
+                    pc.out(present(not.present(Nil,isvar=isvar)).toString())
                   case Nil => default
                 }
               case _ =>
@@ -460,14 +465,31 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
                 notations.find(_.op.isDefined) match {
                   case Some(not) =>
                     // TODO parentheses
-                    pc.out(not.op.get.toString)
+                    pc.out(present(not.present(Nil,isvar=isvar)).toString())
                   case _ => default
                 }
             }
           case _ =>
             default
         }
-        if (is.isEmpty) ret() else {
+        object subs extends Traverser[Term] {
+          object Done extends Throwable
+
+          def traverse(tm: Term)(implicit con: Context, state: Term): Term = tm match {
+            case `state` => throw Done
+            case _ => Traverser(this, tm)(con,state)
+          }
+          def contains(itm : Term) : Boolean = try {
+            traverse(t)(Context.empty,itm)
+            false
+          } catch {
+            case Done => true
+          }
+
+        }
+        if (is.isEmpty) ret()
+        else if (is.forall(i => subs contains i)) ret()
+        else {
           pc.out("<munder><munder><mrow>")
           ret()
           pc.out("</mrow><mo>⏟</mo></munder><mrow>")

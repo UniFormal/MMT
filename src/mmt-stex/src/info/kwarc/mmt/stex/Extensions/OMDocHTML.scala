@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.Extensions
 import info.kwarc.mmt.api.checking.{History, HistoryEntry}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.OMS
+import info.kwarc.mmt.api.objects.{OMFOREIGN, OMS}
 import info.kwarc.mmt.api.presentation.{Presenter, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, NestedModule, Structure}
 import info.kwarc.mmt.api.{CPath, DPath, DefComponent, GlobalName, MPath, Path, StructuralElement, TypeComponent}
@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.rules.ModelsOf
 import info.kwarc.mmt.stex.xhtml.HTMLParser
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
-import info.kwarc.mmt.stex.{STeXPresenterML, STeXPresenterTex, STeXServer}
+import info.kwarc.mmt.stex.{SHTML, STeXPresenterML, STeXPresenterTex, STeXServer}
 
 import scala.xml.{Node, NodeSeq}
 
@@ -20,8 +20,11 @@ trait OMDocHTML { this : STeXServer =>
 
   protected def omdocRequest(request: ServerRequest): ServerResponse = {
     request.path.lastOption match {
+      case Some("omdoccss") =>
+        ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"),"text/css")
       case Some("omdoc") =>
-        request.query match {
+        val qr = request.query.replace("&amp;","&")
+        qr match {
           case "" =>
             ServerResponse("Empty query", "txt")
           case s =>
@@ -44,13 +47,13 @@ trait OMDocHTML { this : STeXServer =>
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + ns + "&language=" + lang)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
-              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
+              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/omdoccss")
               ServerResponse(html, "text/html")
             } else {
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + s)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
-              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
+              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/omdoccss")
               ServerResponse(html, "text/html")
             }
         }
@@ -61,10 +64,12 @@ trait OMDocHTML { this : STeXServer =>
           case _ => (request.query, None)
         }
         val path = Path.parse(comp)
+        implicit val state = new State(lang.getOrElse("en"))
         val ret = path match {
-          case d:DPath => omdocDoc(d,lang).toString()
-          case mp:MPath => omdocModule(mp,lang).toString()
-          case gn:GlobalName => omdocSymbol(gn,lang).toString()
+          case d:DPath =>
+            documentTop(d).toString()
+          case mp:MPath => moduleTop(mp).toString()
+          case gn:GlobalName => declTop(gn).toString()
           case _ => "<div>Invalid: " + path.toString + "</div>"
         }
         val (doc, body) = this.emptydoc
@@ -73,6 +78,331 @@ trait OMDocHTML { this : STeXServer =>
       case _ => ServerResponse(s"Malformed URL path ${request.path}", "txt")
     }
   }
+
+  private class State(val language: String) {
+    private var id = 0
+    var lastSection : Option[Node] = None
+    def getId = {
+      id += 1
+      "omdocid"+ id.toString
+    }
+    def withTitle[A](ttl:Node)(f : Option[Node] => A): A = {
+      if (lastSection.contains(ttl)) {
+        f(None)
+      } else {
+        val lasttitle = lastSection
+        lastSection = Some(ttl)
+        try { f(Some(ttl)) } finally { lastSection = lasttitle }
+      }
+    }
+  }
+
+  private def documentTop(path:DPath)(implicit state:State): NodeSeq = {
+    controller.getO(path) match {
+      case Some(d: Document) => documentTop(d)
+      case None =>
+        <div><h1>Document {path.toString}</h1><hr/><div>Not found</div></div>
+    }
+  }
+
+  private def documentTop(doc:Document)(implicit state: State): NodeSeq = {
+    val title = getTitle(doc) match {
+      case Some(node) => node
+      case None => <span>Document {doc.path}</span>
+    }
+    state.withTitle(title){
+      case Some(title) =>
+        <div><h1>{present(title)}</h1><hr/>{documentBody(doc)}</div>
+      case _ => documentBody(doc)
+    }
+  }
+
+  private def documentSection(path: DPath)(implicit state: State): NodeSeq = {
+    controller.getO(path) match {
+      case Some(d: Document) =>
+        documentSection(d)
+      case None =>
+        <div>
+          <div style="font-weight:bold">Document
+            {path.toString}
+          </div>
+          <div>Not found</div>
+        </div>
+    }
+  }
+
+  private def documentSection(doc: Document)(implicit state: State): NodeSeq = {
+    val title = getTitle(doc) match {
+      case Some(node) => node
+      case None => <span>Document
+        {doc.path}
+      </span>
+    }
+    state.withTitle(title) {
+      case Some(title) =>
+        collapsible() { present(title) } { documentBody(doc) }
+      case _ => documentBody(doc)
+    }
+  }
+
+  private def documentBody(d: Document)(implicit state: State): NodeSeq = {
+    d.getDeclarations.flatMap {
+      case mr: MRef if mr.target.parent == d.path =>
+        <span></span> // TODO
+      case dr: DRef =>
+        //doInputref(dr.target,lang)
+        documentSection(dr.target)
+      case m: MRef =>
+        moduleInner(m.target)
+      case o =>
+        <div style="width:100%">TODO: {o.getClass} </div>
+    }
+  }
+
+  private def moduleTop(path: MPath)(implicit state: State): NodeSeq = {
+    controller.getO(path) match {
+      case Some(d: Theory) => moduleTop(d)
+      case None =>
+        <div><h1>Module {path.toString}</h1> <hr/>
+          <div>Not found</div>
+        </div>
+    }
+  }
+
+  private def moduleTop(t:Theory)(implicit state: State): NodeSeq = {
+    <div><h1>Module {t.path.toString}</h1><hr/>{doModuleBody(t)}</div>
+
+    /*
+    def doDecl(d: Declaration): NodeSeq = d match {
+      case Include(i) => Nil
+      case c: Constant =>
+        doBlock(<span>
+          <b>Term</b>{c.df.map(df => xhtmlPresenter.asXML(df, Some(c.path $ DefComponent))).getOrElse()}
+        </span>) {
+          <span>Inferred Type
+            {c.tp.map(tp => xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))).getOrElse("(None)")}
+          </span>
+        }
+      case nm: NestedModule =>
+        nm.module.getPrimitiveDeclarations.flatMap(doDecl)
+      case o =>
+        Seq(<div style="width:100%">TODO:
+          {o.getClass}
+        </div>)
+    }
+
+    controller.getO(mp) match {
+      case Some(t: Theory) if this.getLanguage(t).isDefined => doBlock(
+        <b>
+          <span>Language Module
+            {t.path.name}
+            for</span> <a href={doLink(t.path, lang)} style="color:blue">?
+          {t.path.parent.last}
+        </a>
+        </b>
+      ) {
+        <div style="width:100%">
+          {def getIncls(t: Theory): List[MPath] =
+          t.getIncludesWithoutMeta.tail ::: t.getPrimitiveDeclarations.collect { case nm: NestedModule => getIncls(nm.module.asInstanceOf[Theory]) }.flatten
+
+        val includes = getIncls(t)
+        if (includes.nonEmpty) {
+          <div style="width:100%">
+            <b>Uses</b>{includes.map(p => <span style="display:inline">
+            <a href={doLink(p, lang)} style="color:blue">?
+              {p.name.toString}
+            </a>
+          </span>)}
+          </div>
+        } else <span/>}{t.getPrimitiveDeclarations.flatMap(doDecl)}
+        </div>
+      }
+      case Some(t: Theory) => doBarBlock(<span>Module
+        <a href={doLink(mp, lang)} style="color:blue">
+          {mp.toString}
+        </a>
+      </span>) {
+        doModuleBody(t, lang)
+      }
+      case _ => doBarBlock(<span>Module
+        {mp.toString}
+      </span>)(<span>Theory not found</span>)
+    }
+     */
+  }
+
+  private def moduleInner(path : MPath)(implicit state: State): NodeSeq = {
+    controller.getO(path) match {
+      case Some(d: Theory) => moduleInner(d)
+      case None =>
+        collapsible() { doLink(path) {
+          <b>Module {path.name.toString}</b>
+        }} {<div>Not found</div>}
+    }
+  }
+  private def moduleInner(t: Theory)(implicit state: State): NodeSeq = {
+    if (getLanguage(t).isDefined) return {<span>TODO language module</span>}
+    collapsible() { doLink(t.path) {
+        <b>Module {t.name.toString}</b>
+    }}{doModuleBody(t)}
+  }
+
+  private def doModuleBody(theory: Theory)(implicit state: State): NodeSeq = <div>
+    <div>{theory.getIncludesWithoutMeta match {
+      case Nil =>
+      case ls => <span style="display:inline;"><b>Includes </b>{
+        val ils = ls.map(p => doLink(p){<span>{p.name.toString}</span>})
+        ils.flatMap(n => List(n,{<span>, </span>})).init
+      }<hr/></span>
+    }}</div>
+    <div>{theory.getPrimitiveDeclarations.flatMap {
+      case Include(_) => Nil
+      case nm:NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
+      case nm:NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
+      case o => declInner(o)
+    }}</div>
+  </div>
+
+  private def declTop(path:GlobalName)(implicit state: State): NodeSeq =
+    <div><h1>Symbol {path.toString}</h1> <hr/>{
+      controller.getO(path) match {
+      case Some(d: Declaration) => declInner(d)
+      case None => <div>Not found</div>
+    }}</div>
+
+  private def declTop(d:Declaration)(implicit state: State): NodeSeq =
+    <div><h1>Symbol {d.path.toString}</h1><hr/>{declInner(d)}</div>
+
+  private def declInner(path: GlobalName)(implicit state: State): NodeSeq = {
+    controller.getO(path) match {
+      case Some(d: Declaration) => declInner(d)
+      case None =>
+        collapsible(true) {doLink(path) {
+            <div>Symbol {path.name.toString}</div>
+        }} {<div>Not found</div>}
+    }
+  }
+
+  private def declInner(d:Declaration)(implicit state: State): NodeSeq = {
+    d match {
+      case c : Constant if c.metadata.getValues(ModelsOf.sym).nonEmpty =>
+        <span>TODO: Math Structure</span>
+      case c : Constant => doSymbol(c)
+      case _ => <span>TODO: {d.getClass.toString} {d.path}</span>
+    }
+  }
+
+  private def doSymbol(c:Constant)(implicit state: State): NodeSeq = collapsible(false,true){
+    <span style="display:inline;">{c.rl match {
+      case s if s.contains("variable") => "Variable "
+      case s if s.contains("textsymdecl") => "Text Symbol "
+      case _ => "Symbol "
+    }}{symbolsyntax(c)}</span>
+  }{<table class="symbol-table">
+    {c.df match {
+      case Some(df) =>
+        <tr><td class="symbol-td">Definiens</td><td class="symbol-td">{
+          xhtmlPresenter.asXML(df,Some(c.path $ DefComponent))
+        }</td></tr>
+      case None =>
+    }}
+    {c.tp match {
+      case Some(tp) =>
+        <tr><td class="symbol-td">Type</td> <td class="symbol-td">{
+          xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))
+        }</td></tr>
+      case None =>
+    }}
+    {getNotationsC(c) match {
+      case Nil =>
+      case ls =>
+        val arity = getArity(c).getOrElse("")
+        <tr><td class="symbol-td">Notations</td> <td class="symbol-td">
+          <table class="notation-table">
+            <tr>
+              <th class="notation-td">id</th>
+              <th class="notation-td">notation</th>
+              {if (arity.nonEmpty) <th class="notation-td">operator</th>}
+              <th class="notation-td">in module</th>
+            </tr>
+            {
+              val args = withArguments((getI,getX) => arity.map {
+                case 'i' => List(<mi>{getI}</mi>)
+                case 'b' => List(<mi>{getX}</mi>)
+                case 'a' => val a = getI; List(
+                  <msub><mi>{a}</mi><mn>1</mn></msub>,
+                  <mo>...</mo>,
+                  <msub><mi>{a}</mi><mi>n</mi></msub>
+                )
+                case 'B' =>
+                  val x = getX; List(
+                  <msub><mi>{x}</mi><mn>1</mn></msub>,
+                  <mo>...</mo>,
+                  <msub><mi>{x}</mi><mi>n</mi></msub>
+                )
+              }).toList
+              ls.map{not => <tr>
+                <td class="notation-td">{not.id}</td>
+                <td class="notation-td"><math xmlns={HTMLParser.ns_mml}>{
+                  present(not.present(args))
+                }</math></td>
+                {if (arity.nonEmpty) <td class="notation-td">{not.op.map(n =>
+                  <math xmlns={HTMLParser.ns_mml}>{n.plain.node}</math>
+                ).getOrElse(<span>(None)</span>)}</td>}
+                <td class="notation-td">{not.in.map(t => doLink(t.path)(<span>{t.name}</span>)).getOrElse(<span></span>)}</td>
+              </tr>}
+            }
+          </table>
+        </td></tr>
+    }}
+  </table>}
+
+  def symbolsyntax(c:Constant)(implicit state: State) = <span>
+    <pre style="display:inline;font-size:smaller;">{doLink(c.path)(<span>{c.name}</span>)}</pre>
+    {(getMacroName(c), getArity(c)) match {
+      case (Some(mn), None | Some("")) =>
+        <span> with syntax
+          <pre style="display:inline;font-size:smaller;">\{mn}</pre>
+        </span>
+      case (Some(mn), Some(args)) =>
+        <span>with syntax
+          <pre style="display:inline;font-size:smaller;">\{mn}{
+            withArguments((getI, getX) => args.map {
+                case 'i' => s"{${getI}}"
+                case 'a' => s"{${val a = getI; a + "_1,...," + a + "_n"}}"
+                case 'b' => s"{${getX}}"
+                case 'B' => s"{${val a = getX; a + "_1,...," + a + "_n"}}"
+              }.mkString)
+            }</pre>
+        </span>
+      case _ => <span></span>
+    }}
+  </span>
+  private def withArguments[A](f: (=> Char, => Char) => A): A = {
+    var iidx = -1
+    var vidx = -1
+    val is = "abcdefghi"
+    val xs = "xyzvwustr"
+    def getI = {iidx += 1; is(iidx)}
+    def getX = {vidx += 1; xs(vidx)}
+    f(getI, getX)
+  }
+
+  private def doLink(p: Path)(txt: => NodeSeq)(implicit state: State) =
+    <a href={s"/:${this.pathPrefix}/omdoc?${p.toString}&language=${state.language}"} style="color:blue;">{txt}</a>
+
+  private def collapsible(expanded:Boolean = true,small:Boolean=false)(title: => NodeSeq)(content: =>NodeSeq)(implicit state:State) = {
+    val id = state.getId
+    <div class={if (small) "collapsible collapsible-small" else "collapsible"}>
+      {if (expanded) <input type="checkbox" name={id} id={id} checked="checked"/>
+        else <input type="checkbox" name={id} id={id}/>
+      }
+      <div class="handle"><label for={id}>{title}</label></div>
+      <div class="content">{content}</div>
+    </div>
+  }
+
+  private def present(n:NodeSeq):Node = present(n.toString())(None).plain.node
 
   private def doBarBlock(title:NodeSeq)(content: => NodeSeq): Node = {
     <div style="border-left:2px solid black;padding-left:5px;margin-top:15px;margin-bottom:15px">
@@ -89,34 +419,7 @@ trait OMDocHTML { this : STeXServer =>
       <div style="width:100%;margin-left:20px">{content}</div>
     </div>
   }
-
-  private def doLink(p:Path,lang:Option[String]) = s"/:${this.pathPrefix}/omdoc?${p.toString}" + (lang match {
-    case Some(l) => "&language=" + l
-    case _ => ""
-  })
-  private def doInputref(p:Path,lang:Option[String]) = <div class="inputref" data-inputref-url={doLink(p,lang)}>
-    {p.toString}
-  </div>
-  private def omdocDoc(path:DPath,lang:Option[String]): Node = doBarBlock(
-    <span style="font-size:larger">Document <a href={doLink(path,lang)} style="color:blue">{path.toString}</a></span>
-  ){
-    controller.getO(path) match {
-      case Some(d : Document) =>
-        d.getDeclarations.map{
-          case dr:DRef =>
-            //doInputref(dr.target,lang)
-            omdocDoc(dr.target,lang)
-          case m:MRef =>
-            //doInputref(m.target,lang)
-            omdocModule(m.target,lang)
-          case o =>
-            <div style="width:100%">TODO: {o.getClass}</div>
-        }
-      case _ =>
-        <span>Document not found</span>
-    }
-  }
-
+/*
   def doModuleBody(t : Theory,lang:Option[String]) : NodeSeq = {
     t.getPrimitiveDeclarations.map {
       case c: Constant if c.metadata.get(ModelsOf.sym).nonEmpty =>
@@ -149,46 +452,7 @@ trait OMDocHTML { this : STeXServer =>
         </div>
     }
   }
-  private def omdocModule(mp:MPath,lang:Option[String]) : Node = {
-    def doDecl(d : Declaration) : NodeSeq = d match {
-      case Include(i) => Nil
-      case c: Constant =>
-        doBlock(<span><b>Term </b>{c.df.map(df => xhtmlPresenter.asXML(df,Some(c.path $ DefComponent))).getOrElse()}</span>){
-          <span>Inferred Type {c.tp.map(tp => xhtmlPresenter.asXML(tp,Some(c.path $ TypeComponent))).getOrElse("(None)")}</span>
-        }
-      case nm : NestedModule =>
-        nm.module.getPrimitiveDeclarations.flatMap(doDecl)
-      case o =>
-        Seq(<div style="width:100%">TODO:
-          {o.getClass}
-        </div>)
-    }
-    controller.getO(mp) match {
-      case Some(t: Theory) if this.getLanguage(t).isDefined => doBlock(
-        <b><span>Language Module {t.path.name} for </span><a href={doLink(t.path, lang)} style="color:blue">?{t.path.parent.last}</a></b>
-      ){<div style="width:100%">
-        {
-          def getIncls(t : Theory) : List[MPath] =
-            t.getIncludesWithoutMeta.tail ::: t.getPrimitiveDeclarations.collect{case nm : NestedModule => getIncls(nm.module.asInstanceOf[Theory])}.flatten
-          val includes = getIncls(t)
-          if (includes.nonEmpty) {
-            <div style="width:100%">
-              <b>Uses</b>{
-                includes.map(p => <span style="display:inline"> <a href={doLink(p, lang)} style="color:blue">?{p.name.toString}</a></span>)
-              }
-            </div>
-          } else <span/>
-        }
-        {
-          t.getPrimitiveDeclarations.flatMap(doDecl)
-        }</div>
-      }
-      case Some(t: Theory) => doBarBlock(<span>Module <a href={doLink(mp,lang)} style="color:blue">{mp.toString}</a></span>){
-        doModuleBody(t,lang)
-      }
-      case _ => doBarBlock(<span>Module {mp.toString}</span>)(<span>Theory not found</span>)
-    }
-  }
+
 
   // val state = new ParsingState(controller, presentationRules)
   private def omdocSymbol(gn:GlobalName, lang: Option[String]): Node = {
@@ -275,15 +539,7 @@ trait OMDocHTML { this : STeXServer =>
     <span>TODO structure</span>
   }
 
-  private def withArguments[A](f : ( => Char, => Char) => A): A = {
-    var iidx = -1
-    var vidx = -1
-    val is = "abcdefghi"
-    val xs = "xyzvwustr"
-    def getI = { iidx += 1; is(iidx) }
-    def getX = { vidx += 1; xs(vidx) }
-    f(getI,getX)
-  }
+
 
   private def omdocSymbol(c:Constant,lang:Option[String]): Node = doBlock(
     <b>Symbol <a href={doLink(c.path,lang)} style="color:blue">{c.name.toString}</a></b>){
@@ -386,6 +642,7 @@ trait OMDocHTML { this : STeXServer =>
       }
     }
   }
+ */
 
   lazy val xhtmlPresenter = controller.extman.get(classOf[STeXPresenterML]) match {
     case p :: _ => p
@@ -397,11 +654,20 @@ trait OMDocHTML { this : STeXServer =>
   lazy val presenter = new Presenter(xhtmlPresenter) {
     val key: String = "stexpres"
 
-    override def apply(e: StructuralElement, standalone: Boolean)(implicit rh: RenderingHandler): Unit = {
-      // TODO
-      ???
+    def applyPath(p: Path, standalone: Boolean = true)(implicit rh: RenderingHandler) = {
+      controller.getO(p) match {
+        case Some(d) => apply(d, standalone)
+        case None => rh.apply("Not found: " + p.toString)
+      }
     }
-
+    override def apply(e: StructuralElement, standalone: Boolean)(implicit rh: RenderingHandler): Unit = {
+      implicit val state = new State("en")
+      e match {
+        case d : Document => rh(documentTop(d))
+        case m : Theory => rh(moduleTop(m))
+        case d : Declaration => rh(declTop(d))
+      }
+    }
 
     def doHistories(cp:CPath,h:History*) = {
       implicit val sb = new StringBuilder()

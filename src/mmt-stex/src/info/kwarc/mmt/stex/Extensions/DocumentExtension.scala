@@ -240,7 +240,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
 
     //elem.classes ::= "hasoverlay" //:: elem.classes
     def pickelems(n: HTMLNode, inarg: Boolean = false): List[HTMLNode] = n match {
-      case comp if hasAttribute(comp, "comp") || hasAttribute(comp, "varcomp") || hasAttribute(comp, "definiendum") =>
+      case comp if hasAttribute(comp, "comp") || hasAttribute(comp, "varcomp") || hasAttribute(comp, "definiendum") || hasAttribute(comp,"maincomp") =>
         List(comp)
       //case a if hasAttribute(a,"arg") && hasAttribute(a,"term") => Nil
       case a if hasAttribute(a,"arg") => Nil //a.children.flatMap(pickelems(_, true))
@@ -252,7 +252,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     targets.foreach { e =>
       e.plain.classes ::= "group-highlight"
       e.plain.attributes((e.namespace, "data-highlight-parent")) = id
-      if (hasAttribute(e,"comp")) { getAttribute(e,"comp").foreach{v =>
+      if (hasAttribute(e,"comp") || hasAttribute(e,"maincomp")) { (getAttribute(e,"comp").toList ::: getAttribute(e,"maincomp").toList).foreach{v =>
         val lang = getLanguage(e)
         e.plain.classes ::= "symcomp"
         val urlshort = "/:" + this.pathPrefix + "/fragment?" + v + "&language=" + lang
@@ -705,7 +705,6 @@ trait SHTMLDocumentServer { this : STeXServer =>
       PresentationRule("skipsection", (_, _, node) => Some(SkipSection(node))),
       PresentationRule("sectionlevel",(s,_,n) => Some(SectionLevel(s.toInt,n))),
       PresentationRule("term", (_, _, node) => {
-        overlay(node);
         Some(new SHTMLNode(node) {
           override def onAdd: Unit = overlay(this)
 
@@ -713,7 +712,6 @@ trait SHTMLDocumentServer { this : STeXServer =>
         })
       }),
       PresentationRule("definiendum", (_, _, node) => {
-        overlay(node);
         Some(new SHTMLNode(node) {
           override def onAdd: Unit = overlay(this)
 

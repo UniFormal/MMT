@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MMT Viewer</title>
+    <script>
+        const HTMLSOURCE = "%%HTMLSOURCE%%";
+        const OMDOCSOURCE = "%%OMDOCSOURCE%%";
+        function openTab(evt, value) {
+            // Declare all variables
+            var i, tabcontent;
+            tabcontent = document.getElementsByClassName("tab");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            document.getElementById("htmliframe").src = "";
+            document.getElementById("omdociframe").src = "";
+
+            if (value==="HTML") {
+                document.getElementById("htmlframe").style.display = "block";
+                document.getElementById("htmliframe").src = HTMLSOURCE;
+            } else if (value==="OMDOC") {
+                document.getElementById("omdocframe").style.display = "block";
+                document.getElementById("omdociframe").src = OMDOCSOURCE;
+            }
+        }
+    </script>
+    <style>
+        .tabbed figure {
+            display: block;
+            margin-left: 0px;
+            clear:both;
+        }
+        .tabbed { width:100%;height:100%;display: flex;flex-direction: column; }
+        .tabbed > input, .tabbed figure > div { display:none;}
+        .tabbed figure > div {
+            padding: 0;
+            width: 100%;
+            height:100%
+        }
+        iframe {
+            width: 100%;
+            height:100%;
+        }
+        #htmltab:checked ~ figure .htmltab,
+        #omdoctab:checked ~ figure .omdoctab,
+        #pdftab:checked ~ figure .pdftab { display: block; }
+        nav { flex-grow: 0; background-color: cornsilk}
+        figure {flex-grow: 20; margin:0;}
+        nav label {
+            float: left;
+            padding: 5px 15px;
+            margin-right: 2px;
+            border-top: 2px solid silver;
+            border-right: 2px solid silver;
+            background: hsl(210,50%,50%);
+            color: #eee;
+        }
+        nav label:hover { background: hsl(210,50%,40%); }
+        nav label:active { background: #ffffff; }
+        #htmltab:checked ~ nav label[for="htmltab"],
+        #omdoctab:checked ~ nav label[for="omdoctab"],
+        #pdftab:checked ~ nav label[for="pdftab"] {
+            background: greenyellow;
+            color: #111;
+            position: relative;
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body style="margin:0;padding: 0px;height:100vh;overflow: hidden">
+<div class="tabbed">
+    <input checked="checked" id="htmltab" type="radio" name="tabs"/>
+    <input id="omdoctab" type="radio" name="tabs"/>
+    <nav>
+        <label for="htmltab" id="htmlbutton" style="margin-left: 5px" onclick="openTab(event,'HTML');">HTML</label>
+        <label for="omdoctab" onclick="openTab(event,'OMDOC');">OMDoc</label>
+    </nav>
+    <figure>
+        <div id="htmlframe" class="htmltab tab">
+            <iframe src="" id="htmliframe"></iframe>
+        </div>
+        <div id="omdocframe" class="omdoctab tab">
+            <iframe src="" id="omdociframe"></iframe>
+        </div>
+    </figure>
+    <script>
+        document.getElementById("htmlbutton").click();
+    </script>
+</div>
+</body>
+</html>

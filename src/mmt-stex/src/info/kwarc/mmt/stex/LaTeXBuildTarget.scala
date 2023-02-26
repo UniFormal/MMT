@@ -411,9 +411,12 @@ class PdfBibLatex extends TraversingBuildTarget {
 
 
 class FullsTeX extends Importer with XHTMLParser {
-  override def onBlock(qt : QueuedTask,br:BuildResult) = {
-    val bt = controller.extman.getOrAddExtension(classOf[HTMLToOMDoc],"xhtml-omdoc").getOrElse(this)
-    qt.copy(bt,br)
+  class PDFFailure(u:List[Dependency],p:List[ResourceDependency]) extends BuildFailure(u,p)
+  override def onBlock(qt : QueuedTask,br:BuildResult) = br match {
+    case f:PDFFailure => qt
+    case _ =>
+      val bt = controller.extman.getOrAddExtension(classOf[HTMLToOMDoc],"xhtml-omdoc").getOrElse(this)
+      qt.copy(bt,br)
   }
   val key = "fullstex"
   override val inDim = info.kwarc.mmt.api.archives.source
@@ -489,10 +492,10 @@ class FullsTeX extends Importer with XHTMLParser {
     } catch {
       case PdflatexError(Nil) =>
         bt.errorCont(SourceError(bt.inFile.toString, SourceRef.anonymous(""), "(No error message)"))
-        BuildFailure(Nil,Nil)
+        new PDFFailure(Nil,Nil)
       case PdflatexError(ls) =>
         bt.errorCont(SourceError(bt.inFile.toString, SourceRef.anonymous(""), ls.head, ls.tail))
-        BuildFailure(Nil,Nil)
+        new PDFFailure(Nil,Nil)
     }
   }
 }

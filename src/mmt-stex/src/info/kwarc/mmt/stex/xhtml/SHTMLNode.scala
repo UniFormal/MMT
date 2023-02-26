@@ -129,7 +129,9 @@ case class SHTMLParsingRule(key:String, newobj: (String,HTMLNode,Option[SHTMLSta
       try {
         newobj(p._2,n,s match {case ss : SHTMLState[SHTMLNode] => Some(ss) case _ => None})
       } catch {
-        case _ => return None
+        case e =>
+          e.printStackTrace()
+          return None
       }
     }
   }
@@ -262,6 +264,7 @@ class SHTMLSymbol(val path:GlobalName, orig:HTMLNode) extends SHTMLNode(orig,Som
     super.onAdd
     this.close
   }
+  print("")
 }
 class SHTMLVardef(val name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some("vardef"))
   with SHTMLSymbolLike with SHTMLOVarDecl {
@@ -291,15 +294,18 @@ class SHTMLVardef(val name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some
 case class SHTMLBind(name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some("bind")) {
   override def copy: HTMLNode = SHTMLBind(name,orig.copy)
 
-  override def onAdd(): Unit = sstate.foreach { state =>
-    findAncestor {
-      case gl: SHTMLGroupLike => gl
-    }.foreach {gl =>
-      val vars = gl.getVariables
-      vars.findLast(_.name == name).foreach{ vd =>
-        val nvd = state.markAsBound(VarDecl(vd.name,vd.feature,vd.tp,vd.df,vd.not))
-        vd.metadata.getAll.foreach(nvd.metadata.update)
-        gl.variables ++= nvd
+  override def onAdd: Unit = {
+    super.onAdd
+    sstate.foreach { state =>
+      findAncestor {
+        case gl: SHTMLGroupLike => gl
+      }.foreach {gl =>
+        val vars = gl.getVariables
+        vars.findLast(_.name == name).foreach{ vd =>
+          val nvd = state.markAsBound(VarDecl(vd.name,vd.feature,vd.tp,vd.df,vd.not))
+          vd.metadata.getAll.foreach(nvd.metadata.update)
+          gl.variables ++= nvd
+        }
       }
     }
   }
@@ -591,7 +597,10 @@ with SHTMLONotation {
   id = this.plain.attributes.getOrElse((HTMLParser.ns_shtml,"notationfragment"),"")
   opprec = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "precedence"), "0").toInt
   removed ::= "argprecs"
-  argprecs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "argprecs"), "").split(',').map(_.toInt).toList
+  argprecs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "argprecs"), "").split(',').toList match {
+    case List("") => Nil
+    case ls => ls.map(_.toInt)
+  }
   override def onAdd: Unit = {
     super.onAdd
     close(path)
@@ -606,7 +615,10 @@ case class SHTMLVarNotation(name:LocalName,orig:HTMLNode) extends SHTMLNode(orig
   id = this.plain.attributes.getOrElse((HTMLParser.ns_shtml,"notationfragment"),"")
   opprec = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "precedence"), "0").toInt
   removed ::= "argprecs"
-  argprecs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "argprecs"), "").split(',').map(_.toInt).toList
+  argprecs = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "argprecs"), "").split(',').toList match {
+    case List("") => Nil
+    case ls => ls.map(_.toInt)
+  }
   override def onAdd: Unit = {
     super.onAdd
     closeVar(name)
@@ -959,10 +971,7 @@ case class SHTMLSection(orig: HTMLNode) extends SHTMLNode(orig,Some("section")) 
     sstate.foreach(_.bindings.close)
     sstate match {
       case Some(s : SemanticState) =>
-        val d = s.docs.head
-        title.foreach(t =>
-          d.metadata.update(SHTML.mmtmeta_path ? "title",OMFOREIGN(t.plain.node))
-        )
+        title.foreach(t => s.addTitle(t) )
         s.docs = s.docs.tail
       case _ =>
     }

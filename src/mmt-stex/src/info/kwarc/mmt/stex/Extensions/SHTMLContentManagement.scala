@@ -74,11 +74,15 @@ trait SHTMLContentManagement { this : STeXServer =>
 
   import info.kwarc.mmt.api.documents.Document
   def addTitle(d: Document, t: Node) = {
-    // TODO
+    if (d.metadata.getValues(SHTML.title).isEmpty) {
+      d.metadata.update(SHTML.title, OMFOREIGN(t))
+    }
   }
   def getTitle(d: Document): Option[Node] = {
-    // TODO
-    None
+    d.metadata.getValues(SHTML.title).headOption match {
+      case Some(OMFOREIGN(node)) => Some(node)
+      case _ => None
+    }
   }
 
   def addNotation(parent:Theory,path: GlobalName, id: String, opprec: Int,argprecs:List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
@@ -98,13 +102,22 @@ trait SHTMLContentManagement { this : STeXServer =>
   }
   def getNotations(p : HasMetaData): List[STeXNotation] = p match {
     case c: Constant => getNotationsC(c)
-    case o => o.metadata.getValues(meta_notation).flatMap{
-      case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
-        Some(STeXNotation(p.toString, None, id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
-      case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp))) =>
-        Some(STeXNotation(p.toString, None, id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
-      case _ => None
-    }
+    case vd: VarDecl if vd.metadata.getValues(SHTML.headterm).nonEmpty =>
+      vd.metadata.getValues(SHTML.headterm).head match {
+        case OMS(c) => controller.getO(c) match {
+          case Some(p) => getNotations(p)
+          case _ => getNotationOther(p)
+        }
+        case _ => getNotationOther(p)
+      }
+    case o => getNotationOther(o)
+  }
+  private def getNotationOther(o : HasMetaData) = o.metadata.getValues(meta_notation).flatMap {
+    case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
+      Some(STeXNotation(p.toString, None, id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
+    case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp))) =>
+      Some(STeXNotation(p.toString, None, id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
+    case _ => None
   }
   def getNotations(p: GlobalName): List[STeXNotation] = {
     controller.getO(p) match {
@@ -132,7 +145,8 @@ trait SHTMLContentManagement { this : STeXServer =>
   }
 
   private def toHTML(node : Node) : HTMLNode = {
-    val ncomp = present("<mrow>" + node.toString() + "</mrow>",false)(None)
+    //val ncomp = present("<mrow>" + node.toString() + "</mrow>",false)(None)
+    val ncomp = HTMLParser("<mrow>" + node.toString() + "</mrow>")(new HTMLParser.ParsingState(controller,Nil))
     var toremoves : List[HTMLNode] = Nil
     ncomp.iterate {
       case n if n.plain.attributes.contains((HTMLParser.ns_shtml,"visible")) =>
@@ -233,17 +247,42 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
   }
 
 
-  def present(args:List[List[NodeSeq]],withprec:Int=0) = {
-    if (args.isEmpty) {notation.plain.node} else {
+  def present(args:List[List[NodeSeq]],withprec:Int=0,isvar:Boolean = false) = {
+    val not = (if (args.isEmpty && op.isDefined) op.get else notation).plaincopy
+    not.iterate {
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "comp")) =>
+        if (!isvar) n.plain.attributes((HTMLParser.ns_shtml, "comp")) = sym
+        else {
+          n.plain.attributes.remove((HTMLParser.ns_shtml, "comp"))
+          n.plain.attributes.remove((HTMLParser.ns_shtml, "maincomp"))
+          n.plain.attributes((HTMLParser.ns_shtml, "varcomp")) = sym
+        }
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "maincomp")) =>
+        if (!isvar) n.plain.attributes((HTMLParser.ns_shtml, "maincomp")) = sym
+        else {
+          n.plain.attributes.remove((HTMLParser.ns_shtml, "comp"))
+          n.plain.attributes.remove((HTMLParser.ns_shtml, "maincomp"))
+          n.plain.attributes((HTMLParser.ns_shtml, "varcomp")) = sym
+        }
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "varcomp")) =>
+        if (!isvar) {
+          n.plain.attributes.remove((HTMLParser.ns_shtml, "varcomp"))
+          n.plain.attributes((HTMLParser.ns_shtml, "comp")) = sym
+        }
+        else n.plain.attributes((HTMLParser.ns_shtml, "varcomp")) = sym
+      case _ =>
+    }
+    if (isvar) not.plain.attributes((HTMLParser.ns_mmt,"variable")) = sym
+    if (args.isEmpty) {not.plain.node}
+    else {
       def replace(old:HTMLNode,news:NodeSeq) = {
         old.plain.parent.foreach { p =>
           p.addAfter(<mrow>{news}</mrow>.toString(), old)
           old.delete
         }
       }
-      val nnot = notation.plaincopy
       var replacements: List[Replacement] = Nil
-      nnot.iterate{
+      not.iterate{
         case n if n.plain.attributes.contains((HTMLParser.ns_shtml,"argnum")) && n.plain.attributes((HTMLParser.ns_shtml,"argnum")).length == 1 =>
           replacements ::= Simple(n)
         case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "argsep")) =>
@@ -272,28 +311,13 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
             replace(nd, {<mrow>{ns}</mrow>})
           }
       }
-      nnot.iterate{
-        case n if n.plain.attributes.contains((HTMLParser.ns_shtml,"comp")) =>
-          if (sym.count(_=='?') > 1) n.plain.attributes((HTMLParser.ns_shtml,"comp")) = sym
-          else {
-            n.plain.attributes.remove((HTMLParser.ns_shtml,"comp"))
-            n.plain.attributes((HTMLParser.ns_shtml,"varcomp")) = sym
-          }
-        case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "varcomp")) =>
-          if (sym.count(_ == '?') > 1) {
-            n.plain.attributes.remove((HTMLParser.ns_shtml, "varcomp"))
-            n.plain.attributes((HTMLParser.ns_shtml, "comp")) = sym
-          }
-          else n.plain.attributes((HTMLParser.ns_shtml, "varcomp")) = sym
-        case _ =>
-      }
       if (opprec > withprec)
         <mrow>
           <mo class="opening" stretchy="true">(</mo>
-          {nnot.node}
+          {not.node}
           <mo class="closing" stretchy="true">)</mo>
         </mrow>
-      else nnot.node
+      else not.node
     }
   }
 }

@@ -62,7 +62,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
     request.path.lastOption match {
       case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css") =>
         documentRequest(request)
-      case Some("omdoc" | "omdocfrag" | "omdocuri") =>
+      case Some("omdoc" | "omdocfrag" | "omdocuri" | "omdoccss") =>
         omdocRequest(request)
       case Some(":sTeX") if request.query == "" =>
         browserRequest(request)

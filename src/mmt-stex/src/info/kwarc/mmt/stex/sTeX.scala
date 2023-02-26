@@ -217,14 +217,14 @@ object SHTMLHoas {
 
     def unapply(tm: Term) = tm match {
       case Omb(h,f,List(SCtx(Context(vd, rest@_*)), STerm(bd))) =>
-        if (rest.isEmpty) Some(Some(h),f, vd.name, vd.tp, bd) else Some(Some(h),f, vd.name, vd.tp, Omb(h,f, Context(rest: _*), bd))
+        if (rest.isEmpty) Some(Some(h),f, vd, bd) else Some(Some(h),f, vd, Omb(h,f, Context(rest: _*), bd))
       case OMBIND(f,Context(vd,rest@_*),bd) =>
-        if (rest.isEmpty) Some(None,f,vd.name,vd.tp,bd) else Some(None,f,vd.name,vd.tp,OMBIND(f,Context(rest:_*),bd))
+        if (rest.isEmpty) Some(None,f,vd,bd) else Some(None,f,vd,OMBIND(f,Context(rest:_*),bd))
       case _ => None
     }
-    def apply(h : Option[HoasRule],f:Term,ln:LocalName,tp:Option[Term],bd:Term) = h match {
-      case Some(h) => Omb(h,f,ln,tp,bd)
-      case _ => OMBIND(f,Context(VarDecl(ln,None,tp,None,None)),bd)
+    def apply(h : Option[HoasRule],f:Term,vd:VarDecl,bd:Term) = h match {
+      case Some(h) => Omb(h,f,vd,bd)
+      case _ => OMBIND(f,Context(vd),bd)
     }
   }
 }
@@ -475,6 +475,7 @@ object SHTML {
   val ord = meta_path ? "ordinal"
 
   val headterm = mmtmeta_path ? "headsymbol"
+  val title = mmtmeta_path ? "title"
 
   val parens = new {
     val sym = meta_path ? "internal parentheses"

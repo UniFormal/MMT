@@ -104,6 +104,11 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
               val state = parsingstate(pars.eh)
               val newhtml = HTMLParser(html)(state)
               pars.eh.close
+              val relman = server.controller.relman
+              relman.extract(state.doc)(server.controller.depstore += _)
+              state.doc.getModulesResolved(server.controller.globalLookup) foreach { mod =>
+                if (!mod.isGenerated) relman.extract(mod)(server.controller.depstore += _)
+              }
               client.log("html parsed")
               this.html = Some(server.stexserver.present(newhtml.toString)(None).get("body")()().head)
               ((), "Done")

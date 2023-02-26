@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureCh
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, NotFound}
 import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMFOREIGN, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.utils.File
@@ -182,10 +182,18 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   }
 
   def addTitle(ttl: SHTMLNode) : Unit = {
-    doctitle = Some(ttl)
-    server.addTitle(doc,ttl.plain.node.head)
+    val n = if (ttl.plain.attributes.contains((HTMLParser.ns_shtml,"visible"))) {
+      val m = ttl.plaincopy
+      m.attributes.remove((HTMLParser.ns_shtml,"visible"))
+      m.attributes.remove((m.namespace,"style"))
+      m
+    } else ttl
+    if (doctitle.isEmpty) {
+      doctitle = Some(n)
+    }
+    server.addTitle(doc,n.plain.node.head)
   }
-  private var doctitle: Option[SHTMLNode] = None
+  private var doctitle: Option[HTMLNode] = None
 
   def addMissing(p : Path) = missings ::= p
   def add(se : StructuralElement) = try {controller.library.add(se)} catch {

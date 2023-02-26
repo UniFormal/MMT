@@ -500,7 +500,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
           case Some(t) =>
             val cname = newname(t, name)
-            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), Some(("variable" :: rl.toList).mkString(" ")) )
+            val c = Constant(t.toTerm, cname, Nil, tp, df, Some(("variable" :: rl.toList).mkString(" ")) )
             hoas.foreach(_.apply(c))
             if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
             if (args.nonEmpty) state.server.addArity(args, c)
@@ -509,7 +509,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
             vd.metadata.update(SHTML.headterm, c.toTerm)
             doSourceRef(c)
             state.add(c)
-            state.check(c)
+            //state.check(c)
           case None =>
             hoas.foreach(_.apply(vd))
             if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
@@ -545,7 +545,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
           case Some(t) =>
             val cname = newname(t, name)
-            val c = Constant(t.toTerm, cname, Nil, tp.map(state.applyTopLevelTerm), df.map(state.applyTopLevelTerm), Some(("variable" :: rl.toList).mkString(" ")))
+            val c = Constant(t.toTerm, cname, Nil, tp, df, Some(("variable" :: rl.toList).mkString(" ")))
             hoas.foreach(_.apply(c))
             if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
             if (args.nonEmpty) state.server.addArity(args, c)
@@ -554,7 +554,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
             vd.metadata.update(SHTML.headterm, c.toTerm)
             doSourceRef(c)
             state.add(c)
-            state.check(c)
+            //state.check(c)
           case None =>
             hoas.foreach(_.apply(vd))
             if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
