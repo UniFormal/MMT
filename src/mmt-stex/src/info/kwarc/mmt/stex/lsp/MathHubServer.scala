@@ -51,7 +51,10 @@ class SearchResultServer extends Extension {
       ServerResponse(html, "text/html")
     case Some("searchresultI") =>
       val i = request.parsedQuery("num").get.toInt
-      val ret = server.present(locals(i), true)(None)
+      val ret = if (request.parsedQuery("type").contains("local"))
+        server.present(locals(i), true)(None)
+      else
+        server.present(remotes(i), true)(None)
       ServerResponse.apply(ret.toString, "text/html")
 
       /*
