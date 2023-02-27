@@ -39,6 +39,7 @@ class LSPSearchResult {
   var html : String = null
   var fileuri : String = null
   var module: String = null
+  var preview: String = ""
 }
 
 class LSPSearchResults {

@@ -128,6 +128,7 @@ trait XHTMLParser extends TraversingBuildTarget {
       }
     }
     val html = RusTeX.parse(inFile,params)//,List("c_stex_module_"))
+    val texerrored = errored
     File.write(outFile.setExtension("shtml"),html)
     val doc = try { controller.library.synchronized {
       HTMLParser(outFile.setExtension("shtml"))(state)
@@ -160,7 +161,7 @@ trait XHTMLParser extends TraversingBuildTarget {
     doc.get("head")()().head.children.foreach(_.delete)
     outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
-    (errored,doc)
+    (errored,texerrored,doc)
   }
 
 }
@@ -173,7 +174,7 @@ class LaTeXToHTML extends XHTMLParser {
 
   override def buildFile(bf: BuildTask): BuildResult = {
     val state = new HTMLParser.ParsingState(controller,stexserver.importRules)
-    val (errored,doc) = buildFileActually(bf.inFile,bf.outFile,state,bf.errorCont)
+    val (errored,_,doc) = buildFileActually(bf.inFile,bf.outFile,state,bf.errorCont)
     log("Finished: " + bf.inFile)
     if (errored) BuildFailure(Nil,List(PhysicalDependency(bf.outFile)))
     else BuildSuccess(Nil,List(PhysicalDependency(bf.outFile)))
@@ -261,7 +262,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     val outFile : File = (bt.archive / RedirectableDimension("xhtml") / bt.inPath).setExtension("xhtml")
     val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     outFile.up.mkdirs()
-    val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
+    val (errored,_,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
     index(state.doc)
     log("Finished: " + bt.inFile)
@@ -412,8 +413,10 @@ class PdfBibLatex extends TraversingBuildTarget {
 
 class FullsTeX extends Importer with XHTMLParser {
   class PDFFailure(u:List[Dependency],p:List[ResourceDependency]) extends BuildFailure(u,p)
+
+  class RusTeXFailure(u: List[Dependency], p: List[ResourceDependency]) extends BuildFailure(u, p)
   override def onBlock(qt : QueuedTask,br:BuildResult) = br match {
-    case f:PDFFailure => qt
+    case _:PDFFailure|_:RusTeXFailure => qt
     case _ =>
       val bt = controller.extman.getOrAddExtension(classOf[HTMLToOMDoc],"xhtml-omdoc").getOrElse(this)
       qt.copy(bt,br)
@@ -458,7 +461,7 @@ class FullsTeX extends Importer with XHTMLParser {
       buildSingle(bt,("STEX_USESMS","true"))
       bt.outFile.delete()
       ilog("    -       omdoc " + bt.inPath)
-      val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
+      val (errored,texerrored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
       val npdffile = (bt.archive / RedirectableDimension("export") / "pdf") / bt.inPath.setExtension("pdf").toString
       File.copy(pdffile,npdffile,true)
       pdffile.delete()
@@ -482,7 +485,8 @@ class FullsTeX extends Importer with XHTMLParser {
         case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
         case _ =>  Nil
       }.filterNot(results.contains)
-      if (errored) BuildFailure(used,results) else state.missings match {
+      if (texerrored) new RusTeXFailure(used,results)
+      else if (errored) BuildFailure(used,results) else state.missings match {
         case Nil => BuildSuccess(used, results)
         case o => MissingDependency(o.flatMap {
           case mp: MPath => Some(LogicalDependency(mp))

@@ -422,7 +422,6 @@ trait SymbolLike extends HasTypes with HasDefiniens with HasMacroName with HasRo
           val ret = SHTML.binder(ls.zipWithIndex.map{case (t,i) => LocalName("ARGUMENT_" + (i+1)) % t},rt)
           Some(ret)
         case _ =>
-          println("TODO!")
           Some(rt)
       }
   }

@@ -292,92 +292,111 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def doSymbol(c:Constant)(implicit state: State): NodeSeq = collapsible(false,true){
-    <span style="display:inline;">{c.rl match {
-      case s if s.contains("variable") => "Variable "
-      case s if s.contains("textsymdecl") => "Text Symbol "
-      case _ => "Symbol "
-    }}{symbolsyntax(c)}</span>
-  }{<table class="symbol-table">
-    {c.df match {
+  private def doSymbol(c:Constant)(implicit state: State): NodeSeq = {
+    c.rl match {
+      case s if s.contains("textsymdecl") =>
+        doTextSymbol(c)
+      case s if s.contains("variable") =>
+        <span>TODO: Variable</span>
+      case _ =>
+        lazy val header = <span style="display:inline;">Symbol {symbolsyntax(c)}</span>
+        (c.tp,c.df,getNotationsC(c)) match {
+          case (None,None,Nil) => fakeCollapsible(true){header}
+          case _ => collapsible(false, true) {header}{symbolTable(c)}
+        }
+    }
+  }
+
+  private def doTextSymbol(c:Constant)(implicit state: State): NodeSeq = {
+    val notations = getNotationsC(c)
+    lazy val header = <span style="display:inline;">Text Symbol {symbolsyntax(c)}: {
+      notations match {
+        case Nil => <span>(Notation missing)</span>
+        case ls => <math xmlns={HTMLParser.ns_mml}>{ls.head.present(Nil)}</math>
+      }}
+    </span>
+    (c.tp,c.df) match {
+      case (None,None) if notations.length <= 1 =>
+        fakeCollapsible(true){header}
+      case _ => collapsible(false,true){header}{symbolTable(c,false)}
+    }
+  }
+
+  def symbolTable(c: Constant, donotations:Boolean=true)(implicit state: State) =
+    <table class="symbol-table">{c.df match {
       case Some(df) =>
-        <tr><td class="symbol-td">Definiens</td><td class="symbol-td">{
-          xhtmlPresenter.asXML(df,Some(c.path $ DefComponent))
-        }</td></tr>
+        <tr>
+          <td class="symbol-td">Definiens</td>
+          <td class="symbol-td">{xhtmlPresenter.asXML(df, Some(c.path $ DefComponent))}</td>
+        </tr>
       case None =>
-    }}
-    {c.tp match {
+    }}{c.tp match {
       case Some(tp) =>
-        <tr><td class="symbol-td">Type</td> <td class="symbol-td">{
-          xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))
-        }</td></tr>
+        <tr>
+          <td class="symbol-td">Type</td>
+          <td class="symbol-td">{xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))}</td>
+        </tr>
       case None =>
-    }}
-    {getNotationsC(c) match {
+    }}{getNotationsC(c) match {
       case Nil =>
-      case ls =>
+      case List(a) if !donotations =>
+      case nls =>
+        val ls = if (donotations) nls else nls.tail
         val arity = getArity(c).getOrElse("")
-        <tr><td class="symbol-td">Notations</td> <td class="symbol-td">
+        <tr>
+          <td class="symbol-td">Notations</td> <td class="symbol-td">
           <table class="notation-table">
             <tr>
               <th class="notation-td">id</th>
-              <th class="notation-td">notation</th>
-              {if (arity.nonEmpty) <th class="notation-td">operator</th>}
-              <th class="notation-td">in module</th>
-            </tr>
-            {
-              val args = withArguments((getI,getX) => arity.map {
-                case 'i' => List(<mi>{getI}</mi>)
-                case 'b' => List(<mi>{getX}</mi>)
-                case 'a' => val a = getI; List(
-                  <msub><mi>{a}</mi><mn>1</mn></msub>,
-                  <mo>...</mo>,
-                  <msub><mi>{a}</mi><mi>n</mi></msub>
-                )
-                case 'B' =>
-                  val x = getX; List(
-                  <msub><mi>{x}</mi><mn>1</mn></msub>,
-                  <mo>...</mo>,
-                  <msub><mi>{x}</mi><mi>n</mi></msub>
-                )
-              }).toList
-              ls.map{not => <tr>
-                <td class="notation-td">{not.id}</td>
-                <td class="notation-td"><math xmlns={HTMLParser.ns_mml}>{
-                  present(not.present(args))
-                }</math></td>
-                {if (arity.nonEmpty) <td class="notation-td">{not.op.map(n =>
+              <th class="notation-td">notation</th>{if (arity.nonEmpty) <th class="notation-td">operator</th>}<th class="notation-td">in module</th>
+            </tr>{val args = withArguments((getI, getX) => arity.map {
+            case 'i' => List(<mi>{getI}</mi>)
+            case 'b' => List(<mi>{getX}</mi>)
+            case 'a' => val a = getI; List(
+                <msub><mi>{a}</mi><mn>1</mn></msub>,
+                <mo>...</mo>,
+                <msub><mi>{a}</mi><mi>n</mi></msub>)
+            case 'B' =>
+              val x = getX; List(
+                <msub><mi>{x}</mi><mn>1</mn></msub>,
+                <mo>...</mo>,
+                <msub><mi>{x}</mi><mi>n</mi></msub>)
+          }).toList
+          ls.map { not =>
+            <tr>
+              <td class="notation-td">{not.id}</td>
+              <td class="notation-td">
+                <math xmlns={HTMLParser.ns_mml}>{present(not.present(args))}</math>
+              </td>
+              {if (arity.nonEmpty) <td class="notation-td">{
+                not.op.map(n =>
                   <math xmlns={HTMLParser.ns_mml}>{n.plain.node}</math>
-                ).getOrElse(<span>(None)</span>)}</td>}
-                <td class="notation-td">{not.in.map(t => doLink(t.path)(<span>{t.name}</span>)).getOrElse(<span></span>)}</td>
-              </tr>}
-            }
-          </table>
-        </td></tr>
-    }}
-  </table>}
+                ).getOrElse(<span>(None)</span>)
+              }</td>}
+              <td class="notation-td">{
+                not.in.map(t => doLink(t.path)(<span>{t.name}</span>)).getOrElse(<span></span>)
+                }</td>
+            </tr>
+          }}
+          </table></td></tr>
+    }}</table>
 
   def symbolsyntax(c:Constant)(implicit state: State) = <span>
     <pre style="display:inline;font-size:smaller;">{doLink(c.path)(<span>{c.name}</span>)}</pre>
     {(getMacroName(c), getArity(c)) match {
       case (Some(mn), None | Some("")) =>
-        <span> with syntax
-          <pre style="display:inline;font-size:smaller;">\{mn}</pre>
-        </span>
+        <span> (<pre style="display:inline;font-size:smaller;">\{mn}</pre>)</span>
       case (Some(mn), Some(args)) =>
-        <span>with syntax
-          <pre style="display:inline;font-size:smaller;">\{mn}{
+        <span> (<pre style="display:inline;font-size:smaller;">\{mn}{
             withArguments((getI, getX) => args.map {
                 case 'i' => s"{${getI}}"
                 case 'a' => s"{${val a = getI; a + "_1,...," + a + "_n"}}"
                 case 'b' => s"{${getX}}"
                 case 'B' => s"{${val a = getX; a + "_1,...," + a + "_n"}}"
               }.mkString)
-            }</pre>
-        </span>
+            }</pre>)</span>
       case _ => <span></span>
-    }}
-  </span>
+    }}</span>
   private def withArguments[A](f: (=> Char, => Char) => A): A = {
     var iidx = -1
     var vidx = -1
@@ -401,6 +420,9 @@ trait OMDocHTML { this : STeXServer =>
       <div class="content">{content}</div>
     </div>
   }
+
+  private def fakeCollapsible(small: Boolean = false)(title: => NodeSeq)(implicit state: State) =
+    <div class={if (small) "fake-collapsible-small" else "fake-collapsible"}>{title}</div>
 
   private def present(n:NodeSeq):Node = present(n.toString())(None).plain.node
 

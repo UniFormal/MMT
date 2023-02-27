@@ -137,6 +137,7 @@ trait MathHubServer { this : STeXLSPServer =>
                r.local = false
                r.archive = jo.getAsString("archive")
                r.sourcefile = jo.getAsString("sourcefile")
+               r.preview = remoteServer + "/fulldocument?archive=" + jo.getAsString("archive") + "&filepath=" + jo.getAsString("sourcefile").replace(".tex",".xhtml")
                r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=remote&num=" + searchresultserver.remotes.length
                searchresultserver.remotes ::= jo.getAsString("html")
                r
@@ -155,6 +156,7 @@ trait MathHubServer { this : STeXLSPServer =>
         r.local = true
         r.archive = res.archive
         r.sourcefile = res.sourcefile
+        r.preview = localServer.toString + ":sTeX/fulldocument?archive=" + res.archive + "&filepath=" + res.sourcefile.replace(".tex",".xhtml")
         res.module match {
           case Some(mod) =>
             controller.backend.getArchive(r.archive) match {

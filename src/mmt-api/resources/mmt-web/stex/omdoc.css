@@ -19,7 +19,7 @@
 }
 
 .collapsible {
-    margin-bottom: 1em;
+    margin-bottom: 0.5em;
 }
 
 .collapsible > input[type="checkbox"]:checked ~ .content {
@@ -76,4 +76,17 @@
     vertical-align: baseline;
     padding-bottom: 5px;
     text-align: center;
+}
+
+.fake-collapsible, .fake-collapsible-small {
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.fake-collapsible {}
+.fake-collapsible-small {}
+
+.fake-collapsible::before, .fake-collapsible-small::before {
+    content:'▷ ';
+    white-space: pre;
 }

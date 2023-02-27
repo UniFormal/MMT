@@ -270,21 +270,21 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
         nt.plain.attributes.remove((nt.namespace, "style"))
         List(("title", makeString(nt)), ("titlesource", nt.toString))
       }: _*)
-      definitions.foreach(d => doc.add("definition", makeString(d._1.copy), d.toString,
+      definitions.foreach(d => doc.add("definition", makeString(d._1.copy), d._1.toString,
         ("for", d._1.fors.mkString(", ")) ::
           d._1.path.map(p => ("path", p.toString)).toList ::: (d._2 match {
           case Some(mp) => List(("module",mp.toString))
           case _ => Nil
         }): _*
       ))
-      assertions.foreach(d => doc.add("assertion", makeString(d._1.copy), d.toString,
+      assertions.foreach(d => doc.add("assertion", makeString(d._1.copy), d._1.toString,
         ("for", d._1.fors.mkString(", ")) ::
           d._1.path.map(p => ("path", p.toString)).toList ::: (d._2 match {
           case Some(mp) => List(("module", mp.toString))
           case _ => Nil
         }): _*
       ))
-      examples.foreach(d => doc.add("example", makeString(d._1.copy), d.toString,
+      examples.foreach(d => doc.add("example", makeString(d._1.copy), d._1.toString,
         ("for", d._1.fors.mkString(", ")) ::
           d._1.path.map(p => ("path", p.toString)).toList ::: (d._2 match {
           case Some(mp) => List(("module", mp.toString))
