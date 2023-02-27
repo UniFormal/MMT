@@ -126,7 +126,12 @@ trait MathHubServer { this : STeXLSPServer =>
 
   def searchI(q : String,tps:List[String],syms: Boolean) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {
     val archs = controller.backend.getArchives.map(_.id)
-    val url = URLEscaping.apply(remoteServer + "/search?skiparchs=" + archs.mkString(",") + "&types=" + tps.mkString(",") + "&query=" + q)
+    val url = URLEscaping.apply(remoteServer + "/search?skiparchs=" +
+      archs.mkString(",") +
+      "&types=" + tps.mkString(",") +
+      "&infors=" + syms.toString +
+      "&query=" + q
+    )
     val attempt = Try(io.Source.fromURL(url)("UTF8"))
     searchresultserver.remotes = Nil
      val rems = if (attempt.isSuccess) {

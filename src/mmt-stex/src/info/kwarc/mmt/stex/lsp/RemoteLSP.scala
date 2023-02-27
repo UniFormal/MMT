@@ -77,10 +77,11 @@ class RemoteLSP extends Extension {
     case Some("search") =>
       val archs = request.parsedQuery("skiparchs").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
       val types = request.parsedQuery("types").getOrElse("").split(',').map(_.trim).filterNot(_ == "").toList
+      val infors = request.parsedQuery("infors").contains("true")
       val query = request.parsedQuery("query").getOrElse {
         return ServerResponse.JsonResponse(JSONArray())
       }
-      val results = searcher.search(query,10,types,archs)
+      val results = searcher.search(query,10,types,archs,infors)
       ServerResponse.JsonResponse(JSONArray(
         results.map(sr => JSONObject(
           ("archive",JSONString(sr.archive)),
