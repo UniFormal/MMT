@@ -315,7 +315,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      bootToken = Some(params.hashCode())
      controller.extman.addExtension(searchresultserver)
      startProgress(bootToken.get,"Starting sTeX/MMT","Initializing...")
-     doPing
+     //doPing
    }
 
    @JsonRequest("sTeX/getMathHubContent")
