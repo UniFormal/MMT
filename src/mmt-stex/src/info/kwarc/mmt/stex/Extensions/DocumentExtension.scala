@@ -15,6 +15,7 @@ import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.{ErrorReturn, SHTML, STeXServer}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, SHTMLFrame, SHTMLNode, SHTMLRule, SHTMLState}
 
+import scala.collection.mutable
 import scala.util.Try
 //import info.kwarc.mmt.stex.xhtml.{HTMLArg, HTMLComp, HTMLLanguageComponent, HTMLNode, HTMLParser, HasHead, NotationComponent}
 //import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
@@ -23,7 +24,7 @@ import scala.xml.parsing.XhtmlParser
 import scala.xml.{Elem, Node}
 
 trait SHTMLDocumentServer { this : STeXServer =>
-  private case class DocParams(q: WebQuery) {
+  protected case class DocParams(q: WebQuery) {
     lazy val path = q.pairs.find(p => p._2.isEmpty && p._1.contains('?') && !p._1.endsWith("="))
       .map(p => Path.parse(p._1))
     lazy val language = q("language")
@@ -68,6 +69,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
         var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
         html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/declaration?" + request.query)
         html = html.replace("BASE_URL_PLACEHOLDER", "")
+        html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
         ServerResponse(html, "text/html")
       case Some("document") =>
@@ -455,6 +457,11 @@ trait SHTMLDocumentServer { this : STeXServer =>
     doc.plain.attributes((HTMLParser.ns_html, "style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
   }
 
+  def presentationRules(withbindings:Option[LateBinding]) : mutable.HashMap[String,HTMLNode => SHTMLNode] = {
+    val map = mutable.HashMap.empty[String,HTMLNode => SHTMLNode]
+
+  }
+
   def present(str : String,remove:Boolean=true)(implicit withbindings : Option[LateBinding]) = {
     val ifinputref = withbindings.isDefined
     val bindings = withbindings.getOrElse(new LateBinding)
@@ -515,8 +522,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
 
       init
     }
-
-      case class Section(orig: HTMLNode) extends SHTMLNode(orig) {
+    case class Section(orig: HTMLNode) extends SHTMLNode(orig) {
         val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "section")).map(_.trim.toInt)
 
         def init = {
@@ -859,22 +865,6 @@ trait SHTMLDocumentServer { this : STeXServer =>
         }*/
       } */
   )
-}
-
-trait DocumentExtension extends STeXExtension {
-  def documentRules : List[PartialFunction[HTMLNode,Unit]]
-}
-
-object DocumentExtension extends STeXExtension {
-
-  override def serverReturn(request: ServerRequest): Option[ServerResponse] = None /*  */
-/*
-
-  override def doHeader(head: HTMLNode,body: HTMLNode): Unit = {
-  }
-
-
- */
 }
 
 sealed trait BindingStep {

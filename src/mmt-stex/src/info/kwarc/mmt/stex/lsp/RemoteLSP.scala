@@ -4,7 +4,6 @@ import info.kwarc.mmt.api.archives.{Dim, RedirectableDimension}
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.utils.{JSONArray, JSONObject, JSONString}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.search.Searcher
 
 class RemoteLSP extends Extension {

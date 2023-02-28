@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{ExampleRelational, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
+import info.kwarc.mmt.stex.Extensions.{ExampleRelational, ExportExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
 import info.kwarc.mmt.stex.lsp.{MathHubServer, RemoteLSP, STeXLSPServer, SearchResultServer}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, VollKi}
@@ -21,7 +21,7 @@ case class ErrorReturn(s : String) extends Throwable {
 }
 
 
-class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML {
+class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML with ExportExtension {
   def ctrl = controller
 
   override def start(args: List[String]): Unit = {

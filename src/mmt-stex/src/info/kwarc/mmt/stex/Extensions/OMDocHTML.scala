@@ -47,21 +47,24 @@ trait OMDocHTML { this : STeXServer =>
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + ns + "&language=" + lang)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
+              html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
               html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/omdoccss")
               ServerResponse(html, "text/html")
             } else {
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + s)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
+              html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
               html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/omdoccss")
               ServerResponse(html, "text/html")
             }
         }
       case Some("omdocfrag") =>
-        val (comp, lang) = request.query.split('&') match {
+        val qr = request.query.replace("&amp;", "&")
+        val (comp, lang) = qr.split('&') match {
           case Array(a) => (a, None)
           case Array(a, l) if l.startsWith("language=") => (a, if (l.drop(9).isEmpty) None else Some(l.drop(9)))
-          case _ => (request.query, None)
+          case _ => (qr, None)
         }
         val path = Path.parse(comp)
         implicit val state = new State(lang.getOrElse("en"))

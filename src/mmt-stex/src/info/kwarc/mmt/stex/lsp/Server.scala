@@ -398,7 +398,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          val ue = client.diags(client.diags.length - (1 + request.query.toInt))._2.get
          val ret = self.presenter.doHistories(ue.cp,ue.histories.reverse :_*)
          ServerResponse("<body>" + ret + "</body>","text/html")
-       case Some("document") =>
+       case Some("documentTop") =>
          request.query match {
            case "" =>
              ServerResponse("Empty Document path","txt")
@@ -436,8 +436,9 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
              ServerResponse("Empty Document path","txt")
            case s =>
              var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
-             html = html.replace("CONTENT_URL_PLACEHOLDER",(localServer / (":" + this.pathPrefix) / "document").toString + "?" + s )
+             html = html.replace("CONTENT_URL_PLACEHOLDER",(localServer / (":" + this.pathPrefix) / "documentTop").toString + "?" + s )
              html = html.replace("BASE_URL_PLACEHOLDER","")
+             html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?" + s)
              ServerResponse(html, "text/html")
          }

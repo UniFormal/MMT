@@ -322,7 +322,7 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
   }
 }
 
-object NotationExtractor extends RelationalExtractor with STeXExtension {
+object NotationExtractor extends RelationalExtractor {
   val notation = CustomBinary("notation", "has notation for", "has notation in")
   override val allBinary: List[Binary] = List(
     notation
@@ -344,7 +344,7 @@ object NotationExtractor extends RelationalExtractor with STeXExtension {
   }
 }
 
-object SymdocRelational extends RelationalExtractor with STeXExtension {
+object SymdocRelational extends RelationalExtractor {
   val documents = CustomBinary("documents","documents","has documentation")
   override val allBinary: List[Binary] = List(
     documents
@@ -369,7 +369,7 @@ object SymdocRelational extends RelationalExtractor with STeXExtension {
   }
 }
 
-object ExampleRelational extends RelationalExtractor with STeXExtension {
+object ExampleRelational extends RelationalExtractor {
   val exemplifies = CustomBinary("example","has example for","has example in")
   override val allBinary: List[Binary] = List(
     exemplifies

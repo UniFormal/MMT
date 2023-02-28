@@ -5,7 +5,6 @@ import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem, URLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.search.Searcher
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, HTMLText}
