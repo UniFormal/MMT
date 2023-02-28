@@ -110,7 +110,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  private case class PresentationRule(key: String, newobj: (String, HTMLParser.ParsingState, HTMLNode) => Option[SHTMLNode], override val priority: Int = 0) extends SHTMLRule(priority) {
+  protected case class PresentationRule(key: String, newobj: (String, HTMLParser.ParsingState, HTMLNode) => Option[SHTMLNode], override val priority: Int = 0) extends SHTMLRule(priority) {
     def apply(s: HTMLParser.ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
       attrs.find(_._1 == key).flatMap { p =>
         try {
@@ -125,19 +125,20 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   def doDocument(implicit dp:DocParams) = {
-    val filecontent = getDocument
+    val filecontent = present(getDocument)(dp.bindings)
     val body = filecontent.get("body")()().head
     body
   }
 
-  def getDocument(implicit dp:DocParams): HTMLNode = {
+  def getDocument(implicit dp:DocParams): String = {
     (dp.archive,dp.filepath) match {
-      case (None,_) => throw ErrorResponse("Archive not found")
+      case (None,_) =>
+        val (doc, bd) = this.emptydoc
+        bd.add(<b>{"Archive not found"}</b>)
+        doc.toString
       case (Some(a),None) =>
         val (doc, bd) = this.emptydoc
-        bd.add(<b style="text-align: center">
-          {a.id}
-        </b>)
+        bd.add(<b style="text-align: center">{a.id}</b>)
         a.properties.collectFirst {
           case ("description", d) if (a.root / "META-INF" / d).exists() =>
             bd.add(File.read(a.root / "META-INF" / d))
@@ -146,31 +147,25 @@ trait SHTMLDocumentServer { this : STeXServer =>
           case ("teaser", t) =>
             bd.add("<div>" + t + "</div>")
         }
-        doc
+        doc.toString
       case (Some(a),Some(path)) =>
         val top = a / RedirectableDimension("xhtml")
         val fn = top / path
         if (fn.exists() && fn.isDirectory) {
           if ((fn / "index.xhtml").exists()) {
-            val ret = present(File.read(fn / "index.xhtml"))(dp.bindings)
-            ret
+            File.read(fn / "index.xhtml")
           } else {
             val (doc, bd) = this.emptydoc
-            bd.add(<b>
-              {a.id + "/" + path}
-            </b>)
-            doc
+            bd.add(<b>{a.id + "/" + path}</b>)
+            doc.toString
           }
         } else if (fn.exists()) {
-          val ret = present(File.read(fn))(dp.bindings) //HTMLParser(fn)(state)
-          ret
+          File.read(fn)
         }
         else {
           val (doc, bd) = this.emptydoc
-          bd.add(<b>
-            {"Document does not exist: " + a.id + "/" + path}
-          </b>)
-          doc
+          bd.add(<b>{"Document does not exist: " + a.id + "/" + path}</b>)
+          doc.toString
         }
     }
   }
@@ -234,7 +229,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
 
   private def hasAttribute(node:HTMLNode,s:String) = node.plain.attributes.contains((HTMLParser.ns_shtml,s))
   private def getAttribute(node: HTMLNode, s: String) = node.plain.attributes.get((HTMLParser.ns_shtml, s))
-  def overlay(elem: HTMLNode/*, urlshort: String, urllong: String*/): Unit = {
+  def overlay(elem: HTMLNode)(getLinks : String => (String,String))(getVarLink: String => String): Unit = {
     if (elem.plain.classes.contains("overlay-parent")) return
     val id = elem.hashCode().toString
     elem.plain.attributes((elem.namespace, "id")) = id
@@ -255,20 +250,16 @@ trait SHTMLDocumentServer { this : STeXServer =>
       e.plain.classes ::= "group-highlight"
       e.plain.attributes((e.namespace, "data-highlight-parent")) = id
       if (hasAttribute(e,"comp") || hasAttribute(e,"maincomp")) { (getAttribute(e,"comp").toList ::: getAttribute(e,"maincomp").toList).foreach{v =>
-        val lang = getLanguage(e)
         e.plain.classes ::= "symcomp"
-        val urlshort = "/:" + this.pathPrefix + "/fragment?" + v + "&language=" + lang
-        val urllong = "/:" + this.pathPrefix + "/declaration?" + v + "&language=" + lang
+        val (urlshort,urllong) = getLinks(v)
         e.plain.attributes((elem.namespace, "data-overlay-link-hover")) = urlshort
         e.plain.attributes((elem.namespace, "data-overlay-link-click")) = urllong
       }} else if (hasAttribute(e,"varcomp")) {
         elem.plain.attributes.get((HTMLParser.ns_mmt,"variable")) match {
           case Some(str) =>
-            val lang = getLanguage(e)
-            val urlshort = "/:" + this.pathPrefix + "/variable?" + str + "&language=" + lang
-            val urllong = "/:" + this.pathPrefix + "/variable?" + str + "&language=" + lang
-            e.plain.attributes((elem.namespace, "data-overlay-link-hover")) = urlshort
-            e.plain.attributes((elem.namespace, "data-overlay-link-click")) = urllong
+            val link = getVarLink(str)
+            e.plain.attributes((elem.namespace, "data-overlay-link-hover")) = link
+            e.plain.attributes((elem.namespace, "data-overlay-link-click")) = link
           case _ =>
         }
         e.plain.classes ::= "varcomp" // TODO
@@ -457,44 +448,42 @@ trait SHTMLDocumentServer { this : STeXServer =>
     doc.plain.attributes((HTMLParser.ns_html, "style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
   }
 
-  def presentationRules(withbindings:Option[LateBinding]) : mutable.HashMap[String,HTMLNode => SHTMLNode] = {
-    val map = mutable.HashMap.empty[String,HTMLNode => SHTMLNode]
-
-  }
-
-  def present(str : String,remove:Boolean=true)(implicit withbindings : Option[LateBinding]) = {
-    val ifinputref = withbindings.isDefined
+  def presentationRules(withbindings:Option[LateBinding]) = {
+    val map = mutable.HashMap.empty[String,HTMLRule]
     val bindings = withbindings.getOrElse(new LateBinding)
-    var statements : List[Statement] = Nil
-    case class Statement(s : String,orig: HTMLNode) extends SHTMLNode(orig) {
+    case class Statement(s: String, orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
         super.onAdd
         title.foreach(_.plain.classes ::= "shtml-title-" + s)
       }
+
       def copy = orig.copy
-      var title:Option[STitle] = None
+
+      var title: Option[STitle] = None
 
       val inline = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "inline"), "true").contains("true")
 
       if (!inline) bindings.add(StatementStep)
       val styles = plain.attributes.getOrElse((HTMLParser.ns_shtml, "styles"), "").split(',').map(_.trim).toList.filterNot(_.isEmpty)
       plain.classes :::= ("shtml-" + s) :: styles.reverse.map(st => "shtml-" + s + "-" + st)
-      val old = plain.attributes.getOrElse((plain.namespace,"style"),"")
-      plain.attributes((plain.namespace,"style")) = "counter-set: shtml-statement " + bindings.statement.toString + ";" + old
-      statements ::= this
+      val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
+      plain.attributes((plain.namespace, "style")) = "counter-set: shtml-statement " + bindings.statement.toString + ";" + old
     }
-    case class STitle(orig : HTMLNode) extends SHTMLNode(orig) {
+    case class STitle(orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
         super.onAdd
         if (isEmpty) plain.classes ::= "empty"
-        findAncestor{case s:Statement => s}.foreach(_.title = Some(this))
+        findAncestor { case s: Statement => s }.foreach(_.title = Some(this))
       }
+
       def copy = STitle(orig.copy)
     }
-    case class Frame(orig : HTMLNode) extends SHTMLFrame(orig) {
+    case class Frame(orig: HTMLNode) extends SHTMLFrame(orig) {
       override def init = {}
+
       orig.plain.classes ::= "frame"
       bindings.add(SlideStep)
+
       override def onAdd: Unit = {
         val ch = this.children
         val inner = add(<div class="inner-frame"/>)
@@ -502,7 +491,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
         super.onAdd
       }
     }
-    case class SkipSection(orig:HTMLNode) extends SHTMLNode(orig) {
+    case class SkipSection(orig: HTMLNode) extends SHTMLNode(orig) {
       val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "skipsection")).map(_.trim.toInt)
 
       def init = {
@@ -523,45 +512,48 @@ trait SHTMLDocumentServer { this : STeXServer =>
       init
     }
     case class Section(orig: HTMLNode) extends SHTMLNode(orig) {
-        val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "section")).map(_.trim.toInt)
+      val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "section")).map(_.trim.toInt)
 
-        def init = {
-          bindings.add(new SectionStep(lvl.getOrElse(-1)))
-          val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
-          withbindings match {
-            case Some(wb) => plain.attributes((plain.namespace,"data-with-bindings")) = bindings.toString
-            case None => plain.attributes((plain.namespace,"data-with-bindings")) = "None"
-          }
-          bindings.currlvl match {
-            case 1 =>
-              this.plain.classes ::= "shtml-sec-part"
-              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-part " + bindings.secnum.toString + ";" + old
-            case 2 =>
-              this.plain.classes ::= "shtml-sec-chapter"
-              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-chapter " + bindings.secnum.toString + ";" + old
-            case 3 =>
-              this.plain.classes ::= "shtml-sec-section"
-              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-section " + bindings.secnum.toString + ";" + old
-            case 4 =>
-              this.plain.classes ::= "shtml-sec-subsection"
-              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-subsection " + bindings.secnum.toString + ";" + old
-            case _ =>
-              this.plain.classes ::= "shtml-sec-paragraph"
-              plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-paragraph " + bindings.secnum.toString + ";" + old
-          }
+      def init = {
+        bindings.add(new SectionStep(lvl.getOrElse(-1)))
+        val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
+        withbindings match {
+          case Some(wb) => plain.attributes((plain.namespace, "data-with-bindings")) = bindings.toString
+          case None => plain.attributes((plain.namespace, "data-with-bindings")) = "None"
         }
+        bindings.currlvl match {
+          case 1 =>
+            this.plain.classes ::= "shtml-sec-part"
+            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-part " + bindings.secnum.toString + ";" + old
+          case 2 =>
+            this.plain.classes ::= "shtml-sec-chapter"
+            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-chapter " + bindings.secnum.toString + ";" + old
+          case 3 =>
+            this.plain.classes ::= "shtml-sec-section"
+            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-section " + bindings.secnum.toString + ";" + old
+          case 4 =>
+            this.plain.classes ::= "shtml-sec-subsection"
+            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-subsection " + bindings.secnum.toString + ";" + old
+          case _ =>
+            this.plain.classes ::= "shtml-sec-paragraph"
+            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-paragraph " + bindings.secnum.toString + ";" + old
+        }
+      }
+
       override def onAdd: Unit = {
         super.onAdd
         bindings.close
       }
+
       override def copy = {
         new Section(orig.copy) {
           override def init = {}
         }
       }
+
       init
     }
-    case class FrameNumber(orig:HTMLNode) extends SHTMLNode(orig) {
+    case class FrameNumber(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = FrameNumber(orig.copy)
 
       override def onAdd: Unit = {
@@ -576,7 +568,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
         val n = if (this.plain.parent.exists(_.plain.classes.contains("paragraph"))) {
           this.plain.parent.get
         } else this
-        if (n.label == "span") {n.plain._label = "div"}
+        if (n.label == "span") {
+          n.plain._label = "div"
+        }
         n.plain.classes ::= "shtml-sectitle"
         if (n.isEmpty) n.plain.classes ::= "empty"
       }
@@ -585,22 +579,25 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
     case class SectionLevel(lvl: Int, orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = SectionLevel(lvl, orig.copy)
+
       override def onAdd: Unit = {
         super.onAdd
         if (withbindings.isEmpty) bindings.topsec = lvl
       }
     }
-    case class Hidable(orig:HTMLNode) extends SHTMLNode(orig) {
+    case class Hidable(orig: HTMLNode) extends SHTMLNode(orig) {
       lazy val expanded = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "proofhide"), "") == "true"
+
       def copy = Hidable(orig.copy)
-      var title : Option[HTMLNode] = None
+
+      var title: Option[HTMLNode] = None
       var body: Option[ProofBody] = None
 
       override def onAdd: Unit = {
         super.onAdd
-        (title,body) match {
-          case (Some(t),Some(b)) =>
-            t.plain.attributes((t.namespace,"data-collapse-title")) = "true"
+        (title, body) match {
+          case (Some(t), Some(b)) =>
+            t.plain.attributes((t.namespace, "data-collapse-title")) = "true"
             b.plain.attributes((t.namespace, "data-collapse-body")) = "true"
             plain.attributes((this.namespace, "data-collapsible")) = if (expanded) "true" else "false"
             print("")
@@ -608,11 +605,12 @@ trait SHTMLDocumentServer { this : STeXServer =>
         }
       }
     }
-    case class ProofTitle(orig:HTMLNode) extends SHTMLNode(orig) {
+    case class ProofTitle(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = ProofTitle(orig.copy)
+
       override def onAdd: Unit = {
         super.onAdd
-        findAncestor{case h:Hidable => h}.foreach{h =>
+        findAncestor { case h: Hidable => h }.foreach { h =>
           val opt = h.children.find(_.get()()().contains(this))
           h.title = opt
         }
@@ -620,12 +618,13 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
     case class ProofBody(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = ProofBody(orig.copy)
+
       override def onAdd: Unit = {
         super.onAdd
         findAncestor { case h: Hidable => h }.foreach(h => h.body = Some(this))
       }
     }
-    case class FillInSol(orig:HTMLNode) extends SHTMLNode(orig) {
+    case class FillInSol(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = FillInSol(orig.copy)
 
       override def onAdd: Unit = {
@@ -675,87 +674,110 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
 
-    val presentationRules: List[HTMLRule] = List(
-      new SHTMLRule() {
-        override def apply(s: ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
-          if (n.label == "img") {
-            n.plain.attributes.get((HTMLParser.ns_html,"src")) match {
-              case Some(s) if s.startsWith("shtml/") =>
-                n.plain.attributes((HTMLParser.ns_html,"src")) =
-                  "/:" + pathPrefix + "/img?" + s.drop(6)
-              case _ =>
-            }
+    def simple(s: String,f : HTMLNode => SHTMLNode) = map(s) = PresentationRule(s,(_,_,n) => Some(f(n)))
+    def tuple(s:String,f:(String,HTMLNode) => SHTMLNode) = map(s) = PresentationRule(s,(ns,_,n) => Some(f(ns,n)))
+
+    simple("solution",n => Solution(n))
+    simple("multiple-choice-block",n => MCB(n))
+    simple("mcc",n => MC(n))
+    simple("mcc-solution",n => MCSolution(n))
+    simple("problem",n => Problem(n))
+    simple("fillinsol",n => FillInSol(n))
+    simple("proof",n => Hidable(n))
+    simple("subproof", n => Hidable(n))
+    simple("prooftitle",n => ProofTitle(n))
+    simple("proofbody",n => ProofBody(n))
+    simple("frame",n => Frame(n))
+    simple("framenumber",n => FrameNumber(n))
+    simple("paragraph",n => Statement("paragraph",n))
+    simple("example", n => Statement("example", n))
+    simple("definition", n => Statement("definition", n))
+    simple("assertion", n => Statement("assertion", n))
+    simple("statementtitle",n => STitle(n))
+    simple("section",n => Section(n))
+    simple("sectiontitle",n => SecTitle(n))
+    simple("skipsection",n => SkipSection(n))
+
+    simple("term",node => new SHTMLNode(node) {
+      override def onAdd: Unit = {
+        val lang = getLanguage(this)
+        overlay(this) { s =>
+          ("/:" + pathPrefix + "/fragment?" + s + "&language=" + lang,
+            "/:" + pathPrefix + "/declaration?" + s + "&language=" + lang
+          )
+        }{s => "/:" + pathPrefix + "/variable?" + s + "&language=" + lang}
+      }
+      override def copy: HTMLNode = node.copy
+    })
+    simple("definiendum",node => new SHTMLNode(node) {
+      override def onAdd: Unit = {
+        val lang = getLanguage(this)
+        overlay(this) { s =>
+          ("/:" + pathPrefix + "/fragment?" + s + "&language=" + lang,
+            "/:" + pathPrefix + "/declaration?" + s + "&language=" + lang
+          )
+        } { s => "/:" + pathPrefix + "/variable?" + s + "&language=" + lang }
+      }
+      override def copy: HTMLNode = node.copy
+    })
+
+    tuple("sectionlevel",(s,n) => SectionLevel(s.toInt,n))
+
+
+    map("img") = new SHTMLRule() {
+      override def apply(s: ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
+        if (n.label == "img") {
+          n.plain.attributes.get((HTMLParser.ns_html, "src")) match {
+            case Some(s) if s.startsWith("shtml/") =>
+              n.plain.attributes((HTMLParser.ns_html, "src")) =
+                "/:" + pathPrefix + "/img?" + s.drop(6)
+            case _ =>
           }
-          None
-        }
-      },
-      PresentationRule("solution", (_, _, n) => Some(Solution(n))),
-      PresentationRule("multiple-choice-block", (_, _, n) => Some(MCB(n))),
-      PresentationRule("mcc", (_, _, n) => Some(MC(n))),
-      PresentationRule("mcc-solution", (_, _, n) => Some(MCSolution(n))),
-      PresentationRule("problem", (_, _, n) => Some(Problem(n))),
-      PresentationRule("fillinsol",(_,_,n) => Some(FillInSol(n))),
-      PresentationRule("proof",(_,_,n) => Some(Hidable(n))),
-      PresentationRule("prooftitle", (_, _, n) => Some(ProofTitle(n))),
-      PresentationRule("proofbody", (_, _, n) => Some(ProofBody(n))),
-      PresentationRule("subproof", (_, _, n) => Some(Hidable(n))),
-      PresentationRule("framenumber",(_,_,n) => Some(FrameNumber(n))),
-      PresentationRule("paragraph", (_,_,node) => Some(Statement("paragraph",node))),
-      PresentationRule("example", (_, _, node) => Some(Statement("example", node))),
-      PresentationRule("definition", (_, _, node) => Some(Statement("definition", node))),
-      PresentationRule("assertion", (_, _, node) => Some(Statement("assertion", node))),
-      PresentationRule("frame", (_, _, node) => Some(Frame(node))),
-      PresentationRule("statementtitle", (_, _, node) => Some(STitle(node))),
-      PresentationRule("sectiontitle", (_, _, node) => Some(SecTitle(node))),
-      PresentationRule("section", (_, _, node) => Some(Section(node))),
-      PresentationRule("skipsection", (_, _, node) => Some(SkipSection(node))),
-      PresentationRule("sectionlevel",(s,_,n) => Some(SectionLevel(s.toInt,n))),
-      PresentationRule("term", (_, _, node) => {
-        Some(new SHTMLNode(node) {
-          override def onAdd: Unit = overlay(this)
-
-          override def copy: HTMLNode = node.copy
-        })
-      }),
-      PresentationRule("definiendum", (_, _, node) => {
-        Some(new SHTMLNode(node) {
-          override def onAdd: Unit = overlay(this)
-
-          override def copy: HTMLNode = node.copy
-        })
-      }),
-      PresentationRule("inputref", (v, _, node) => {
-        val dp = Path.parseD((if (v.endsWith(".tex")) {
-          v.dropRight(4)
-        } else v) + ".omdoc", NamespaceMap.empty)
-        controller.getO(dp) match {
-          case Some(d: Document) =>
-            controller.backend.resolveLogical(d.path.uri) match {
-              case Some((a, ls)) =>
-                val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
-                node.plain.attributes((node.namespace, "style")) = ""
-                node.plain.attributes.remove((HTMLParser.ns_shtml, "visible"))
-                node.plain.classes = List("inputref")
-                node.plain.attributes((node.namespace, "data-inputref-url")) = "/:" + pathPrefix + "/document?archive=" + a.id + "&filepath=" + path + "&bindings=" + bindings.toNum(controller)
-                this.getTitle(d).foreach(n => node.add(n))
-              case _ =>
-            }
-            bindings.merge(dp)(controller)//LateBinding.get(dp)(controller))
-          case _ =>
         }
         None
-      })
-    )
-
-    val state = new ParsingState(this.controller,presentationRules)
-    val ret = HTMLParser(str)(state)
-    var toremoves: List[HTMLNode] = Nil
-    ret.iterate{n =>
-      n.plain.attributes.get((HTMLParser.ns_shtml,"id")) match {
-        case Some(id) => n.plain.attributes((n.namespace,"id")) = id
+      }
+    }
+    map("inputref") = PresentationRule("inputref",(v,_,node) => {
+      val dp = Path.parseD((if (v.endsWith(".tex")) {
+        v.dropRight(4)
+      } else v) + ".omdoc", NamespaceMap.empty)
+      controller.getO(dp) match {
+        case Some(d: Document) =>
+          controller.backend.resolveLogical(d.path.uri) match {
+            case Some((a, ls)) =>
+              val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
+              node.plain.attributes((node.namespace, "style")) = ""
+              node.plain.attributes.remove((HTMLParser.ns_shtml, "visible"))
+              node.plain.classes = List("inputref")
+              node.plain.attributes((node.namespace, "data-inputref-url")) = "/:" + pathPrefix + "/document?archive=" + a.id + "&filepath=" + path + "&bindings=" + bindings.toNum(controller)
+              this.getTitle(d).foreach(n => node.add(n))
+            case _ =>
+          }
+          bindings.merge(dp)(controller) //LateBinding.get(dp)(controller))
         case _ =>
       }
-      n.plain.attributes.get((HTMLParser.ns_shtml,"ifinputref")) match {
+      None
+    })
+
+    (map,bindings)
+  }
+
+  def present(str : String,remove:Boolean=true)(implicit withbindings : Option[LateBinding]) = {
+    val ifinputref = withbindings.isDefined
+    val rules = presentationRules(withbindings)._1.values.toList
+    val state = new ParsingState(this.controller,rules)
+    val ret = HTMLParser(str)(state)
+    cleanHTML(ret,ifinputref,remove)
+  }
+
+  def cleanHTML(node : HTMLNode,ifinputref:Boolean,remove:Boolean) = {
+    var toremoves: List[HTMLNode] = Nil
+    node.iterate { n =>
+      n.plain.attributes.get((HTMLParser.ns_shtml, "id")) match {
+        case Some(id) => n.plain.attributes((n.namespace, "id")) = id
+        case _ =>
+      }
+      n.plain.attributes.get((HTMLParser.ns_shtml, "ifinputref")) match {
         case Some("true") if !ifinputref =>
           toremoves ::= n
         case Some("false") if ifinputref =>
@@ -772,7 +794,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
     toremoves.foreach(_.delete)
-    ret
+    node
   }
 
   lazy val presentationRulesOld : List[PartialFunction[HTMLNode,Unit]] = List(/*
