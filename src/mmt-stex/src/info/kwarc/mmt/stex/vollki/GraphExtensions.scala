@@ -9,7 +9,6 @@ import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
-import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
