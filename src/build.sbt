@@ -495,7 +495,7 @@ lazy val specware = (project in file("mmt-specware")).
 
 // plugin for reading stex. Maintainer: Dennis
 lazy val stex = (project in file("mmt-stex")).
-  dependsOn(api,odk,lsp).
+  dependsOn(api,odk,lsp,tiscaf).
   settings(
     mmtProjectsSettings("mmt-stex"),
     libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",

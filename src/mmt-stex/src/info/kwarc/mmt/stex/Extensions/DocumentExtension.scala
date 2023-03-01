@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.Extensions
 
-import info.kwarc.mmt.api.{DPath, DefComponent, GlobalName, MPath, NamespaceMap, Path, StructuralElement, TypeComponent}
+import info.kwarc.mmt.api.{DPath, DefComponent, GlobalName, MPath, NamespaceMap, Path, StructuralElement, TypeComponent, presentation}
 import info.kwarc.mmt.api.archives.RedirectableDimension
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.Controller
@@ -85,9 +85,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case Some("declaration") =>
         doDeclaration
       case Some("css") =>
-        ServerResponse(css(request.query),"text/css")
+        ServerResponse(css(request.query) + "\n" + MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"),"text/css")
       case Some("variable") =>
-        ServerResponse("<b>TODO</b>","text/html")
+        ServerResponse(doVariable.toString.trim,"text/html")
       case _ =>
         throw ErrorResponse("Unknown path: " + request.path.mkString)
     }
@@ -292,7 +292,10 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  def doDeclHeader(c: Constant)(implicit dp:DocParams): Elem = {
+  def doDeclHeader(c: Constant)(implicit dp:DocParams) = {
+    val state = new OMDocState(dp.language.getOrElse("en"))
+    doSymbol(c)(state).toString()
+  }/*{
     <div>
       <table>
         <tr>
@@ -304,7 +307,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
           </code>
           </td> <td>
             <a href={"/:vollki?path=" + c.path.toString + "&lang=" + dp.language.getOrElse("en")} target="_blank" style="pointer-events:all;color:blue">
-              {"> Guided Tour"}
+              <img src="/stex/guidedtour.svg" height="30px"></img>
             </a>
         </td>
         </tr>
@@ -384,6 +387,31 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }}
       </table>
     </div>
+  }*/
+
+  def doVariable(implicit dp: DocParams) = {
+    val htm = getVariable
+    val (doc, body) = this.emptydoc
+    body.plain.attributes((HTMLParser.ns_html, "style")) = "background-color:white"
+    stripMargins(doc)
+    val border = body.add(<div style="font-size:small"/>)
+    border.add(htm)
+    doc.get("body")()().head
+  }
+  def getVariable(implicit dp:DocParams) = {
+    dp.path match {
+      case None => throw ErrorResponse("Path missing")
+      case Some(gn : GlobalName) =>
+        controller.getO(gn) match {
+          case Some(c : Constant) if c.rl.exists(_.contains("variable")) =>
+            val sb = new presentation.StringBuilder
+            presenter.apply(c,false)(sb)
+            sb.get
+          case Some(o) => throw ErrorResponse("Not a variable: " + o.path.toString)
+          case _ => throw ErrorResponse("Not found: " + gn.toString)
+        }
+      case Some(o) => throw ErrorResponse("Not a variable: " + o.toString)
+    }
   }
 
   def doFragment(implicit dp:DocParams) = {

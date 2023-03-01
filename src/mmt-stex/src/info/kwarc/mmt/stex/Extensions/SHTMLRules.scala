@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
-import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, Path, StructuralElement}
+import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, ParseError, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLBlindSection, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLIfInputref, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMStr, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, TopLevelTerm}
@@ -100,6 +100,12 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("comp", (s, n, _) => {
       val gn = Path.parseS(s)
       SHTMLComp(gn, n)
+    }, 10),
+    SHTMLParsingRule("maincomp", (s, n, _) => try {
+      val gn = Path.parseS(s)
+      SHTMLComp(gn, n)
+    } catch {
+      case _:ParseError => SHTMLVarComp(LocalName.parse(s), n)
     }, 10),
     SHTMLParsingRule("definiendum", (s, n, _) => {
       val gn = Path.parseS(s)

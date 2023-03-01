@@ -17,7 +17,7 @@ trait ExportExtension { self : STeXServer =>
 
   private val default_remote = "https://building.beta.vollki.kwarc.info/:sTeX/"
 
-  private class State(val archive:Archive,val dir:File) {
+  private class ExportState(val archive:Archive,val dir:File) {
     val dones_frag = mutable.Set.empty[GlobalName]
     val todo_frag = mutable.Set.empty[GlobalName]
     val dones_var = mutable.Set.empty[GlobalName]
@@ -29,7 +29,7 @@ trait ExportExtension { self : STeXServer =>
       case f if f.isDirectory => f.deleteDir
       case f if f.exists() => f.delete()
     }
-    (to / "aux" / "fonts").mkdirs()
+    (to / "aux" ).mkdirs()
     (to / "docs").mkdirs()
     (to / "frags").mkdirs()
     (to / "img").mkdirs()
@@ -50,32 +50,19 @@ trait ExportExtension { self : STeXServer =>
       File.write(to / "aux" / f,MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/" + f))
       index = index.replace("/stex/mmt-viewer/" + f,"aux/" + f)
     }
-    File.write(to / "aux/fonts.css",
-      MMTSystem.getResourceAsString("mmt-web/stex/fonts.css").replace("/stex/fonts/","fonts/")
-    )
-    index = index.replace("/stex/fonts.css","aux/fonts.css")
-
-    val font_files = MMTSystem.getResourceList("mmt-web/stex/fonts")
-    font_files.foreach { f =>
-      val nf = to / "aux" / "fonts" / f
-      nf.createNewFile()
-      val out = new FileOutputStream(nf.toString)
-      val in = MMTSystem.getResource("mmt-web/stex/fonts/" + f)
-      out.write(in.readAllBytes())
-      in.close()
-      out.close()
-    }
+    index = index.replace("/stex/fonts.css",default_remote.dropRight(6) + "stex/fonts.css")
 
     File.write(to / "index.html",index)
-    implicit val state = new State(archive,to)
+    implicit val state = new ExportState(archive,to)
     doFile(document,to / document.setExtension("doc.html").name,true,None)
-    while (state.todo_frag.nonEmpty) {
-      val head = state.todo_frag.head
-      doFrag(head)
-    }
-    while (state.todo_var.nonEmpty) {
-      val head = state.todo_var.head
-      doVar(head)
+    while (state.todo_frag.nonEmpty || state.todo_var.nonEmpty) {
+      state.todo_frag.headOption match {
+        case Some(head) =>
+          doFrag(head)
+        case None =>
+          val head = state.todo_var.head
+          doVar(head)
+      }
     }
   }
 
@@ -89,7 +76,7 @@ trait ExportExtension { self : STeXServer =>
         <img src="https://kwarc.info/public/kwarc_logo.svg" style="height:25px;vertical-align:middle;" title="KWARC"></img></a>
   </div>
 
-  private def getRules(withbindings:Option[LateBinding])(implicit state:State) = {
+  private def getRules(withbindings:Option[LateBinding])(implicit state:ExportState) = {
     val (rules, bindings) = presentationRules(withbindings)
     rules("inputref") = PresentationRule("inputref", (v, _, node) => {
       val dp = Path.parseD((if (v.endsWith(".tex")) {
@@ -200,11 +187,19 @@ trait ExportExtension { self : STeXServer =>
 
     rules("term") = PresentationRule("term",(_,_,node) => Some(OverlayNode(node)))
     rules("definiendum") = PresentationRule("definiendum", (_, _, node) => Some(OverlayNode(node)))
+    rules("guidedtour") = new SHTMLRule() {
+      override def apply(s: ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
+        if (n.label == "td" && n.plain.classes.contains("vollki-guided-tour")) {
+          n.plain.attributes((n.namespace, "style")) = "display:none;"
+        } // <td class="vollki-guided-tour">
+        None
+      }
+    }
 
     (rules,bindings)
   }
 
-  private def doFile(file:File,to:File,top : Boolean = false,withbindings:Option[LateBinding])(implicit state:State): Unit = {
+  private def doFile(file:File,to:File,top : Boolean = false,withbindings:Option[LateBinding])(implicit state:ExportState): Unit = {
     val params = new DocParams(new WebQuery(Nil)) {
       override lazy val path = None
       override lazy val language = None // TODO
@@ -227,7 +222,7 @@ trait ExportExtension { self : STeXServer =>
     File.write(to,ret.toString.trim)
   }
 
-  private def doFrag(gn : GlobalName)(implicit state:State): Unit = {
+  private def doFrag(gn : GlobalName)(implicit state:ExportState): Unit = {
     state.todo_frag -= gn
     state.dones_frag += gn
     controller.getO(gn) match {
@@ -254,9 +249,30 @@ trait ExportExtension { self : STeXServer =>
     }
   }
 
-  private def doVar(gn: GlobalName)(implicit state: State): Unit = {
+  private def doVar(gn: GlobalName)(implicit state: ExportState): Unit = {
     state.todo_var -= gn
     state.dones_var += gn
+    controller.getO(gn) match {
+      case Some(c: Constant) =>
+        implicit val params = new DocParams(new WebQuery(Nil)) {
+          override lazy val path = Some(gn)
+          override lazy val language = None // TODO
+          override lazy val filepath = None
+          override lazy val bindings = None
+          override lazy val archive = Some(state.archive)
+        }
+        val (rules, _) = getRules(None)
+        val htm = cleanHTML(HTMLParser(getVariable)(new ParsingState(controller, rules.values.toList)), false, true)
+        val (doc, body) = this.emptydoc
+        body.plain.attributes((HTMLParser.ns_html, "style")) = "background-color:white"
+        stripMargins(doc)
+        val border = body.add(<div style="font-size:small"/>)
+        border.add(htm)
+        val ret = doc.get("body")()().head.toString.trim
+        val fname = "frags/" + gn.hashCode().toHexString + ".html"
+        File.write(state.dir / fname, ret)
+      case _ =>
+    }
   }
 
 

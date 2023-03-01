@@ -445,16 +445,16 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        case Some("css") =>
          request.query match {
            case "" =>
-             ServerResponse("", "text/css")
+             ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"), "text/css")
            case s =>
              self.documents.get(s) match {
                case None =>
-                 ServerResponse("", "text/css")
+                 ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"), "text/css")
                case Some(d) =>
                  val ret = d.archive match {
                    case None => ""
                    case Some(a) =>
-                     stexserver.css(a.id)
+                     stexserver.css(a.id) + "\n" + MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css")
                  }
                  ServerResponse(ret, "text/css")
              }

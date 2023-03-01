@@ -35,6 +35,8 @@ class SyncedDocument {
     override def first: Char = currline match {
       case Some(line) if _char < line.line.length => line.line(_char)
       case Some(line) if _char == line.line.length => '\n'
+      case _ =>
+        throw ParseError("parsestring empty")
     }
     def startsWith(s : String): Boolean = {
       if (s.isEmpty) return true

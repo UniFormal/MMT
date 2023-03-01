@@ -300,7 +300,28 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
   private def present(n : Node) = server.present(n.toString(),true)(None)
   override def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pc: PresentationContext): Int = {
     def default(implicit pc: PresentationContext) = {
-      super.recurse(obj, bracket)
+      obj match {
+        case OMS(p) => pc.out(
+          s"""<mrow shtml:term="OMID" shtml:head="${p.toString}" shtml:maincomp="${p.toString}">
+            |  <mi mathvariant="normal">${p.name}</mi>
+            |</mrow>""".stripMargin
+        )
+        0
+        case t@OMV(p) =>
+          pc.out(server.getRuler(t,pc.getContext) match {
+            case Some(c : Constant) =>
+              s"""<mrow shtml:term="OMV" shtml:head="${p.toString}" shtml:varcomp="${p.toString}" mmt:variable="${c.path}">
+              |  <mi>${p.toString}</mi>
+              |</mrow>""".stripMargin
+            case _ =>
+              s"""<mrow shtml:term="OMV" shtml:head="${p.toString}" shtml:varcomp="${p.toString}">
+              |  <mi>${p.toString}</mi>
+              |</mrow>""".stripMargin
+          })
+          0
+        case _ =>
+          super.recurse(obj, bracket)
+      }
     }
     obj match {
       case ctx: Context =>

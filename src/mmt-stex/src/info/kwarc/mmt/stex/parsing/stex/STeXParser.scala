@@ -221,6 +221,7 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     val (rpath, name) = path.split('?').toList match {
       case List(n) => (Nil, n)
       case List(p, n) => (p.split('/').toList, n)
+      case _ => throw LaTeXParseError("Invalid path")
     }
     (archive, rpath) match {
       case (_, Nil) if current_namespace.exists(dp => all_modules.isDefinedAt(dp ? LocalName.parse(name))) =>

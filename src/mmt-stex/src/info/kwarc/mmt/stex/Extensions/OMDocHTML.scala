@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMFOREIGN, OMS}
 import info.kwarc.mmt.api.presentation.{Presenter, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, NestedModule, Structure}
-import info.kwarc.mmt.api.{CPath, DPath, DefComponent, GlobalName, MPath, Path, StructuralElement, TypeComponent}
+import info.kwarc.mmt.api.{CPath, DPath, DefComponent, GlobalName, LocalName, MPath, NamespaceMap, Path, StructuralElement, TypeComponent}
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.rules.ModelsOf
@@ -67,7 +67,7 @@ trait OMDocHTML { this : STeXServer =>
           case _ => (qr, None)
         }
         val path = Path.parse(comp)
-        implicit val state = new State(lang.getOrElse("en"))
+        implicit val state = new OMDocState(lang.getOrElse("en"))
         val ret = path match {
           case d:DPath =>
             documentTop(d).toString()
@@ -82,7 +82,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private class State(val language: String) {
+  protected class OMDocState(val language: String) {
     private var id = 0
     var lastSection : Option[Node] = None
     def getId = {
@@ -100,7 +100,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def documentTop(path:DPath)(implicit state:State): NodeSeq = {
+  private def documentTop(path:DPath)(implicit state:OMDocState): NodeSeq = {
     controller.getO(path) match {
       case Some(d: Document) => documentTop(d)
       case None =>
@@ -108,7 +108,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def documentTop(doc:Document)(implicit state: State): NodeSeq = {
+  private def documentTop(doc:Document)(implicit state: OMDocState): NodeSeq = {
     val title = getTitle(doc) match {
       case Some(node) => node
       case None => <span>Document {doc.path}</span>
@@ -120,7 +120,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def documentSection(path: DPath)(implicit state: State): NodeSeq = {
+  private def documentSection(path: DPath)(implicit state: OMDocState): NodeSeq = {
     controller.getO(path) match {
       case Some(d: Document) =>
         documentSection(d)
@@ -134,7 +134,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def documentSection(doc: Document)(implicit state: State): NodeSeq = {
+  private def documentSection(doc: Document)(implicit state: OMDocState): NodeSeq = {
     val title = getTitle(doc) match {
       case Some(node) => node
       case None => <span>Document
@@ -148,7 +148,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def documentBody(d: Document)(implicit state: State): NodeSeq = {
+  private def documentBody(d: Document)(implicit state: OMDocState): NodeSeq = {
     d.getDeclarations.flatMap {
       case mr: MRef if mr.target.parent == d.path =>
         <span></span> // TODO
@@ -162,18 +162,21 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def moduleTop(path: MPath)(implicit state: State): NodeSeq = {
+  private def moduleTop(path: MPath)(implicit state: OMDocState): NodeSeq = {
     controller.getO(path) match {
       case Some(d: Theory) => moduleTop(d)
       case None =>
-        <div><h1>Module {path.toString}</h1> <hr/>
+        <div><h2>Module {path.toString}</h2> <hr/>
           <div>Not found</div>
         </div>
     }
   }
 
-  private def moduleTop(t:Theory)(implicit state: State): NodeSeq = {
-    <div><h1>Module {t.path.toString}</h1><hr/>{doModuleBody(t)}</div>
+  private def moduleTop(t:Theory)(implicit state: OMDocState): NodeSeq = {
+    val ns = t.path.doc
+    val docpath = getDocPath(ns.toString, t.path.module.name)
+    <div><h2>Module {docpath.map(doLink(_)(<span>{ns}</span>)).getOrElse(<span>ns</span>)
+      }?{t.name}</h2><hr/>{doModuleBody(t)}</div>
 
     /*
     def doDecl(d: Declaration): NodeSeq = d match {
@@ -234,7 +237,7 @@ trait OMDocHTML { this : STeXServer =>
      */
   }
 
-  private def moduleInner(path : MPath)(implicit state: State): NodeSeq = {
+  private def moduleInner(path : MPath)(implicit state: OMDocState): NodeSeq = {
     controller.getO(path) match {
       case Some(d: Theory) => moduleInner(d)
       case None =>
@@ -243,14 +246,14 @@ trait OMDocHTML { this : STeXServer =>
         }} {<div>Not found</div>}
     }
   }
-  private def moduleInner(t: Theory)(implicit state: State): NodeSeq = {
+  private def moduleInner(t: Theory)(implicit state: OMDocState): NodeSeq = {
     if (getLanguage(t).isDefined) return {<span>TODO language module</span>}
     collapsible() { doLink(t.path) {
         <b>Module {t.name.toString}</b>
     }}{doModuleBody(t)}
   }
 
-  private def doModuleBody(theory: Theory)(implicit state: State): NodeSeq = <div>
+  private def doModuleBody(theory: Theory)(implicit state: OMDocState): NodeSeq = <div>
     <div>{theory.getIncludesWithoutMeta match {
       case Nil =>
       case ls => <span style="display:inline;"><b>Includes </b>{
@@ -266,17 +269,45 @@ trait OMDocHTML { this : STeXServer =>
     }}</div>
   </div>
 
-  private def declTop(path:GlobalName)(implicit state: State): NodeSeq =
-    <div><h1>Symbol {path.toString}</h1> <hr/>{
+  private def getDocPath(s : String,mn : LocalName)(implicit state: OMDocState): Option[DPath] =
+    controller.getO(Path.parseD(s"$s/$mn.${state.language}.omdoc", NamespaceMap.empty)) match {
+      case Some(doc:Document) => Some(doc.path)
+      case _ => controller.getO(Path.parseD(s"$s/$mn.en.omdoc", NamespaceMap.empty)) match {
+        case Some(doc: Document) => Some(doc.path)
+        case _ => controller.getO(Path.parseD(s"$s/$mn.omdoc", NamespaceMap.empty)) match {
+          case Some(doc: Document) => Some(doc.path)
+          case _ => controller.getO(Path.parseD(s"$s.${state.language}.omdoc", NamespaceMap.empty)) match {
+            case Some(doc: Document) => Some(doc.path)
+            case _ => controller.getO(Path.parseD(s"$s.en.omdoc", NamespaceMap.empty)) match {
+              case Some(doc: Document) => Some(doc.path)
+              case _ => controller.getO(Path.parseD(s"$s.omdoc", NamespaceMap.empty)) match {
+                case Some(doc: Document) => Some(doc.path)
+                case _ => None
+              }
+            }
+          }
+        }
+      }
+  }
+  private def declTop(path:GlobalName)(implicit state: OMDocState): NodeSeq = {
+    val ns = path.doc
+    val docpath = getDocPath(ns.toString,path.module.name)
+    <div><h3>Symbol {docpath.map(doLink(_)(<span>{ns}</span>)).getOrElse(<span>ns</span>)
+      }?{doLink(path.module)(<span>{path.module.name}</span>)}?{path.name}</h3> <hr/>{
       controller.getO(path) match {
       case Some(d: Declaration) => declInner(d)
       case None => <div>Not found</div>
     }}</div>
+  }
 
-  private def declTop(d:Declaration)(implicit state: State): NodeSeq =
-    <div><h1>Symbol {d.path.toString}</h1><hr/>{declInner(d)}</div>
+  private def declTop(d:Declaration)(implicit state: OMDocState): NodeSeq = {
+    val ns = d.path.doc
+    val docpath = getDocPath(ns.toString, d.path.module.name)
+    <div><h3>Symbol {docpath.map(doLink(_)(<span>{ns}</span>)).getOrElse(<span>ns</span>)
+      }?{doLink(d.path.module)(<span>{d.path.module.name}</span>)}?{d.path.name}</h3><hr/>{declInner(d)}</div>
+  }
 
-  private def declInner(path: GlobalName)(implicit state: State): NodeSeq = {
+  private def declInner(path: GlobalName)(implicit state: OMDocState): NodeSeq = {
     controller.getO(path) match {
       case Some(d: Declaration) => declInner(d)
       case None =>
@@ -286,7 +317,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def declInner(d:Declaration)(implicit state: State): NodeSeq = {
+  private def declInner(d:Declaration)(implicit state: OMDocState): NodeSeq = {
     d match {
       case c : Constant if c.metadata.getValues(ModelsOf.sym).nonEmpty =>
         <span>TODO: Math Structure</span>
@@ -295,14 +326,18 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def doSymbol(c:Constant)(implicit state: State): NodeSeq = {
+  def doSymbol(c:Constant)(implicit state: OMDocState): NodeSeq = {
     c.rl match {
-      case s if s.contains("textsymdecl") =>
+      case Some(s) if s.contains("textsymdecl") =>
         doTextSymbol(c)
-      case s if s.contains("variable") =>
-        <span>TODO: Variable</span>
+      case Some(s) if s.contains("variable") =>
+        doVariable(c)
       case _ =>
-        lazy val header = <span style="display:inline;">Symbol {symbolsyntax(c)}</span>
+        lazy val header = //<span style="display:inline;">Symbol {symbolsyntax(c)}<img src="/stex/guidedtour.svg" height="30px" style="vertical-align:middle;"></img></span>
+          <table style="width:calc(100% - 16.53px);vertical-align:middle;display:inline-table;"><tr>
+            <td style="text-align:left;"><span style="display:inline;">Symbol {symbolsyntax(c)}</span></td>
+            <td class="vollki-guided-tour" style="text-align:right;"><a href={"/:vollki?path=" + c.path.toString + "&lang=" + state.language} target="_blank" style="pointer-events:all;color:blue"><img src="/stex/guidedtour.svg" height="30px" style="vertical-align:middle;padding-right:5px;padding-bottom:5px"></img></a></td>
+          </tr></table>
         (c.tp,c.df,getNotationsC(c)) match {
           case (None,None,Nil) => fakeCollapsible(true){header}
           case _ => collapsible(false, true) {header}{symbolTable(c)}
@@ -310,7 +345,22 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def doTextSymbol(c:Constant)(implicit state: State): NodeSeq = {
+  private def doVariable(c: Constant)(implicit state: OMDocState): NodeSeq = {
+    lazy val header = <span style="display:inline;">Variable {symbolsyntax(c)}
+      {c.tp match {
+        case Some(tp) =>
+          <span> of type <math xmlns={HTMLParser.ns_mml}>
+            {present(xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent)))}
+          </math></span>
+        case _ => <span> (No type given)</span>
+      }}</span>
+    (c.df, getNotationsC(c)) match {
+      case (None, Nil) => fakeCollapsible(true) {header}
+      case _ => collapsible(false, true) {header} {symbolTable(c,dotype = false)}
+    }
+  }
+
+  private def doTextSymbol(c:Constant)(implicit state: OMDocState): NodeSeq = {
     val notations = getNotationsC(c)
     lazy val header = <span style="display:inline;">Text Symbol {symbolsyntax(c)}: {
       notations match {
@@ -325,7 +375,7 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  def symbolTable(c: Constant, donotations:Boolean=true)(implicit state: State) =
+  def symbolTable(c: Constant, donotations:Boolean=true, dotype:Boolean=true)(implicit state: OMDocState) =
     <table class="symbol-table">{c.df match {
       case Some(df) =>
         <tr>
@@ -334,12 +384,12 @@ trait OMDocHTML { this : STeXServer =>
         </tr>
       case None =>
     }}{c.tp match {
-      case Some(tp) =>
+      case Some(tp) if dotype =>
         <tr>
           <td class="symbol-td">Type</td>
           <td class="symbol-td">{xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))}</td>
         </tr>
-      case None =>
+      case _ =>
     }}{getNotationsC(c) match {
       case Nil =>
       case List(a) if !donotations =>
@@ -384,7 +434,7 @@ trait OMDocHTML { this : STeXServer =>
           </table></td></tr>
     }}</table>
 
-  def symbolsyntax(c:Constant)(implicit state: State) = <span>
+  def symbolsyntax(c:Constant)(implicit state: OMDocState) = <span>
     <pre style="display:inline;font-size:smaller;">{doLink(c.path)(<span>{c.name}</span>)}</pre>
     {(getMacroName(c), getArity(c)) match {
       case (Some(mn), None | Some("")) =>
@@ -410,10 +460,10 @@ trait OMDocHTML { this : STeXServer =>
     f(getI, getX)
   }
 
-  private def doLink(p: Path)(txt: => NodeSeq)(implicit state: State) =
+  private def doLink(p: Path)(txt: => NodeSeq)(implicit state: OMDocState) =
     <a href={s"/:${this.pathPrefix}/omdoc?${p.toString}&language=${state.language}"} style="color:blue;">{txt}</a>
 
-  private def collapsible(expanded:Boolean = true,small:Boolean=false)(title: => NodeSeq)(content: =>NodeSeq)(implicit state:State) = {
+  private def collapsible(expanded:Boolean = true,small:Boolean=false)(title: => NodeSeq)(content: =>NodeSeq)(implicit state:OMDocState) = {
     val id = state.getId
     <div class={if (small) "collapsible collapsible-small" else "collapsible"}>
       {if (expanded) <input type="checkbox" name={id} id={id} checked="checked"/>
@@ -424,7 +474,7 @@ trait OMDocHTML { this : STeXServer =>
     </div>
   }
 
-  private def fakeCollapsible(small: Boolean = false)(title: => NodeSeq)(implicit state: State) =
+  private def fakeCollapsible(small: Boolean = false)(title: => NodeSeq)(implicit state: OMDocState) =
     <div class={if (small) "fake-collapsible-small" else "fake-collapsible"}>{title}</div>
 
   private def present(n:NodeSeq):Node = present(n.toString())(None).plain.node
@@ -686,11 +736,14 @@ trait OMDocHTML { this : STeXServer =>
       }
     }
     override def apply(e: StructuralElement, standalone: Boolean)(implicit rh: RenderingHandler): Unit = {
-      implicit val state = new State("en")
+      implicit val state = new OMDocState("en")
       e match {
-        case d : Document => rh(documentTop(d))
-        case m : Theory => rh(moduleTop(m))
-        case d : Declaration => rh(declTop(d))
+        case d : Document if standalone => rh(documentTop(d))
+        case d: Document  => rh(documentSection(d))
+        case m : Theory if standalone => rh(moduleTop(m))
+        case m: Theory => rh(moduleInner(m))
+        case d : Declaration if standalone => rh(declTop(d))
+        case d: Declaration => rh(declInner(d))
       }
     }
 
