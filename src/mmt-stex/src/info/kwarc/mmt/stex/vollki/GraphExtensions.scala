@@ -23,7 +23,7 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
   import server._
 
   def apply(request: ServerRequest): ServerResponse = {
-    val path = request.parsedQuery("path").flatMap(s => Try(Path.parseS(s)).toOption)
+    val path = request.parsedQuery("path").flatMap(s => Try(Path.parse(s.replace(".xhtml",".omdoc"))).toOption)
     val language = request.parsedQuery("lang") match {
       case Some(l) => l
       case None => "en"
@@ -39,17 +39,19 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + server.pathPrefix + "/css?None")
         ServerResponse(html, "text/html")
       case Some("frag") =>
-        path.flatMap(getSymdocs(_,language).headOption).map{n =>
-          present(n.toString,true)(None)
-        } match {
-          case Some(ht) => ServerResponse(ht.toString,"text/html")
-          case None =>ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
+        path match {
+          case Some(gn : GlobalName) =>
+            getSymdocs(gn, language).headOption match {
+              case Some(ht) => ServerResponse(ht.toString, "text/html")
+              case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
+            }
+          case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
         }
       case Some("list") =>
         ServerResponse.JsonResponse(JSONArray())
       case Some("tour") =>
         path match {
-          case Some(n) =>
+          case Some(n: GlobalName) =>
             val ret = guidedTour(n, language)
             ServerResponse.JsonResponse(ret)
           case None =>
@@ -57,7 +59,7 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
         }
       case Some("deps") =>
         path match {
-          case Some(p) =>
+          case Some(p:GlobalName) =>
             getSymdocs(p, language).headOption match {
               case None =>
                 ServerResponse.JsonResponse(JSONArray())
@@ -89,9 +91,7 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
           case None =>
             ServerResponse("Unknown query: " + request.query, "text/plain")
         }
-
     }
-
   }
 
   def guidedTour(sym:GlobalName,language:String) = {

@@ -81,6 +81,10 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
   val server : STeXServer
   var in_term : Boolean = false
   val bindings = new LateBinding
+
+  def closeDoc : Unit
+
+  def openDoc(d: Document) : Unit
   def addTitle(ttl:SHTMLClass) : Unit
   private var term_num = 0
   def termname = {
@@ -283,7 +287,7 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
             val nt = new NestedModule(t.toTerm, LocalName(language), th)
             doSourceRef(th)
             state.add(nt)
-            signature_theory = Some(th)
+            language_theory = Some(th)
           }
         }
         return ()
@@ -338,12 +342,7 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
       _context = _context ++ Context(lang.path)
     }
     (signature_theory.toList ::: language_theory.toList).foreach { t =>
-      findAncestor { case th: HasRuleContext => th } match {
-        case Some(st: SHTMLDocument) =>
-          state.add(MRef(st.path, t.path.toMPath))
-        case _ =>
-          state.add(MRef(state.doc.path, t.path.toMPath))
-      }
+      state.add(MRef(state.doc.path,t.path))
       state.check(t)
     }
   }

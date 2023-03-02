@@ -8,12 +8,15 @@ import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, NotFound}
 import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMFOREIGN, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.opaque.OpaqueXML.MMTIndex
+import info.kwarc.mmt.api.opaque.{OpaqueXML, TermFragmentInXML}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure, TermContainer}
 import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.stex.Extensions.Definienda
 import info.kwarc.mmt.stex.{SHTML, STeXError, STeXServer}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
-import info.kwarc.mmt.stex.rules.HTMLTermRule
+import info.kwarc.mmt.stex.rules.{HTMLTermRule, StringLiterals}
 //import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType, SubstRule}
 import info.kwarc.mmt.stex.search.SearchDocument
 //import info.kwarc.mmt.stex.{NestedHOAS, OMDocHTML, SCtx, SOMA, SOMB, SOMBArg, STeX, STeXError, STeXHOAS, STerm, SimpleHOAS}
@@ -24,7 +27,16 @@ import scala.collection.mutable
 import scala.util.Try
 
 class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHandler, val dpath : DPath) extends HTMLParser.ParsingState(server.ctrl,rules) with SHTMLState[SHTMLNode] {
-  var docs = List(new Document(dpath))
+  private var docs = List(new Document(dpath))
+  def closeDoc = {
+    val h :: tail = docs
+    if (docs.length > 1) docs = tail
+    // TODO h
+  }
+  def openDoc(d : Document) = {
+    docs ::= d
+  }
+
   def doc = docs.head
   var missings: List[Path] = Nil // Search Stuff
 
@@ -297,6 +309,11 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
     def addDefi(df: HTMLStatement)(implicit self:SHTMLNode) = {
       val mod = self.findAncestor {
         case t: SHTMLOTheory => t.mp
+      }
+      docs.headOption match {
+        case Some(d) if df.id.nonEmpty && df.fors.nonEmpty =>
+          add(Definienda.Def(d.path,df.id,df.fors))
+        case _ =>
       }
       definitions ::= (df,mod)
     }

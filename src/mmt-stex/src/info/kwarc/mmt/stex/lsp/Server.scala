@@ -31,6 +31,11 @@ class MathHubMessage {
 class ArchiveMessage {
   var archive : String = null
 }
+class NewArchiveMessage {
+  var archive: String = null
+  var ns: String = null
+  var urlbase : String = null
+}
 
 class LSPSearchResult {
   var archive : String = null
@@ -59,6 +64,10 @@ class BuildMessage {
   var file:String = null
 }
 
+class ExportMessage {
+  var file: String = null
+  var dir: String = null
+}
 
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
@@ -125,18 +134,31 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        a
    }
 
+   @JsonNotification("sTeX/exportHTML")
+   def exportHTML(msg: ExportMessage): Unit = safely {
+     msg.file = LSPServer.VSCodeToURI(msg.file)
+     val d = documents.synchronized {
+       documents.getOrElseUpdate(msg.file, newDocument(msg.file))
+     }
+     (d.archive,d.relfile) match {
+       case (Some(a),Some(f)) =>
+         stexserver.`export`(a,File(f),File(msg.dir))
+       case _ =>
+     }
+   }
+
    @JsonNotification("sTeX/buildFile")
    def buildFile(a :BuildMessage) : Unit = {
      a.file = LSPServer.VSCodeToURI(a.file)
      val d = documents.synchronized{documents.getOrElseUpdate(a.file,newDocument(a.file))}
      d.buildFull()
    }
-   private def do_manifest(s : String) =
+   private def do_manifest(s : String,ns: Option[String],urlbase:Option[String]) =
      s"""
         |id:$s
-        |ns:http://mathhub.info/$s
-        |narration-base:http://mathhub.info/$s
-        |url-base:http://mathhub.info/$s
+        |ns:${ns.getOrElse("http://mathhub.info/"+s)}
+        |narration-base:$ns
+        |url-base:${urlbase.getOrElse("https://stexmmt.mathhub.info/:sTeX")}
         |format:stex
         |""".stripMargin
 
@@ -188,11 +210,11 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                              |*.fdb_latexmk""".stripMargin
 
    @JsonNotification("sTeX/initializeArchive")
-   def initializeArchive(a : ArchiveMessage): Unit = safely {
+   def initializeArchive(a : NewArchiveMessage): Unit = safely {
      mathhub_top.foreach {mh =>
        val ndir = mh / a.archive
        (ndir / "META-INF").mkdirs()
-       File.write(ndir / "META-INF" / "MANIFEST.MF",do_manifest(a.archive))
+       File.write(ndir / "META-INF" / "MANIFEST.MF",do_manifest(a.archive,Some(a.ns),Some(a.urlbase)))
        (ndir / "lib").mkdirs()
        File.write(ndir / "lib" / "preamble.en.tex",s"% preamble code for ${a.archive}")
        (ndir / "source").mkdirs()
@@ -411,7 +433,8 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                    case Some(html) =>
                      ServerResponse(html.toString,"text/html")
                    case None =>
-                     ServerResponse("Document not yet built","txt")
+                     val req = request.copy(path = List(":" + stexserver.pathPrefix,"documentTop"),query = "?archive=" + d.archive.map(_.id).getOrElse("NONE") + "&filepath=" + d.relfile.map(_.setExtension("omdoc").toString.replace('\\','/')).getOrElse("NONE"))
+                     stexserver(req)
                  } }
              }
          }

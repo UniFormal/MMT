@@ -84,17 +84,29 @@ trait OMDocHTML { this : STeXServer =>
 
   protected class OMDocState(val language: String) {
     private var id = 0
-    var lastSection : Option[Node] = None
+    private var lastSection : Option[String] = None
     def getId = {
       id += 1
       "omdocid"+ id.toString
     }
+
+    def setTitle(n : Node) = {
+      lastSection = Some(getString(n))
+    }
+
+    private def getString(n : Node) = {
+      val sb = new StringBuilder()
+      n.descendant.collect {
+        case scala.xml.Text(s) => sb ++= s
+      }
+      sb.mkString.trim
+    }
     def withTitle[A](ttl:Node)(f : Option[Node] => A): A = {
-      if (lastSection.contains(ttl)) {
+      if (lastSection.contains(getString(ttl))) {
         f(None)
       } else {
         val lasttitle = lastSection
-        lastSection = Some(ttl)
+        setTitle(ttl)
         try { f(Some(ttl)) } finally { lastSection = lasttitle }
       }
     }
@@ -151,12 +163,28 @@ trait OMDocHTML { this : STeXServer =>
   private def documentBody(d: Document)(implicit state: OMDocState): NodeSeq = {
     d.getDeclarations.flatMap {
       case mr: MRef if mr.target.parent == d.path =>
-        <span></span> // TODO
+        controller.getO(mr.target) match {
+          case Some(t : Theory) if t.getDeclarations.nonEmpty =>
+            collapsible(false, true){<b>Document Elements</b>}{
+              doModuleBody(t)
+            }
+          case _ =>
+            <span></span>
+        }
       case dr: DRef =>
         //doInputref(dr.target,lang)
         documentSection(dr.target)
+      case d : Document =>
+        documentSection(d)
       case m: MRef =>
-        moduleInner(m.target)
+        controller.getO(m.target) match {
+          case Some(t:Theory) if getLanguage(t).isDefined =>
+            <span></span>
+          case Some(t : Theory) =>
+            moduleInner(t)
+          case _ =>
+            moduleInner(m.target)
+        }
       case o =>
         <div style="width:100%">TODO: {o.getClass} </div>
     }
@@ -177,64 +205,6 @@ trait OMDocHTML { this : STeXServer =>
     val docpath = getDocPath(ns.toString, t.path.module.name)
     <div><h2>Module {docpath.map(doLink(_)(<span>{ns}</span>)).getOrElse(<span>ns</span>)
       }?{t.name}</h2><hr/>{doModuleBody(t)}</div>
-
-    /*
-    def doDecl(d: Declaration): NodeSeq = d match {
-      case Include(i) => Nil
-      case c: Constant =>
-        doBlock(<span>
-          <b>Term</b>{c.df.map(df => xhtmlPresenter.asXML(df, Some(c.path $ DefComponent))).getOrElse()}
-        </span>) {
-          <span>Inferred Type
-            {c.tp.map(tp => xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))).getOrElse("(None)")}
-          </span>
-        }
-      case nm: NestedModule =>
-        nm.module.getPrimitiveDeclarations.flatMap(doDecl)
-      case o =>
-        Seq(<div style="width:100%">TODO:
-          {o.getClass}
-        </div>)
-    }
-
-    controller.getO(mp) match {
-      case Some(t: Theory) if this.getLanguage(t).isDefined => doBlock(
-        <b>
-          <span>Language Module
-            {t.path.name}
-            for</span> <a href={doLink(t.path, lang)} style="color:blue">?
-          {t.path.parent.last}
-        </a>
-        </b>
-      ) {
-        <div style="width:100%">
-          {def getIncls(t: Theory): List[MPath] =
-          t.getIncludesWithoutMeta.tail ::: t.getPrimitiveDeclarations.collect { case nm: NestedModule => getIncls(nm.module.asInstanceOf[Theory]) }.flatten
-
-        val includes = getIncls(t)
-        if (includes.nonEmpty) {
-          <div style="width:100%">
-            <b>Uses</b>{includes.map(p => <span style="display:inline">
-            <a href={doLink(p, lang)} style="color:blue">?
-              {p.name.toString}
-            </a>
-          </span>)}
-          </div>
-        } else <span/>}{t.getPrimitiveDeclarations.flatMap(doDecl)}
-        </div>
-      }
-      case Some(t: Theory) => doBarBlock(<span>Module
-        <a href={doLink(mp, lang)} style="color:blue">
-          {mp.toString}
-        </a>
-      </span>) {
-        doModuleBody(t, lang)
-      }
-      case _ => doBarBlock(<span>Module
-        {mp.toString}
-      </span>)(<span>Theory not found</span>)
-    }
-     */
   }
 
   private def moduleInner(path : MPath)(implicit state: OMDocState): NodeSeq = {
@@ -250,7 +220,14 @@ trait OMDocHTML { this : STeXServer =>
     if (getLanguage(t).isDefined) return {<span>TODO language module</span>}
     collapsible() { doLink(t.path) {
         <b>Module {t.name.toString}</b>
-    }}{doModuleBody(t)}
+    }}{<div>
+      {doModuleBody(t)}
+      {controller.getO(t.path.toDPath ? state.language) match {
+        case Some(t: Theory) => collapsible(false, true)
+          {<b>Document Elements</b>}{doModuleBody(t)}
+        case _ => <span></span>
+      }}</div>
+    }
   }
 
   private def doModuleBody(theory: Theory)(implicit state: OMDocState): NodeSeq = <div>
@@ -321,6 +298,8 @@ trait OMDocHTML { this : STeXServer =>
     d match {
       case c : Constant if c.metadata.getValues(ModelsOf.sym).nonEmpty =>
         <span>TODO: Math Structure</span>
+      case c : Constant if c.rl.exists(_.contains("mmt_term")) =>
+        doTerm(c)
       case c : Constant => doSymbol(c)
       case _ => <span>TODO: {d.getClass.toString} {d.path}</span>
     }
@@ -336,7 +315,11 @@ trait OMDocHTML { this : STeXServer =>
         lazy val header = //<span style="display:inline;">Symbol {symbolsyntax(c)}<img src="/stex/guidedtour.svg" height="30px" style="vertical-align:middle;"></img></span>
           <table style="width:calc(100% - 16.53px);vertical-align:middle;display:inline-table;"><tr>
             <td style="text-align:left;"><span style="display:inline;">Symbol {symbolsyntax(c)}</span></td>
-            <td class="vollki-guided-tour" style="text-align:right;"><a href={"/:vollki?path=" + c.path.toString + "&lang=" + state.language} target="_blank" style="pointer-events:all;color:blue"><img src="/stex/guidedtour.svg" height="30px" style="vertical-align:middle;padding-right:5px;padding-bottom:5px"></img></a></td>
+            <td class="vollki-guided-tour" style="text-align:right;">
+              <a href={"/:vollki?path=" + c.path.toString + "&lang=" + state.language} target="_blank" style="pointer-events:all;color:blue">
+                <img src="/stex/guidedtour.svg" height="30px" title="Guided Tour" style="vertical-align:middle;padding-right:5px"></img>
+              </a>
+            </td>
           </tr></table>
         (c.tp,c.df,getNotationsC(c)) match {
           case (None,None,Nil) => fakeCollapsible(true){header}
@@ -357,6 +340,25 @@ trait OMDocHTML { this : STeXServer =>
     (c.df, getNotationsC(c)) match {
       case (None, Nil) => fakeCollapsible(true) {header}
       case _ => collapsible(false, true) {header} {symbolTable(c,dotype = false)}
+    }
+  }
+
+  private def doTerm(c: Constant)(implicit state: OMDocState): NodeSeq = {
+    lazy val header = <span style="display:inline;">{c.df match {
+        case Some(df) =>
+            <math xmlns={HTMLParser.ns_mml}>
+              {present(xhtmlPresenter.asXML(df, Some(c.path $ DefComponent)))}
+            </math>
+        case _ => <span>(Term missing)</span>
+      }}
+    </span>
+    c.tp match {
+      case None => fakeCollapsible(true) {header}
+      case Some(tp) => collapsible(false, true) {header} {
+        <span>Inferred Type: <math xmlns={HTMLParser.ns_mml}>{
+          present(xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent)))
+        }</math></span>
+      }
     }
   }
 

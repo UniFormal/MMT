@@ -15,7 +15,7 @@ import scala.collection.mutable
 
 trait ExportExtension { self : STeXServer =>
 
-  private val default_remote = "https://building.beta.vollki.kwarc.info/:sTeX/"
+  private val default_remote = "https://stexmmt.mathhub.info/:sTeX/"
 
   private class ExportState(val archive:Archive,val dir:File) {
     val dones_frag = mutable.Set.empty[GlobalName]

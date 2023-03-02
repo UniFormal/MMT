@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{ExampleRelational, ExportExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
+import info.kwarc.mmt.stex.Extensions.{Definienda, ExampleRelational, ExportExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
 import info.kwarc.mmt.stex.lsp.{MathHubServer, RemoteLSP, STeXLSPServer, SearchResultServer}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, VollKi}
@@ -29,6 +29,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
     controller.extman.addExtension(NotationExtractor)
     controller.extman.addExtension(SymdocRelational)
     controller.extman.addExtension(ExampleRelational)
+    controller.extman.addExtension(Definienda)
     controller.extman.addExtension(new MathStructureFeature)
     /*addExtension(DocumentExtension)
     addExtension(FragmentExtension)
@@ -60,7 +61,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
-      case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css") =>
+      case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css" | "sections" | "definienda") =>
         documentRequest(request)
       case Some("omdoc" | "omdocfrag" | "omdocuri" | "omdoccss") =>
         omdocRequest(request)

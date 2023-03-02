@@ -1,12 +1,13 @@
 package info.kwarc.mmt.stex.Extensions
 
-import info.kwarc.mmt.api.{ContentPath, GetError, GlobalName, MPath, Path, RuleSet, StructuralElement}
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, ObjectChecker}
+import info.kwarc.mmt.api.{ContentPath, DPath, GetError, GlobalName, MPath, NamespaceMap, Path, RuleSet, StructuralElement}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.{HasMetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{Context, OMA, OMFOREIGN, OMID, OMS, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
-import info.kwarc.mmt.api.opaque.OpaqueXML
+import info.kwarc.mmt.api.opaque.{OpaqueChecker, OpaqueElement, OpaqueElementInterpreter, OpaqueXML}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.stex.{SHTML, STeXServer}
 import info.kwarc.mmt.stex.rules.{IntLiterals, RulerRule, StringLiterals}
@@ -392,4 +393,21 @@ object ExampleRelational extends RelationalExtractor {
       }
     case _ =>
   }
+}
+
+object Definienda extends OpaqueElementInterpreter with OpaqueChecker {
+  case class Def(override val parent:DPath,id : String,fors:List[GlobalName]) extends OpaqueXML(parent,"definiendum",
+    <df id={id} fors={fors.map(_.toString).mkString(", ")}/>,Nil)
+  override type OE = Def
+
+  /** the format of [[OpaqueElement]]s this can interpret */
+  override def format: String = "definiendum"
+
+  /** constructs an [[OpaqueElement]] from a raw string */
+    import info.kwarc.mmt.api.utils.xml._
+  override def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq): OE = nodes.head match {
+    case n @ <df/> => Def(parent,attr(n,"id"),attr(n,"fors").split(", ").map(Path.parseS(_)).toList)
+  }
+
+  override def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe: OpaqueElement)(implicit ce: CheckingEnvironment): Unit = {}
 }

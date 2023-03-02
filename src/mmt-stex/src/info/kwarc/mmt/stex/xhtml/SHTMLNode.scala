@@ -153,6 +153,7 @@ case class SHTMLDocument(path : DPath, orig:HTMLNode) extends SHTMLNode(orig) wi
         val tm = state.bindings.term
         //al num = state.bindings.toNum(state.server.ctrl)
         d.metadata.update(LateBinding.sym,tm)
+        state.closeDoc
       }
     }
   }
@@ -959,7 +960,7 @@ case class SHTMLSection(orig: HTMLNode) extends SHTMLNode(orig,Some("section")) 
       case s : SemanticState =>
         val nd = new Document(s.doc.path / this.hashCode().toHexString, SectionLevel)
         s.add(nd)
-        s.docs ::= nd
+        s.openDoc(nd)
       case _ =>
     }
     state.doc
@@ -972,7 +973,7 @@ case class SHTMLSection(orig: HTMLNode) extends SHTMLNode(orig,Some("section")) 
     sstate match {
       case Some(s : SemanticState) =>
         title.foreach(t => s.addTitle(t) )
-        s.docs = s.docs.tail
+        s.closeDoc
       case _ =>
     }
   }

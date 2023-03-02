@@ -2,14 +2,15 @@ package info.kwarc.mmt.stex.Extensions
 
 import info.kwarc.mmt.api.{DPath, DefComponent, GlobalName, MPath, NamespaceMap, Path, StructuralElement, TypeComponent, presentation}
 import info.kwarc.mmt.api.archives.RedirectableDimension
-import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.documents.{DRef, Document}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{OMA, OMID, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.opaque.OpaqueXML
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
+import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse, WebQuery}
-import info.kwarc.mmt.stex.rules.IntLiterals
+import info.kwarc.mmt.stex.rules.{IntLiterals, StringLiterals}
 import info.kwarc.mmt.stex.vollki.FullsTeXGraph
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.{ErrorReturn, SHTML, STeXServer}
@@ -88,6 +89,12 @@ trait SHTMLDocumentServer { this : STeXServer =>
         ServerResponse(css(request.query) + "\n" + MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"),"text/css")
       case Some("variable") =>
         ServerResponse(doVariable.toString.trim,"text/html")
+      case Some("sections") =>
+        val ret = doSections
+        ServerResponse.JsonResponse(ret)
+      case Some("definienda") =>
+        val ret = doDefinienda
+        ServerResponse.JsonResponse(ret)
       case _ =>
         throw ErrorResponse("Unknown path: " + request.path.mkString)
     }
@@ -109,6 +116,63 @@ trait SHTMLDocumentServer { this : STeXServer =>
         retstr
     }
   }
+
+  def doSections(implicit dp:DocParams) : JSON = {
+    (dp.archive, dp.filepath) match {
+      case (Some(a),Some(fp)) =>
+        val nm = fp.replace(".xhtml", ".omdoc").replace(".tex", ".omdoc").split("/")
+        val dp = DPath(nm.foldLeft(a.narrationBase)((u, s) => u / s))
+        controller.getO(dp) match {
+          case Some(d : Document) =>
+            doSections(d)
+          case _ => JSONObject()
+        }
+      case _ => JSONObject()
+    }
+  }
+
+  def doDefinienda(implicit dp: DocParams): JSON = {
+    (dp.archive, dp.filepath) match {
+      case (Some(a), Some(fp)) =>
+        val nm = fp.replace(".xhtml", ".omdoc").replace(".tex", ".omdoc").split("/")
+        val dp = DPath(nm.foldLeft(a.narrationBase)((u,s) => u / s))
+        controller.getO(dp) match {
+          case Some(d: Document) =>
+            JSONArray(doDefinienda(d).distinct:_*)
+          case _ => JSONArray()
+        }
+      case _ => JSONArray()
+    }
+  }
+
+  private def doDefinienda(d: Document): List[JSON] = {
+    d.getPrimitiveDeclarations.flatMap {
+      case d: Document => doDefinienda(d)
+      case dr: DRef => controller.getO(dr.target) match {
+        case Some(d: Document) => doDefinienda(d)
+        case _ => Nil
+      }
+      case Definienda.Def(_, id, ls) => List(JSONObject(
+          ("id", JSONString("sref@" + id)),
+          ("symbols", JSONArray(ls.map { p => JSONString(p.toString) }: _*))
+        ))
+      case _ => Nil
+    }
+  }
+
+  private def doSections(d : Document) : JSON = JSONObject(
+    ("title",JSONString(getTitle(d).map(_.toString()).getOrElse(d.name.toString))),
+    ("children",JSONArray(
+      d.getPrimitiveDeclarations.flatMap {
+        case d : Document => Some(doSections(d))
+        case dr : DRef => controller.getO(dr.target) match {
+          case Some(d : Document) => Some(doSections(d))
+          case _ => None
+        }
+        case _ => None
+      } :_*
+    ))
+  )
 
   protected case class PresentationRule(key: String, newobj: (String, HTMLParser.ParsingState, HTMLNode) => Option[SHTMLNode], override val priority: Int = 0) extends SHTMLRule(priority) {
     def apply(s: HTMLParser.ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
