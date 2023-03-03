@@ -21,8 +21,7 @@ trait OMDocHTML { this : STeXServer =>
   protected def omdocRequest(request: ServerRequest): ServerResponse = {
     request.path.lastOption match {
       case Some("omdoc") =>
-        val qr = request.query.replace("&amp;","&")
-        qr match {
+        request.query match {
           case "" =>
             ServerResponse("Empty query", "txt")
           case s =>
@@ -60,11 +59,10 @@ trait OMDocHTML { this : STeXServer =>
             }
         }
       case Some("omdocfrag") =>
-        val qr = request.query.replace("&amp;", "&")
-        val (comp, lang) = qr.split('&') match {
+        val (comp, lang) = request.query.split('&') match {
           case Array(a) => (a, None)
           case Array(a, l) if l.startsWith("language=") => (a, if (l.drop(9).isEmpty) None else Some(l.drop(9)))
-          case _ => (qr, None)
+          case _ => (request.query, None)
         }
         val path = Path.parse(comp)
         implicit val state = new OMDocState(lang.getOrElse("en"))
@@ -317,7 +315,7 @@ trait OMDocHTML { this : STeXServer =>
           <table style="width:calc(100% - 16.53px);vertical-align:middle;display:inline-table;"><tr>
             <td style="text-align:left;"><span style="display:inline;">Symbol {symbolsyntax(c)}</span></td>
             <td class="vollki-guided-tour" style="text-align:right;">
-              <a href={"/:vollki?path=" + c.path.toString + "&lang=" + state.language} target="_blank" style="pointer-events:all;color:blue">
+              <a href={scala.xml.Unparsed("/:vollki?path=" + c.path.toString + "&lang=" + state.language)} target="_blank" style="pointer-events:all;color:blue">
                 <img src="/stex/guidedtour.svg" height="30px" title="Guided Tour" style="vertical-align:middle;padding-right:5px"></img>
               </a>
             </td>
@@ -464,7 +462,7 @@ trait OMDocHTML { this : STeXServer =>
   }
 
   private def doLink(p: Path)(txt: => NodeSeq)(implicit state: OMDocState) =
-    <a href={s"/:${this.pathPrefix}/omdoc?${p.toString}&language=${state.language}"} style="color:blue;">{txt}</a>
+    <a href={scala.xml.Unparsed(s"/:${this.pathPrefix}/omdoc?${p.toString}&language=${state.language}")} style="color:blue;">{txt}</a>
 
   private def collapsible(expanded:Boolean = true,small:Boolean=false)(title: => NodeSeq)(content: =>NodeSeq)(implicit state:OMDocState) = {
     val id = state.getId

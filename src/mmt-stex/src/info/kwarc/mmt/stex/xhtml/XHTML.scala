@@ -223,7 +223,7 @@ object HTMLParser {
               else if (namespaces.values.toList.contains(ns))
                 " " + namespaces.toList.collectFirst{case p if p._2 == ns => p._1}.get + ":"
               else " " + ns + ":"
-              } + key + "=\"" + value.replace("\"","\'").replace("&","%26") + "\""
+              } + key + "=\"" + value.replace("\"","\'")/*.replace("&","%26")*/ + "\""
           }.mkString + {
             if (n._sourceref.isDefined && !n._parent.exists(_.sourceref == n._sourceref)) " " + "shtml:sourceref=\"" + n._sourceref.get.toString + "\"" else ""
           } + {

@@ -23,7 +23,8 @@ class RemoteLSP extends Extension {
     RedirectableDimension("relational"),
     RedirectableDimension("bin"),
     RedirectableDimension("buildresults"),
-    RedirectableDimension("export")
+    RedirectableDimension("export"),
+    RedirectableDimension (".img")
   )
   lazy val searcher : Searcher = {
     new Searcher(controller)

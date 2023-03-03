@@ -157,7 +157,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      s"""
         |id:$s
         |ns:${ns.getOrElse("http://mathhub.info/"+s)}
-        |narration-base:$ns
+        |narration-base:${ns.getOrElse("http://mathhub.info/"+s)}
         |url-base:${urlbase.getOrElse("https://stexmmt.mathhub.info/:sTeX")}
         |format:stex
         |""".stripMargin

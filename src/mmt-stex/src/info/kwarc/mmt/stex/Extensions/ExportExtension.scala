@@ -117,11 +117,12 @@ trait ExportExtension { self : STeXServer =>
         if (n.label == "img") {
           n.plain.attributes.get((HTMLParser.ns_html, "src")) match {
             case Some(s) if s.startsWith("shtml/") =>
-              val fn = s.drop(6) + ".png"
-              n.plain.attributes((HTMLParser.ns_html, "src")) = "img/" + fn
-              val target = state.dir / "img" / fn
+              val fn = s.drop(6).split("/").init.mkString("/")
+              val f = s.split("/")(1).last + ".png"
+              n.plain.attributes((HTMLParser.ns_html, "src")) = "img/" + f
+              val target = state.dir / "img" / f
               if (!target.exists()) {
-                val orig = RusTeX.mh.up / ".img" / fn
+                val orig = RusTeX.mh.up / fn / ".img" / fn
                 if (orig.exists()) {
                   target.createNewFile()
                   val out = new FileOutputStream(target.toString)

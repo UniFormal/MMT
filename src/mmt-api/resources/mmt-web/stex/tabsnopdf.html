@@ -78,10 +78,10 @@
     </nav>
     <figure>
         <div id="htmlframe" class="htmltab tab">
-            <iframe src="" id="htmliframe"></iframe>
+            <iframe src="" id="htmliframe" onload="this.contentDocument.location.hash=location.hash"></iframe>
         </div>
         <div id="omdocframe" class="omdoctab tab">
-            <iframe src="" id="omdociframe"></iframe>
+            <iframe src="" id="omdociframe" onload="this.contentDocument.location.hash=location.hash"></iframe>
         </div>
     </figure>
     <script>

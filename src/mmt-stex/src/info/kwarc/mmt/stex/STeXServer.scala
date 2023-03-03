@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.Presenter
@@ -70,11 +70,17 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
       case Some("browser") =>
         browserRequest(request)
       case Some("img") =>
-        val f = RusTeX.mh.up / ".img" / (request.query + ".png")
-        if (f.exists()) {
-          ServerResponse.FileResponse(f)
+        val fp = request.query.split("/").init.mkString("/")
+        controller.backend.getArchive(fp) match {
+          case Some(a) =>
+            val f = a / RedirectableDimension(".img") / (request.query.split("/").last + ".png")
+            if (f.exists()) {
+              ServerResponse.FileResponse(f)
+            }
+            else ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+          case _ =>
+            ServerResponse("Image file " + request.query + ".png not found", "text/plain")
         }
-        else ServerResponse("Image file " + request.query + ".png not found", "text/plain")
       case Some("getupdates"|"allarchives"|"allarchfiles"|"archfile"|"search") =>
         controller.extman.get(classOf[RemoteLSP]).headOption match {
           case Some(remote) =>

@@ -426,7 +426,7 @@ object TeXRules {
   }
 
   val allrules : List[TeXRule] = List(Begin,End,
-    VerbatimEnvRule("verbatim"),VerbatimEnvRule("lstlisting"),
+    VerbatimEnvRule("verbatim"),VerbatimEnvRule("lstlisting"),VerbatimEnvRule("stexcode"),
     InlineVerbRule("lstinline"),InlineVerbRule("verb"),InlineVerbRule("stexinline"),
     lstdefinelanguage,url,makeatletter,makeatother,explsyntaxon,explsyntaxoff,
     SkipCommand("newcommand","noon"),

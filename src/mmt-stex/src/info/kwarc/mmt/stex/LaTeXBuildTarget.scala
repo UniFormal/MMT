@@ -96,7 +96,7 @@ trait XHTMLParser extends TraversingBuildTarget {
       throw t
   }
 
-  def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
+  def buildFileActually(archive:Archive,inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
     RusTeX.initialize
     var errored = false
     log("building " + inFile)
@@ -137,7 +137,7 @@ trait XHTMLParser extends TraversingBuildTarget {
         e.printStackTrace()
         throw e
     }
-    val imgdir = RusTeX.mh.up / ".img"
+    val imgdir = archive / RedirectableDimension(".img")
     imgdir.mkdirs()
     doc.get("img")()().foreach { n =>
       n.plain.attributes.get((HTMLParser.ns_html,"src")) match {
@@ -153,7 +153,7 @@ trait XHTMLParser extends TraversingBuildTarget {
           val out = new FileOutputStream(file.toString)
           out.write(bs)
           out.close()
-          n.plain.attributes((HTMLParser.ns_html,"src")) = "shtml/" + md5str
+          n.plain.attributes((HTMLParser.ns_html,"src")) = "shtml/" + archive.id + "/" + md5str
         case _ =>
       }
     }
@@ -174,7 +174,7 @@ class LaTeXToHTML extends XHTMLParser {
 
   override def buildFile(bf: BuildTask): BuildResult = {
     val state = new HTMLParser.ParsingState(controller,stexserver.importRules)
-    val (errored,_,doc) = buildFileActually(bf.inFile,bf.outFile,state,bf.errorCont)
+    val (errored,_,doc) = buildFileActually(bf.archive,bf.inFile,bf.outFile,state,bf.errorCont)
     log("Finished: " + bf.inFile)
     if (errored) BuildFailure(Nil,List(PhysicalDependency(bf.outFile)))
     else BuildSuccess(Nil,List(PhysicalDependency(bf.outFile)))
@@ -262,7 +262,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     val outFile : File = (bt.archive / RedirectableDimension("xhtml") / bt.inPath).setExtension("xhtml")
     val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     outFile.up.mkdirs()
-    val (errored,_,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
+    val (errored,_,_) = buildFileActually(bt.archive,bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
     index(state.doc)
     log("Finished: " + bt.inFile)
@@ -461,7 +461,7 @@ class FullsTeX extends Importer with XHTMLParser {
       buildSingle(bt,("STEX_USESMS","true"))
       bt.outFile.delete()
       ilog("    -       omdoc " + bt.inPath)
-      val (errored,texerrored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
+      val (errored,texerrored,_) = buildFileActually(bt.archive,bt.inFile, outFile, state, bt.errorCont)
       val npdffile = (bt.archive / RedirectableDimension("export") / "pdf") / bt.inPath.setExtension("pdf").toString
       File.copy(pdffile,npdffile,true)
       pdffile.delete()

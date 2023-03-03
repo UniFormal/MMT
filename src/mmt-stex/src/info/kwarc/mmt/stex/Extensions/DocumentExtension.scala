@@ -361,99 +361,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   def doDeclHeader(c: Constant)(implicit dp:DocParams) = {
     val state = new OMDocState(dp.language.getOrElse("en"))
     doSymbol(c)(state).toString()
-  }/*{
-    <div>
-      <table>
-        <tr>
-          <td>
-            <font size="+2">
-              {" ☞ "}
-            </font> <code>
-            {c.path.toString}
-          </code>
-          </td> <td>
-            <a href={"/:vollki?path=" + c.path.toString + "&lang=" + dp.language.getOrElse("en")} target="_blank" style="pointer-events:all;color:blue">
-              <img src="/stex/guidedtour.svg" height="30px"></img>
-            </a>
-        </td>
-        </tr>
-      </table> <hr/>
-      <table>
-        {this.getMacroName(c) match {
-        case None => <tr>
-          <td></td> <td></td>
-        </tr>
-        case Some(s) => <tr>
-          <td style="padding:3px">
-            <b>TeX Macro:</b>
-          </td> <td>
-            <code>
-              {"\\" + s}
-            </code>
-          </td>
-        </tr>
-      }}{def td[A](a: A) = <td style="border:1px solid;padding:3px">
-        {a}
-      </td>
-
-      this.getNotations(c) match {
-        case Nil => <tr>
-          <td></td> <td></td>
-        </tr>
-        case ls =>
-          <tr>
-            <td style="padding-right:3px">
-              <b>Notations:</b>
-            </td> <td>
-            <table>
-              <tr>
-                {td("identifier")}{td("notation")}{td("operator notation")}{td("in module")}
-              </tr>{ls.map(n =>
-              <tr>
-                {td(n.id match {
-                case "" => "(None)"
-                case s => s
-              })}{td(<math xmlns="http://www.w3.org/1998/Math/MathML">
-                {this.htmlpres.doNotation(n.notation.plain.node)}
-              </math>)}{td(n.op match {
-                case Some(n) => <math xmlns="http://www.w3.org/1998/Math/MathML">
-                  {this.htmlpres.doNotation(n.plain.node)}
-                </math>
-                case None => <span></span>
-              })}{td(if (!n.in.exists(_.path == c.parent)) n.in.map(_.path.toString).getOrElse("(elsewhere)") else "(here)")}
-              </tr>
-            )}
-            </table>
-          </td>
-          </tr>
-      }}{c.tp match {
-        case None => <tr>
-          <td></td> <td></td>
-        </tr>
-        case Some(tp) =>
-          <tr>
-            <td style="padding:3px">
-              <b>Type:</b>
-            </td> <td>
-            {this.xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))}
-          </td>
-          </tr>
-      }}{c.df match {
-        case None => <tr>
-          <td></td> <td></td>
-        </tr>
-        case Some(df) =>
-          <tr>
-            <td style="padding:3px">
-              <b>Definiens:</b>
-            </td> <td>
-            {this.xhtmlPresenter.asXML(df, Some(c.path $ DefComponent))}
-          </td>
-          </tr>
-      }}
-      </table>
-    </div>
-  }*/
+  }
 
   def doVariable(implicit dp: DocParams) = {
     val htm = getVariable
@@ -831,6 +739,28 @@ trait SHTMLDocumentServer { this : STeXServer =>
         None
       }
     }
+    map("sref") = PresentationRule("sref",(s,_,node) => Some(new SHTMLNode(node) {
+      override def copy: HTMLNode = this.plain.copy
+      val id = "sref@" + s
+      val in = this.plain.attributes.get((HTMLParser.ns_shtml,"srefin")).map(s => File(s.replace(".sref",".tex")))
+
+      override def onAdd: Unit = {
+        super.onAdd
+        in match {
+          case Some(file) =>
+            controller.backend.resolvePhysical(file) match {
+              case Some((a,fp)) =>
+                /*val ch = this.plain.children TODO needs fixing!
+                val na = this.add(<a href={
+                  scala.xml.Unparsed("/:" + pathPrefix + "/document?archive=" + a.id + "&filepath=" + fp.mkString("/").replace(".tex",".xhtml") + "#" + id)
+                 } style="color:blue;cursor:pointer"></a>)
+                ch.foreach(na.add)*/
+              case _ =>
+            }
+          case _ =>
+        }
+      }
+    }))
     map("inputref") = PresentationRule("inputref",(v,_,node) => {
       val dp = Path.parseD((if (v.endsWith(".tex")) {
         v.dropRight(4)
