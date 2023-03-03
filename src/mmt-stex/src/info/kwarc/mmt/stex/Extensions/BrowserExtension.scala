@@ -14,6 +14,7 @@ trait SHTMLBrowser { this : STeXServer =>
         var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
         html = html.replace("BASE_URL_PLACEHOLDER", "")
         html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "true")
+        html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
         ServerResponse(html, "html")
       case _ =>

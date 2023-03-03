@@ -46,6 +46,7 @@ class SearchResultServer extends Extension {
       html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + server.pathPrefix + "/searchresultI?" + request.query)
       html = html.replace("BASE_URL_PLACEHOLDER", "")
       html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
+      html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
       html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + server.pathPrefix + "/css?" + request.parsedQuery("archive").getOrElse(""))
       ServerResponse(html, "text/html")
     case Some("searchresultI") =>

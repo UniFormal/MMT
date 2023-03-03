@@ -64,12 +64,14 @@ trait SHTMLDocumentServer { this : STeXServer =>
         html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/documentTop?" + request.query)
         html = html.replace("BASE_URL_PLACEHOLDER", "")
         html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
+        html = html.replace("NO_FRILLS_PLACEHOLDER", "FALSE")
         html = html.replace("CONTENT_CSS_PLACEHOLDER","/:" + this.pathPrefix + "/css?" + request.parsedQuery("archive").getOrElse(""))
         ServerResponse(html, "text/html")
       case Some("symbol") =>
         var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
         html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/declaration?" + request.query)
         html = html.replace("BASE_URL_PLACEHOLDER", "")
+        html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
         html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
         ServerResponse(html, "text/html")
@@ -86,7 +88,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case Some("declaration") =>
         doDeclaration
       case Some("css") =>
-        ServerResponse(css(request.query) + "\n" + MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"),"text/css")
+        ServerResponse(css(request.query),"text/css")
       case Some("variable") =>
         ServerResponse(doVariable.toString.trim,"text/html")
       case Some("sections") =>
@@ -146,7 +148,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   private def doDefinienda(d: Document): List[JSON] = {
-    d.getPrimitiveDeclarations.flatMap {
+    d.getDeclarationsElaborated.flatMap {
       case d: Document => doDefinienda(d)
       case dr: DRef => controller.getO(dr.target) match {
         case Some(d: Document) => doDefinienda(d)
@@ -161,9 +163,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   private def doSections(d : Document) : JSON = JSONObject(
-    ("title",JSONString(getTitle(d).map(_.toString()).getOrElse(d.name.toString))),
+    ("title",JSONString(getTitle(d).map(_.toString()).getOrElse(""))),
     ("children",JSONArray(
-      d.getPrimitiveDeclarations.flatMap {
+      d.getDeclarationsElaborated.flatMap {
         case d : Document => Some(doSections(d))
         case dr : DRef => controller.getO(dr.target) match {
           case Some(d : Document) => Some(doSections(d))

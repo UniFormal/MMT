@@ -155,6 +155,7 @@ class SyncedDocument {
     add(new Line(curro, currline.toString(), ""))
   }
   def set(s : String) = this.synchronized {
+    lines = Nil
     doLines(s,lines ::= _)
     lines = lines.reverse
   }

@@ -35,6 +35,7 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
         html = html.replace("BASE_URL_PLACEHOLDER", "")
         html = html.replace("CONTENT_URL_PLACEHOLDER", "")
         html = html.replace("USER_MODEL_PLACEHOLDER", "")
+        html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
         html = html.replace("LANGUAGE_PLACEHOLDER", language)
         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + server.pathPrefix + "/css?None")
         ServerResponse(html, "text/html")

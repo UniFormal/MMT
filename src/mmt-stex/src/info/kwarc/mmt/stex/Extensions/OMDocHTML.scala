@@ -20,8 +20,6 @@ trait OMDocHTML { this : STeXServer =>
 
   protected def omdocRequest(request: ServerRequest): ServerResponse = {
     request.path.lastOption match {
-      case Some("omdoccss") =>
-        ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"),"text/css")
       case Some("omdoc") =>
         val qr = request.query.replace("&amp;","&")
         qr match {
@@ -47,15 +45,17 @@ trait OMDocHTML { this : STeXServer =>
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + ns + "&language=" + lang)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
+              html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
               html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
-              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/omdoccss")
+              html = html.replace("CONTENT_CSS_PLACEHOLDER", "")
               ServerResponse(html, "text/html")
             } else {
               var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
               html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/omdocfrag?" + s)
               html = html.replace("BASE_URL_PLACEHOLDER", "")
+              html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
               html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
-              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/omdoccss")
+              html = html.replace("CONTENT_CSS_PLACEHOLDER", "")
               ServerResponse(html, "text/html")
             }
         }
@@ -185,6 +185,7 @@ trait OMDocHTML { this : STeXServer =>
           case _ =>
             moduleInner(m.target)
         }
+      case _ : Definienda.Def => <span></span>
       case o =>
         <div style="width:100%">TODO: {o.getClass} </div>
     }
@@ -378,18 +379,18 @@ trait OMDocHTML { this : STeXServer =>
   }
 
   def symbolTable(c: Constant, donotations:Boolean=true, dotype:Boolean=true)(implicit state: OMDocState) =
-    <table class="symbol-table">{c.df match {
+    <table class="omdoc-symbol-table">{c.df match {
       case Some(df) =>
         <tr>
-          <td class="symbol-td">Definiens</td>
-          <td class="symbol-td">{xhtmlPresenter.asXML(df, Some(c.path $ DefComponent))}</td>
+          <td class="omdoc-symbol-td">Definiens</td>
+          <td class="omdoc-symbol-td">{xhtmlPresenter.asXML(df, Some(c.path $ DefComponent))}</td>
         </tr>
       case None =>
     }}{c.tp match {
       case Some(tp) if dotype =>
         <tr>
-          <td class="symbol-td">Type</td>
-          <td class="symbol-td">{xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))}</td>
+          <td class="omdoc-symbol-td">Type</td>
+          <td class="omdoc-symbol-td">{xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))}</td>
         </tr>
       case _ =>
     }}{getNotationsC(c) match {
@@ -399,11 +400,11 @@ trait OMDocHTML { this : STeXServer =>
         val ls = if (donotations) nls else nls.tail
         val arity = getArity(c).getOrElse("")
         <tr>
-          <td class="symbol-td">Notations</td> <td class="symbol-td">
-          <table class="notation-table">
+          <td class="omdoc-symbol-td">Notations</td> <td class="omdoc-symbol-td">
+          <table class="omdoc-notation-table">
             <tr>
-              <th class="notation-td">id</th>
-              <th class="notation-td">notation</th>{if (arity.nonEmpty) <th class="notation-td">operator</th>}<th class="notation-td">in module</th>
+              <th class="omdoc-notation-td">id</th>
+              <th class="omdoc-notation-td">notation</th>{if (arity.nonEmpty) <th class="omdoc-notation-td">operator</th>}<th class="omdoc-notation-td">in module</th>
             </tr>{val args = withArguments((getI, getX) => arity.map {
             case 'i' => List(<mi>{getI}</mi>)
             case 'b' => List(<mi>{getX}</mi>)
@@ -419,16 +420,16 @@ trait OMDocHTML { this : STeXServer =>
           }).toList
           ls.map { not =>
             <tr>
-              <td class="notation-td">{not.id}</td>
-              <td class="notation-td">
+              <td class="omdoc-notation-td">{not.id}</td>
+              <td class="omdoc-notation-td">
                 <math xmlns={HTMLParser.ns_mml}>{present(not.present(args))}</math>
               </td>
-              {if (arity.nonEmpty) <td class="notation-td">{
+              {if (arity.nonEmpty) <td class="omdoc-notation-td">{
                 not.op.map(n =>
                   <math xmlns={HTMLParser.ns_mml}>{n.plain.node}</math>
                 ).getOrElse(<span>(None)</span>)
               }</td>}
-              <td class="notation-td">{
+              <td class="omdoc-notation-td">{
                 not.in.map(t => doLink(t.path)(<span>{t.name}</span>)).getOrElse(<span></span>)
                 }</td>
             </tr>
@@ -467,17 +468,17 @@ trait OMDocHTML { this : STeXServer =>
 
   private def collapsible(expanded:Boolean = true,small:Boolean=false)(title: => NodeSeq)(content: =>NodeSeq)(implicit state:OMDocState) = {
     val id = state.getId
-    <div class={if (small) "collapsible collapsible-small" else "collapsible"}>
+    <div class={if (small) "omdoc-collapsible omdoc-collapsible-small" else "omdoc-collapsible"}>
       {if (expanded) <input type="checkbox" name={id} id={id} checked="checked"/>
         else <input type="checkbox" name={id} id={id}/>
       }
-      <div class="handle"><label for={id}>{title}</label></div>
-      <div class="content">{content}</div>
+      <div class="omdoc-handle"><label for={id}>{title}</label></div>
+      <div class="omdoc-content">{content}</div>
     </div>
   }
 
   private def fakeCollapsible(small: Boolean = false)(title: => NodeSeq)(implicit state: OMDocState) =
-    <div class={if (small) "fake-collapsible-small" else "fake-collapsible"}>{title}</div>
+    <div class={if (small) "omdoc-fake-collapsible-small" else "omdoc-fake-collapsible"}>{title}</div>
 
   private def present(n:NodeSeq):Node = present(n.toString())(None).plain.node
 

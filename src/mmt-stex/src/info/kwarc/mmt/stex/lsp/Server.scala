@@ -163,8 +163,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
         |""".stripMargin
 
    private val default_stex =
-     """
-       |\documentclass{stex}
+     """\documentclass{stex}
        |\libinput{preamble}
        |\begin{document}
        |% A first sTeX document
@@ -216,7 +215,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        (ndir / "META-INF").mkdirs()
        File.write(ndir / "META-INF" / "MANIFEST.MF",do_manifest(a.archive,Some(a.ns),Some(a.urlbase)))
        (ndir / "lib").mkdirs()
-       File.write(ndir / "lib" / "preamble.en.tex",s"% preamble code for ${a.archive}")
+       File.write(ndir / "lib" / "preamble.tex",s"% preamble code for ${a.archive}")
        (ndir / "source").mkdirs()
        File.write(ndir / "source" / "helloworld.tex", default_stex)
        File.write(ndir / ".gitignore",gitignore)
@@ -406,6 +405,19 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    }
 
+   override def didSave(docuri: String): Unit = documents.synchronized {
+     documents.get(docuri) match {
+       case Some(d) => d.synchronized {
+         d.file match {
+           case Some(f) if f.exists() =>
+             d._doctext.set(File.read(f))
+           case _ =>
+         }
+       }
+       case _ =>
+     }
+   }
+
    val self = this
 
    override lazy val htmlserver = Some(new ServerExtension("stexlspdocumentserver") {
@@ -414,6 +426,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
          html = html.replace("CONTENT_URL_PLACEHOLDER", (localServer / (":" + this.pathPrefix) / "geterror").toString + "?" + request.query)
          html = html.replace("BASE_URL_PLACEHOLDER", "")
+         html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
          html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?None")
          ServerResponse(html, "text/html")
        case Some("geterror") =>
@@ -429,13 +442,13 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                case None =>
                  ServerResponse("Empty Document path","txt")
                case Some(d) =>
-                 /*d.synchronized */ { d.html match {
+                 /*d.synchronized */ d.html match {
                    case Some(html) =>
                      ServerResponse(html.toString,"text/html")
                    case None =>
                      val req = request.copy(path = List(":" + stexserver.pathPrefix,"documentTop"),query = "?archive=" + d.archive.map(_.id).getOrElse("NONE") + "&filepath=" + d.relfile.map(_.setExtension("omdoc").toString.replace('\\','/')).getOrElse("NONE"))
                      stexserver(req)
-                 } }
+                 }
              }
          }
        case Some("fulldocument") =>
@@ -461,6 +474,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
              var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
              html = html.replace("CONTENT_URL_PLACEHOLDER",(localServer / (":" + this.pathPrefix) / "documentTop").toString + "?" + s )
              html = html.replace("BASE_URL_PLACEHOLDER","")
+             html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
              html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
              html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?" + s)
              ServerResponse(html, "text/html")
@@ -468,16 +482,16 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        case Some("css") =>
          request.query match {
            case "" =>
-             ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"), "text/css")
+             ServerResponse("", "text/css")
            case s =>
              self.documents.get(s) match {
                case None =>
-                 ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css"), "text/css")
+                 ServerResponse("", "text/css")
                case Some(d) =>
                  val ret = d.archive match {
                    case None => ""
                    case Some(a) =>
-                     stexserver.css(a.id) + "\n" + MMTSystem.getResourceAsString("mmt-web/stex/omdoc.css")
+                     stexserver.css(a.id)
                  }
                  ServerResponse(ret, "text/css")
              }

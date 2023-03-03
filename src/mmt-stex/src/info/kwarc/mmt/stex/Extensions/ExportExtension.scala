@@ -40,6 +40,7 @@ trait ExportExtension { self : STeXServer =>
     index = index.replace("BASE_URL_PLACEHOLDER", "")
     index = index.replace("LANGUAGE_PLACEHOLDER", "")
     index = index.replace("TOUR_ID_PLACEHOLDER", "")
+    index = index.replace("NO_FRILLS_PLACEHOLDER", "FALSE")
     index = index.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
     index = index.replace("CONTENT_CSS_PLACEHOLDER", "aux/archive.css")
 

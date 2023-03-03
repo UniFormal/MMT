@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-  <link rel="stylesheet" href="/stex/fonts.css">
   <script type="text/javascript">
     addEventListener("resize", (e) => {
       var bodyelem = document.getElementById('rustexbody');
@@ -19,7 +18,7 @@
     });
     function preloadFunc() {
       // Eg. https://mmt.beta.vollki.kwarc.info
-      window.BASE_URL = '';
+      window.BASE_URL = 'BASE_URL_PLACEHOLDER';
       // If 'SHOW_FILE_BROWSER' is set to 'TRUE', then the filebrowser is displayed and all other values are ignored.
       window.SHOW_FILE_BROWSER = 'SHOW_FILE_BROWSER_PLACEHOLDER';
       // Eg. /:sTeX/document?archive=MiKoMH/GenCS&filepath=dmath/mod/addition-function.en.xhtml
@@ -29,6 +28,8 @@
       window.TOUR_ID = 'TOUR_ID_PLACEHOLDER';
       // Eg. en
       window.LANGUAGE = 'LANGUAGE_PLACEHOLDER';
+      // Eg. If 'NO_FRILLS' is set to 'TRUE', the sidepanel etc will not be shown
+      window.NO_FRILLS = 'NO_FRILLS_PLACEHOLDER';
     }
     window.onpaint = preloadFunc();
   </script>
@@ -36,12 +37,12 @@
   <title>sTeX Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="/stex/mmt-viewer/styles.fa3cb0c23ee4b300.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.4946e0893fa5d8cd.css">
-<link rel="stylesheet" href="CONTENT_CSS_PLACEHOLDER">
+<link rel="stylesheet" href="/stex/mmt-viewer/styles.5148e7f6b6531f17.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.4946e0893fa5d8cd.css">
+  <link rel="stylesheet" href="CONTENT_CSS_PLACEHOLDER">
 </head>
 
 <body>
   <div id="root"></div>
-<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.e7ea3970f35d3a98.js" type="module"></script><script src="/stex/mmt-viewer/main.7a0578ec5536e238.js" type="module"></script></body>
+<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.e7ea3970f35d3a98.js" type="module"></script><script src="/stex/mmt-viewer/main.dc1cfdeeb022974a.js" type="module"></script></body>
 
 </html>

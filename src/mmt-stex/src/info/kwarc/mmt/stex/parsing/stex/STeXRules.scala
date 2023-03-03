@@ -1,17 +1,19 @@
 package info.kwarc.mmt.stex.parsing.stex
 
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{ComplexStep, DPath, GlobalName, Level, LocalName, MPath, Path}
+import info.kwarc.mmt.api.{ComplexStep, DPath, GlobalName, Level, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.lsp.Annotation
 import info.kwarc.mmt.stex.lsp.{SemanticHighlighting, sTeXDocument}
 import info.kwarc.mmt.stex.parsing.{Begin, End, Environment, EnvironmentRule, Group, Grouped, LaTeXParseError, LaTeXParser, MacroApplication, MacroRule, OptionalArgument, ParseState, PlainMacro, PlainText, RuleContainer, Single, SkipCommand, TeXRule, TeXRules, TeXTokenLike}
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
 
 import scala.collection.mutable
+import scala.util.Try
 
 object STeXRules {
   def allRules(dict: Dictionary) : List[TeXRule] = List(
     ModuleRule(dict),ProblemRule(dict),UseModuleRule(dict),UseStructureRule(dict),
+    SymuseRule(dict),
     SymrefRule("symref",dict),SymrefRule("sr",dict),
     SymnameRule("symname",dict,false),SymnameRule("Symname",dict,true),
     SymnameRule("sn", dict, false), SymnameRule("Sn", dict, true),
@@ -84,7 +86,14 @@ case class ModuleRule(dict : Dictionary) extends STeXRule with EnvironmentRule {
     val lang = opts.flatMap(_.consumeStr("lang")).getOrElse(dict.getLanguage)
     val sig = opts.flatMap(_.consumeStr("sig")).getOrElse("")
     opts.foreach(_.drop("title","deprecate","creators","contributors","id","srccite"))
-    val mp = dict.getMPath(name)
+    val mp = opts.flatMap(_.consumeStr("ns")) match {
+      case Some(s) =>
+        Try(Path.parseD(s,NamespaceMap.empty)).toOption match {
+          case Some(dp) => dp ? LocalName.parse(name)
+          case _ => dict.getMPath(name)
+        }
+      case _ => dict.getMPath(name)
+    }
     val macr = new STeXModule(parser.trigger,mp,meta,lang,sig)
     //if (deprecation != "") macr.addError("Deprecated: Use " + deprecation + " instead",lvl=Level.Warning)
     dict.openModule(macr)
@@ -631,6 +640,15 @@ case class SymrefRule(name:String,dict:Dictionary) extends SymRefRuleLike with M
     getSymbolsAndThen{(syms,reftks) =>
       val txt = parser.readArgument
       new SymrefApp(dict,syms,{ txt.asname },true,reftks)
+    }
+  }
+}
+case class SymuseRule(dict:Dictionary) extends SymRefRuleLike with MacroRule with NonFormalRule {
+  val name = "symuse"
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    parser.readOptAgument
+    getSymbolsAndThen{(syms,reftks) =>
+      new SymrefApp(dict,syms,{ "" },true,reftks)
     }
   }
 }

@@ -65,7 +65,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
 
   var html:Option[HTMLNode] = None
 
-  def buildFull() = Future {
+  def buildFull() = Future { synchronized {
     client.resetErrors(uri)
     server.withProgress(uri + "-fullstex","Building " + uri.split('/').last, "full") { update =>
       val target = server.controller.extman.getOrAddExtension(classOf[FullsTeX],"fullstex")
@@ -88,18 +88,18 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
       quickparse
       ((),"Done")
     }
-  }
+  }}
 
-  def buildHTML(): Unit = {
+  def buildHTML(): Unit = Future { synchronized {
     client.resetErrors(uri)
     this.file match {
       case Some(f) =>
-        Future { server.safely {
+        server.safely {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
             val pars = params(s => update(0,s))
             val html = RusTeX.parseString(f,doctext ,pars,List("c_stex_module_"))
             update(0, "Parsing HTML... (2/2)")
-            this.synchronized {
+            //this.synchronized {
               val state = parsingstate(pars.eh)
               val newhtml = HTMLParser(html)(state)
               pars.eh.close
@@ -111,16 +111,16 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
               client.log("html parsed")
               this.html = Some(server.stexserver.present(newhtml.toString)(None).get("body")()().head)
               ((), "Done")
-            }
+            //}
           }
           val msg = new HTMLUpdateMessage
           msg.html = (server.localServer / (":" + server.htmlserver.get.pathPrefix) / "fulldocument").toString + "?" + LSPServer.URItoVSCode(uri) // uri
           this.client.client.updateHTML(msg)
           quickparse
-        }}
+        }
       case _ =>
     }
-  }
+  }}
 
   override val timercount: Int = 0
   override def onChange(annotations: List[(Delta, DocAnnotation)]): Unit = {
