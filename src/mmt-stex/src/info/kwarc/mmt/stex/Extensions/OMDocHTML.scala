@@ -3,10 +3,10 @@ package info.kwarc.mmt.stex.Extensions
 import info.kwarc.mmt.api.checking.{History, HistoryEntry}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{OMFOREIGN, OMS}
+import info.kwarc.mmt.api.objects.{OMA, OMFOREIGN, OMMOD, OMS}
 import info.kwarc.mmt.api.presentation.{Presenter, RenderingHandler}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, NestedModule, Structure}
-import info.kwarc.mmt.api.{CPath, DPath, DefComponent, GlobalName, LocalName, MPath, NamespaceMap, Path, StructuralElement, TypeComponent}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, NestedModule, RuleConstant, Structure}
+import info.kwarc.mmt.api.{CPath, DPath, DefComponent, GlobalName, LocalName, MPath, NamespaceMap, Original, Path, SemanticObject, StructuralElement, TypeComponent}
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.rules.ModelsOf
@@ -222,15 +222,17 @@ trait OMDocHTML { this : STeXServer =>
     }}{<div>
       {doModuleBody(t)}
       {controller.getO(t.path.toDPath ? state.language) match {
-        case Some(t: Theory) => collapsible(false, true)
-          {<b>Document Elements</b>}{doModuleBody(t)}
+        case Some(lt: Theory) => collapsible(false, true)
+          {<b>Document Elements</b>}{doModuleBody(lt,Some(t.path))}
         case _ => <span></span>
       }}</div>
     }
   }
 
-  private def doModuleBody(theory: Theory)(implicit state: OMDocState): NodeSeq = <div>
-    <div>{theory.getIncludesWithoutMeta match {
+  private def doModuleBody(theory: Theory,sig:Option[MPath] = None)(implicit state: OMDocState): NodeSeq = <div>
+    <div>{theory.getPrimitiveDeclarations.collect {
+      case i @ Include(mp) if i.getOrigin == Original && !sig.contains(mp.from) => mp.from
+    } match {
       case Nil =>
       case ls => <span style="display:inline;"><b>Includes </b>{
         val ils = ls.map(p => doLink(p){<span>{p.name.toString}</span>})
@@ -300,6 +302,24 @@ trait OMDocHTML { this : STeXServer =>
       case c : Constant if c.rl.exists(_.contains("mmt_term")) =>
         doTerm(c)
       case c : Constant => doSymbol(c)
+      case rc:RuleConstant =>
+        rc.tp match {
+          case Some(OMMOD(p)) =>
+            fakeCollapsible(true){<span style="display:inline-block">Rule <pre style="display:inline;font-size:x-small;">{SemanticObject.mmtToJava(p)}</pre></span>}
+          case Some(OMA(OMMOD(p),args)) =>
+            fakeCollapsible(true) {
+              <span style="display:inline-block">Rule <pre style="display:inline;font-size:x-small;">{SemanticObject.mmtToJava(p)}</pre><math xmlns={HTMLParser.ns_mml}>
+                <mrow><mo stretchy="true">(</mo>
+                  {args.flatMap(a => List(
+                    present(xhtmlPresenter.asXML(a, Some(rc.path $ TypeComponent))),
+                    <mo>,</mo>
+                  )).init}
+                <mo stretchy="true">)</mo></mrow>
+              </math></span>
+            }
+          case _ =>
+            <span></span>
+        }
       case _ => <span>TODO: {d.getClass.toString} {d.path}</span>
     }
   }

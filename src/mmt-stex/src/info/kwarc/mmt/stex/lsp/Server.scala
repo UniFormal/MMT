@@ -1,13 +1,13 @@
 package info.kwarc.mmt.stex.lsp
 
-import info.kwarc.mmt.api.archives.{Archive, BuildManager, RedirectableDimension, TrivialBuildManager}
+import info.kwarc.mmt.api.archives.{Archive, BuildChanged, BuildManager, RedirectableDimension, TrivialBuildManager, source}
 import info.kwarc.mmt.api.frontend.{Controller, Report, Run}
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, SandboxedWebSocket, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import info.kwarc.mmt.stex.parsing.stex.STeXParser
-import info.kwarc.mmt.stex.{RusTeX, STeXServer}
+import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams, WorkspaceFoldersOptions, WorkspaceServerCapabilities, WorkspaceSymbol, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest, JsonSegment}
@@ -26,6 +26,10 @@ class HTMLUpdateMessage {
 class MathHubMessage {
   var mathhub : String = null
   var remote: String = null
+}
+
+class LocalServerInterface {
+  var url: String = null
 }
 
 class ArchiveMessage {
@@ -64,6 +68,11 @@ class BuildMessage {
   var file:String = null
 }
 
+class BuildGroupMessage {
+  var file:String = null
+  var archive:String = null
+}
+
 class ExportMessage {
   var file: String = null
   var dir: String = null
@@ -75,6 +84,7 @@ trait STeXClient extends LSPClient {
   @JsonRequest def openFile(msg:HTMLUpdateMessage): CompletableFuture[Unit]
   @JsonRequest def ping(): CompletableFuture[String]
   @JsonNotification def updateMathHub(): Unit
+  @JsonNotification def setLocalServer(msg:LocalServerInterface): Unit
 }
 final class STeXLSPWebSocket extends SandboxedWebSocket(classOf[STeXClient],classOf[STeXLSPServer]) {
   override def initialize: Unit = {
@@ -108,6 +118,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      //val mf = client.client.getMainFile
      //val file = mf.join().mainFile
      //println("Here: " + file)
+     while (bootToken.isDefined) Thread.sleep(100)
      new sTeXDocument(uri,this.client,this)
    }
    var mathhub_top : Option[File] = None
@@ -144,6 +155,63 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        case (Some(a),Some(f)) =>
          stexserver.`export`(a,File(f),File(msg.dir))
        case _ =>
+     }
+   }
+
+   @JsonNotification("sTeX/buildArchive")
+   def buildFile(msg: BuildGroupMessage): Unit = withProgress(msg,"Building") { update =>
+     msg.file = msg.file.replace(".xhtml",".tex")
+     controller.backend.getArchive(msg.archive) match {
+       case Some(a) if msg.file.isEmpty =>
+         val reg = a.properties.get("ignore").map(_.replace(".", "\\.").replace("*", ".*").r)
+         def regfilter(f: File): Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
+         val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
+         val src = a / source
+         val files = src.descendants.filter(f => f.getExtension.contains("tex") && regfilter(f)).map(src.relativize)
+         val eh = STeXLSPErrorHandler(_ => {}, update)
+         files.foreach{f =>
+           update(0, "Building " + a.id + ": " + f)
+           target.build(a,BuildChanged(),f.toFilePath,Some(eh))
+         }
+         a.readRelational(Nil,controller,"rel")
+         ((),"Done")
+       case Some(a) if File(a / source / msg.file).isDirectory =>
+         val reg = a.properties.get("ignore").map(_.replace(".", "\\.").replace("*", ".*").r)
+         def regfilter(f: File): Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
+         val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
+         val src = (a / source) / msg.file
+         val files = src.descendants.filter(f => f.getExtension.contains("tex") && regfilter(f)).map(f => src.relativize(f))
+         val eh = STeXLSPErrorHandler(_ => {}, update)
+         files.foreach { f =>
+           update(0, "Building " + a.id + ": " + f)
+           target.build(a, BuildChanged(), f.toFilePath, Some(eh))
+         }
+         a.readRelational(Nil, controller, "rel")
+         ((), "Done")
+       case Some(a) =>
+         val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
+         val eh = STeXLSPErrorHandler(_ => {}, update)
+         val relfile = File(msg.file).toFilePath
+         update(0,"Building " + a.id + ": " + relfile)
+         target.build(a, BuildChanged(), relfile, Some(eh))
+         a.readRelational(Nil, controller, "rel")
+         ((), "Done")
+       case _ =>
+         val archs = controller.backend.getArchives.filter(_.id.startsWith(msg.archive + "/"))
+         val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
+         val eh = STeXLSPErrorHandler(_ => {}, update)
+         archs.foreach {a =>
+           val src = a / source
+           val reg = a.properties.get("ignore").map(_.replace(".", "\\.").replace("*", ".*").r)
+           def regfilter(f: File): Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
+           val files = src.descendants.filter(f => f.getExtension.contains("tex") && regfilter(f)).map(src.relativize)
+           files.foreach {f =>
+             update(0, "Building " + a.id + ": " + f)
+             target.build(a, BuildChanged(), f.toFilePath, Some(eh))
+           }
+           a.readRelational(Nil, controller, "rel")
+         }
+         ((),"Archive not found")
      }
    }
 
@@ -302,6 +370,11 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      bootToken.foreach {tk =>
        updateProgress(tk,0,"Indexing tex files")
      }
+     client.client.updateMathHub()
+     val lsi = new LocalServerInterface
+     lsi.url = this.localServer.toString
+     client.client.setLocalServer(lsi)
+
      //}(scala.concurrent.ExecutionContext.global)
      //println(t._1)
      /*
@@ -321,9 +394,9 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    def doPing: Unit = Future {
      Thread.sleep(30000)
      while (true) {
-       Thread.sleep(1000)
+       Thread.sleep(10000)
        try {
-         client.client.ping().get(30, TimeUnit.SECONDS)
+         client.client.ping().get(60, TimeUnit.SECONDS)
        } catch {
          case _: java.util.concurrent.TimeoutException =>
            sys.exit()
@@ -336,7 +409,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      bootToken = Some(params.hashCode())
      controller.extman.addExtension(searchresultserver)
      startProgress(bootToken.get,"Starting sTeX/MMT","Initializing...")
-     //doPing
+     doPing
    }
 
    @JsonRequest("sTeX/getMathHubContent")
@@ -347,6 +420,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      val ret = getMathHubContentI()
      bootToken.foreach {tk =>
        finishProgress(tk,"Finished")
+       bootToken = None
      }
      ret
    }
@@ -457,6 +531,26 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
              ServerResponse("Empty Document path", "txt")
            case s =>
              self.documents.get(s) match {
+               case Some(d) if d.html.isEmpty =>
+                 controller.backend.resolvePhysical(File(s)) match {
+                   case Some((a, fp)) =>
+                     stexserver.apply(request.copy(
+                       path = List(":" + stexserver.pathPrefix, "fulldocument"),
+                       query = "archive=" + a.id + "&filepath=" + fp.mkString("/").replace(".tex", ".xhtml")
+                     ))
+                   case _ =>
+                     ServerResponse("Unknown Document", "txt")
+                 }
+               case None if File(s).exists() =>
+                 controller.backend.resolvePhysical(File(s)) match {
+                   case Some((a,fp)) =>
+                     stexserver.apply(request.copy(
+                       path = List(":" + stexserver.pathPrefix,"fulldocument"),
+                       query = "archive=" + a.id + "&filepath=" + fp.mkString("/").replace(".tex",".xhtml")
+                     ))
+                   case _ =>
+                     ServerResponse("Unknown Document", "txt")
+                 }
                case None =>
                  ServerResponse("Empty Document path", "txt")
                case Some(d) =>

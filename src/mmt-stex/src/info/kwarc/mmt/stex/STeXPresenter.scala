@@ -169,11 +169,21 @@ trait STeXPresenter extends ObjectPresenter {
 }
 
 class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
+  override def asXML(o: Obj, origin: Option[CPath]): Node = {
+    val s = asString(o, origin)
+    try {
+      scala.xml.XML.loadString(s.replace("&","&amp;"))
+    } catch {
+      case t: Throwable =>
+        print("")
+        throw t
+    }
+  }
 
   private def recurseI(obj:Obj)(implicit pc: PresentationContext): NodeSeq = {
     val sb = new presentation.StringBuilder
     recurse(obj)(pc.copy(rh=sb))
-    XML.loadString(s"<mrow>${sb.get}</mrow>").head.child
+    XML.loadString(s"<mrow>${sb.get}</mrow>".replace("&","&amp;")).head.child
   }
 
   private def undoPre(h :  SHTMLHoas.HoasRule,f : Term,args:List[SOMBArg]) : List[SOMBArg] = args match {

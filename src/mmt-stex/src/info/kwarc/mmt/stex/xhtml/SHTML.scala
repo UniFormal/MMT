@@ -60,9 +60,20 @@ trait SHTMLObject {
   def getVariableContext : Context = findAncestor{
     case gl:SHTMLGroupLike => gl.getVariables
   }.getOrElse(Context.empty)
-  def getRuleContext : Context = findAncestor {
-    case hrc:HasRuleContext => hrc.context
-  }.getOrElse(Context.empty)
+  def getRuleContext : Context = {
+    val maybe = findAncestor {
+      case hrc: HasRuleContext => hrc.context
+    }.getOrElse(Context.empty)
+    if (maybe.isEmpty) {
+      findAncestor {
+        case doc : SHTMLODocument =>
+          doc.language_theory match {
+            case Some(o) => Context(o.path)
+            case _ => maybe
+          }
+      }
+    }.getOrElse(maybe) else maybe
+  }
 
   def getMetaTheory = {
     this match {

@@ -294,9 +294,9 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
         case _ =>
       }
       replacements.foreach {
-        case s@Simple(n) if args(s.index).length == 1 =>
+        case s@Simple(n) if args.isDefinedAt(s.index) && args(s.index).length == 1 =>
           replace(n,args(s.index).head)
-        case s@Simple(n) =>
+        case s@Simple(n) if args.isDefinedAt(s.index) =>
           val ls = args(s.index)
           if (ls.isEmpty)
             replace(n,{<mrow></mrow>})
@@ -304,13 +304,17 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
             val ns: NodeSeq = ls.flatMap(n => List(n,{<mo>,</mo>})).dropRight(1).flatten
             replace(n,{<mrow>{ns}</mrow>})
           }
-        case s@Sep(nd) =>
+        case s@Simple(n) =>
+          replace(n,{<mo>_</mo>})
+        case s@Sep(nd) if args.isDefinedAt(s.index) =>
           val ls = args(s.index)
           if (ls.isEmpty) replace(nd, {<mrow></mrow>})
           else {
             val ns : NodeSeq = ls.flatMap(n => n.toList ::: nd.children.map(_.plain.node)).dropRight(nd.children.length)
             replace(nd, {<mrow>{ns}</mrow>})
           }
+        case _ =>
+          print("")
       }
       if (opprec > withprec)
         <mrow>

@@ -6,10 +6,12 @@ import info.kwarc.mmt.api.utils.{File, URI, Unparsed, XMLEscaping}
 import info.kwarc.mmt.stex.Extensions.LateBinding
 import info.kwarc.mmt.stex.STeXError
 
+import javax.xml.parsers.SAXParserFactory
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 import scala.xml._
+import scala.xml.parsing.{ConstructingParser, NoBindingFactoryAdapter}
 
 abstract class HTMLRule {
   val priority : Int = 0

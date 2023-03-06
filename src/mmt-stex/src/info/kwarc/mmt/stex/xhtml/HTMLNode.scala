@@ -6,6 +6,7 @@ import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.io.Source
+import scala.xml.parsing.{ConstructingParser, NoBindingFactoryAdapter}
 import scala.xml.{Elem, Node, NodeSeq, XML}
 
 trait HTMLNode {
@@ -229,8 +230,8 @@ class HTMLPlainNode(var _state: ParsingState, override val namespace: String, va
   }
 
   def node : Node = try {
-    //scala.xml.parsing.XhtmlParser(Source.fromString(state.present(this, forcenamespace = true).trim)).head
-    XML.loadString(state.present(this, forcenamespace = true,dotop=false).trim.replace("&nbsp;", "&amp;nbsp;"))
+    XML.loadString(state.present(this, forcenamespace = true, dotop = false).trim.replace("&", "&amp;"))
+    //XML.loadString(state.present(this, forcenamespace = true,dotop=false).trim.replace("&nbsp;", "&amp;nbsp;"))
   } catch {
     case o: Throwable =>
       println(o.toString)

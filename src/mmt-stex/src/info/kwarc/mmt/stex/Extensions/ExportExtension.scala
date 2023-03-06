@@ -25,14 +25,14 @@ trait ExportExtension { self : STeXServer =>
   }
 
   def export(archive:Archive,document: File,to:File) = {
-    if (to.exists()) to.descendants.foreach {
+    /*if (to.exists()) to.descendants.foreach {
       case f if f.isDirectory => f.deleteDir
       case f if f.exists() => f.delete()
-    }
+    }*/
     (to / "aux" ).mkdirs()
-    (to / "docs").mkdirs()
-    (to / "frags").mkdirs()
-    (to / "img").mkdirs()
+    (to / "docs").mkdir()
+    (to / "frags").mkdir()
+    (to / "img").mkdir()
 
     to.descendants.foreach(_.delete())
     var index = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
