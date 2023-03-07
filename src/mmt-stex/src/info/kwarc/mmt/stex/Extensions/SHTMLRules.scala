@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
+import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, ParseError, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.rules.MathStructureFeature
@@ -149,6 +150,21 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("notationcomp", (s, n, _) => SHTMLNotationComponent(n)),
     SHTMLParsingRule("notationopcomp", (s, n, _) => SHTMLOpNotationComponent(n)),
     SHTMLParsingRule("argnum", (s, n, _) => SHTMLArgnum(s.head.toInt, n)),
+    new SHTMLRule(-50) {
+      def apply(s: HTMLParser.ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
+        attrs.find(_._1 == "srefin") match {
+          case Some((_,p)) =>
+            val f = File(p.replace(".sref",".tex"))
+            controller.backend.resolvePhysical(f) match {
+              case Some((a,fp)) =>
+                n.plain.attributes((HTMLParser.ns_shtml,"srefin")) = a.id + "::" + fp.mkString("/")
+              case _ =>
+            }
+          case _ =>
+        }
+        None
+      }
+    },
     new SHTMLRule(-50) {
       def rec(nn: HTMLNode, s: HTMLParser.ParsingState, top: HTMLNode): Option[SHTMLNode] = (nn, s) match {
         case (_: IsTerm, s: SHTMLState[SHTMLNode]) if !s.in_term =>

@@ -3,8 +3,40 @@
 
 <head>
   <script type="text/javascript">
+    var bodyelem = null;
+    var padding = 0;
+    var mainwidth = 0;
+    var innerwidth = 0;
+    function set_bodyelem() {
+      bodyelem = document.getElementById('rustexbody');
+      if (bodyelem !== null) {
+        innerwidth = Number(bodyelem.style.maxWidth.replace(/px$/, ''));
+        padding = Number(bodyelem.style.paddingLeft.replace(/px$/, ''));
+        mainwidth = innerwidth + (2 * padding);
+        bodyelem.style.setProperty('--current-width', innerwidth + "px");
+      }
+    }
     addEventListener("resize", (e) => {
-      var bodyelem = document.getElementById('rustexbody');
+      if (bodyelem == null) set_bodyelem();
+      let fullwidth = window.innerWidth;
+      if (fullwidth < mainwidth) {
+        if (fullwidth < innerwidth) {
+          bodyelem.style.paddingLeft = 0;
+          bodyelem.style.paddingRight = 0;
+          bodyelem.style.setProperty('--current-width', fullwidth + "px");
+        } else {
+          const discrep = mainwidth - fullwidth;
+          bodyelem.style.paddingLeft = (padding - (discrep / 2)) + "px";
+          bodyelem.style.paddingRight = (padding - (discrep / 2)) + "px";
+          bodyelem.style.setProperty('--current-width', innerwidth + "px");
+        }
+      } else {
+        bodyelem.style.paddingLeft = padding + "px";
+        bodyelem.style.paddingRight = padding + "px";
+        bodyelem.style.setProperty('--current-width', innerwidth + "px");
+      }
+
+      /*var bodyelem = document.getElementById('rustexbody');
       if (bodyelem !== null) {
         var parent = bodyelem.offsetParent.offsetParent;
         var pwidth = parent.offsetWidth - ((Number(bodyelem.style.paddingLeft.replace(/px$/, '')) + Number(bodyelem.style.paddingRight.replace(/px$/, ''))));
@@ -14,7 +46,7 @@
         } else {
           bodyelem.style.setProperty('--current-width', maxwidth + "px");
         }
-      }
+      }*/
     });
     function preloadFunc() {
       // Eg. https://mmt.beta.vollki.kwarc.info

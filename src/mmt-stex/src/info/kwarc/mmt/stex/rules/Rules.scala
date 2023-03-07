@@ -699,7 +699,7 @@ object AssocRule extends HTMLTermRule {
       SHTMLHoas.OmaSpine(h,f,pre ::: List(a, b))
     case IsSeq(pre, SHTML.flatseq(a :: Nil), List(b)) =>
       SHTMLHoas.OmaSpine(h,f, pre ::: List(a, b))
-    case IsSeq(pre, SHTML.flatseq(ls), Nil) if ls.length > 2 =>
+    case IsSeq(pre, SHTML.flatseq(ls), post) if ls.length > 2 =>
       var conj : Option[Constant] = None
       self.getRuleContext.getIncludes.foreach{i =>
         state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)){
@@ -710,28 +710,13 @@ object AssocRule extends HTMLTermRule {
       }
       conj match {
         case Some(c) =>
-          ls.init.init.foldRight(SHTMLHoas.OmaSpine(h,f,pre ::: List(ls.init.last,ls.last)))((t,r) =>
-            SHTMLHoas.OmaSpine(h,OMS(c.path),List(r,SHTMLHoas.OmaSpine(h,f,pre ::: List(t,ls.last))))
-          )
+          def dohead(t1: Term,t2:Term) = SHTMLHoas.OmaSpine(h,f,pre ::: List(t1,t2) ::: post)
+          def doconj(t1 : Term,t2:Term) = SHTMLHoas.OmaSpine(h,OMS(c.path),List(t1,t2))
+          ls.tail.tail.foldLeft((dohead(ls.head,ls.tail.head),ls.tail.head))((b,t) =>
+            (doconj(b._1,dohead(b._2,t)),t)
+          )._1
         case _ =>
           SHTMLHoas.OmaSpine(h,f,args)
-      }
-    case IsSeq(pre, SHTML.flatseq(ls), List(b)) if ls.length > 2 =>
-      var conj: Option[Constant] = None
-      self.getRuleContext.getIncludes.foreach { i =>
-        state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
-          case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains("conjunction") =>
-            conj = Some(c)
-          case _ =>
-        }
-      }
-      conj match {
-        case Some(c) =>
-          ls.init.init.foldRight(SHTMLHoas.OmaSpine(h, f, pre ::: List(ls.last, b)))((t, r) =>
-            SHTMLHoas.OmaSpine(h, OMS(c.path), List(r, SHTMLHoas.OmaSpine(h, f, pre ::: List(t, b))))
-          )
-        case _ =>
-          SHTMLHoas.OmaSpine(h, f, args)
       }
     case _ => SHTMLHoas.OmaSpine(h,f,args)
   }

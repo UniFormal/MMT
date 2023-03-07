@@ -468,8 +468,8 @@ trait SHTMLDocumentServer { this : STeXServer =>
       if (!inline) bindings.add(StatementStep)
       val styles = plain.attributes.getOrElse((HTMLParser.ns_shtml, "styles"), "").split(',').map(_.trim).toList.filterNot(_.isEmpty)
       plain.classes :::= ("shtml-" + s) :: styles.reverse.map(st => "shtml-" + s + "-" + st)
-      val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
-      plain.attributes((plain.namespace, "style")) = "counter-set: shtml-statement " + bindings.statement.toString + ";" + old
+      //val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
+      //plain.attributes((plain.namespace, "style")) = "counter-set: shtml-statement " + bindings.statement.toString + ";" + old
     }
     case class STitle(orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
@@ -526,19 +526,19 @@ trait SHTMLDocumentServer { this : STeXServer =>
         bindings.currlvl match {
           case 1 =>
             this.plain.classes ::= "shtml-sec-part"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-part " + bindings.secnum.toString + ";" + old
+            //plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-part " + bindings.secnum.toString + ";" + old
           case 2 =>
             this.plain.classes ::= "shtml-sec-chapter"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-chapter " + bindings.secnum.toString + ";" + old
+            //plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-chapter " + bindings.secnum.toString + ";" + old
           case 3 =>
             this.plain.classes ::= "shtml-sec-section"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-section " + bindings.secnum.toString + ";" + old
+            //plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-section " + bindings.secnum.toString + ";" + old
           case 4 =>
             this.plain.classes ::= "shtml-sec-subsection"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-subsection " + bindings.secnum.toString + ";" + old
+            //plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-subsection " + bindings.secnum.toString + ";" + old
           case _ =>
             this.plain.classes ::= "shtml-sec-paragraph"
-            plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-paragraph " + bindings.secnum.toString + ";" + old
+            //plain.attributes((plain.namespace, "style")) = "counter-set: shtml-sec-paragraph " + bindings.secnum.toString + ";" + old
         }
       }
 
@@ -739,24 +739,40 @@ trait SHTMLDocumentServer { this : STeXServer =>
         None
       }
     }
+    map("linktarget") = new SHTMLRule() {
+      override def apply(s: ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
+        if (n.label == "a") {
+          n.plain.attributes.get((HTMLParser.ns_html, "id")) match {
+            case Some(s) if s.startsWith("sref@") =>
+              n.plain.attributes((HTMLParser.ns_html, "id")) = s.hashCode.toHexString
+              n.plain.attributes((HTMLParser.ns_html, "name")) = s.hashCode.toHexString
+            case _ =>
+          }
+        }
+        None
+      }
+    }
     map("sref") = PresentationRule("sref",(s,_,node) => Some(new SHTMLNode(node) {
       override def copy: HTMLNode = this.plain.copy
-      val id = "sref@" + s
-      val in = this.plain.attributes.get((HTMLParser.ns_shtml,"srefin")).map(s => File(s.replace(".sref",".tex")))
+      val id = ("sref@" + s).hashCode.toHexString
+      val in = this.plain.attributes.get((HTMLParser.ns_shtml,"srefin")).flatMap{s =>
+        s.split("::").toList match {
+          case List(a,b) =>
+            controller.backend.getArchive(a) match {
+              case Some(a) => Some((a,File(b.replace(".tex",".xhtml"))))
+              case _ => None
+            }
+          case _ => None
+        }
+      }//(s => File(s.replace(".sref",".tex")))
 
       override def onAdd: Unit = {
         super.onAdd
         in match {
-          case Some(file) =>
-            controller.backend.resolvePhysical(file) match {
-              case Some((a,fp)) =>
-                /*val ch = this.plain.children TODO needs fixing!
-                val na = this.add(<a href={
-                  scala.xml.Unparsed("/:" + pathPrefix + "/document?archive=" + a.id + "&filepath=" + fp.mkString("/").replace(".tex",".xhtml") + "#" + id)
-                 } style="color:blue;cursor:pointer"></a>)
-                ch.foreach(na.add)*/
-              case _ =>
-            }
+          case Some((a,f)) =>
+            val ch = this.plain.children //TODO needs fixing!
+            val na = this.add(<a href={scala.xml.Unparsed("/:" + pathPrefix + "/fullhtml?archive=" + a.id + "&filepath=" + f + "#" + id)} style="color:blue;cursor:pointer"></a>)
+            ch.foreach(na.add)
           case _ =>
         }
       }
