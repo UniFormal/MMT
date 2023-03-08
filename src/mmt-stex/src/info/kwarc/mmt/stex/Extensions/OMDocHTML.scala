@@ -330,6 +330,8 @@ trait OMDocHTML { this : STeXServer =>
         doTextSymbol(c)
       case Some(s) if s.contains("variable") =>
         doVariable(c)
+      case Some(s) if s.contains("assertion") =>
+        doAssertion(c)
       case _ =>
         lazy val header = //<span style="display:inline;">Symbol {symbolsyntax(c)}<img src="/stex/guidedtour.svg" height="30px" style="vertical-align:middle;"></img></span>
           <table style="width:calc(100% - 16.53px);vertical-align:middle;display:inline-table;"><tr>
@@ -344,6 +346,21 @@ trait OMDocHTML { this : STeXServer =>
           case (None,None,Nil) => fakeCollapsible(true){header}
           case _ => collapsible(false, true) {header}{symbolTable(c)}
         }
+    }
+  }
+
+  private def doAssertion(c: Constant)(implicit state: OMDocState): NodeSeq = {
+    lazy val header = <span style="display:inline;">Assertion {symbolsyntax(c)}{c.tp match {
+        case Some(tp) =>
+          <span> <math xmlns={HTMLParser.ns_mml}>
+              {present(xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent)))}
+            </math></span>
+        case _ => <span>(statement unknown)</span>
+      }}
+    </span>
+    c.df match {
+      case None => fakeCollapsible(true) {header}
+      case _ => collapsible(false, true) {header} {symbolTable(c, dotype = false)}
     }
   }
 

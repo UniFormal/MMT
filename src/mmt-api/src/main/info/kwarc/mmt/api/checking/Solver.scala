@@ -431,7 +431,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
           case None =>
             Unknown(n, argsT)
         }
-        tS.from(t) // preserve meta-data when this is called at the end, in particular source reference of _
+        t.metadata.getAll.foreach(tS.metadata.update)
+        tS//.from(t) // preserve meta-data when this is called at the end, in particular source reference of _
       case _ =>
         if (t.freeVars exists {x => unknowns contains x})
           Traverser(this, t)

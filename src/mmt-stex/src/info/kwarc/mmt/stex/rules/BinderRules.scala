@@ -189,30 +189,6 @@ object ApplyRule extends ParametricRule {
       case (Some(a), SHTMLHoas.bound(_, OMS(`pi`), x, r)) if x.tp.isDefined =>
         if (!covered) solver.check(Typing(stack, a, x.tp.get, None))
         val rtp = r ^? (x.name / a)
-        /*val rtp = solver.inferType(a,covered) match {
-          case Some(tpA) => (seq(tpA), seq(tp)) match {
-            case (SHTML.flatseq.tp(_), SHTML.flatseq.tp(_)) =>
-              if (!covered) {
-                solver.check(Typing(stack, a, tp, None))
-              }
-              r ^? (x / a)
-            case (_, SHTML.flatseq.tp(tA)) =>
-              if (!covered) {
-                solver.check(Typing(stack, a, tA, None))
-              }
-              r ^? (x / SHTML.flatseq(List(a)))
-            case _ =>
-              if (!covered) {
-                solver.check(Typing(stack, a, tp, None))
-              }
-              r ^? (x / a)
-          }
-          case _ =>
-            if (!covered) {
-              solver.check(Typing(stack, a, tp, None))
-            }
-            r ^? (x / a)
-        } */
         makeOMA(args.tail,rtp,rettp)
       case (Some(a),SHTML.implicit_binder(x,Some(tp),r)) =>
         solver.check(Typing(stack, a, tp, None))

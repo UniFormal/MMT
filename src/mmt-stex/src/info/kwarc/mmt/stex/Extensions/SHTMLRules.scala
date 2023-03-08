@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, ParseError, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.rules.MathStructureFeature
-import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLBlindSection, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLIfInputref, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMStr, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, TopLevelTerm}
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLBlindSection, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLIfInputref, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMStr, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLPremise, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, TopLevelTerm}
 
 trait OMDocSHTMLRules { this : STeXServer =>
 
@@ -129,6 +129,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("returntype", (s, n, _) => SHTMLReturnType(n),-10),
     SHTMLParsingRule("definiens", (s, n, _) => SHTMLDefiniens(n), -10),
     SHTMLParsingRule("conclusion", (s, n, _) => SHTMLConclusion(n), -10),
+    SHTMLParsingRule("premise", (s, n, _) => SHTMLPremise(n), -10),
     SHTMLParsingRule("omstr", (_,n,_) => SHTMLOMStr(n)),
     SHTMLParsingRule("term", (s, n, _) => {
       s match {
@@ -181,144 +182,3 @@ trait OMDocSHTMLRules { this : STeXServer =>
   )
 
 }
-/*
-object OMDocExtension extends DocumentExtension {
-
-  override def start(args: List[String]): Unit = {
-    super.start(args)
-    if (!server.extensions.contains(NotationExtractor))
-      controller.extman.addExtension(NotationExtractor)
-    if (!server.extensions.contains(SymdocRelational)) {
-      controller.extman.addExtension(SymdocRelational)
-    }
-    server.addExtension(classOf[MathStructureFeature])
-  }
-
-
-/*
-  case class TermRule(name : String,f : HTMLParser.HTMLNode => OMDocHTML) extends HTMLRule {
-    override val priority = 10
-    override def apply(s: HTMLParser.ParsingState, n: HTMLParser.HTMLNode): Option[HTMLParser.HTMLNode] = {
-      if (property(n).contains("shtml:" + name)) {
-        val ret = f(n)
-        s match {
-          case state:SemanticState if !state.in_term =>
-            Some(new HTMLTopLevelTerm(ret))
-          case _ => Some(ret)
-        }
-      } else None
-    }
-  }
-
-  object MathMLRule extends HTMLRule {
-    override val priority = -100
-
-    override def apply(s: HTMLParser.ParsingState, n: HTMLParser.HTMLNode): Option[HTMLParser.HTMLNode] = {
-      s match {
-        case ss: SemanticState if ss.in_term && n.namespace == HTMLParser.ns_mml && n.label != "math" =>
-          Some(MathMLNode(n))
-        case _ => None
-      }
-    }
-  }
-
-  object FeatureRule extends HTMLRule {
-    override val priority: Int = -50
-    override def apply(s: HTMLParser.ParsingState, n: HTMLParser.HTMLNode): Option[HTMLParser.HTMLNode] = {
-      s match {
-        case _:SemanticState if property(n).exists(_.startsWith("shtml_feature:")) =>
-          Some(HTMLStructuralFeature(n,property(n).get.drop(13)))
-        case _ => None
-      }
-    }
-  }
-
- */
-
-  /*override lazy val rules = List(UnknownPropertyRule
-    UnknownPropertyRule,
-    MathMLRule,
-    FeatureRule,
-    SimpleHTMLRule("feature:structure",HTMLStructureFeature),
-    SimpleHTMLRule("language",HTMLLanguageComponent),
-    SimpleHTMLRule("theory",HTMLTheory),
-    SimpleHTMLRule("problem",HTMLProblem),
-    SimpleHTMLRule("header",HTMLTheoryHeader),
-    SimpleHTMLRule("signature",HTMLSignatureComponent),
-    SimpleHTMLRule("symdecl",HTMLSymbol),
-    SimpleHTMLRule("args",HTMLArityComponent),
-    SimpleHTMLRule("macroname",HTMLMacroNameComponent),
-    SimpleHTMLRule("assoctype",HTMLAssoctypeComponent),
-    SimpleHTMLRule("reorderargs",HTMLReorderComponent),
-    SimpleHTMLRule("doctitle",HTMLDoctitle),
-    SimpleHTMLRule("import",HTMLImport),
-    SimpleHTMLRule("usemodule",HTMLUseModule),
-    SimpleHTMLRule("copymodule",HTMLCopyModule(_,false)),
-    SimpleHTMLRule("interpretmodule",HTMLCopyModule(_,true)),
-    SimpleHTMLRule("realize",HTMLRealization),
-    SimpleHTMLRule("alias",HTMLAliasComponent),
-    SimpleHTMLRule("notation",HTMLNotation),
-    SimpleHTMLRule("donotcopy",HTMLDonotcopy),
-    SimpleHTMLRule("notationcomp",HTMLNotationComponent),
-    SimpleHTMLRule("notationopcomp",HTMLNotationOpComponent),
-    SimpleHTMLRule("notationfragment",HTMLNotationFragment),
-    SimpleHTMLRule("metatheory",HTMLMetatheoryComponent),
-    SimpleHTMLRule("statementname",HTMLStatementNameComponent),
-    SimpleHTMLRule("conclusion",HTMLConclusionComponent),
-    SimpleHTMLRule("precedence",HTMLNotationPrec),
-    SimpleHTMLRule("bindtype",HTMLBindTypeComponent),
-    SimpleHTMLRule("domain",HTMLDomainComponent),
-    SimpleHTMLRule("assign",HTMLSimpleAssignment),
-    SimpleHTMLRule("assignment",HTMLComplexAssignment),
-    SimpleHTMLRule("inputref",HTMLInputref),
-    SimpleHTMLRule("includeproblem",HTMLIncludeproblem),
-    SimpleHTMLRule("solution",HTMLSolution),
-
-    SimpleHTMLRule("comp",HTMLComp),
-    SimpleHTMLRule("varcomp",HTMLVarComp),
-    SimpleHTMLRule("arg",HTMLArg),
-    SimpleHTMLRule("argmarker",HTMLArgMarker),
-    TermRule("OMBIND",HTMLOMBIND),
-    TermRule("OMID",HTMLOMID),
-    TermRule("OMA",HTMLOMA),
-    TermRule("OMV",HTMLOMV),
-
-    SimpleHTMLRule("frame",HTMLFrame),
-
-    SimpleHTMLRule("definition",HTMLSDefinition),
-    SimpleHTMLRule("example",HTMLSExample),
-    SimpleHTMLRule("assertion",HTMLSAssertion),
-    SimpleHTMLRule("judgment",HTMLJudgment),
-    SimpleHTMLRule("sproof",HTMLSProof),
-    SimpleHTMLRule("spfstep",HTMLSProofstep),
-    SimpleHTMLRule("spfyield",HTMLSProofyield),
-    SimpleHTMLRule("spftitle",HTMLSProoftitle),
-    SimpleHTMLRule("spfbody",HTMLSProofbody),
-    SimpleHTMLRule("proofsketch",HTMLSProofsketch),
-    SimpleHTMLRule("subproof",HTMLSubproof),
-    SimpleHTMLRule("spfcase",HTMLSpfcase),
-    SimpleHTMLRule("spfeq",HTMLSpfeq),
-    SimpleHTMLRule("paragraph",HTMLSParagraph),
-    SimpleHTMLRule("typestrings",HTMLTypeStringComponent),
-    SimpleHTMLRule("definiendum",HTMLDefiniendum),
-    SimpleHTMLRule("from",HTMLFromComponent),
-    SimpleHTMLRule("to",HTMLToComponent),
-    SimpleHTMLRule("premise",HTMLPremise),
-
-    SimpleHTMLRule("vardecl",HTMLVarDecl),
-    SimpleHTMLRule("varseq",HTMLVarSeqDecl),
-    SimpleHTMLRule("startindex",HTMLVarSeqStart),
-    SimpleHTMLRule("endindex",HTMLVarSeqEnd),
-    SimpleHTMLRule("varinstance",HTMLVarStructDecl),
-    SimpleHTMLRule("type",HTMLTypeComponent),
-    SimpleHTMLRule("definiens",HTMLDefComponent),
-
-    SimpleHTMLRule("mmtrule",HTMLMMTRule)
-  )
-      */
-
-  import DocumentExtension._
-
-}
-
- */

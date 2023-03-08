@@ -72,10 +72,12 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
     ret
   }
 
-  def applyTopLevelTerm(tm: Term)(implicit self:SHTMLNode) : Term = {
-    val vars = self.getVariableContext.filter(isBound)
-      .reverse.distinctBy(_.name).reverse
-    var ntm = vars.foldRight(tm)((vd,t) => SHTML.binder(vd,t))//SHTML.binder(vars,tm)
+  def applyTopLevelTerm(tm: Term,bindvars:Boolean = true)(implicit self:SHTMLNode) : Term = {
+    var ntm = if (bindvars) {
+      val vars = self.getVariableContext.filter(isBound)
+        .reverse.distinctBy(_.name).reverse
+      vars.foldRight(tm)((vd, t) => SHTML.binder(vd, t)) //SHTML.binder(vars,tm)
+    } else tm
 
     var implbinds = Context.empty
     var tosolves = Context.empty
@@ -346,6 +348,6 @@ class SearchOnlyState(server:STeXServer, rules : List[HTMLRule],eh : ErrorHandle
   override def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = {}
   override def update(se: StructuralElement): Unit = {}
   override def applyTerm(tm: Term)(implicit self: SHTMLNode): Term = tm
-  override def applyTopLevelTerm(tm: Term)(implicit self: SHTMLNode): Term = tm
+  override def applyTopLevelTerm(tm: Term,bindvars:Boolean = true)(implicit self: SHTMLNode): Term = tm
   override def check(se: StructuralElement): Unit = {}
 }

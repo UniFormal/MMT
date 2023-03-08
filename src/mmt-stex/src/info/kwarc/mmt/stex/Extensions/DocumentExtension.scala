@@ -588,7 +588,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
     case class Hidable(orig: HTMLNode) extends SHTMLNode(orig) {
-      lazy val expanded = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "proofhide"), "") == "true"
+      lazy val hidden = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "proofhide"), "") == "true"
 
       def copy = Hidable(orig.copy)
 
@@ -600,8 +600,8 @@ trait SHTMLDocumentServer { this : STeXServer =>
         (title, body) match {
           case (Some(t), Some(b)) =>
             t.plain.attributes((t.namespace, "data-collapse-title")) = "true"
-            b.plain.attributes((t.namespace, "data-collapse-body")) = "true"
-            plain.attributes((this.namespace, "data-collapsible")) = if (expanded) "true" else "false"
+            b.plain.attributes((b.namespace, "data-collapse-body")) = "true"
+            plain.attributes((this.namespace, "data-collapsible")) = if (hidden) "false" else "true"
             print("")
           case _ =>
         }

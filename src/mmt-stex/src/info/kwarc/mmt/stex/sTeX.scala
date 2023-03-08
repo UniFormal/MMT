@@ -99,8 +99,9 @@ object SHTMLHoas {
   val sym = SHTML.mmtmeta_path ? "hoas"
 
   case class HoasRule(app : GlobalName, lambda : GlobalName, pi: GlobalName) extends Rule {
+    lazy val asterm = OMA(OMS(sym),List(OMS(app),OMS(lambda),OMS(pi)))
     def apply[A <: HasMetaData](o : A): A = {
-      o.metadata.update(sym,OMA(OMS(sym),List(OMS(app),OMS(lambda),OMS(pi))))
+      o.metadata.update(sym,asterm)
       o
     }
     private val self = this
@@ -194,11 +195,6 @@ object SHTMLHoas {
 
   object Omb {
     def apply(hoas:HoasRule, binder: Term, ctx: Context, body: Term) = hoas.HOMB(binder, SCtx(ctx) :: STerm(body) :: Nil)
-
-    def apply(hoas:HoasRule, binder: Term, ln: LocalName, tp: Option[Term], body: Term) = hoas.HOMB(binder,SCtx(tp match {
-        case Some(t) => VarDecl(ln,t)
-        case _ => VarDecl(ln)
-      }) :: STerm(body) :: Nil)
 
     def unapply(tm: Term): Option[(HoasRule,Term,List[SOMBArg])] = tm match {
       case OMBIND(OMS(_), _, OMA(_, _)) =>
@@ -371,14 +367,11 @@ object SHTML {
 
     def apply(ctx: Context, body: Term) : Term = if (ctx.isEmpty) body else OMBIND(OMS(path), ctx, body)
 
-    def apply(ln: LocalName, tp: Option[Term], body: Term) = OMBIND(OMS(path), Context(tp match {
-      case Some(t) => OMV(ln) % t
-      case None => VarDecl(ln)
-    }), body)
+    def apply(vd:VarDecl, body: Term) = OMBIND(OMS(path), Context(vd), body)
 
     def unapply(tm: Term) = tm match {
       case OMBIND(OMS(`path`), Context(vd, rest@_*), bd) =>
-        if (rest.isEmpty) Some(vd.name, vd.tp, bd) else Some(vd.name, vd.tp, apply(Context(rest: _*), bd))
+        if (rest.isEmpty) Some((vd, bd)) else Some((vd, apply(Context(rest: _*), bd)))
       case _ => None
     }
   }

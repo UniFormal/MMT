@@ -272,8 +272,8 @@ object TypingLike extends ParametricRule {
     val (pattern,ln) = args match {
       case List(h,OMV(n)) =>
         (new Pattern(h),Some(n))
-      case List(h,SHTML.binder(n,_,OMV(m))) if n == m =>
-        (new Pattern(h),Some(n))
+      case List(h,SHTML.binder(vd,OMV(m))) if vd.name == m =>
+        (new Pattern(h),Some(m))
       case List(h) =>
         (new Pattern(h),None)
       case _ =>
@@ -293,8 +293,8 @@ object TypeAssertionLike extends ParametricRule {
     val (pattern,ln) = args match {
       case List(h,OMV(n)) =>
         (new Pattern(h),Some(n))
-      case List(h,SHTML.binder(n,_,OMV(m))) if n == m =>
-        (new Pattern(h),Some(n))
+      case List(h,SHTML.binder(vd,OMV(m))) if vd.name == m =>
+        (new Pattern(h),Some(m))
       case List(h) =>
         (new Pattern(h),None)
       case _ =>
@@ -352,7 +352,8 @@ object ParenthesisRule extends HTMLTermRule {
     }
   }
   override def apply(tm : Term)(implicit state : SHTMLState[SHTMLNode], self:SHTMLNode,cont:Term => Term) : Option[Term] = tm match {
-    case SHTML.informal.op("mrow",List(open(_),t,close(_))) => Some(SHTML.parens(t))
+    case SHTML.informal.op("mrow",List(open(_),t,close(_))) =>
+      Some(SHTML.parens(t))
     case _ => None
   }
 }
