@@ -216,16 +216,18 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
   private def moduleInner(t: Theory)(implicit state: OMDocState): NodeSeq = {
-    if (getLanguage(t).isDefined) return {<span>TODO language module</span>}
+    val lastname = t.name.steps.last.toString
+    if (lastname.startsWith("EXTSTRUCT_") && lastname.endsWith("-module")) return doConservative(t)
+    if (getLanguage(t).isDefined) return {doModuleBody(t,Some(t.path))}
     collapsible() { doLink(t.path) {
         <b>Module {t.name.toString}</b>
     }}{<div>
       {doModuleBody(t)}
-      {controller.getO(t.path.toDPath ? state.language) match {
+      {/*controller.getO(t.path.toDPath ? state.language) match {
         case Some(lt: Theory) => collapsible(false, true)
           {<b>Document Elements</b>}{doModuleBody(lt,Some(t.path))}
         case _ => <span></span>
-      }}</div>
+      }*/}</div>
     }
   }
 
@@ -298,7 +300,7 @@ trait OMDocHTML { this : STeXServer =>
   private def declInner(d:Declaration)(implicit state: OMDocState): NodeSeq = {
     d match {
       case c : Constant if c.metadata.getValues(ModelsOf.sym).nonEmpty =>
-        <span>TODO: Math Structure</span>
+        doStructure(c)
       case c : Constant if c.rl.exists(_.contains("mmt_term")) =>
         doTerm(c)
       case c : Constant => doSymbol(c)
@@ -320,7 +322,8 @@ trait OMDocHTML { this : STeXServer =>
           case _ =>
             <span></span>
         }
-      case _ => <span>TODO: {d.getClass.toString} {d.path}</span>
+      case _ =>
+        <span>TODO: {d.getClass.toString} {d.path}</span>
     }
   }
 
@@ -331,7 +334,7 @@ trait OMDocHTML { this : STeXServer =>
       case Some(s) if s.contains("variable") =>
         doVariable(c)
       case Some(s) if s.contains("assertion") =>
-        doAssertion(c)
+        doAssertion(c,"Assertion")
       case _ =>
         lazy val header = //<span style="display:inline;">Symbol {symbolsyntax(c)}<img src="/stex/guidedtour.svg" height="30px" style="vertical-align:middle;"></img></span>
           <table style="width:calc(100% - 16.53px);vertical-align:middle;display:inline-table;"><tr>
@@ -349,8 +352,141 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def doAssertion(c: Constant)(implicit state: OMDocState): NodeSeq = {
-    lazy val header = <span style="display:inline;">Assertion {symbolsyntax(c)}{c.tp match {
+  private def doStructure(c: Constant)(implicit state: OMDocState): NodeSeq = {
+    val mod = c.metadata.getValues(ModelsOf.sym).headOption.flatMap {
+      case OMMOD(mp) => controller.getO(mp)
+      case _ => None
+    }
+    def head = <b>Structure {symbolsyntax(c)}</b>
+    mod match {
+      case Some(th:Theory) => collapsible(expanded=false,small=true) { head }{doStructureBody(th)}
+      case _ => fakeCollapsible(true){ head }
+    }
+  }
+
+  private def doConservative(th : Theory)(implicit state: OMDocState): NodeSeq = {
+    val base = th.getIncludesWithoutMeta match {
+      case List(mp) =>
+        controller.getO(mp) match {
+          case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty =>
+            t.metadata.getValues(ModelsOf.tp).head match {
+              case OMS(p) => Some(p)
+              case _ => None
+            }
+          case _ => None
+        }
+      case _ => None
+    }
+    base match {
+      case Some(p) =>
+        collapsible(true,true){
+          <span style="display:inline;"><b>Conservative Extension</b> of {doLink(p){<span>{p.name.toString}</span>}}</span>
+        }{<div>{th.getPrimitiveDeclarations.flatMap {
+          case Include(_) => Nil
+          case nm: NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
+          case nm: NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
+          case o => fieldInner(o)
+        }}</div>}
+      case _ =>
+        <span style="display:inline;">Unknown Conservative Extension</span>
+    }
+  }
+
+  private def doStructureBody(th : Theory)(implicit state: OMDocState): NodeSeq = <div>
+    <div>{th.getPrimitiveDeclarations.collect {
+      case i@Include(mp) if i.getOrigin == Original => mp.from
+    }.map{mp => controller.getO(mp) match {
+      case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty =>
+        t.metadata.getValues(ModelsOf.tp).head match {
+          case OMS(p) =>
+            collapsible(true, true) {<span style="display:inline;">Inherited from {
+              doLink(p){<span>{p.name.toString}</span>}
+            }</span>} { doStructureBody(t)}
+          case _ => <span style="display:inline;"><b>Extends </b>{doLink(mp){<span>{mp.name.toString}</span>}}</span>
+        }
+      case _ => <span style="display:inline;"><b>Extends </b>{doLink(mp){<span>{mp.name.toString}</span>}}</span>
+    }}}</div>
+      <div>
+        {th.getPrimitiveDeclarations.flatMap {
+        case Include(_) => Nil
+        case nm: NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
+        case nm: NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
+        case o => fieldInner(o)
+      }}
+      </div>
+  </div>
+
+  private def fieldInner(d: Declaration)(implicit state: OMDocState): NodeSeq = {
+    d match {
+      case c: Constant if c.metadata.getValues(ModelsOf.sym).nonEmpty =>
+        doStructure(c) // shoudn't happen
+      case c: Constant if c.rl.exists(_.contains("mmt_term")) =>
+        doTerm(c)  // shoudn't happen
+      case c: Constant => doField(c)
+      case rc: RuleConstant =>
+        rc.tp match {
+          case Some(OMMOD(p)) =>
+            fakeCollapsible(true) {<span style="display:inline-block">Rule
+              <pre style="display:inline;font-size:x-small;">
+                {SemanticObject.mmtToJava(p)}
+              </pre>
+            </span>}
+          case Some(OMA(OMMOD(p), args)) =>
+            fakeCollapsible(true) {<span style="display:inline-block">Rule
+                <pre style="display:inline;font-size:x-small;">
+                  {SemanticObject.mmtToJava(p)}
+                </pre> <math xmlns={HTMLParser.ns_mml}>
+                <mrow>
+                  <mo stretchy="true">(</mo>{args.flatMap(a => List(
+                  present(xhtmlPresenter.asXML(a, Some(rc.path $ TypeComponent))),
+                  <mo>,</mo>
+                )).init}<mo stretchy="true">)</mo>
+                </mrow>
+              </math>
+            </span>}
+          case _ =>
+            <span></span>
+        }
+      case _ =>
+        <span>TODO:
+          {d.getClass.toString}{d.path}
+        </span>
+    }
+  }
+
+  def doField(c: Constant)(implicit state: OMDocState): NodeSeq = {
+    c.rl match {
+      case Some(s) if s.contains("textsymdecl") =>
+        doTextSymbol(c)
+      case Some(s) if s.contains("variable") =>
+        doVariable(c) // shoudn't happen
+      case Some(s) if s.contains("assertion") && c.df.isDefined =>
+        doAssertion(c,"Theorem")
+      case Some(s) if s.contains("assertion") =>
+        doAssertion(c, "Axiom")
+      case _ =>
+        lazy val header = //<span style="display:inline;">Symbol {symbolsyntax(c)}<img src="/stex/guidedtour.svg" height="30px" style="vertical-align:middle;"></img></span>
+          <table style="width:calc(100% - 16.53px);vertical-align:middle;display:inline-table;">
+            <tr>
+              <td style="text-align:left;">
+                <span style="display:inline;">{if (c.df.isDefined) "Defined "}Field {fieldsyntax(c)}</span>
+              </td>
+              <td class="vollki-guided-tour" style="text-align:right;">
+                <a href={scala.xml.Unparsed("/:vollki?path=" + c.path.toString + "&lang=" + state.language)} target="_blank" style="pointer-events:all;color:blue">
+                  <img src="/stex/guidedtour.svg" height="30px" title="Guided Tour" style="vertical-align:middle;padding-right:5px"></img>
+                </a>
+              </td>
+            </tr>
+          </table>
+        (c.tp, c.df, getNotationsC(c)) match {
+          case (None, None, Nil) => fakeCollapsible(true) { header }
+          case _ => collapsible(false, true) { header } { symbolTable(c) }
+        }
+    }
+  }
+
+  private def doAssertion(c: Constant, typestr : String)(implicit state: OMDocState): NodeSeq = {
+    lazy val header = <span style="display:inline;">{typestr} {symbolsyntax(c)}{c.tp match {
         case Some(tp) =>
           <span> <math xmlns={HTMLParser.ns_mml}>
               {present(xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent)))}
@@ -488,6 +624,22 @@ trait OMDocHTML { this : STeXServer =>
             }</pre>)</span>
       case _ => <span></span>
     }}</span>
+
+  def fieldsyntax(c: Constant)(implicit state: OMDocState) = <span>
+    <pre style="display:inline;font-size:smaller;">{doLink(c.path)(<span>{c.name}</span>)}</pre>
+    {(getMacroName(c), getArity(c)) match {
+      case (Some(mn), None | Some("")) =>
+        <span>(<pre style="display:inline;font-size:smaller;">\this{s"{$mn}"}</pre>)</span>
+      case (Some(mn), Some(args)) =>
+        <span>(<pre style="display:inline;font-size:smaller;">\this{s"{$mn}"}{withArguments((getI, getX) => args.map {
+            case 'i' => s"{${getI}}"
+            case 'a' => s"{${val a = getI; a + "_1,...," + a + "_n"}}"
+            case 'b' => s"{${getX}}"
+            case 'B' => s"{${val a = getX; a + "_1,...," + a + "_n"}}"
+          }.mkString)}</pre>)</span>
+      case _ => <span></span>
+    }}
+  </span>
   private def withArguments[A](f: (=> Char, => Char) => A): A = {
     var iidx = -1
     var vidx = -1
@@ -532,230 +684,6 @@ trait OMDocHTML { this : STeXServer =>
       <div style="width:100%;margin-left:20px">{content}</div>
     </div>
   }
-/*
-  def doModuleBody(t : Theory,lang:Option[String]) : NodeSeq = {
-    t.getPrimitiveDeclarations.map {
-      case c: Constant if c.metadata.get(ModelsOf.sym).nonEmpty =>
-          <span/>
-      case c: Constant =>
-        //doInputref(c.path, lang)
-        omdocSymbol(c, lang)
-      case Include(i) =>
-        <div style="width:100%">
-          <b>Include</b>
-          <a href={doLink(i.from, lang)} style="color:blue">?{i.from.name.toString}</a>
-        </div>
-      case nm: NestedModule =>
-        nm.metadata.getValues(ModelsOf.tp).headOption match {
-          case Some(OMS(const)) =>
-            controller.getO(const) match {
-              case Some(c: Constant) =>
-                omdocStructure(nm.module.asInstanceOf[Theory], c, lang)
-              case None =>
-                doBarBlock(<span>Structure {const.name}</span>){
-                  <span>Structure Not Found</span>
-                }
-            }
-          case _ =>
-            <div style="width:100%">TODO: Nested Module</div>
-        }
-      case o =>
-        <div style="width:100%">TODO:
-          {o.getClass}
-        </div>
-    }
-  }
-
-
-  // val state = new ParsingState(controller, presentationRules)
-  private def omdocSymbol(gn:GlobalName, lang: Option[String]): Node = {
-    controller.getO(gn) match {
-      case Some(c : Constant) => omdocSymbol(c,lang)
-      case Some(o) =>
-        <div style="width:100%">TODO:{o.getClass}</div>
-      case None => <div style="width:100%;margin-bottom:15px;margin-top:25px">
-        <div style="width:100%;font-weight:bold;margin-bottom:15px">{gn.name.toString}</div>
-        <span>Symbol not found</span>
-      </div>
-    }
-  }
-
-  private def makeRow(first:NodeSeq)(second:NodeSeq) = <tr>
-    <td style="width:1%;padding-right:5px;padding-bottom:2px;vertical-align:top">{first}</td>
-    <td style="width:100%;padding-left:5px;padding-bottom:2px;vertical-align:top">{second}</td>
-  </tr>
-
-  private def omdocStructure(th:Theory,const:Constant,lang:Option[String]) = {
-    doBarBlock(<span>Structure <a href={doLink(const.path,lang)} style="color:blue">{const.name}</a></span>){
-      <table style="width:100%;margin-left:30px">
-        {this.getMacroName(const) match {
-          case Some(mn) => makeRow(<span>macro:</span>)(<code>\{mn}</code>)
-          case None =>
-        }}
-        {
-          def getIncls(t: Theory): List[MPath] = t.getIncludesWithoutMeta.flatMap(p => p :: controller.getO(p).map {
-            case t : Theory => getIncls(t)
-            case _ => Nil
-          }.getOrElse(Nil))
-          val includes = getIncls(th)
-          if (includes.nonEmpty) {
-            makeRow(<span>Extends:</span>)(includes.map(p => <span style="display:inline"> <a href={doLink(p, lang)} style="color:blue">?{p.name.toString}</a></span>))
-          } else <span/>
-        }
-        {
-          th.getPrimitiveDeclarations.flatMap {
-            case c : Constant =>
-              val macroname = this.getMacroName(c)
-              Some(makeRow(<span>Field {if (macroname.isDefined) macroname.get else c.name}</span>){
-                val arity = this.getArity(c)
-                <table style="width:100%;margin-left:30px">
-                  {if (macroname.nonEmpty && !macroname.contains(c.name.toString)) {
-                    makeRow(<span>Name:</span>)(<span>{c.name}</span>)
-                  }}
-                  {withArguments { (getI, getX) =>
-                  arity match {
-                    case None | Some("") => <span/>
-                    case Some(args) =>
-                      makeRow(<span>Arguments:</span>)(<code>{args map {
-                          case 'i' => "{" + getI + "}"
-                          case 'a' => "{" + {
-                            val a = getI;
-                            a + "_1,...," + a + "_n"
-                          } + "}"
-                          case 'b' => "{" + getX + "}"
-                          case 'B' => "{" + {
-                            val x = getX;
-                            x + "_1,...," + x + "_n"
-                          } + "}"
-                        }}
-                      </code>)
-                    case _ =>
-                  }}}
-                {arity.map(a => doNotations(c, a, lang)).getOrElse(doNotations(c, "", lang))}
-                {c.tp.map(tp => makeRow(<span>Type:</span>)(xhtmlPresenter.asXML(tp,Some(c.path $ TypeComponent)))).getOrElse()}
-                {c.df.map(df => makeRow(<span>Definiens:</span>)(xhtmlPresenter.asXML(df, Some(c.path $ DefComponent)))).getOrElse()}
-                </table>
-              })
-            case Include(_) => None
-            case s : Structure =>
-              doStructure(s,lang)
-            case o =>
-              <span>TODO: {o.getClass}</span>
-          }
-        }
-        {makeRow(<span/>)(<span>TODO</span>)}
-      </table>
-    }
-  }
-
-  private def doStructure(s : Structure,lang:Option[String]) : NodeSeq = {
-    <span>TODO structure</span>
-  }
-
-
-
-  private def omdocSymbol(c:Constant,lang:Option[String]): Node = doBlock(
-    <b>Symbol <a href={doLink(c.path,lang)} style="color:blue">{c.name.toString}</a></b>){
-      val arity = this.getArity(c)
-      <table style="width:100%;margin-left:30px">
-        {withArguments{(getI,getX) => (this.getMacroName(c), arity) match {
-          case (Some(mn), None | Some("")) if mn.forall(_.isLetter) =>
-            makeRow(<span>Syntax:</span>)(<code>\{mn}</code>)
-          case (Some(mn), Some(args)) if mn.forall(_.isLetter) =>
-            makeRow(<span>Syntax:</span>)(<code>\{mn}{args map {
-              case 'i' => "{" + getI + "}"
-              case 'a' => "{" + {
-                val a = getI; a + "_1,...," + a + "_n"
-              } + "}"
-              case 'b' => "{" + getX + "}"
-              case 'B' => "{" + {
-                val x = getX; x + "_1,...," + x + "_n"
-              } + "}"
-            }}</code>)
-          case _ =>
-        }}}
-        {arity.map(a => doNotations(c,a,lang)).getOrElse(doNotations(c,"",lang))}
-        {c.tp.map(tp => makeRow(<span>Type:</span>)(xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent)))).getOrElse()}
-        {c.df.map(df => makeRow(<span>Definiens:</span>)(xhtmlPresenter.asXML(df, Some(c.path $ DefComponent)))).getOrElse()}
-      </table>
-    }
-
-  private def doOMSNotation(not : STeXNotation,doin : Boolean,lang:Option[String]) = <tr>
-      <td style="padding-right:5px;padding-left:5px;text-align:center">{not.id}</td>
-      <td style="padding-right:5px;padding-left:5px;text-align:center"><math xmlns={HTMLParser.ns_mml}><mrow>{not.present(Nil)}</mrow></math></td>
-      <td style="padding-right:5px;padding-left:5px;text-align:center">{if (doin) <a href={doLink(not.in.get.path, lang)} style="color:blue">?{not.in.get.path.name}</a>}</td>
-    </tr>
-  private def doComplexNotation(not : STeXNotation,args:List[List[Node]],doin : Boolean,lang:Option[String]) = <tr>
-    <td style="padding-right:5px;padding-left:5px;text-align:center">{not.id}</td>
-    <td style="padding-right:5px;padding-left:5px;text-align:center"><math xmlns={HTMLParser.ns_mml}><mrow>{not.present(args)}</mrow></math></td>
-    <td style="padding-right:5px;padding-left:5px;text-align:center">{not.op match {
-      case Some(n) => <math xmlns={HTMLParser.ns_mml}><mrow>{n.plain.node}</mrow></math>
-      case _ => "(None)"
-    }}</td>
-    <td style="padding-right:5px;padding-left:5px;text-align:center">{if (doin) <a href={doLink(not.in.get.path, lang)} style="color:blue">?{not.in.get.path.name}</a>}</td>
-  </tr>
-  private def doNotations(c : Constant,arity:String,lang:Option[String]) : NodeSeq = {
-    if (arity.isEmpty) {
-      this.getNotations(c) match {
-        case Nil => <span/>
-        case ls =>
-          makeRow(<span>Notations:</span>) {
-            <table>
-              <tr>
-                <th style="padding-right:5px;padding-left:5px;text-align:center">id</th>
-                <th style="padding-right:5px;padding-left:5px;text-align:center">notation</th>
-                <th style="padding-right:5px;padding-left:5px;text-align:center">in</th>
-              </tr>
-              {
-                val ins = ls.collect { case n if n.in.get.path == c.path.module => n }
-                ins.map { doOMSNotation(_, false, lang) }
-              }
-              {
-                val ins = ls.collect { case n if n.in.get.path != c.path.module => n }
-                ins.map { doOMSNotation(_,true,lang)}
-              }
-            </table>
-          }
-      }
-    }
-    else {
-      val args = withArguments { (getI, getX) =>
-        arity.map {
-          case 'i' => List(<mi>{getI}</mi>)
-          case 'b' => List(<mi>{getX}</mi>)
-          case 'a' =>
-            val a = getI
-            List((<msub><mi>{a}</mi> <mn>1</mn></msub>), (<mo>...</mo>), (<msub><mi>{a}</mi> <mi>n</mi></msub>))
-          case 'B' =>
-            val x = getX
-            List((<msub><mi>{x}</mi> <mn>1</mn></msub>), (<mo>...</mo>), (<msub><mi>{x}</mi> <mi>n</mi></msub>))
-        }
-      }.toList
-      this.getNotations(c) match {
-        case Nil => <span/>
-        case ls =>
-          makeRow(<span>Notations:</span>) {
-            <table>
-              <tr>
-                <th style="padding-right:5px;padding-left:5px;text-align:center">id</th>
-                <th style="padding-right:5px;padding-left:5px;text-align:center">notation</th>
-                <th style="padding-right:5px;padding-left:5px;text-align:center">operator</th>
-                <th>in</th>
-              </tr>
-              {
-                val ins = ls.collect { case n if n.in.get.path == c.path.module => n }
-                ins.map { doComplexNotation(_,args,false,lang)}
-              }
-              {
-                val ins = ls.collect { case n if n.in.get.path != c.path.module => n }
-                ins.map { doComplexNotation(_,args,true,lang)}
-              }
-            </table>
-          }
-      }
-    }
-  }
- */
 
   lazy val xhtmlPresenter = controller.extman.get(classOf[STeXPresenterML]) match {
     case p :: _ => p

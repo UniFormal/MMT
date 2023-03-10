@@ -246,10 +246,14 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
       idx
     }
   }
+  private case class Tis(orig:HTMLNode) extends Replacement {
+    val index = -1
+  }
 
 
-  def present(args:List[List[NodeSeq]],withprec:Int=0,isvar:Boolean = false) = {
-    val not = (if (args.isEmpty && op.isDefined) op.get else notation).plaincopy
+  def present(args:List[List[NodeSeq]],withprec:Int=0,isvar:Boolean = false,tis:Option[NodeSeq] = None) = {
+    var not = (if (args.isEmpty && op.isDefined) op.get else notation).plaincopy
+    var donethis = tis.isEmpty
     not.iterate {
       case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "comp")) =>
         if (!isvar) n.plain.attributes((HTMLParser.ns_shtml, "comp")) = sym
@@ -274,55 +278,66 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
       case _ =>
     }
     if (isvar) not.plain.attributes((HTMLParser.ns_mmt,"variable")) = sym
-    if (args.isEmpty) {not.plain.node}
-    else {
-      def replace(old:HTMLNode,news:NodeSeq) = {
-        old.plain.parent.foreach { p =>
-          p.addAfter(<mrow>{news}</mrow>.toString(), old)
-          old.delete
+    def replace(old:HTMLNode,news:NodeSeq) = {
+      old.plain.parent.foreach { p =>
+        p.addAfter(<mrow>{news}</mrow>.toString(), old)
+        old.delete
+      }
+    }
+    var replacements: List[Replacement] = Nil
+    not.iterate{
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "maincomp")) && tis.nonEmpty =>
+        replacements ::= Tis(n)
+        donethis = true
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml,"argnum")) && n.plain.attributes((HTMLParser.ns_shtml,"argnum")).length == 1 =>
+        replacements ::= Simple(n)
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "argsep")) =>
+        replacements ::= Sep(n)
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "argmap")) =>
+        // TODO
+        print("")
+      case _ =>
+    }
+    replacements.foreach {
+      case Tis(n) =>
+        replace(n,{<msub>{n.plain.node}<mrow>{tis.get}</mrow></msub>})
+      case s@Simple(n) if args.isDefinedAt(s.index) && args(s.index).length == 1 =>
+        replace(n,args(s.index).head)
+      case s@Simple(n) if args.isDefinedAt(s.index) =>
+        val ls = args(s.index)
+        if (ls.isEmpty)
+          replace(n,{<mrow></mrow>})
+        else {
+          val ns: NodeSeq = ls.flatMap(n => List(n,{<mo>,</mo>})).dropRight(1).flatten
+          replace(n,{<mrow>{ns}</mrow>})
         }
-      }
-      var replacements: List[Replacement] = Nil
-      not.iterate{
-        case n if n.plain.attributes.contains((HTMLParser.ns_shtml,"argnum")) && n.plain.attributes((HTMLParser.ns_shtml,"argnum")).length == 1 =>
-          replacements ::= Simple(n)
-        case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "argsep")) =>
-          replacements ::= Sep(n)
-        case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "argmap")) =>
-          // TODO
-          print("")
-        case _ =>
-      }
-      replacements.foreach {
-        case s@Simple(n) if args.isDefinedAt(s.index) && args(s.index).length == 1 =>
-          replace(n,args(s.index).head)
-        case s@Simple(n) if args.isDefinedAt(s.index) =>
-          val ls = args(s.index)
-          if (ls.isEmpty)
-            replace(n,{<mrow></mrow>})
-          else {
-            val ns: NodeSeq = ls.flatMap(n => List(n,{<mo>,</mo>})).dropRight(1).flatten
-            replace(n,{<mrow>{ns}</mrow>})
-          }
-        case s@Simple(n) =>
-          replace(n,{<mo>_</mo>})
-        case s@Sep(nd) if args.isDefinedAt(s.index) =>
-          val ls = args(s.index)
-          if (ls.isEmpty) replace(nd, {<mrow></mrow>})
-          else {
-            val ns : NodeSeq = ls.flatMap(n => n.toList ::: nd.children.map(_.plain.node)).dropRight(nd.children.length)
-            replace(nd, {<mrow>{ns}</mrow>})
-          }
-        case _ =>
-          print("")
-      }
-      if (opprec > withprec)
-        <mrow>
-          <mo class="opening" stretchy="true">(</mo>
-          {not.node}
-          <mo class="closing" stretchy="true">)</mo>
-        </mrow>
-      else not.node
+      case s@Simple(n) =>
+        replace(n,{<mo>_</mo>})
+      case s@Sep(nd) if args.isDefinedAt(s.index) =>
+        val ls = args(s.index)
+        if (ls.isEmpty) replace(nd, {<mrow></mrow>})
+        else {
+          val ns : NodeSeq = ls.flatMap(n => n.toList ::: nd.children.map(_.plain.node)).dropRight(nd.children.length)
+          replace(nd, {<mrow>{ns}</mrow>})
+        }
+      case _ =>
+        print("")
+    }
+    val ret = if (opprec > withprec)
+      <mrow>
+        <mo class="opening" stretchy="true">(</mo>
+        {not.node}
+        <mo class="closing" stretchy="true">)</mo>
+      </mrow>
+    else not.node
+    if (donethis) ret else {
+      <mover>
+        <mover>
+          {ret}<mo>⏞</mo>
+        </mover> <mrow>
+        <mtext>this:</mtext>{tis.get}
+      </mrow>
+      </mover>
     }
   }
 }

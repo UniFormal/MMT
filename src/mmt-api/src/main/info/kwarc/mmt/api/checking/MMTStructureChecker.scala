@@ -866,7 +866,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               None
             case hd :: Nil =>
               content.getO(hd)
-            case _ => 
+            case _ =>
               env.errorCont(InvalidObject(s, "ambiguous constant reference " + path))
               None
           }

@@ -273,7 +273,8 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
   lazy val hoas : Option[SHTMLHoas.HoasRule] = sstate.flatMap(_.getMetaRules(classOf[SHTMLHoas.HoasRule]).headOption)
 
   def open: Unit = sstate.foreach { state =>
-    val pth = findAncestor { case th: ModuleLike if th.signature_theory.isDefined => th }
+    val pth = findAncestor { case th: ModuleLike if th.signature_theory.isDefined => th.signature_theory.get }
+    val plang = findAncestor { case th:ModuleLike if th.language_theory.isDefined => th.language_theory.get }
     metatheory.foreach { p =>
       state.getO(p) match {
         case None =>
@@ -284,23 +285,27 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
     }
     pth match {
       case Some(t) =>
-        t.signature_theory.foreach { t =>
-          val th = Theory(mp.parent, mp.name, metatheory) // TODO parameters
-          doSourceRef(th)
-          val nt = new NestedModule(t.toTerm, mp.name.tail, th)
-          state.add(nt)
-          signature_theory = Some(th)
+        val th = Theory(mp.parent, mp.name, metatheory) // TODO parameters
+        doSourceRef(th)
+        val nt = new NestedModule(t.toTerm, mp.name.tail, th)
+        state.add(nt)
+        signature_theory = Some(th)
+        plang.foreach{lang =>
+          val incl = PlainInclude(mp, lang.path)
+          //incl.setOrigin(GeneratedFrom(lang.path,this))
+          state.add(incl)
+          state.endAdd(incl)
         }
-        if (language != "") {
-          t.language_theory.foreach { t =>
-            val th = Theory(mp.parent / mp.name, LocalName(language), metatheory) // TODO parameters
+        /*if (language != "") {
+          plang.foreach { t =>
+            val th = Theory(t.parent / t.name, LocalName(mp.name), metatheory) // TODO parameters
             doSourceRef(th)
-            val nt = new NestedModule(t.toTerm, LocalName(language), th)
+            val nt = new NestedModule(t.toTerm, LocalName(mp.name), th)
             doSourceRef(th)
             state.add(nt)
             language_theory = Some(th)
           }
-        }
+        }*/
         return ()
       case _ =>
     }
@@ -309,9 +314,19 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
       doSourceRef(th)
       signature_theory = Some(th)
       state.add(th)
-      if (language.isEmpty) language = "en"
+      plang.foreach { lang =>
+        val incl = PlainInclude(mp, lang.path)
+        //incl.setOrigin(GeneratedFrom(lang.path,this))
+        state.add(incl)
+        state.endAdd(incl)
+      }
+      /*if (language.isEmpty) language = "en"
       //if (language != "") {
-      val lang = Theory(mp.parent / mp.name, LocalName(language), metatheory)
+      val lang = plang match {
+        case Some(t) =>
+          Theory(t.parent / t.name, LocalName(mp.name), metatheory)
+        case _ => Theory(mp.parent / mp.name, LocalName(language), metatheory)
+      }
       state.server.addLanguage(language,lang)
       doSourceRef(lang)
       language_theory = Some(lang)
@@ -322,13 +337,25 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
       state.endAdd(incl)
       state.check(incl)
       _context = _context ++ Context(lang.path)
+
+       */
       //}
     } else if (language == signature) {
       val sig = Theory(mp.parent, mp.name, metatheory) // TODO parameters
       doSourceRef(sig)
       signature_theory = Some(sig)
       state.add(sig)
-      val lang = Theory(mp.parent / mp.name, LocalName(language), metatheory)
+      plang.foreach { lang =>
+        val incl = PlainInclude(mp, lang.path)
+        //incl.setOrigin(GeneratedFrom(lang.path,this))
+        state.add(incl)
+        state.endAdd(incl)
+      }
+      /*val lang = plang match {
+        case Some(t) =>
+          Theory(t.parent / t.name, LocalName(mp.name), metatheory)
+        case _ => Theory(mp.parent / mp.name, LocalName(language), metatheory)
+      }
       state.server.addLanguage(language,lang)
       doSourceRef(lang)
       language_theory = Some(lang)
@@ -339,8 +366,19 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
       state.endAdd(incl)
       state.check(incl)
       _context = _context ++ Context(lang.path)
+       */
     } else {
-      val lang = Theory(mp.parent / mp.name, LocalName(language), metatheory)
+      plang.foreach { lang =>
+        val incl = PlainInclude(mp, lang.path)
+        state.add(incl)
+        state.endAdd(incl)
+        state.check(incl)
+      }
+      /*val lang = plang match {
+        case Some(t) =>
+          Theory(t.parent / t.name, LocalName(mp.name), metatheory)
+        case _ => Theory(mp.parent / mp.name, LocalName(language), metatheory)
+      }
       state.server.addLanguage(language, lang)
       doSourceRef(lang)
       language_theory = Some(lang)
@@ -351,10 +389,18 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
       state.endAdd(incl)
       state.check(incl)
       _context = _context ++ Context(lang.path)
+
+       */
     }
     (signature_theory.toList ::: language_theory.toList).foreach { t =>
       state.add(MRef(state.doc.path,t.path))
       state.check(t)
+    }
+    (plang,language_theory) match {
+      case (Some(t),Some(lang)) =>
+        val nt = new NestedModule(t.toTerm, LocalName(lang.name), lang)
+        state.add(nt)
+      case _ =>
     }
   }
   def close: Unit = {
@@ -383,17 +429,14 @@ trait SHTMLOUseModule extends SHTMLObject {
   val mp : MPath
   def close: Unit = {
     sstate.foreach { state =>
-      findAncestor { case ml: ModuleLike => ml }.foreach { ml =>
-        ml.language_theory.foreach { th =>
-          val pl = PlainInclude(mp, th.path)
-          doSourceRef(pl)
-          state.add(pl)
-          state.endAdd(pl)
-          state.check(pl)
-        }
+      findAncestor { case ml: ModuleLike if ml.language_theory.isDefined => ml.language_theory.get }.foreach { th =>
+        val pl = PlainInclude(mp, th.path)
+        doSourceRef(pl)
+        state.add(pl)
+        state.endAdd(pl)
+        state.check(pl)
       }
     }
-
   }
 }
 trait HasTypes extends SHTMLObject {
@@ -744,42 +787,35 @@ trait SHTMLOMathStructure extends SHTMLObject with ModuleLike {
   lazy val modulename = LocalName.parse(mp.name + "-module")
   lazy val constantname = LocalName.parse(mp.name.tail.mkString("/"))
   def open: Unit = sstate.foreach { state =>
-    findAncestor { case th: ModuleLike => th }.foreach { ml =>
-      parent = Some(ml.mp)
-      ml.signature_theory.foreach { t =>
-        val th = Theory(mp.parent, modulename, None)
-        val nt = new NestedModule(t.toTerm, modulename.tail, th)
-        module = Some(nt)
-        doSourceRef(th)
-        doSourceRef(nt)
-        state.add(nt)
-        if (constantname.toString.startsWith("EXTSTRUCT_")) {
-          // TODO
-        } else {
-          val c = Constant(t.toTerm, constantname, Nil, Some(OMS(ModelsOf.tp)), Some(ModelsOf(th.path)), None)
-          state.server.addMacroName(macroname,c)
-          nt.metadata.update(ModelsOf.tp, c.toTerm)
-          c.metadata.update(ModelsOf.sym, th.toTerm)
-          //c.setOrigin(GeneratedFrom(nt.path,this))
-          // TODO elaborations
-          doSourceRef(c)
-          state.add(c)
-          const = Some(c)
-        }
-        signature_theory = Some(th)
+    val plang = findAncestor { case th: ModuleLike if th.language_theory.isDefined => th.language_theory.get }
+    findAncestor { case th: ModuleLike if th.signature_theory.isDefined => th.signature_theory.get }.foreach { t =>
+      parent = Some(t.path)
+      val th = Theory(mp.parent, modulename, None)
+      val nt = new NestedModule(t.toTerm, modulename.tail, th)
+      module = Some(nt)
+      doSourceRef(th)
+      doSourceRef(nt)
+      state.add(nt)
+      if (constantname.toString.startsWith("EXTSTRUCT_")) {
+        // TODO
+      } else {
+        val c = Constant(t.toTerm, constantname, Nil, Some(OMS(ModelsOf.tp)), Some(ModelsOf(th.path)), None)
+        state.server.addMacroName(macroname,c)
+        nt.metadata.update(ModelsOf.tp, c.toTerm)
+        c.metadata.update(ModelsOf.sym, th.toTerm)
+        //c.setOrigin(GeneratedFrom(nt.path,this))
+        // TODO elaborations
+        doSourceRef(c)
+        state.add(c)
+        const = Some(c)
       }
-      ml.language_theory.foreach { t =>
-        val th = Theory(t.parent, t.name / modulename.tail, None)
-        val nt = new NestedModule(t.toTerm,modulename.tail, th)
-        doSourceRef(th)
-        doSourceRef(nt)
+      signature_theory = Some(th)
+      plang.foreach { t =>
         //nt.setOrigin(GeneratedFrom(mp.parent ? modulename,this))
-        val incl = PlainInclude(mp.parent ? modulename, th.path)
+        val incl = PlainInclude(mp.parent ? modulename, t.path)
         //incl.setOrigin(GeneratedFrom(mp.parent ? modulename,this))
-        state.add(nt)
         state.add(incl)
         state.endAdd(incl)
-        language_theory = Some(th)
       }
     }
   }
