@@ -34,66 +34,22 @@ object SOMBArg {
   implicit def toSOMB(tm : Term) = STerm(tm)
 }
 
-import SOMBArg._
-
-/*
-object SOMB {
-
-  object bound {
-    def apply(binder:Term,ctx: Context, body: Term) = SOMB(binder, ctx, body)
-
-    def apply(binder:Term,ln: LocalName, tp: Option[Term], body: Term) = SOMB(binder, Context(tp match {
-      case Some(t) => OMV(ln) % t
-      case None => VarDecl(ln)
-    }), body)
-
-    def unapply(tm: Term) = tm match {
-      case SOMB(tt, List(SCtx(Context(vd, rest@_*)), STerm(bd))) =>
-        if (rest.isEmpty) Some(tt,vd.name, vd.tp, bd) else Some(tt,vd.name, vd.tp, apply(tt,Context(rest: _*), bd))
-      case _ => None
-    }
-  }
-  def apply(f : Term,scopes:SOMBArg*) : OMBINDC = {
-    val ctx = Context(scopes.flatMap{
-      case SCtx(ctx) => ctx.variables
-      case _ => Nil
-    }:_*)
-    OMBIND(OMS(SHTML.apply),ctx,OMA(f,scopes.toList.map{
-      case STerm(tm) => tm
-      case SCtx(ctx) => OMA(OMS(SHTML.meta_quantification),ctx.map(vd => OMV(vd.name)))
-    }))
-  }
-  def unapply(tm : Term) = tm match {
-    case OMBIND(OMS(SHTML.apply),ctx,OMA(f,scopes)) =>
-      var nctx = Context.empty
-      val ret = (f,scopes.map {
-        case OMA(OMS(SHTML.meta_quantification),args : List[OMV@unchecked]) =>
-          SCtx(args.map(v => {val vd = ctx(v.name); nctx = nctx ++ vd; vd} ))
-        case t => STerm(t)
-      })
-      if (ctx.forall(nctx.contains)) Some(ret) else None
-    case _ => None
+object STeXTraverser {
+  def apply[State](trav : Traverser[State], t : Term)(implicit con : Context, state : State) : Term = t match {
+    case SHTMLHoas.Omb(hoas,head,args) =>
+      val nhead = trav.traverse(head)(con,state)
+      var ncon = con
+      val nargs = args.map {
+        case SCtx(ctx) =>
+          val nctx = trav.traverseContext(ctx)(ncon,state)
+          ncon = ncon ++ nctx
+          SCtx(nctx)
+        case STerm(tm) => STerm(trav.traverse(tm)(ncon,state))
+      }
+      hoas.HOMB(nhead,nargs).from(t)
+    case _ => Traverser(trav,t)
   }
 }
-
-object SOMA {
-  def apply(f : Term,args : Term*) : Term = args.toList match {
-    case Nil => f
-    case ls => OMA(OMS(SHTML.apply),f :: ls)
-    //case List(a) => OMA(OMS(STeX.apply),List(f,a))
-    //case h :: tail => apply(OMA(OMS(STeX.apply),List(f,h)),tail:_*)
-  }
-  def unapply(tm : Term) : Option[(Term,List[Term])] = tm match {
-    /*case OMA(OMS(STeX.apply),(it@OMA(OMS(STeX.apply),_ :: _)) :: ls) =>
-      unapply(it).map { case (h,as) =>
-        (h,as ::: ls)
-      }*/
-    case OMA(OMS(SHTML.apply),f :: ls) => Some((f,ls))
-    case _ => None
-  }
-}
-
- */
 
 object SHTMLHoas {
   val sym = SHTML.mmtmeta_path ? "hoas"
@@ -247,39 +203,6 @@ sealed trait STeXHOAS {
 
   def apply(head: Term, vd:VarDecl,bd:Term): Term
 }
-object STeXHOAS {
-  /*
-  def fromTerm(tm : Obj) = tm match {
-    case OMA(OMS(STeX.meta_hoas),List(OMS(a),OMS(l))) =>
-      Some(SimpleHOAS(HOAS(a,l)))
-    case OMA(OMS(STeX.meta_hoas), List(
-    OMA(OMS(STeX.meta_hoas), List(OMS(a1), OMS(l1))),
-    OMA(OMS(STeX.meta_hoas), List(OMS(a2), OMS(l2))))) =>
-      Some(NestedHOAS(HOAS(a1,l1),HOAS(a2,l2)))
-    case _ => None
-  } */
-}
-/*
-case class SimpleHOAS(inner:HOAS) extends STeXHOAS {
-  override def toTerm: Term = STeX.meta_hoas(OMS(inner.apply),OMS(inner.bind))
-
-  def apply(head: Term, args: List[Term]): Term =
-    args.foldLeft(head)((f,a) => inner.apply(f,a))
-
-  def apply(head: Term, vd: VarDecl, bd: Term): Term =
-    inner.apply(head,OMBIND(OMS(inner.bind),Context(vd),bd))
-
-}
-case class NestedHOAS(obj:HOAS,meta:HOAS) extends STeXHOAS{
-  override def toTerm: Term = STeX.meta_hoas(
-    STeX.meta_hoas(OMS(obj.apply),OMS(obj.bind)),
-    STeX.meta_hoas(OMS(meta.apply),OMS(meta.bind))
-  )
-  def apply(head: Term, args: List[Term]): Term = ???
-
-  def apply(head: Term, vd: VarDecl, bd: Term): Term = ???
-}
-*/
 
 
 object SHTML {
@@ -525,64 +448,4 @@ object SHTML {
     val sym = meta_path ? "judgmentholds"
   }
 
-  /*
-  val notation = new {
-    val tp = new {
-      val sym = mmtmeta_path ? "notationtype"
-      def apply(nsym : GlobalName, arity : String) = OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity)))
-
-      def unapply(tm : Term) = tm match {
-        case OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity))) => Some((nsym,arity))
-        case _ => None
-      }
-    }
-    def apply(node : Node, prec : String, frag : String,op:Option[Node]) = {
-      op match {
-        case Some(op) =>
-          OMA(OMS(meta_notation),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node),OMFOREIGN(op)))
-        case None =>
-          OMA(OMS(meta_notation),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node)))
-      }
-    }
-    def unapply(tm : Term) = tm match {
-      case OMA(OMS(`meta_notation`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node))) =>
-        Some((node,prec,frag,None))
-      case OMA(OMS(`meta_notation`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node),OMFOREIGN(op))) =>
-        Some((node,prec,frag,Some(op)))
-      case _ => None
-    }
-  }
-  }
-
-
-
-  import SOMBArg._
-
-  val symboldoc = new {
-    val tp = mmtmeta_path ? "symboldoc"
-    val sym = mmtmeta_path ? "symboldocfor"
-    def apply(symbol : List[ContentPath],lang : String,doc : HTMLNode) = {
-      OMA(OMS(sym),StringLiterals(lang) :: OMFOREIGN(doc.node) :: symbol.map(s => StringLiterals(s.toString))) // OMFOREIGN
-    }
-    def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),StringLiterals(lang) :: OMFOREIGN(n) :: ls) =>
-        Some((ls.map(StringLiterals.unapply(_).get),lang,n))
-      case _ =>
-        None
-    }
-  }
-
-
-  val meta_macro = mmtmeta_path ? "macroname"
-  val meta_arity = mmtmeta_path ? "arity"
-  val meta_assoctype = mmtmeta_path ? "assoctype"
-  val meta_reorder = mmtmeta_path ? "reorder"
-  val meta_hoas = mmtmeta_path ? "hoas"
-
-  val meta_qforall = mmtmeta_path ? "universal"
-  val meta_qexists = mmtmeta_path ? "existential"
-
-  val meta_doctitle = mmtmeta_path ? "doctitle"
-
-   */
 }

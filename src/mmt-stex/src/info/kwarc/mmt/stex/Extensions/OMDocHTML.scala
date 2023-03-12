@@ -91,6 +91,11 @@ trait OMDocHTML { this : STeXServer =>
     def setTitle(n : Node) = {
       lastSection = Some(getString(n))
     }
+    var doneincludes : List[MPath] = Nil
+    def resetincludes = {
+      doneincludes = Nil
+      this
+    }
 
     private def getString(n : Node) = {
       val sb = new StringBuilder()
@@ -202,7 +207,7 @@ trait OMDocHTML { this : STeXServer =>
   private def moduleTop(t:Theory)(implicit state: OMDocState): NodeSeq = {
     val ns = t.path.doc
     val docpath = getDocPath(ns.toString, t.path.module.name)
-    <div><h2>Module {docpath.map(doLink(_)(<span>{ns}</span>)).getOrElse(<span>ns</span>)
+    <div><h2 style="display:inline;">Module {docpath.map(doLink(_)(<span>{ns}</span>)).getOrElse(<span>{ns}</span>)
       }?{t.name}</h2><hr/>{doModuleBody(t)}</div>
   }
 
@@ -359,13 +364,15 @@ trait OMDocHTML { this : STeXServer =>
     }
     def head = <b>Structure {symbolsyntax(c)}</b>
     mod match {
-      case Some(th:Theory) => collapsible(expanded=false,small=true) { head }{doStructureBody(th)}
+      case Some(th:Theory) => collapsible(expanded=false,small=true) { head }{doStructureBody(th)(state.resetincludes)}
       case _ => fakeCollapsible(true){ head }
     }
   }
 
   private def doConservative(th : Theory)(implicit state: OMDocState): NodeSeq = {
-    val base = th.getIncludesWithoutMeta match {
+    val base = th.getPrimitiveDeclarations.collect {
+      case Include(mp) => mp.from
+    } match {
       case List(mp) =>
         controller.getO(mp) match {
           case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty =>
@@ -392,11 +399,13 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
-  private def doStructureBody(th : Theory)(implicit state: OMDocState): NodeSeq = <div>
+  private def doStructureBody(th : Theory)(implicit state: OMDocState): NodeSeq = {
+    state.doneincludes ::= th.path
+  <div>
     <div>{th.getPrimitiveDeclarations.collect {
       case i@Include(mp) if i.getOrigin == Original => mp.from
     }.map{mp => controller.getO(mp) match {
-      case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty =>
+      case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty && !state.doneincludes.contains(t.path) =>
         t.metadata.getValues(ModelsOf.tp).head match {
           case OMS(p) =>
             collapsible(true, true) {<span style="display:inline;">Inherited from {
@@ -404,6 +413,11 @@ trait OMDocHTML { this : STeXServer =>
             }</span>} { doStructureBody(t)}
           case _ => <span style="display:inline;"><b>Extends </b>{doLink(mp){<span>{mp.name.toString}</span>}}</span>
         }
+      case Some(t: Theory) if !state.doneincludes.contains(t.path) && t.name.last.toString.startsWith("EXTSTRUCT") =>
+        collapsible(true, true) {
+          <span style="display:inline;">Inherited from Conservative Extension {doLink(mp) {<span>{mp.toString}</span>}}</span>
+        } {doStructureBody(t)}
+      case Some(t: Theory) if state.doneincludes.contains(t.path) => <span></span>
       case _ => <span style="display:inline;"><b>Extends </b>{doLink(mp){<span>{mp.name.toString}</span>}}</span>
     }}}</div>
       <div>
@@ -414,7 +428,7 @@ trait OMDocHTML { this : STeXServer =>
         case o => fieldInner(o)
       }}
       </div>
-  </div>
+  </div>}
 
   private def fieldInner(d: Declaration)(implicit state: OMDocState): NodeSeq = {
     d match {

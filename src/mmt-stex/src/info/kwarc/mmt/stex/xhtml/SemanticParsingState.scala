@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure, TermContainer}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.stex.Extensions.Definienda
-import info.kwarc.mmt.stex.{SHTML, STeXError, STeXServer}
+import info.kwarc.mmt.stex.{SHTML, STeXError, STeXServer, STeXTraverser}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
 import info.kwarc.mmt.stex.rules.{HTMLTermRule, StringLiterals}
 //import info.kwarc.mmt.stex.rules.{BindingRule, ConjunctionLike, ConjunctionRule, Getfield, HTMLTermRule, ModelsOf, ModuleType, RecType, SubstRule}
@@ -108,14 +108,14 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
               implbinds ++= vd//OMV(tpn))
           }
           v
-        case _ => Traverser(this,t)
+        case _ => STeXTraverser(this,t)
       }
     }
     val trav2 = new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
         case OMV(x) if !nobinds.contains(x) && tosolves.exists(_.name == x) =>
           Solver.makeUnknown(x,con.map(v => OMV(v.name)))
-        case _ => Traverser(this,t)
+        case _ => STeXTraverser(this,t)
       }
     }
     ntm = trav1(ntm,())

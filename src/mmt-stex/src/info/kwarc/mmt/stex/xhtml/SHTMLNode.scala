@@ -106,6 +106,29 @@ abstract class SHTMLNode(orig: HTMLNode,val key : Option[String] = None) extends
     ret
   }
   protected def getTermI : Option[Term] = None
+
+  protected def getWithRole(role: String) = {
+    val state = sstate.get
+    try {
+      var ret: Option[(Term, Option[SHTMLHoas.HoasRule])] = None
+      self.getRuleContext.getIncludes.foreach { i =>
+        state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
+          case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains(role) =>
+            state.getRuler(c.toTerm) match {
+              case Some(r) =>
+                ret = Some((c.toTerm, SHTMLHoas.get(r)))
+              case _ => ret = Some((c.toTerm, None))
+            }
+          case _ =>
+        }
+      }
+      ret
+    } catch {
+      case e: info.kwarc.mmt.api.Error =>
+        state.error(e)
+        None
+    }
+  }
 }
 
 abstract class SHTMLRule(override val priority: Int = 0) extends HTMLRule {
@@ -345,6 +368,27 @@ case class SHTMLType(orig:HTMLNode) extends SHTMLNode(orig,Some("type")) {
 }
 case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens")) {
   set_in_term
+
+  object lambda {
+    lazy val tmhoas = getWithRole("lambda")
+    def apply(vd: VarDecl, bd: Term) = tmhoas match {
+      case Some((tm, Some(h))) => sstate.get.applyTerm(SHTMLHoas.bound(Some(h), tm, vd, bd))
+      case Some((tm, None)) => sstate.get.applyTerm(OMBIND(tm, Context(vd), bd))
+      case None =>
+        ???
+    }
+    def unapply(t: Term) = tmhoas match {
+      case Some((tm, Some(h))) => t match {
+        case SHTMLHoas.bound(Some(`h`), `tm`, vd, bd) => Some((vd, bd))
+        case _ => None
+      }
+      case Some((tm, None)) => t match {
+        case SHTMLHoas.bound(None, `tm`, vd, bd) => Some((vd, bd))
+        case _ => None
+      }
+      case None => None
+    }
+  }
   override def copy: HTMLNode = SHTMLDefiniens(orig.copy)
   lazy val path = this.plain.attributes.get((HTMLParser.ns_shtml, "definiens")) match {
     case Some(s) if s.nonEmpty => Some(Path.parseS(s))
@@ -362,7 +406,14 @@ case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens"
             sstate.foreach { state =>
               state.getO(p) match {
                 case Some(c : Constant) =>
-                  val (df,tp) = matchterms(Some(state.applyTopLevelTerm(tm)),c.tp)
+                  val vars = getVariableContext.filter(state.isBound).reverse.distinctBy(_.name).reverse
+                  val idf = (lambda.tmhoas,vars) match {
+                    case (Some(_),ctx) if ctx.nonEmpty =>
+                      state.applyTopLevelTerm(vars.foldRight(getTerm)((vd, t) => lambda(vd, t)),false)
+                    case _ =>
+                      state.applyTopLevelTerm(tm)
+                  }
+                  val (df,tp) = matchterms(Some(idf),c.tp)
                   val nc = Constant(c.home,c.name,c.alias,tp,df,c.rl)
                   nc.metadata = c.metadata
                   state.update(nc)
@@ -382,28 +433,7 @@ case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens"
 }
 
 trait Propositional extends SHTMLNode {
-  private def getWithRole(role:String) = {
-    val state = sstate.get
-    try {
-      var ret : Option[(Term,Option[SHTMLHoas.HoasRule])] = None
-      self.getRuleContext.getIncludes.foreach { i =>
-        state.server.ctrl.globalLookup.forDeclarationsInScope(OMMOD(i)) {
-          case (_, _, c: Constant) if c.rl.map(r => r.split(' ').toList).getOrElse(Nil).contains(role) =>
-            state.getRuler(c.toTerm) match {
-              case Some(r) =>
-                ret = Some((c.toTerm, SHTMLHoas.get(r)))
-              case _ => ret = Some((c.toTerm, None))
-            }
-          case _ =>
-        }
-      }
-      ret
-    } catch {
-      case e: info.kwarc.mmt.api.Error =>
-        state.error(e)
-        None
-    }
-  }
+
   object judgment {
     lazy val tmhoas = getWithRole("judgment")
     def apply(t : Term) = tmhoas match {

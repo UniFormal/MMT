@@ -57,6 +57,17 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
           }
         case _ => args
       }
+    case STerm(t1) :: STerm(t2) :: SCtx(Context(vd)) :: STerm(SHTMLHoas.Omb(`h`, `f`, iargs)) :: Nil =>
+      val ret = undoPre(h, f, iargs)
+      ret.take(2) match {
+        case List(STerm(`t1`),STerm(`t2`)) =>
+          ret.tail.headOption match {
+            case Some(SCtx(ctx)) =>
+              STerm(t1) :: STerm(t2) :: SCtx(Context(vd) ++ ctx) :: ret.tail.tail
+            case _ => args
+          }
+        case _ => args
+      }
     case _ => args
   }
   private def undoBin(h : Option[SHTMLHoas.HoasRule],f : Term,pre:List[Term],ls:List[Term],post:List[Term]): List[Term] = ls match {
