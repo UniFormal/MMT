@@ -173,29 +173,24 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     case _ =>
   }
 
-  def moduleOrStructure(pathorname: String) : DictionaryModule = {
+  def moduleOrStructure[A <: TeXTokenLike](pathorname: String)(implicit parser: ParseState[A]) : DictionaryModule = {
     def default = requireModule(resolveMPath("",pathorname),"",pathorname)
     if (pathorname.contains('?'))
       default
     else {
-      all_modules.values.find {
-        case mod => mod.macr match {
-          case MathStructure(_, _, syminfo, _) if syminfo.macroname == pathorname || syminfo.path.name.toString == pathorname => true
-          case _ => false
-        }
-        case _ => false
-      }.getOrElse(default)
+      getStructure(pathorname).getOrElse{ default }
     }
   }
 
-  def structure[A <: TeXTokenLike](name: String) : DictionaryModule = {
-    all_modules.values.find {
-      case mod => mod.macr match {
-        case MathStructure(_, _, syminfo, _) if syminfo.macroname == name || syminfo.path.name.toString == name => true
-        case _ => false
-      }
-      case _ => false
-    }.getOrElse{
+  private def getStructure[A <: TeXTokenLike](name: String)(implicit parser: ParseState[A]): Option[DictionaryModule] = {
+    val dicts = parser.latex.collectRules {
+      case s@MathStructure(_, _, syminfo, _) if syminfo.macroname == name || syminfo.path.name.toString == name => s
+    }
+    all_modules.values.find(mod => dicts.contains(mod.macr))
+  }
+
+  def structure[A <: TeXTokenLike](name: String)(implicit parser: ParseState[A]) : DictionaryModule = {
+    getStructure(name).getOrElse{
       throw LaTeXParseError("No structure " + name + " found")
     }
   }

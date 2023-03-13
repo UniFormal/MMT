@@ -370,11 +370,8 @@ trait NotationRuleLike extends STeXRule with MacroRule {
     NotationInfo(syminfo,id,not,op)
   }
 }
-class SymdeclApp(val syminfo:SymdeclInfo,val dict:Dictionary) extends MacroApplication with SemanticMacro {
-  val name = syminfo.macroname
-  def cloned = new SymdeclApp(syminfo,dict) {
-    override val name = syminfo.path.toString
-  }
+class SymdeclApp(val syminfo:SymdeclInfo,val dict:Dictionary)(val name : String = syminfo.macroname) extends MacroApplication with SemanticMacro {
+  def cloned = new SymdeclApp(syminfo,dict)(syminfo.path.toString)
 
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this,startoffset,endoffset - startoffset,SymbolKind.Function,symbolname = syminfo.path.toString)
@@ -388,7 +385,7 @@ class SymdeclApp(val syminfo:SymdeclInfo,val dict:Dictionary) extends MacroAppli
     }
   }
 }
-case class TextSymdeclApp(_syminfo:SymdeclInfo,_dict:Dictionary) extends SymdeclApp(_syminfo,_dict)
+case class TextSymdeclApp(_syminfo:SymdeclInfo,_dict:Dictionary)(name : String = _syminfo.macroname) extends SymdeclApp(_syminfo,_dict)(name)
 case class NotationApp(notinfo:NotationInfo,dict:Dictionary,alternatives:List[SymdeclInfo],reftokens:List[TeXTokenLike]) extends MacroApplication with NotationMacro with STeXRule {
   val name = "notation/" + notinfo.syminfo.path + "#" + notinfo.id
   override def doAnnotations(in: sTeXDocument): Unit = {
@@ -406,7 +403,7 @@ case class SymDeclRule(dict:Dictionary) extends SymDeclRuleLike with MacroRule {
   def apply(implicit parser: ParseState[PlainMacro]): SymdeclApp = {
     val makemacro = !parser.readChar('*')
     val (si,o) = parseNameAndOpts(makemacro)
-    val ret = new SymdeclApp(si,dict)
+    val ret = new SymdeclApp(si,dict)()
     o.foreach(_.asKeyVals.foreach{p =>
       ret.addError("Unknown argument: " + p._1.mkString.trim)
     })
@@ -422,7 +419,7 @@ case class TextSymDeclRule(dict:Dictionary) extends SymDeclRuleLike with MacroRu
   override def apply(implicit parser: ParseState[PlainMacro]): TextSymdeclApp = {
     val (si, o) = parseNameAndOpts(true)
     //val si = new SymdeclInfo(_si.macroname,_si.path.module ? (_si.path.name.toString + "-sym"),_si.args,_si.file,_si.start,_si.end,_si.defined,_si.ret)
-    val ret = TextSymdeclApp(si,dict)
+    val ret = TextSymdeclApp(si,dict)()
     o.foreach(_.asKeyVals.foreach { p =>
       ret.addError("Unknown argument: " + p._1.mkString.trim)
     })
@@ -437,7 +434,7 @@ case class SymDefRule(dict:Dictionary) extends SymDeclRuleLike with NotationRule
   override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
     val (si, o) = parseNameAndOpts(true)
     val not = parseOptsNot(si,o)
-    val ret = new SymdeclApp(si, dict) with NotationMacro {
+    val ret = new SymdeclApp(si, dict)() with NotationMacro {
       override val notinfo: NotationInfo = not
       override val alternatives: List[SymdeclInfo] = Nil
       override val reftokens: List[TeXTokenLike] = Nil
@@ -724,7 +721,7 @@ trait StatementRule extends SymDeclRuleLike with SymRefRuleLike {
       case Some(_) =>
         val sym = processOpts(macroname.getOrElse(""),macroname.isDefined,opts)
         sym.isDocumented = true
-        val ret = new SymdeclApp(sym, dict)
+        val ret = new SymdeclApp(sym, dict)()
         addExportRule(ret)
         if (macroname.isDefined) addExportRule(ret.cloned)
         Some(ret)
@@ -1026,14 +1023,14 @@ trait MMTStructure extends STeXRule {
             case None => parent.path ? (path.name / sm.path.name)
           }
           val si = sm.copy(macroname = m.getOrElse(newpath.toString),path = newpath,defined = sm.defined || d.isDefined)
-          val ret = new SymdeclApp(si,dict)
+          val ret = new SymdeclApp(si,dict)()
           addExportRule(ret)
           if (si.macroname != newpath.toString) addExportRule(ret.cloned)
           ret
         case None /* TODO if istotal? */ =>
           val newpath = if (isimplicit) sm.path else parent.path ? (path.name / sm.path.name)
           val si = sm.copy(macroname = newpath.toString, path = newpath)
-          val ret = new SymdeclApp(si, dict)
+          val ret = new SymdeclApp(si, dict)()
           addExportRule(ret)
           ret
       }

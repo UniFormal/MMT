@@ -99,7 +99,10 @@ class ParseState[A <: TeXTokenLike](val latex: LaTeXParser, val trigger: A) {
 
   def readOptAgument : Option[OptionalArgument] = {
     latex.In.trim
-    latex.In.first match {
+    (try { latex.In.first } catch {
+      case _ : java.util.NoSuchElementException =>
+        return None
+    }) match {
       case '[' =>
         children ::= latex.next()
         val ret = readOptI

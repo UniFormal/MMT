@@ -392,14 +392,24 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
    private var bootToken : Option[Int] = None
    def doPing: Unit = Future {
-     Thread.sleep(30000)
+     Thread.sleep(60000)
      while (true) {
-       Thread.sleep(10000)
+       Thread.sleep(60000)
        try {
          client.client.ping().get(60, TimeUnit.SECONDS)
        } catch {
          case _: java.util.concurrent.TimeoutException =>
-           sys.exit()
+           try {
+             client.client.ping().get(60, TimeUnit.SECONDS)
+           } catch {
+             case _: java.util.concurrent.TimeoutException =>
+               try {
+                 client.client.ping().get(60, TimeUnit.SECONDS)
+               } catch {
+                 case _: java.util.concurrent.TimeoutException =>
+                   sys.exit()
+               }
+           }
        }
      }
    }(scala.concurrent.ExecutionContext.global)
