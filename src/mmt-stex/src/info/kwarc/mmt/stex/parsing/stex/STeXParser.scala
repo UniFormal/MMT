@@ -186,7 +186,10 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     val dicts = parser.latex.collectRules {
       case s@MathStructure(_, _, syminfo, _) if syminfo.macroname == name || syminfo.path.name.toString == name => s
     }
-    all_modules.values.find(mod => dicts.contains(mod.macr))
+    all_modules.values.find(_.macr match {
+      case MathStructure(_,_,si,_) => dicts.exists(_.syminfo.path == si.path)
+      case _ => false
+    })
   }
 
   def structure[A <: TeXTokenLike](name: String)(implicit parser: ParseState[A]) : DictionaryModule = {
@@ -237,7 +240,7 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
       case Some(mod) =>
         val ret = InheritModuleRule(mod,export)
         parser.latex.collectFirstRule{
-          case InheritModuleRule(`mod`, _) if !export => true
+          case InheritModuleRule(`mod`, _) if !export => true // TODO this does not work transitively!
           case InheritModuleRule(`mod`, true) => true
         } match {
           case Some(_) =>
