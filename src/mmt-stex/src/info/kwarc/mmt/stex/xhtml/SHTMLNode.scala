@@ -831,14 +831,13 @@ case class SHTMLInputref(target:String,orig : HTMLNode) extends SHTMLNode(orig,S
   }
   def init = {
     sstate.foreach { state =>
-      findAncestor { case t: SHTMLDocument => t }.foreach { doc =>
-        val rtarget = Path.parseD((if (target.endsWith(".tex")) target.dropRight(4) else target) + ".omdoc",NamespaceMap.empty)
-        val dref = DRef(doc.path, rtarget)
-        dref.setOrigin(GeneratedDRef)
-        doSourceRef(dref)
-        state.add(dref)
-        state.bindings.add(ImportStep(rtarget))
-      }
+      val doc = state.doc
+      val rtarget = Path.parseD((if (target.endsWith(".tex")) target.dropRight(4) else target) + ".omdoc",NamespaceMap.empty)
+      val dref = DRef(doc.path, rtarget)
+      dref.setOrigin(GeneratedDRef)
+      doSourceRef(dref)
+      state.add(dref)
+      state.bindings.add(ImportStep(rtarget))
     }
   }
   init
@@ -1102,7 +1101,11 @@ case class SHTMLSection(orig: HTMLNode) extends SHTMLNode(orig,Some("section")) 
     state.bindings.add(new SectionStep(lvl.getOrElse(-1)))
     state match {
       case s : SemanticState =>
-        val nd = new Document(s.doc.path / this.hashCode().toHexString, SectionLevel)
+        val name = plain.attributes.get((plain.namespace,"id")) match {
+          case Some(id) => LocalName(id)
+          case _ => LocalName(this.hashCode().toHexString)
+        }
+        val nd = new Document(s.doc.path / name, SectionLevel)
         s.add(nd)
         s.openDoc(nd)
       case _ =>

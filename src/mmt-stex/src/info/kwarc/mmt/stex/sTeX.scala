@@ -212,6 +212,7 @@ object SHTML {
   val meta_path = meta_dpath ? "Metatheory"
   val mmtmeta_path = meta_dpath ? "MMTMeta"
   val meta_quantification = mmtmeta_path ? "quantification"
+  val meta_srefid = mmtmeta_path ? "srefid"
 
   val string = mmtmeta_path ? "stringliteral"
   val int = meta_path ? "integer literal"

@@ -126,12 +126,45 @@ trait SHTMLDocumentServer { this : STeXServer =>
         val dp = DPath(nm.foldLeft(a.narrationBase)((u, s) => u / s))
         controller.getO(dp) match {
           case Some(d : Document) =>
-            doSections(d)
+            JSONObject(("archive",JSONString(a.id)),("filepath",JSONString(fp.replace(".tex",".xhtml").replace(".omdoc",".xhtml"))),
+              ("children",doSectionChildren(d)),("ids",JSONArray(d.metadata.getValues(SHTML.meta_srefid) collect {
+                case StringLiterals(id) => JSONString(id)
+              }:_*))
+            )
           case _ => JSONObject()
         }
       case _ => JSONObject()
     }
   }
+
+  private def doSectionChildren(d:Document):JSONArray = JSONArray(
+    d.getDeclarationsElaborated.flatMap {
+      case d: Document => Some(doSections(d))
+      case dr: DRef => Some(doSection(dr.target))
+      case _ => None
+    }: _*
+  )
+
+  private def doSection(d : DPath) : JSON = {
+    (controller.backend.resolveLogical(d.uri),controller.getO(d)) match {
+      case (Some((a,ls)),Some(d:Document)) =>
+        JSONObject(("archive", JSONString(a.id)), ("filepath", JSONString(ls.mkString("/").replace(".tex", ".xhtml").replace(".omdoc", ".xhtml"))),
+          ("children", doSectionChildren(d)),("ids", JSONArray(d.metadata.getValues(SHTML.meta_srefid) collect {
+            case StringLiterals(id) => JSONString(id)
+          }: _*))
+        )
+      case _ => JSONObject()
+    }
+  }
+
+  private def doSections(d: Document): JSON = JSONObject(
+    ("title", JSONString(getTitle(d).map(_.toString()).getOrElse(""))),
+    ("ids", JSONArray(d.metadata.getValues(SHTML.meta_srefid) collect {
+      case StringLiterals(id) => JSONString(id)
+    }: _*)),
+    ("id",JSONString(d.path.last)),
+    ("children", doSectionChildren(d))
+  )
 
   def doDefinienda(implicit dp: DocParams): JSON = {
     (dp.archive, dp.filepath) match {
@@ -161,20 +194,6 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case _ => Nil
     }
   }
-
-  private def doSections(d : Document) : JSON = JSONObject(
-    ("title",JSONString(getTitle(d).map(_.toString()).getOrElse(""))),
-    ("children",JSONArray(
-      d.getDeclarationsElaborated.flatMap {
-        case d : Document => Some(doSections(d))
-        case dr : DRef => controller.getO(dr.target) match {
-          case Some(d : Document) => Some(doSections(d))
-          case _ => None
-        }
-        case _ => None
-      } :_*
-    ))
-  )
 
   protected case class PresentationRule(key: String, newobj: (String, HTMLParser.ParsingState, HTMLNode) => Option[SHTMLNode], override val priority: Int = 0) extends SHTMLRule(priority) {
     def apply(s: HTMLParser.ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
