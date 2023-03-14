@@ -115,6 +115,9 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
       lazy val html = doc.map{d =>
         HTMLParser(d.toString())(new ParsingState(controller, Nil))
       }
+      def transitive: Set[GlobalName] = {
+        dependencies.map(_.symbol) + symbol ++ dependencies.flatMap(_.transitive)
+      }
       def fill : Unit = {
         var syms : List[GlobalName] = Nil
         html.toList.foreach { html =>
@@ -142,7 +145,7 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
           }
         }
         syms.distinct.foreach(getDep(_) match {
-          case o if o == this =>
+          case o if o.transitive.contains(this.symbol) =>
           case o => dependencies += o
         })
         //syms.distinct.foreach(s => dependencies += getDep(s))
