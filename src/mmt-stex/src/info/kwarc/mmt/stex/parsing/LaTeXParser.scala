@@ -490,7 +490,21 @@ class LaTeXParser(stringin:SyncedDocUnparsed,initrules : List[TeXRule] = TeXRule
     stringin.drop("%")
     var str = stringin.takeWhileSafe(c => c != '\n' && c != '\r')
     str = str + stringin.takeWhileSafe(c => c == '\n' || c == '\r' || c == ' ' || c == '\t')
+    if (str.trim.startsWith("%STEXIDE")) doDirective(str.trim.drop(8).trim)
     Comment(str,start)
+  }
+  private def doDirective(str : String): Unit = {
+    val ls = str.split("\\s+").map(_.trim).toList
+    ls match {
+      case List("env",envname,args) if args.forall("vnotm".contains(_)) =>
+        addRule(SkipEnvironment(envname,args))
+      case List("cmd", cmdname, args) if args.forall("vnotm".contains(_)) =>
+        addRule(SkipCommand(cmdname, args))
+      case List("nolint") =>
+        In.stringUntil(In.startsWith("%%STEXIDE dolint"))
+      case List("dolint") =>
+      case _ =>
+    }
   }
   def doMacro(pm:PlainMacro) = {
     getMacroRule(pm.name) match {

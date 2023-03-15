@@ -3,7 +3,7 @@ package info.kwarc.mmt.stex.Extensions
 import info.kwarc.mmt.api.checking.{History, HistoryEntry}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{OMA, OMFOREIGN, OMMOD, OMS}
+import info.kwarc.mmt.api.objects.{IsRealization, OMA, OMFOREIGN, OMID, OMMOD, OMS}
 import info.kwarc.mmt.api.presentation.{Presenter, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, NestedModule, RuleConstant, Structure}
 import info.kwarc.mmt.api.{CPath, DPath, DefComponent, GlobalName, LocalName, MPath, NamespaceMap, Original, Path, SemanticObject, StructuralElement, TypeComponent}
@@ -238,7 +238,7 @@ trait OMDocHTML { this : STeXServer =>
 
   private def doModuleBody(theory: Theory,sig:Option[MPath] = None)(implicit state: OMDocState): NodeSeq = <div>
     <div>{theory.getPrimitiveDeclarations.collect {
-      case i @ Include(mp) if i.getOrigin == Original && !sig.contains(mp.from) => mp.from
+      case i @ Include(mp) if i.getOrigin == Original && !sig.contains(mp.from) && !mp.total => mp.from
     } match {
       case Nil =>
       case ls => <span style="display:inline;"><b>Includes </b>{
@@ -247,7 +247,7 @@ trait OMDocHTML { this : STeXServer =>
       }<hr/></span>
     }}</div>
     <div>{theory.getPrimitiveDeclarations.flatMap {
-      case Include(_) => Nil
+      case Include(id) if !id.total => Nil
       case nm:NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
       case nm:NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
       case o => declInner(o)
@@ -371,7 +371,7 @@ trait OMDocHTML { this : STeXServer =>
 
   private def doConservative(th : Theory)(implicit state: OMDocState): NodeSeq = {
     val base = th.getPrimitiveDeclarations.collect {
-      case Include(mp) => mp.from
+      case Include(idata) if !idata.total => idata.from
     } match {
       case List(mp) =>
         controller.getO(mp) match {
@@ -389,7 +389,8 @@ trait OMDocHTML { this : STeXServer =>
         collapsible(true,true){
           <span style="display:inline;"><b>Conservative Extension</b> of {doLink(p){<span>{p.name.toString}</span>}}</span>
         }{<div>{th.getPrimitiveDeclarations.flatMap {
-          case Include(_) => Nil
+          case Include(id) if !id.total => Nil
+          case s:Structure => doCopymoduleInStructure(s)
           case nm: NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
           case nm: NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
           case o => fieldInner(o)
@@ -399,11 +400,49 @@ trait OMDocHTML { this : STeXServer =>
     }
   }
 
+  private def doCopymoduleInStructure(s : Structure)(implicit state: OMDocState): NodeSeq = {
+    val dom = s.from match {
+      case OMMOD(p) => controller.getO(p)
+      case _ => None
+    }
+    def head = dom match {
+      case Some(t : Theory) if s.isTotal && s.isImplicit && t.metadata.getValues(ModelsOf.tp).nonEmpty =>
+        t.metadata.getValues(ModelsOf.tp).head match {
+          case OMS(p) =>
+            <span style="display:inline">Realizes {doLink(p){<span>{p.name.toString}</span>}}</span>
+          case _ => <span style="display:inline">Unknown Realization</span>
+        }
+      case _ =>
+        <span>TODO</span>
+    }
+    def doBody : NodeSeq = {
+      s.getDeclarationsElaborated.flatMap {
+        case ec : Constant if ec.metadata.getValues(SHTML.headterm).nonEmpty =>
+          ec.metadata.getValues(SHTML.headterm).head match {
+            case OMS(p) => controller.getO(p) match {
+              case Some(c : Constant) =>
+                doField(ec)
+              case _ =>
+                <span>TODO</span>
+            }
+            case _ =>
+              <span>TODO</span>
+          }
+      }
+    }
+    dom match {
+      case Some(t : Theory) =>
+        collapsible(true,true){head}{doBody}
+      case _ =>
+        <span style="display:inline">Unknown Morphism</span>
+    }
+  }
+
   private def doStructureBody(th : Theory)(implicit state: OMDocState): NodeSeq = {
     state.doneincludes ::= th.path
   <div>
     <div>{th.getPrimitiveDeclarations.collect {
-      case i@Include(mp) if i.getOrigin == Original => mp.from
+      case i@Include(mp) if i.getOrigin == Original && !mp.total => mp.from
     }.map{mp => controller.getO(mp) match {
       case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty && !state.doneincludes.contains(t.path) =>
         t.metadata.getValues(ModelsOf.tp).head match {
@@ -422,7 +461,7 @@ trait OMDocHTML { this : STeXServer =>
     }}}</div>
       <div>
         {th.getPrimitiveDeclarations.flatMap {
-        case Include(_) => Nil
+        case Include(id) if !id.total => Nil
         case nm: NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
         case nm: NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
         case o => fieldInner(o)

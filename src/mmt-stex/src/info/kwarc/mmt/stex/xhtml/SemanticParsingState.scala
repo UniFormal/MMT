@@ -218,7 +218,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
 
   private lazy val checker = controller.extman.get(classOf[MMTStructureChecker]).head
 
-  private lazy val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore, new MMTTask {})
+  private lazy val ce = CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore, new MMTTask {})
 
   def check(se: StructuralElement) = try {
     eh match {

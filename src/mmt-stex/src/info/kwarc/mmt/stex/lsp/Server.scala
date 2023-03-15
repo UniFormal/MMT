@@ -688,7 +688,7 @@ object Main {
     controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
     controller.extman.addExtension(new TrivialBuildManager)
     controller.extman.addExtension(end)
-    controller.backend.openArchive(File(args.head))
+    controller.backend.openArchive(mathhub_dir)
     end.runLocal
   }
 }

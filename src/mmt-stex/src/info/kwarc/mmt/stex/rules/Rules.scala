@@ -653,6 +653,10 @@ object AssocRule extends HTMLTermRule {
       ctx.variables.init.foldRight(
         h.HOMB(f, STerm(v) :: SCtx(ctx.variables.last) :: rest)
       )((vd, ti) => h.HOMB(f, STerm(state.markAsUnknown(OMV(state.getUnknown))) :: SCtx(vd) :: STerm(ti) :: Nil))
+    case STerm(v1@OMV(_)) :: STerm(v2@OMV(_)) :: SCtx(ctx) :: rest if ctx.nonEmpty && state.isUnknown(v1) && state.isUnknown(v2) =>
+      ctx.variables.init.foldRight(
+        h.HOMB(f, STerm(v1) :: STerm(v2) :: SCtx(ctx.variables.last) :: rest)
+      )((vd, ti) => h.HOMB(f, STerm(state.markAsUnknown(OMV(state.getUnknown))) :: STerm(state.markAsUnknown(OMV(state.getUnknown))) :: SCtx(vd) :: STerm(ti) :: Nil))
     case STerm(t) :: SCtx(ctx) :: rest if ctx.nonEmpty =>
       ctx.variables.init.foldRight(
         h.HOMB(f, STerm(t) :: SCtx(ctx.variables.last) :: rest)

@@ -51,6 +51,12 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
               $scope.refreshCount = 1;
           })
       };
+      $scope.redo = function(id) {
+          $http.get('/:buildserver/redo?'+id).success(function(data) {
+              $scope.refreshRate = 1;
+              $scope.refreshCount = 1;
+          })
+      };
       $scope.fileName ='';
       $scope.make = function() {
         var t = $scope.targets.current;

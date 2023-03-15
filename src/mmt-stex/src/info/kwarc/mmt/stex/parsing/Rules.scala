@@ -321,9 +321,10 @@ trait VerbatimLikeRule extends TeXRule {
     PlainText(str,start,parser.In.offset)
   }
 }
-case class VerbatimEnvRule(envname:String) extends EnvironmentRule with VerbatimLikeRule {
+case class VerbatimEnvRule(envname:String,args:String = "") extends EnvironmentRule with VerbatimLikeRule with Skip{
   override def applyStart(implicit parser: ParseState[Begin.BeginMacro]): Environment = {
     val env = super.applyStart
+    skip
     parser.children = readVerb("\\end{" + envname + "}")(parser.latex) :: parser.children
     env
   }
@@ -342,15 +343,29 @@ case class InlineVerbRule(name:String) extends MacroRule with VerbatimLikeRule {
   }
 }
 
-case class SkipCommand(name : String,args:String) extends MacroRule {
-  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
-    args.foreach{
-      case 'n' => parser.readArgumentNoRules
-      case 'e' => parser.readArgument
+trait Skip extends TeXRule {
+  val args : String
+  def skip[A <: TeXTokenLike](implicit parser: ParseState[A]) = {
+    args.foreach {
+      case 'v' => parser.readArgumentNoRules
+      case 'n' => parser.readArgument
       case 'o' => parser.readOptAgument
-      case 't' => parser.latex.escapeMath{ parser.readArgument }
-      case 'm' => parser.latex.inMath{ parser.readArgument }
+      case 't' => parser.latex.escapeMath {parser.readArgument}
+      case 'm' => parser.latex.inMath {parser.readArgument}
     }
+  }
+}
+case class SkipEnvironment(envname: String, args:String) extends EnvironmentRule with Skip {
+  override def applyStart(implicit parser: ParseState[Begin.BeginMacro]): Environment = {
+    skip
+    new Environment(parser.trigger)
+  }
+
+}
+
+case class SkipCommand(name : String,args:String) extends MacroRule with Skip {
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    skip
     new MacroApplication
   }
 }
@@ -432,325 +447,17 @@ object TeXRules {
     VerbatimEnvRule("verbatim"),VerbatimEnvRule("lstlisting"),VerbatimEnvRule("stexcode"),
     InlineVerbRule("lstinline"),InlineVerbRule("verb"),InlineVerbRule("stexcodeinline"),
     lstdefinelanguage,url,makeatletter,makeatother,explsyntaxon,explsyntaxoff,
-    SkipCommand("newcommand","noon"),
-    SkipCommand("providecommand", "noon"),
-    SkipCommand("renewcommand", "noon"),
-    SkipCommand("newenvironment", "noonn"),
-    SkipCommand("renewenvironment", "noonn"),
-    SkipCommand("NewDocumentCommand", "nnn"),
-    SkipCommand("DeclareDocumentCommand", "nnn"),
-    SkipCommand("DeclareRobustCommand", "nn"),
-    SkipCommand("NewDocumentEnvironment", "nnnn"),
-    SkipCommand("DeclareDocumentEnvironment", "nnnn"),
+    SkipCommand("newcommand","voov"),
+    SkipCommand("providecommand", "voov"),
+    SkipCommand("renewcommand", "voov"),
+    SkipCommand("newenvironment", "voovv"),
+    SkipCommand("renewenvironment", "voovv"),
+    SkipCommand("NewDocumentCommand", "vvv"),
+    SkipCommand("DeclareDocumentCommand", "vvv"),
+    SkipCommand("DeclareRobustCommand", "vv"),
+    SkipCommand("NewDocumentEnvironment", "vvvv"),
+    SkipCommand("DeclareDocumentEnvironment", "vvvv"),
     SkipCommand("hbox","t"),SkipCommand("vbox","t"),SkipCommand("text","t"),
-    SkipCommand("texttt","t"),SkipCommand("ensuremath","m"),SkipCommand("scalebox","nt")
+    SkipCommand("texttt","t"),SkipCommand("ensuremath","m"),SkipCommand("scalebox","vt")
   )
-
 }
-/*
-import info.kwarc.mmt.lsp.SyncedDocUnparsed
-
-import scala.collection.mutable
-
-
-trait TeXRule {
-  val noargs = List("}", "\\begin", "\\end", "$", "\\]", "\\[")
-  def safely[A <: TeXTokenLike](elem: => A)(f : => A): A = try { f } catch {
-    case LaTeXParseError(s,e,l) =>
-      val ge = elem
-      ge.addError(s,e,l)
-      ge
-  }
-  def name:String
-  def readChar(c:Char)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): (Boolean,List[TeXTokenLike]) = {
-    import SuperficialLaTeXParser._
-    in.trim
-    var occured = false
-    var children : List[TeXTokenLike] = Nil
-    while (!in.empty && (in.first match {
-      case `c` =>
-        val start = in.offset
-        in.drop(1)
-        children ::= new PlainText(c.toString,start,in.offset)
-        occured = true
-        false
-      case '%' =>
-        children ::= readComment
-        true
-      case _ =>
-        false
-    })) {}
-    (occured,children)
-  }
-
-  def readSafeArg(top:String)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
-    import SuperficialLaTeXParser._
-    var children : List[TeXTokenLike] = Nil
-    var done = false
-    in.trim
-    while (!done && !in.empty) {
-      if (noargs.exists(in.startsWith)) {
-        throw LaTeXParseError(noargs.find(in.startsWith).get + " should not start an argument for " + top)
-      }
-      in.first match {
-        case '%' =>
-          children ::= readComment
-          in.trim
-        case '{' =>
-          done = true
-          val ret = readGroup
-          children ::= ret
-          return (ret,children.reverse)
-        case '\\' =>
-          done = true
-          val ret = readMacro
-          children ::= ret
-          return (ret, children.reverse)
-        case o =>
-          done = true
-          in.drop(1)
-          val ret = new PlainText(o.toString, in.offset-1, in.offset)
-          children ::= ret
-          return (ret,children.reverse)
-      }
-    }
-    throw LaTeXParseError("File ended unexpectedly")
-  }
-
-  def readArg(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (TeXTokenLike,List[TeXTokenLike]) = {
-    import SuperficialLaTeXParser._
-    var children : List[TeXTokenLike] = Nil
-    var done = false
-    in.trim
-    while (!done && !in.empty) {
-      in.first match {
-        case '%' =>
-          children ::= readComment
-          in.trim
-        case '{' =>
-          done = true
-          val ret = readGroup
-          children ::= ret
-          return (ret,children.reverse)
-        case '\\' =>
-          done = true
-          val ret = readMacro
-          children ::= ret
-          return (ret,children.reverse)
-        case o =>
-          done = true
-          in.drop(1)
-          val ret = new PlainText(o.toString, in.offset-1, in.offset)
-          children ::= ret
-          return (ret,children.reverse)
-      }
-    }
-    throw LaTeXParseError("File ended unexpectedly")
-  }
-
-  def readOptArg(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : (List[List[TeXTokenLike]],List[TeXTokenLike]) = {
-    import SuperficialLaTeXParser._
-      in.trim
-      var children: List[TeXTokenLike] = Nil
-      var args: List[List[TeXTokenLike]] = Nil
-      while (!in.empty) {
-        in.first match {
-          case '%' =>
-            children = children ::: List(readComment)
-            in.trim
-          case '[' =>
-            var done = false
-            in.drop(1)
-            children = children ::: List(new PlainText("[", in.offset - 1, in.offset))
-            while (!done) {
-              if (in.empty) {
-                done = true
-                throw LaTeXParseError("File ended unexpectedly")
-              }
-              var curr: List[TeXTokenLike] = Nil
-              var inbrackets = 0
-              var break = false
-              while ({in.trim;!in.empty} && !break) {
-                in.first match {
-                  case ']' if inbrackets == 0 =>
-                    children = children ::: List(new PlainText("]", in.offset, in.offset + 1))
-                    in.drop(1)
-                    done = true
-                    break = true
-                  case ']' =>
-                    inbrackets -= 1
-                    in.drop(1)
-                    children = children ::: List(new PlainText("]", in.offset, in.offset + 1))
-                    curr ::= new PlainText("]", in.offset, in.offset + 1)
-                  case ',' if inbrackets == 0 =>
-                    children = children ::: List(new PlainText(",", in.offset, in.offset + 1))
-                    in.drop(1)
-                    break = true
-                  case ',' =>
-                    children = children ::: List(new PlainText(",", in.offset, in.offset + 1))
-                    in.drop(1)
-                  case '{' =>
-                    curr ::= readGroup
-                  case '[' =>
-                    inbrackets += 1
-                    in.drop(1)
-                    children = children ::: List(new PlainText("[", in.offset, in.offset + 1))
-                    curr ::= new PlainText("[", in.offset, in.offset + 1)
-                  case _ =>
-                    val ret = readOneNoRule(List('[', ']', ',').contains)
-                    children = children ::: ret :: Nil
-                    curr ::= ret
-                }
-              }
-              if (curr.nonEmpty)
-                args ::= curr.filterNot(_.isInstanceOf[Comment]).reverse
-              curr = Nil
-            }
-            return (args.reverse, children)
-          case _ => return (Nil, children)
-        }
-      }
-      throw LaTeXParseError("File ended unexpectedly")
-  }
-}
-
-trait MacroRule extends TeXRule {
-  def name:String
-  def parse(plain:PlainMacro)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) : TeXTokenLike
-  //def apply(plain:PlainMacro,ls:List[TeXTokenLike]) : MacroApplication
-}
-
-class SimpleMacroRule(val name : String,args:Int=0,maybestarred:Boolean = false) extends MacroRule {
-  def after(ma:SimpleMacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState) = {}
-  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
-    import SuperficialLaTeXParser._
-    var children : List[TeXTokenLike] = Nil
-    val starred = if (maybestarred) {
-      val (b,c) = readChar('%')
-      children = c
-      b
-    } else false
-    var argls : List[TeXTokenLike] = Nil
-    (0 until args).foreach{_ =>
-      in.trim
-      if (!in.empty) in.first match {
-        case '%' =>
-          children ::= readComment
-        case _ =>
-          val (arg,ch) = readArg
-          children = ch.reverse ::: children
-          argls ::= arg
-      }
-    }
-    val ret = new SimpleMacroApplication(plain,children.reverse,starred,argls.reverse,this)
-    after(ret)
-    ret
-  }
-}
-
-abstract class EnvironmentRule(val name:String) extends TeXRule {
-  def parse(begin:MacroApplication)(implicit in: SyncedDocUnparsed, state:LaTeXParserState): MacroApplication
-  def finalize(env : Environment)(implicit state:LaTeXParserState) : Environment
-}
-
-trait VerbatimLikeRule extends TeXRule {
-  def readVerb(finish:String)(implicit in: SyncedDocUnparsed, state:LaTeXParserState) = {
-    val currrules = state.rules
-    state.rules = Nil
-    val start = in.offset
-    val sb = new mutable.StringBuilder()
-    try {
-      while (!in.empty && !in.startsWith(finish)) {
-        sb += in.next()
-      }
-    } finally {
-      state.rules = currrules
-    }
-    (!in.empty,new PlainText(sb.mkString,start,in.offset))
-  }
-}
-
-class InlineVerbRule(val name: String) extends MacroRule with VerbatimLikeRule {
-  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
-    import SuperficialLaTeXParser._
-    var done = false
-    var children: List[TeXTokenLike] = readOptArg._2.reverse
-    while (!in.empty && !done) {
-      in.trim
-      in.first match {
-        case '%' => children ::= readComment
-        case c =>
-          done = true
-          children ::= new PlainText(c.toString, in.offset, in.offset + 1)
-          in.drop(c.toString)
-          val (terminated, ch) = readVerb(c.toString)
-          if (terminated) {
-            children ::= new PlainText(c.toString, in.offset, in.offset + 1)
-            in.drop(c.toString)
-          }
-          val res = new MacroApplication(plain, (ch :: children).reverse, this)
-          if (!terminated) res.addError("\\" + name + " not properly terminated")
-          return res
-      }
-    }
-    val res = new MacroApplication(plain, children.reverse, this)
-    res.addError("\\" + name + " not properly terminated")
-    res
-  }
-}
-
-trait MathMacroRule extends MacroRule {
-  def inmath[A](f : => A)(implicit state:LaTeXParserState): A = {
-    val prevmath = state.inmath
-    state.inmath = true
-    try { f } finally {state.inmath = prevmath}
-  }
-}
-
-trait MathEnvRule extends EnvironmentRule {
-  case class MathMacroAppl(pl:PlainMacro,ch:List[TeXTokenLike],rl:TeXRule,prev:Boolean) extends MacroApplication(pl,ch,rl)
-  override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
-    val ret = MathMacroAppl(begin.plain,begin.children,this,state.inmath)
-    state.inmath = true
-    ret
-  }
-
-  override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = {
-    env.begin match {
-      case MathMacroAppl(_, _, _, prev) => state.inmath = prev
-      case _ =>
-    }
-    env
-  }
-}
-
-trait DefLikeRule extends MacroRule {
-  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
-    import SuperficialLaTeXParser._
-    val pre = readTop(c => c == '{')
-    val currrules = state.rules
-    val main = try {
-      state.rules = Nil
-      readArg
-    } finally {
-      state.rules = currrules
-    }
-    new SimpleMacroApplication(plain,pre ::: main._2,false,Nil,this)
-  }
-}
-
-class NoLintRule(name: String) extends SimpleMacroRule(name, 1) {
-  override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
-    val inmath = state.inmath
-    val currrules = state.rules
-    try {
-      state.rules = Nil
-      readOptArg
-      super.parse(plain)
-    } finally {
-      state.rules = currrules
-    }
-  }
-}
-
- */

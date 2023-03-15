@@ -111,6 +111,15 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       ServerResponse.JsonResponse(JSONArray(as.map(JSONString): _*))
     case List("queue") =>
       ServerResponse.JsonResponse(getQueueInfo)
+    case List("redo") =>
+      State.synchronized {
+        val id = request.query.toInt
+        State.failed.find(_._1.hashCode() == id).foreach { p =>
+          State.failed = State.failed.filterNot(_ == p)
+          State.queue.prepend(p._1)
+        }
+      }
+      ServerResponse.JsonResponse(JSONObject())
     case _ =>
       ServerResponse.apply(
         MMTSystem.getResourceAsString("/mmt-web/buildserver.html"),"text/html"
@@ -127,7 +136,8 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     val bs = State.blocked.map(_.toJson)
     val fs = (State.finished ::: State.failed).map {
       case (d,r) =>
-        JSONObject("dependency" -> d.toJson, "result" -> r.toJson)
+        JSONObject("dependency" -> d.toJson, "result" -> r.toJson,
+        "taskid" -> JSONInt(d.hashCode()))
     }
     JSONObject("count" -> JSONInt(qSize),
       "queue" -> JSONArray(q: _*),

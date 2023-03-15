@@ -366,29 +366,8 @@ case class SHTMLType(orig:HTMLNode) extends SHTMLNode(orig,Some("type")) {
     }
   }
 }
-case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens")) {
+case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens")) with Definitional {
   set_in_term
-
-  object lambda {
-    lazy val tmhoas = getWithRole("lambda")
-    def apply(vd: VarDecl, bd: Term) = tmhoas match {
-      case Some((tm, Some(h))) => sstate.get.applyTerm(SHTMLHoas.bound(Some(h), tm, vd, bd))
-      case Some((tm, None)) => sstate.get.applyTerm(OMBIND(tm, Context(vd), bd))
-      case None =>
-        ???
-    }
-    def unapply(t: Term) = tmhoas match {
-      case Some((tm, Some(h))) => t match {
-        case SHTMLHoas.bound(Some(`h`), `tm`, vd, bd) => Some((vd, bd))
-        case _ => None
-      }
-      case Some((tm, None)) => t match {
-        case SHTMLHoas.bound(None, `tm`, vd, bd) => Some((vd, bd))
-        case _ => None
-      }
-      case None => None
-    }
-  }
   override def copy: HTMLNode = SHTMLDefiniens(orig.copy)
   lazy val path = this.plain.attributes.get((HTMLParser.ns_shtml, "definiens")) match {
     case Some(s) if s.nonEmpty => Some(Path.parseS(s))
@@ -409,7 +388,7 @@ case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens"
                   val vars = getVariableContext.filter(state.isBound).reverse.distinctBy(_.name).reverse
                   val idf = (lambda.tmhoas,vars) match {
                     case (Some(_),ctx) if ctx.nonEmpty =>
-                      state.applyTopLevelTerm(vars.foldRight(getTerm)((vd, t) => lambda(vd, t)),false)
+                      state.applyTopLevelTerm(vars.foldRight(tm)((vd, t) => lambda(vd, t)),false)
                     case _ =>
                       state.applyTopLevelTerm(tm)
                   }
@@ -428,6 +407,31 @@ case class SHTMLDefiniens(orig:HTMLNode) extends SHTMLNode(orig,Some("definiens"
         findAncestor { case ht: HasDefiniens => ht }.foreach { ht =>
           ht.defi = Some(tm)
         }
+    }
+  }
+}
+
+trait Definitional extends SHTMLNode {
+  object lambda {
+    lazy val tmhoas = getWithRole("lambda")
+
+    def apply(vd: VarDecl, bd: Term) = tmhoas match {
+      case Some((tm, Some(h))) => sstate.get.applyTerm(SHTMLHoas.bound(Some(h), tm, vd, bd))
+      case Some((tm, None)) => sstate.get.applyTerm(OMBIND(tm, Context(vd), bd))
+      case None =>
+        ???
+    }
+
+    def unapply(t: Term) = tmhoas match {
+      case Some((tm, Some(h))) => t match {
+        case SHTMLHoas.bound(Some(`h`), `tm`, vd, bd) => Some((vd, bd))
+        case _ => None
+      }
+      case Some((tm, None)) => t match {
+        case SHTMLHoas.bound(None, `tm`, vd, bd) => Some((vd, bd))
+        case _ => None
+      }
+      case None => None
     }
   }
 }
@@ -996,6 +1000,7 @@ with SHTMLMorphism {
           case Some(oldc : Constant) =>
           case _ =>
         }*/
+        doSourceRef(c)
         c.metadata.update(SHTML.headterm,OMS(gn))
         sstate.get.add(c)
         c
@@ -1039,7 +1044,7 @@ case class SHTMLRenaming(path:GlobalName,orig:HTMLNode) extends SHTMLNode(orig,S
   }
 }
 
-case class SHTMLAssignment(path: GlobalName, orig: HTMLNode) extends SHTMLNode(orig, Some("assign"))
+case class SHTMLAssignment(path: GlobalName, orig: HTMLNode) extends SHTMLNode(orig, Some("assign")) with Definitional
   with HasDefiniens {
   def copy = SHTMLAssignment(path, orig.copy)
 
@@ -1048,11 +1053,23 @@ case class SHTMLAssignment(path: GlobalName, orig: HTMLNode) extends SHTMLNode(o
     sstate.foreach { state =>
       findAncestor { case s: SHTMLMMTStructure => s }.foreach { structure =>
         defi.foreach { defi =>
+          val ndefi = findAncestor { case htmld:SHTMLDefinition => htmld} match {
+            case Some(_) =>
+              val vars = getVariableContext.filter(state.isBound).reverse.distinctBy(_.name).reverse
+              (lambda.tmhoas, vars) match {
+                case (Some(_), ctx) if ctx.nonEmpty =>
+                  state.applyTopLevelTerm(vars.foldRight(defi)((vd, t) => lambda(vd, t)), false)
+                case _ =>
+                  state.applyTopLevelTerm(defi)
+              }
+            case _ => state.applyTopLevelTerm(defi)
+          }
           val orig = structure.getAss(path)
-          val nc = Constant(orig.home, orig.name, orig.alias, orig.tp, Some(state.applyTopLevelTerm(defi)), orig.rl)
+          val nc = Constant(orig.home, orig.name, orig.alias, orig.tp, Some(ndefi), orig.rl)
+          doSourceRef(nc)
           nc.metadata = orig.metadata
           state.update(nc)
-          //state.check(nc)
+          state.check(nc)
         }
       }
     }
