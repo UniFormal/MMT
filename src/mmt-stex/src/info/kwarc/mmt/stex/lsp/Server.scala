@@ -11,7 +11,9 @@ import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
 import org.eclipse.lsp4j.{InitializeParams, InitializeResult, InitializedParams, WorkspaceFoldersOptions, WorkspaceServerCapabilities, WorkspaceSymbol, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest, JsonSegment}
+import org.eclipse.lsp4j.services.LanguageClient
 
+import java.io.IOException
 import java.util.concurrent.{CompletableFuture, TimeUnit}
 import scala.concurrent.{Await, Future}
 
@@ -145,21 +147,27 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        a
    }
 
+   import scala.concurrent.ExecutionContext.Implicits._
+
    @JsonNotification("sTeX/exportHTML")
-   def exportHTML(msg: ExportMessage): Unit = safely {
+   def exportHTML(msg: ExportMessage): Unit = Future { safely {
      msg.file = LSPServer.VSCodeToURI(msg.file)
+     log("Exporting file " + msg.file)
      val d = documents.synchronized {
        documents.getOrElseUpdate(msg.file, newDocument(msg.file))
      }
      (d.archive,d.relfile) match {
        case (Some(a),Some(f)) =>
          stexserver.`export`(a,File(f),File(msg.dir))
+         log("Exporting finished.")
        case _ =>
+         log("Not found: Archive: " + d.archive.toString + " file path: " + d.relfile)
      }
-   }
+   } }
 
    @JsonNotification("sTeX/buildArchive")
-   def buildFile(msg: BuildGroupMessage): Unit = withProgress(msg,"Building") { update =>
+   def buildFile(msg: BuildGroupMessage): Unit = Future { withProgress(msg,"Building") { update =>
+     log("Building file(s) " + msg.file + " in " + msg.archive)
      msg.file = msg.file.replace(".xhtml",".tex")
      controller.backend.getArchive(msg.archive) match {
        case Some(a) if msg.file.isEmpty =>
@@ -171,6 +179,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          val eh = STeXLSPErrorHandler(_ => {}, update)
          files.foreach{f =>
            update(0, "Building " + a.id + ": " + f)
+           log("Building " + a.id + ": " + f)
            target.build(a,BuildChanged(),f.toFilePath,Some(eh))
          }
          a.readRelational(Nil,controller,"rel")
@@ -184,6 +193,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          val eh = STeXLSPErrorHandler(_ => {}, update)
          files.foreach { f =>
            update(0, "Building " + a.id + ": " + f)
+           log("Building " + a.id + ": " + f)
            target.build(a, BuildChanged(), f.toFilePath, Some(eh))
          }
          a.readRelational(Nil, controller, "rel")
@@ -193,6 +203,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          val eh = STeXLSPErrorHandler(_ => {}, update)
          val relfile = File(msg.file).toFilePath
          update(0,"Building " + a.id + ": " + relfile)
+         log("Building " + a.id + ": " + relfile)
          target.build(a, BuildChanged(), relfile, Some(eh))
          a.readRelational(Nil, controller, "rel")
          ((), "Done")
@@ -207,17 +218,19 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
            val files = src.descendants.filter(f => f.getExtension.contains("tex") && regfilter(f)).map(src.relativize)
            files.foreach {f =>
              update(0, "Building " + a.id + ": " + f)
+             log("Building " + a.id + ": " + f)
              target.build(a, BuildChanged(), f.toFilePath, Some(eh))
            }
            a.readRelational(Nil, controller, "rel")
          }
          ((),"Archive not found")
      }
-   }
+   }}
 
    @JsonNotification("sTeX/buildFile")
    def buildFile(a :BuildMessage) : Unit = {
      a.file = LSPServer.VSCodeToURI(a.file)
+     log("Building file " + a.file)
      val d = documents.synchronized{documents.getOrElseUpdate(a.file,newDocument(a.file))}
      d.buildFull()
    }
@@ -277,7 +290,8 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
                              |*.fdb_latexmk""".stripMargin
 
    @JsonNotification("sTeX/initializeArchive")
-   def initializeArchive(a : NewArchiveMessage): Unit = safely {
+   def initializeArchive(a : NewArchiveMessage): Unit = Future { safely {
+     log("New archive " + a.archive)
      mathhub_top.foreach {mh =>
        val ndir = mh / a.archive
        (ndir / "META-INF").mkdirs()
@@ -293,43 +307,47 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        um.html = (ndir / "source" / "helloworld.tex").toString
        client.client.openFile(um)
      }
-   }
+   }}
 
    @JsonRequest("sTeX/search")
    def search(p : SearchParams) : CompletableFuture[LSPSearchResults] = Completable {
+     log("Search: Defis:" +p.defis + " Examples:" + p.exs + " Assertions:" + p.asserts + " Symbols:" + p.syms + " Query: " + p.query)
      var tps = if (p.defis) List("definition") else if (p.exs) List("example") else if (p.asserts) List("assertion") else Nil
      val (local,remote) = searchI(p.query,tps,p.syms)
      val ret = new LSPSearchResults
      ret.locals = local
      ret.remotes = remote
+     log("Search results: " + local.size() + " locals and " + remote.size() + " remotes.")
      ret
    }
 
    @JsonNotification("sTeX/parseWorkspace")
    def parseWorkspace() : Unit = Future {withProgress(this,"Quickparsing Workspace"){ update =>
+     log("Parsing workspace")
      var allfiles : List[File] = Nil
      allfiles = workspacefolders.flatMap(f => if (f.exists()) f.descendants.filter(fi => fi.isFile && fi.getExtension.contains("tex")) else Nil)
-       allfiles.zipWithIndex.foreach {
-         case (f, i) => //((a, f), i) =>
-           update(i.toFloat / allfiles.length.toFloat, "Parsing " + (i + 1) + "/" + allfiles.length + ": " + f.toString)
-           //if (!parser.dict.previouslyread(f)) parser.apply(f, Some(a))
-           val uri = if (f.toString.charAt(1) == ':') "file://" + f.toString.head.toLower + f.toString.drop(1) else "file://" + f.toString
-           var needsdoing = false
-           val d = documents.getOrElseUpdate(uri, {
-             needsdoing = true
-             newDocument(uri)
-           })
-           if (needsdoing) d.synchronized {
-             d.archive match {
-               case Some(a) =>
-                 val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
-                 def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
-                 if (regfilter(f)) d.init(File.read(f))
-               case _ =>
-                 d.init(File.read(f))
-             }
+     log(allfiles.length.toString + " files")
+     allfiles.zipWithIndex.foreach {
+       case (f, i) => //((a, f), i) =>
+         update(i.toFloat / allfiles.length.toFloat, "Parsing " + (i + 1) + "/" + allfiles.length + ": " + f.toString)
+         //if (!parser.dict.previouslyread(f)) parser.apply(f, Some(a))
+         val uri = if (f.toString.charAt(1) == ':') "file://" + f.toString.head.toLower + f.toString.drop(1) else "file://" + f.toString
+         var needsdoing = false
+         val d = documents.getOrElseUpdate(uri, {
+           needsdoing = true
+           newDocument(uri)
+         })
+         if (needsdoing) d.synchronized {
+           d.archive match {
+             case Some(a) =>
+               val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
+               def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
+               if (regfilter(f)) d.init(File.read(f))
+             case _ =>
+               d.init(File.read(f))
            }
-       }
+         }
+     }
      ((),"Done")
    }}(scala.concurrent.ExecutionContext.global)
 
@@ -394,19 +412,26 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    def doPing: Unit = Future {
      Thread.sleep(60000)
      while (true) {
-       Thread.sleep(60000)
+       Thread.sleep(1000)
        try {
-         client.client.ping().get(60, TimeUnit.SECONDS)
+         //log("Ping...")
+         client.client.ping().get(30, TimeUnit.SECONDS)
+         //log("Ping returned")
        } catch {
          case _: java.util.concurrent.TimeoutException =>
+           log("First ping failed")
            try {
-             client.client.ping().get(60, TimeUnit.SECONDS)
+             client.client.ping().get(30, TimeUnit.SECONDS)
+             log("Ping returned")
            } catch {
              case _: java.util.concurrent.TimeoutException =>
+               log("Second ping failed")
                try {
-                 client.client.ping().get(60, TimeUnit.SECONDS)
+                 client.client.ping().get(30, TimeUnit.SECONDS)
+                 log("Ping returned")
                } catch {
                  case _: java.util.concurrent.TimeoutException =>
+                   log("Third ping failed. Shutting down")
                    sys.exit()
                }
            }
@@ -458,7 +483,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
 
    @JsonNotification("sTeX/installArchive")
-   def installArchive(arch: ArchiveMessage) : Unit = installArchives(arch.archive)
+   def installArchive(arch: ArchiveMessage) : Unit = Future { installArchives(arch.archive) }
 
    @JsonNotification("sTeX/buildHTML")
    def buildHTML(a:BuildMessage): Unit = safely {
@@ -480,7 +505,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      client.log("Connected to sTeX!")
    }
 
-   override def didChangeConfiguration(params: List[(String, List[(String, String)])]): Unit = {
+   override def didChangeConfiguration(params: List[(String, List[(String, String)])]): Unit = Future {
      params.collect {case (a,ls) if a == "stexide" =>
        ls.collect {case ("mathhub",v) if v.nonEmpty && File(v).exists() =>
          RusTeX.initializeBridge(File(v) / ".rustex")
@@ -489,7 +514,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    }
 
-   override def didSave(docuri: String): Unit = documents.synchronized {
+   override def didSave(docuri: String): Unit = Future { documents.synchronized {
      documents.get(docuri) match {
        case Some(d) => d.synchronized {
          d.file match {
@@ -500,7 +525,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        }
        case _ =>
      }
-   }
+   }}
 
    val self = this
 
@@ -668,11 +693,17 @@ object Main {
   //@throws[ExecutionException]
   def main(args: Array[String]): Unit = {
     val controller = Run.controller
-    /*controller.handleLine("log html /home/jazzpirate/mmtlog.html")
-    controller.handleLine("log+ lsp")
-    controller.handleLine("log+ lsp-stex")
-    controller.handleLine("log+ lsp-stex-server")
-    controller.handleLine("log+ lsp-stex-server-methodcall")*/
+    sys.env.get("HOME") match {
+      case Some(f) =>
+        val logf = File(f) / ".stex" / "log"
+        logf.mkdirs()
+        controller.handleLine(s"log html ${logf.toString}/lsplog.html")
+        controller.handleLine("log+ lsp")
+        controller.handleLine("log+ lsp-stex")
+        controller.handleLine("log+ lsp-stex-server")
+        controller.handleLine("log+ lsp-stex-server-methodcall")
+      case _ =>
+    }
     val mathhub_dir = File(args.head)
     var port = args(1).toInt
     if (mathhub_dir.exists()) {

@@ -436,7 +436,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    server.init((s,g) => lsp.log(s,Some("-server" + g.map("-"+_).getOrElse(""))),controller)
+    server.init((s,g) => lsp.log(s,Some("server" + g.map("-"+_).getOrElse(""))),controller)
   }
   private object Completable {
     import scala.concurrent.Future
