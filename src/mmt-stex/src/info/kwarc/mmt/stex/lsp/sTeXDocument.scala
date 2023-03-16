@@ -90,7 +90,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
     }
   }}
 
-  def buildHTML(): Unit = Future { synchronized {
+  def buildHTML(): Unit = Future { this.synchronized {
     client.resetErrors(uri)
     this.file match {
       case Some(f) =>

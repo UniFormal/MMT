@@ -328,7 +328,7 @@ trait SymDeclRuleLike extends STeXRule {
     val name = opts.flatMap(_.consumeStr("name")).getOrElse(maybename)
     val gn = dict.getGlobalName(name)
     opts.foreach { o =>
-      o.drop("assoc", "gfc", "reorder", "role", "argtypes")
+      o.drop("assoc", "gfc", "reorder", "role", "argtypes","style")
     }
     if (dict.formalOnly) {
       opts.foreach(_.drop("type"))
