@@ -231,7 +231,16 @@ trait EnvironmentRule extends TeXRule {
   val envname : String
   def name = "environment/" + envname
   def applyStart(implicit parser: ParseState[Begin.BeginMacro]) : Environment = new Environment(parser.trigger)
-  def applyEnd(env:Environment)(implicit parser: ParseState[Begin.BeginMacro]) : Environment = env
+  def applyEnd(env:Environment)(implicit parser: ParseState[Begin.BeginMacro]) : Environment = {
+    env.end match {
+      case Some(e:End.EndMacro) if e.arg.asname == envname =>
+      case Some(e: End.EndMacro) =>
+        env.addError("Environment " + envname + " closed by " + e.arg.asname)
+      case _ =>
+        env.addError("Environment ended unexpectedly")
+    }
+    env
+  }
 }
 case class UnknownEnvironmentRule(envname : String) extends EnvironmentRule
 

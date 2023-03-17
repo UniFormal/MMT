@@ -99,7 +99,7 @@ case class ModuleRule(dict : Dictionary) extends STeXRule with EnvironmentRule {
     dict.openModule(macr)
   }
 
-  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = super.applyEnd(env) match {
     case tmm: STeXModule =>
       dict.closeModule
       tmm
@@ -125,7 +125,7 @@ case class ProblemRule(dict : Dictionary) extends STeXRule with EnvironmentRule 
     dict.openModule(macr)
   }
 
-  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = super.applyEnd(env) match {
     case tmm: STeXModule =>
       dict.closeModule
       tmm
@@ -876,7 +876,7 @@ trait MathStructureDeclRule extends SymDeclRuleLike with SymRefRuleLike with Env
     ret
   }
 
-  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = super.applyEnd(env) match {
     case tmm: MathStructure =>
       dict.closeModule
       tmm
@@ -1191,7 +1191,7 @@ case class CopyModuleRule(dict:Dictionary) extends MMTStructureRule with Environ
     struct
   }
 
-  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = super.applyEnd(env) match {
     case cm: CopyModule =>
       cm.elaborate(false)
       cm
@@ -1223,7 +1223,7 @@ case class InterpretModuleRule(dict:Dictionary) extends MMTStructureRule with En
     struct
   }
 
-  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = super.applyEnd(env) match {
     case cm: CopyModule =>
       cm.elaborate(true)
       cm
@@ -1252,7 +1252,7 @@ case class RealizationRule(dict:Dictionary) extends MMTStructureRule with Enviro
     struct
   }
 
-  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = env match {
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = super.applyEnd(env) match {
     case cm: CopyModule =>
       cm.elaborate(true)
       cm
