@@ -500,6 +500,10 @@ class LaTeXParser(stringin:SyncedDocUnparsed,initrules : List[TeXRule] = TeXRule
         addRule(SkipEnvironment(envname,args))
       case List("cmd", cmdname, args) if args.forall("vnotm".contains(_)) =>
         addRule(SkipCommand(cmdname, args))
+      case List("verbcmd",cmdname) =>
+        addRule(InlineVerbRule(cmdname))
+      case List("verbenv", envname) =>
+        addRule(VerbatimEnvRule(envname))
       case List("nolint") =>
         In.stringUntil(In.startsWith("%%STEXIDE dolint"))
       case List("dolint") =>
