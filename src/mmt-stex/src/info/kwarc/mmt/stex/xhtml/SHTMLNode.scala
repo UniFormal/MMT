@@ -1120,7 +1120,10 @@ case class SHTMLSection(orig: HTMLNode) extends SHTMLNode(orig,Some("section")) 
       case s : SemanticState =>
         val name = plain.attributes.get((plain.namespace,"id")) match {
           case Some(id) => LocalName(id)
-          case _ => LocalName(this.hashCode().toHexString)
+          case _ =>
+            val namestr = this.hashCode().toHexString
+            plain.attributes((plain.namespace,"id")) = namestr
+            LocalName(namestr)
         }
         val nd = new Document(s.doc.path / name, SectionLevel)
         s.add(nd)

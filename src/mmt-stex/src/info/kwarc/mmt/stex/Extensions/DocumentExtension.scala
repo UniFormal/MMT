@@ -158,7 +158,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   private def doSections(d: Document): JSON = JSONObject(
-    ("title", JSONString(getTitle(d).map(_.toString()).getOrElse(""))),
+    ("title", JSONString(getTitle(d).map(_.toString().replace("&amp;amp;","&amp;")).getOrElse(""))),
     ("ids", JSONArray(d.metadata.getValues(SHTML.meta_srefid) collect {
       case StringLiterals(id) => JSONString(id)
     }: _*)),
