@@ -718,7 +718,30 @@ trait SHTMLDocumentServer { this : STeXServer =>
     simple("section",n => Section(n))
     simple("sectiontitle",n => SecTitle(n))
     simple("skipsection",n => SkipSection(n))
+    simple("currentsectionlevel",node => new SHTMLNode(node) {
+      override def copy = node.copy
+      lazy val capitalize = node.plain.attributes.get((HTMLParser.ns_shtml,"capitalize")).contains("true")
 
+      override def onAdd: Unit = {
+        super.onAdd
+        node.add(bindings.currlvl match {
+          case 0 if capitalize => "Document"
+          case 0 => "document"
+          case 1 if capitalize => "Part"
+          case 1 => "part"
+          case 2 if capitalize => "Chapter"
+          case 2 => "chapter"
+          case 3 if capitalize => "Section"
+          case 3 => "section"
+          case 4 if capitalize => "Subsection"
+          case 4 => "subsection"
+          case 5 if capitalize => "Subsubsection"
+          case 5 => "subsubsection"
+          case _ if capitalize => "Paragraph"
+          case _ => "paragraph"
+        })
+      }
+    })
     simple("term",node => new SHTMLNode(node) {
       override def onAdd: Unit = {
         val lang = getLanguage(this)

@@ -915,7 +915,13 @@ case class SHTMLParagraph(orig:HTMLNode) extends HTMLStatement("paragraph",orig)
     if (styles.contains("symdoc")) {
       sstate.foreach{s =>
         val lang = findAncestor{ case hl : HasLanguage => hl.language}.getOrElse("en")
-        s.addSymdoc(fors,id,this.plain.node.head,lang)
+        val node = if (inline) {
+          val cp = this.plaincopy
+          cp._label = "div"
+          cp.classes ::= "paragraph"
+          cp.node
+        } else this.plain.node
+        s.addSymdoc(fors,id,node,lang)
         s match {
           case s:SemanticState =>
             s.Search.addDefi(this)
@@ -949,7 +955,13 @@ case class SHTMLDefinition(orig:HTMLNode) extends HTMLStatement("definition",ori
     super.onAdd
     sstate.foreach { s =>
       val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
-      s.addSymdoc(fors, id, this.plain.node.head, lang)
+      val node = if (inline) {
+        val cp = this.plaincopy
+        cp._label = "div"
+        cp.classes ::= "paragraph"
+        cp.node
+      } else this.plain.node
+      s.addSymdoc(fors, id, node, lang)
       sstate match {
         case Some(s: SemanticState) =>
           s.Search.addDefi(this)
@@ -967,7 +979,13 @@ case class SHTMLAssertion(orig:HTMLNode) extends HTMLStatement("assertion",orig)
     super.onAdd
     sstate.foreach { s =>
       val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
-      s.addSymdoc(fors, id, this.plain.node.head, lang)
+      val node = if (inline) {
+        val cp = this.plaincopy
+        cp._label = "div"
+        cp.classes ::= "paragraph"
+        cp.node
+      } else this.plain.node
+      s.addSymdoc(fors, id, node, lang)
       sstate match {
         case Some(s: SemanticState) =>
           s.Search.addAssertion(this)
