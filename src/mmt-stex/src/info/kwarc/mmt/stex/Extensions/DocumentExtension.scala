@@ -827,7 +827,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
         case Some(d: Document) =>
           controller.backend.resolveLogical(d.path.uri) match {
             case Some((a, ls)) =>
-              val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
+              val ns = ls.init.mkString("/")
+              val name = ls.last.dropRight(5) + "xhtml"
+              val path = if (ns.isEmpty) name else ns + "/" + name
               node.plain.attributes((node.namespace, "style")) = ""
               node.plain.attributes.remove((HTMLParser.ns_shtml, "visible"))
               node.plain.classes = List("inputref")
