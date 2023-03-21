@@ -31,6 +31,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     **/
   protected val presentGenerated = false
 
+  /** Determines if the special delimiters of MMT surface syntax are printed (only needed if machine parsing of output is planned) */
+  protected val presentDelimiters = false
+
   /**
     * The format of [[MMTSyntaxPresenter]] as an extension
     */
@@ -39,8 +42,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
   override def outExt = "mmt"
 
   private val OBJECT_DELIMITER = "❘"
+  private def getObjDelim = if (presentDelimiters) OBJECT_DELIMITER + " " else ""
   private val DECLARATION_DELIMITER = "❙"
+  private def getDeclDelim = if (presentDelimiters) DECLARATION_DELIMITER + "\n" else ""
   private val MODULE_DELIMITER = "❚"
+  private def getModDelim = if (presentDelimiters) MODULE_DELIMITER + "\n" else ""
   private val EOL = "\n"
 
   /**
@@ -164,7 +170,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
               rh("\n")
               rh(s"# ${not.toText}")
             case (Some(not), 1) =>
-              rh("\n" + OBJECT_DELIMITER + " ")
+              rh("\n" + getObjDelim)
               rh(s"## ${not.toText}")
             case (None, _) => // nothing to do
             case _ => ??? // not yet implemented
@@ -173,7 +179,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
         notationElements.foreach { _(indented(rh)) }
         if (dd.getDeclarations.nonEmpty) {
-          rh(OBJECT_DELIMITER + " =\n")
+          rh(getObjDelim + "=\n")
           dd.module.getDeclarations.foreach { d => present(d, indented(rh)) }
         }
 
@@ -196,23 +202,23 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case _: DRef => // rh(MODULE_DELIMITER)
     case _: MRef => // rh(MODULE_DELIMITER)
     case s : SRef =>
-    case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER + "\n")
+    case s: Structure if s.isInclude => rh(getDeclDelim)
 
     // TODO Fix for [[Structure.isInclude]] not accounting for inclusions
     //  with definiens component, see todo note in [[Include.unapply]]
-    case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER + "\n")
-    case _: ModuleOrLink => rh(MODULE_DELIMITER + "\n")
+    case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(getDeclDelim)
+    case _: ModuleOrLink => rh(getModDelim)
     case _: NestedModule => /* nothing, the module delimiter of the presented module already accounts for this */
 
     // some declarations are handled before by ModuleOrLink already
-    case _: Declaration => rh(DECLARATION_DELIMITER + "\n")
+    case _: Declaration => rh(getDeclDelim)
     case _: InterpretationInstruction =>
-      rh(MODULE_DELIMITER + "\n")
+      rh(getModDelim)
     case t: OpaqueText =>
-      val del = if (t.parent.toString.endsWith("omdoc")) MODULE_DELIMITER else DECLARATION_DELIMITER
+      val del = if (t.parent.toString.endsWith("omdoc")) getModDelim else getDeclDelim
       // rh("/t ")
       // t.text.toString(objectPresenter)(rh,OpaqueText.defaultEscapes)
-      rh(del + "\n")
+      rh(del)
   }
 
   private def doTheory(theory: AbstractTheory, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
@@ -386,7 +392,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       if (index == 0) {
         indentedRh("\n")
       } else {
-        indentedRh("\n" + OBJECT_DELIMITER + " ")
+        indentedRh("\n" + getObjDelim)
       }
       renderFunction(indentedRh)
     }
@@ -400,7 +406,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       doURI(OMMOD(from), rh, needsHand = true)
       // TODO args ignored
       df.foreach(definiensTerm => {
-        rh(" " + OBJECT_DELIMITER + " ")
+        rh(" " + getObjDelim)
         objectPresenter(definiensTerm, Some(s.path $ DefComponent))(rh)
       })
 

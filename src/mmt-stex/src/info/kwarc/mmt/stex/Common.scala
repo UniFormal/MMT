@@ -75,9 +75,9 @@ object OMDoc {
 
   def parseSourceRef(n : scala.xml.Node,dpath : DPath)(implicit errorCont : ErrorHandler) : Option[SourceRef] = {
     val attrs = n.attributes.asAttrMap
-    if (attrs.contains("stex:srcref")) { //try to parse the source ref
+    if (attrs.contains("shtml:srcref")) { //try to parse the source ref
       try {
-        val srcrefS = n.attributes.asAttrMap("stex:srcref")
+        val srcrefS = n.attributes.asAttrMap("shtml:srcref")
         val trangeIdx = srcrefS.indexOf("#textrange") + "#textrange".length
         val trangeS = srcrefS.substring(trangeIdx)
         val fromto = trangeS.split(",").toList

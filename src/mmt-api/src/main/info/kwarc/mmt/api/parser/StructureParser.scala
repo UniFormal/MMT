@@ -1109,23 +1109,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val defDelim = if (link.isDefined) "=" else "abbrev"
     if (token == defDelim) {
       // read the definiens of a DefinedStructure
-      val (targetStr, reg) = state.reader.readObject
       val nsMap = state.namespaces(parentInfo.modParent)
+      val (_, reg, tm) = readParsedObject(context)
+      val target = tm.toTerm
       val sref = state.makeSourceRef(reg)
-      // TODO target should be parsed as a morphism expression, in particular compositions are allowed; for now we just parse a reference to a structure or a view
-      val target = try {
-        val p = Path.parseS(targetStr, nsMap)
-        OMS(p)
-      } catch {case _: Error =>
-        try {
-          val p = Path.parseM(targetStr, nsMap)
-          OMMOD(p)
-        } catch {case _: Error =>
-          makeError(reg, "only references to structures or views supported", None)
-          val pu = ParsingUnit(sref, context, targetStr, state.iiContext, None)
-          DefaultObjectParser(pu)(state.errorCont).toTerm
-        }
-      }
       SourceRef.update(target, sref)
       val s = createStructure(Some(target))
       end(s)

@@ -12,22 +12,26 @@ import info.kwarc.mmt.api.presentation.{ContentMathMLPresenter, HTMLAttributes, 
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, Structure}
 import info.kwarc.mmt.api.utils.{HTML, mmt, xml}
 import info.kwarc.mmt.api.utils.xml.{closeTag, namespace, openTag}
-import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLText
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
+
+import scala.xml.NodeSeq
+//import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLText
+//import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
 
 import scala.xml.Node
 
 class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends HTMLPresenter(new InformalMathMLPresenter) {
   val key = "html"
 
+  def doNotation(n: NodeSeq): NodeSeq = n
+
   import htmlRh._
   import cssClasses._
-
+/*
   def doNotation(n:Node) : Node = {
     implicit val htmlstate = new HTMLParser.ParsingState(controller,Nil)
     val top = HTMLParser(n.toString)
     top.iterate {
-      case n if n.attributes.toList.contains(((n.namespace,"property"),"stex:argmarker")) =>
+      case n if n.attributes.toList.contains(((n.namespace,"property"),"shtml:argmarker")) =>
         val resource = n.attributes((n.namespace,"resource"))
         val argstr = if (resource.endsWith("a") || resource.endsWith("b")) {
           "##" + resource
@@ -39,13 +43,15 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
     top.node
   }
 
+ */
+
   private def getParent(d : Declaration) : Option[StructuralElement] = controller.getO(d.parent) match {
     case Some(t : Theory) if t.name.length > 1 =>
       controller.getO(t.parent ? t.name.head)
     case Some(s : Structure) => getParent(s)
     case o => o
   }
-
+/*
   override def doDeclaration(d: Declaration): Unit = {
     d match {
       case c: Constant if c.rl.contains("notation") || c.rl.contains("symboldoc") => return
@@ -248,6 +254,8 @@ class MMTsTeXPresenter(stex: STeXPresenterTex, mathml:STeXPresenterML) extends H
       }
     }
   }
+
+ */
 }
 
 class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
@@ -298,19 +306,19 @@ class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
   // TODO this should override doToplevel and apply should go
   def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) = o match {
     case OMATTR(t, k, v) if k.path != MathMLNarration.path => //normal html
-      val attrs = t.head.map(p => HTMLAttributes.symref -> p.toPath).toList
-      pc.out(openTag("span", attrs))
+      //val attrs = t.head.map(p => HTMLAttributes.symref -> p.toPath).toList
+      pc.out(openTag("span",Nil))
       body
       pc.out(closeTag("span"))
     case _ => //wrapping as mathml
       val nsAtts = List("xmlns" -> namespace("mathml"))
-      val mmtAtts = pc.owner match {
+      /*val mmtAtts = pc.owner match {
         case None => Nil
         case Some(cp) => List(HTMLAttributes.owner -> cp.parent.toPath, HTMLAttributes.component -> cp.component.toString, HTMLAttributes.position -> "")
       }
-      val idAtt = ( "id" -> o.hashCode.toString)
+      val idAtt = ( "id" -> o.hashCode.toString)*/
       // <mstyle displaystyle="true">
-      pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
+      pc.out(openTag("math",  nsAtts))
       pc.out(openTag("semantics", Nil))
       pc.out(openTag("mrow", Nil))
       body

@@ -1,19 +1,24 @@
 package info.kwarc.mmt.lsp
 
-import info.kwarc.mmt.api.{GetError, Invalid, InvalidElement, InvalidObject, InvalidUnit, Level, SourceError}
+import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.checking.History
+import info.kwarc.mmt.api.{CPath, GetError, Invalid, InvalidElement, InvalidObject, InvalidUnit, Level, SourceError}
 
 import java.util.concurrent.CompletableFuture
-import org.eclipse.lsp4j.{CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CodeAction, CodeActionParams, CodeLens, CodeLensParams, ColorInformation, ColorPresentation, ColorPresentationParams, Command, CompletionItem, CompletionList, CompletionParams, CreateFilesParams, DeclarationParams, DefinitionParams, DeleteFilesParams, Diagnostic, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentColorParams, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams, DocumentHighlight, DocumentHighlightParams, DocumentLink, DocumentLinkParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, ImplementationParams, InitializeParams, InitializeResult, InitializedParams, InlayHint, InlayHintParams, InlineValue, InlineValueParams, LinkedEditingRangeParams, LinkedEditingRanges, Location, LocationLink, MessageParams, MessageType, Moniker, MonikerParams, Position, PrepareRenameParams, PrepareRenameResult, ProgressParams, PublishDiagnosticsParams, ReferenceParams, RenameFilesParams, RenameParams, SelectionRange, SelectionRangeParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SetTraceParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, TypeDefinitionParams, TypeHierarchyItem, TypeHierarchyPrepareParams, TypeHierarchySubtypesParams, TypeHierarchySupertypesParams, WillSaveTextDocumentParams, WorkDoneProgressBegin, WorkDoneProgressCancelParams, WorkDoneProgressCreateParams, WorkDoneProgressEnd, WorkDoneProgressNotification, WorkDoneProgressReport, WorkspaceDiagnosticParams, WorkspaceDiagnosticReport, WorkspaceEdit, WorkspaceSymbol, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CodeAction, CodeActionParams, CodeLens, CodeLensParams, ColorInformation, ColorPresentation, ColorPresentationParams, Command, CompletionItem, CompletionList, CompletionParams, CreateFilesParams, DeclarationParams, DefinitionParams, DeleteFilesParams, Diagnostic, DiagnosticCodeDescription, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentColorParams, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams, DocumentHighlight, DocumentHighlightParams, DocumentLink, DocumentLinkParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, ImplementationParams, InitializeParams, InitializeResult, InitializedParams, InlayHint, InlayHintParams, InlineValue, InlineValueParams, LinkedEditingRangeParams, LinkedEditingRanges, Location, LocationLink, MessageParams, MessageType, Moniker, MonikerParams, Position, PrepareRenameDefaultBehavior, PrepareRenameParams, PrepareRenameResult, ProgressParams, PublishDiagnosticsParams, ReferenceParams, RenameFilesParams, RenameParams, SelectionRange, SelectionRangeParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SetTraceParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, TypeDefinitionParams, TypeHierarchyItem, TypeHierarchyPrepareParams, TypeHierarchySubtypesParams, TypeHierarchySupertypesParams, WillSaveTextDocumentParams, WorkDoneProgressBegin, WorkDoneProgressCancelParams, WorkDoneProgressCreateParams, WorkDoneProgressEnd, WorkDoneProgressNotification, WorkDoneProgressReport, WorkspaceDiagnosticParams, WorkspaceDiagnosticReport, WorkspaceEdit, WorkspaceSymbol, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 import org.eclipse.lsp4j.jsonrpc.Launcher
-import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
+import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither, Either3 => JEither3}
 
-import java.net.ServerSocket
+import java.net.{ServerSocket, URLDecoder, URLEncoder}
 import java.util
 import java.util.logging.LogManager
 import java.util.logging.Logger
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.presentation.Presenter
+import info.kwarc.mmt.api.utils.time.Time
+import info.kwarc.mmt.api.web.ServerExtension
 import org.eclipse.jetty.server.{Server, ServerConnector}
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
@@ -24,6 +29,7 @@ import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
 import java.io.{PrintStream, PrintWriter, StringWriter}
+import java.nio.charset.StandardCharsets
 import javax.websocket.{CloseReason, Session}
 import javax.websocket.server.ServerEndpointConfig
 import scala.concurrent.Future
@@ -129,7 +135,11 @@ case object LocalStyle extends RunStyle
 case object SocketStyle extends RunStyle
 case object WebSocketStyle extends RunStyle
 
-class ClientWrapper[+A <: LSPClient](val client : A) {
+class UnitError(val cp: CPath, h: History) {
+  var histories = List(h)
+}
+
+class ClientWrapper[+A <: LSPClient](val client : A,server:LSPServer[A]) {
   private def normalizeUri(s : String) : String = s.take(5) + s.drop(5).replace(":","%3A")
   def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
   def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
@@ -141,66 +151,77 @@ class ClientWrapper[+A <: LSPClient](val client : A) {
     params.setDiagnostics(Nil.asJava)
     client.publishDiagnostics(params)
   }
-  private var diags : List[Diagnostic] = Nil
-  private var all_errors : List[info.kwarc.mmt.api.Error] = Nil
-  def documentErrors(controller:Controller,doc : LSPDocument[LSPClient,LSPServer[LSPClient]],uri : String,errors : info.kwarc.mmt.api.Error*) = this.synchronized {if (errors.nonEmpty) {
+  var diags : List[(Diagnostic,Option[UnitError])] = Nil
+  var all_errors : List[info.kwarc.mmt.api.Error] = Nil
+
+  def republishErrors(uri:String) = {
     val params = new PublishDiagnosticsParams()
-    params.setUri(normalizeUri(uri))
-    val ndiags = errors.collect{case e if !all_errors.contains(e) =>
-      all_errors ::= e
-      val d = new Diagnostic
-      val (lvl,msg) = e match {
-        case ge:GetError =>
-          d.setRange(new lsp4j.Range(new Position(0, 0), new Position(0, 0)))
-          (Level.Warning,"MMT: " + ge.shortMsg)
-        case SourceError(_,ref,_,ems,_) =>
-          val start = ref.region.start.offset
-          val end = ref.region.end.offset + 1
-          val (sl,sc) = doc._doctext.toLC(start)
-          val (el,ec) = doc._doctext.toLC(end)
-          d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
-          (e.level,e.shortMsg + ems.mkString("\n","\n",""))
-        case iu:Invalid =>
-          val ref = iu.sourceRef.getOrElse{iu match {
-            case iu: InvalidUnit =>
-              iu.unit.component.map {
-                c =>
-                  controller.getO(c).flatMap(SourceRef.get).getOrElse {
-                    controller.getO(c.parent).flatMap(SourceRef.get).getOrElse(SourceRef.anonymous(""))
-                  }
-              }.getOrElse(SourceRef.anonymous(""))
-            case iu: InvalidObject =>
-              iu.sourceRef.getOrElse(SourceRef.anonymous(""))
-          }}
-          val start = ref.region.start.offset
-          val end = ref.region.end.offset + 1
-          val (sl,sc) = doc._doctext.toLC(start)
-          val (el,ec) = doc._doctext.toLC(end)
-          d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
-          (Level.Warning,e.shortMsg + "\n" + (iu match{
-            case iu:InvalidUnit =>
-              iu.history.narrowDownError.present(controller.presenter)
-            case io:InvalidObject =>
-              io.extraMessage
-            case ie: InvalidElement =>
-              ie.extraMessage
-          }))
-        case _ =>
-          d.setRange(new lsp4j.Range(new Position(1,1),new Position(1,1)))
-          (e.level,e.shortMsg)
-      }
-      import info.kwarc.mmt.api.Level
+    params.setUri(uri)
+    params.setDiagnostics(diags.map(_._1).asJava)
+    client.publishDiagnostics(params)
+  }
+
+  def documentErrors(doc : LSPDocument[LSPClient,LSPServer[LSPClient]],errors : info.kwarc.mmt.api.Error*) = this.synchronized {if (errors.nonEmpty) {
+    val controller = server.controller
+    val params = new PublishDiagnosticsParams()
+    params.setUri(normalizeUri(doc.uri))
+    def get(sr : SourceRef,lvl:Level,msg : String) = {
+      val d = new Diagnostic()
+      val start = sr.region.start.offset
+      val end = sr.region.end.offset + 1
+      val (sl, sc) = doc._doctext.toLC(start)
+      val (el, ec) = doc._doctext.toLC(end)
+      d.setRange(new lsp4j.Range(new Position(sl, sc), new Position(el, ec)))
+      d.setMessage(msg)
       d.setSeverity(lvl match {
         case Level.Info => DiagnosticSeverity.Information
         case Level.Error => DiagnosticSeverity.Error
         case Level.Warning => DiagnosticSeverity.Warning
         case Level.Fatal => DiagnosticSeverity.Error
       })
-      d.setMessage(msg)
       d
     }
-    diags = diags ::: ndiags.toList
-    params.setDiagnostics(diags.asJava)
+    errors.foreach{e => if (!all_errors.contains(e)) {
+      all_errors ::= e
+      e match {
+        case ge:GetError =>
+          diags::= (get(SourceRef.anonymous(""),Level.Warning,ge.shortMsg),None)
+        case SourceError(_,ref,_,ems,_) =>
+          diags ::= (get(ref,e.level,e.shortMsg + ems.mkString("\n","\n","")),None)
+        case ie: InvalidElement =>
+          val ref = SourceRef.get(ie.elem).getOrElse(SourceRef.anonymous(""))
+          diags ::= (get(ref,Level.Warning,ie.shortMsg + "\n" + ie.extraMessage),None)
+        case io : InvalidObject =>
+          val ref = io.sourceRef.getOrElse(SourceRef.anonymous(""))
+          diags ::= (get(ref, Level.Warning, io.shortMsg + "\n" + io.extraMessage), None)
+        case iu:InvalidUnit =>
+          val ref = iu.unit.component.map {
+            c =>
+              controller.getO(c).flatMap(SourceRef.get).getOrElse {
+                controller.getO(c.parent).flatMap(SourceRef.get).getOrElse(SourceRef.anonymous(""))
+              }
+          }.getOrElse(SourceRef.anonymous(""))
+          (server.htmlserver, iu.unit.component) match {
+            case (Some(s), Some(comp)) =>
+              diags.find(_._2.exists(_.cp == comp)) match {
+                case Some((_,Some(p))) => p.histories ::= iu.history.narrowDownError
+                case _ =>
+                  val dcc = new DiagnosticCodeDescription()
+                  dcc.setHref((controller.server.get.baseURI / (":" + s.pathPrefix) / ("lsperror?" + diags.length.toString)).toString)
+                  val d = get(ref, Level.Warning, iu.shortMsg)
+                  d.setCode("Invalid Unit")
+                  d.setCodeDescription(dcc)
+                  diags ::= (d, Some(new UnitError(comp, iu.history.narrowDownError)))
+              }
+            case _ =>
+              diags ::= (get(ref,Level.Warning,iu.shortMsg + "\n" + iu.history.narrowDownError.present(server.presenter)), None)
+          }
+        case _ =>
+          diags ::= (get(SourceRef.anonymous(""), e.level, e.shortMsg), None)
+      }
+    }}
+
+    params.setDiagnostics(diags.map(_._1).asJava)
     client.publishDiagnostics(params)
   }}
 }
@@ -278,6 +299,8 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   private var _log : (String,Option[String]) => Unit = null
   private var _controller : Controller = null
   private var _client : Option[ClientWrapper[LSPClient]] = None
+  def presenter : Presenter = _controller.presenter
+  def htmlserver : Option[ServerExtension] = None
   def controller = _controller
   protected def log(s : String, subgroup : Option[String] = None) = _log(s,subgroup)
   def client = _client.getOrElse({
@@ -300,7 +323,7 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
     _controller = ctrl
   }
   private[lsp] def connectI(cl : LSPClient) = {
-    _client = Some(new ClientWrapper(cl.asInstanceOf[ClientType]))
+    _client = Some(new ClientWrapper(cl.asInstanceOf[ClientType],this))
     connect
   }
   protected object Completable {
@@ -351,6 +374,7 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
     }) } catch {
       case t: Throwable =>
         finishProgress(token, "")
+        client.logError(t.getMessage + "\n" + t.getStackTrace.mkString("\n"))
         throw t
     }
     finishProgress(token, end)
@@ -392,6 +416,16 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def setTrace(params: SetTraceParams): Unit = {}
 }
 
+object LSPServer {
+  def URItoVSCode(s : String) : String = URLEncoder.encode(s.replace("+","%2B"),StandardCharsets.UTF_8)
+  def VSCodeToURI(s : String) : String = {
+    val dec = URLDecoder.decode(s,StandardCharsets.UTF_8)
+    if (dec.startsWith("file:///") && dec(9) == ':') {
+      dec.take(8) + dec(8).toUpper + dec.drop(9)
+    } else dec
+  }//s.replace("%3A",":")
+}
+
 class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B]](val server : B,lsp:LSP[A,B,C])
   extends LanguageClientAware
     with LanguageServer
@@ -402,13 +436,19 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    server.init((s,g) => lsp.log(s,Some("-server" + g.map("-"+_).getOrElse(""))),controller)
+    server.init((s,g) => lsp.log(s,Some("server" + g.map("-"+_).getOrElse(""))),controller)
   }
   private object Completable {
     import scala.concurrent.Future
     import scala.concurrent.ExecutionContext.Implicits._
     import scala.compat.java8.FutureConverters._
-    def apply[T](t : => T) = Future.apply(t).toJava.toCompletableFuture
+    def apply[T](t : => T) = Future{
+      //val (time,ret) = Time.measure {
+        t
+      /*}
+      println("Took: " + time)
+      ret*/
+    }.toJava.toCompletableFuture
     def list[T](t : => List[T]) : CompletableFuture[util.List[T]] = apply{ t.asJava }
   }
 
@@ -423,10 +463,8 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def getTextDocumentService: TextDocumentService = this
   override def getWorkspaceService: WorkspaceService = this
 
-  private def normalizeUri(s:String) : String = s.replace("%3A",":")
-
   //@JsonNotification("connect")
-  override def connect(clientO: LanguageClient): Unit = {
+  override def connect(clientO: LanguageClient): Unit = Completable {
     log("Connected: " + clientO.toString,Some("methodcall"))
     server.connectI(clientO.asInstanceOf[A])
   }
@@ -453,14 +491,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   }
 
   //@JsonNotification("exit")
-  override def exit(): Unit = {
+  override def exit(): Unit = Completable {
     log("exit",Some("methodcall"))
     server.exit
     this.controller.extman.removeExtension(this)
   }
 
   //@JsonNotification("initialized")
-  override def initialized(params: InitializedParams): Unit = {
+  override def initialized(params: InitializedParams): Unit = Completable {
     log("initialized",Some("methodcall"))
     server.initialized(params)
   }
@@ -470,7 +508,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   //@JsonNotification("workspace/didChangeConfiguration")
   override def didChangeConfiguration(
                               params: DidChangeConfigurationParams
-                            ): Unit = {
+                            ): Unit = Completable {
     log("workspace/didChangeConfiguration: " + params.toString,Some("methodcall"))
     params.getSettings match {
       case o: com.google.gson.JsonObject =>
@@ -494,7 +532,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   //@JsonNotification("workspace/didChangeWatchedFiles")
   override def didChangeWatchedFiles(
                              params: DidChangeWatchedFilesParams
-                           ): Unit = {
+                           ): Unit = Completable {
     log("workspace/didChangeWatchedFiles: " + params.toString,Some("methodcall"))
     server.didChangeWatchedFiles(params)
   }
@@ -509,7 +547,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   //@JsonRequest("textDocument/completion")
   override def completion(position: CompletionParams): CompletableFuture[JEither[util.List[CompletionItem], CompletionList]] = Completable {
-    position.getTextDocument.setUri(normalizeUri(position.getTextDocument.getUri))
+    position.getTextDocument.setUri(LSPServer.VSCodeToURI(position.getTextDocument.getUri))
     log("textDocument/completion: " + position.getTextDocument.getUri + " at (" +
       position.getPosition.getLine + "," + position.getPosition.getCharacter + ")"
       ,Some("methodcall"))
@@ -521,7 +559,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   //@JsonRequest("textDocument/hover")
   override def hover(params: HoverParams): CompletableFuture[Hover] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/hover: " + params.getTextDocument.getUri + ":(" + params.getPosition.getLine + "," + params.getPosition.getCharacter + ")",Some("methodcall"))
     server.hover(params)
   }
@@ -530,6 +568,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def signatureHelp(
                      params: SignatureHelpParams
                    ): CompletableFuture[SignatureHelp] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/signatureHelp: " + params.toString,Some("methodcall"))
     server.signatureHelp(params)
   }
@@ -538,6 +577,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def references(
                   params: ReferenceParams
                 ): CompletableFuture[util.List[_ <: Location]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/reference: " + params.toString,Some("methodcall"))
     server.references(params).asJava
   }
@@ -546,13 +586,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def documentHighlight(
                           params: DocumentHighlightParams
                         ): CompletableFuture[util.List[_ <: DocumentHighlight]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/documentHighlight: " + params.toString,Some("methodcall"))
     server.documentHighlights(params).asJava
   }
 
   //@JsonNotification("textDocument/didOpen")
-  override def didOpen(params: DidOpenTextDocumentParams): Unit = {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+  override def didOpen(params: DidOpenTextDocumentParams): Unit = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didOpen: " + params.getTextDocument.getUri + " (" + params.getTextDocument.getLanguageId + ")",Some("methodcall"))
     server.didOpen(params)
   }
@@ -560,7 +601,8 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   //@JsonNotification("textDocument/didChange")
   override def didChange(
                  params: DidChangeTextDocumentParams
-               ): Unit = {
+               ): Unit = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didChange: " + params.getContentChanges.asScala.map(c =>
       "(" + c.getRange.getStart.getLine + "," + c.getRange.getStart.getCharacter + "),(" +
         c.getRange.getEnd.getLine + "," + c.getRange.getEnd.getCharacter + ")=\"" + c.getText + "\""
@@ -570,15 +612,16 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
 
   //@JsonNotification("textDocument/didClose")
-  override def didClose(params: DidCloseTextDocumentParams): Unit = {
+  override def didClose(params: DidCloseTextDocumentParams): Unit = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didClose: " + params.toString,Some("methodcall"))
     server.didClose(params)
   }
 
 
   //@JsonNotification("textDocument/didSave")
-  override def didSave(params: DidSaveTextDocumentParams): Unit = {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+  override def didSave(params: DidSaveTextDocumentParams): Unit = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/didSave: " + params.getTextDocument.getUri,Some("methodcall"))
     server.didSave(params.getTextDocument.getUri)
   }
@@ -588,6 +631,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def definition(
                   params: DefinitionParams
                 ): CompletableFuture[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/definition: " + params.toString,Some("methodcall"))
     toEither{
       val ret = server.definition(params)
@@ -600,6 +644,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def typeDefinition(
                       position: TypeDefinitionParams
                     ): CompletableFuture[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]] = Completable {
+    position.getTextDocument.setUri(LSPServer.VSCodeToURI(position.getTextDocument.getUri))
     log("textDocument/typeDefinition: " + position.toString,Some("methodcall"))
     toEither{
       val ret = server.typeDefinition(position)
@@ -612,13 +657,16 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def implementation(
                       position: ImplementationParams
                     ): CompletableFuture[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]] = Completable {
+    position.getTextDocument.setUri(LSPServer.VSCodeToURI(position.getTextDocument.getUri))
     log("textDocument/implementation: " + position.toString,Some("methodcall"))
     toEither{(Some(server.implementation(position).asJava),None)}.asInstanceOf[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]]
   }
 
   override def declaration(params: DeclarationParams): CompletableFuture[JEither[util.List[_ <: Location], util.List[_ <: LocationLink]]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/implementation: " + params.toString,Some("methodcall"))
-    toEither{(Some(server.declaration(params).asJava),None)}.asInstanceOf[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]]
+    val ret = server.declaration(params)
+    toEither{(Some(ret.asJava),None)}.asInstanceOf[JEither[util.List[_ <: Location],util.List[_ <: LocationLink]]]
   }
 
 
@@ -628,7 +676,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
                       params: DocumentSymbolParams
                     ): CompletableFuture[util.List[JEither[SymbolInformation,DocumentSymbol]]] = Completable {
   //CompletableFuture[JEither[util.List[DocumentSymbol], util.List[SymbolInformation]]] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/documentSymbol: " + params.getTextDocument.getUri,Some("methodcall"))
     val sc = try {
       server.documentSymbol(params)
@@ -647,6 +695,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def formatting(
                   params: DocumentFormattingParams
                 ): CompletableFuture[util.List[_ <: TextEdit]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/formatting: " + params.toString,Some("methodcall"))
     server.formatting(params).asJava
   }
@@ -656,6 +705,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def rename(
               params: RenameParams
             ): CompletableFuture[WorkspaceEdit] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/rename: " + params.toString,Some("methodcall"))
     server.rename(params)
   }
@@ -664,6 +714,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def codeAction(
                   params: CodeActionParams
                 ): CompletableFuture[util.List[JEither[Command,CodeAction]]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/codeAction: " + params.toString,Some("methodcall"))
     server.codeAction(params).map(e => toEither(None.asInstanceOf[Option[Command]],Some(e)).asInstanceOf[JEither[Command,CodeAction]]).asJava
   }
@@ -672,6 +723,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def codeLens(
                 params: CodeLensParams
               ): CompletableFuture[util.List[_ <: CodeLens]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/codeLens: " + params.getTextDocument.getUri,Some("methodcall"))
     server.codeLens(params).asJava
   }
@@ -680,14 +732,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def foldingRange(
                     params: FoldingRangeRequestParams
                   ): CompletableFuture[util.List[FoldingRange]] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/foldingRange: " + params.getTextDocument.getUri,Some("methodcall"))
     server.foldingRange(params).asJava
   }
 
   //@JsonRequest(value = "textDocument/semanticTokens/full")
   override def semanticTokensFull(params: SemanticTokensParams) : CompletableFuture[SemanticTokens] = Completable {
-    params.getTextDocument.setUri(normalizeUri(params.getTextDocument.getUri))
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/semanticTokens/full: " + params.getTextDocument.getUri,Some("methodcall"))
     server.semanticTokensFull(params)
   }
@@ -695,12 +747,14 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   //@JsonRequest(value = "textDocument/semanticTokens/full/delta", useSegment = false)
   //@ResponseJsonAdapter(classOf[SemanticTokensFullDeltaResponseAdapter])
   override def semanticTokensFullDelta(params: SemanticTokensDeltaParams): CompletableFuture[JEither[SemanticTokens, SemanticTokensDelta]] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/semanticTokens/full/delta: " + params.toString,Some("methodcall"))
     toEither(server.semanticTokensFullDelta(params)).asInstanceOf[JEither[SemanticTokens, SemanticTokensDelta]]
   }
 
   //@JsonRequest(value = "textDocument/semanticTokens/range", useSegment = false)
   override def semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture[SemanticTokens] = Completable {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/semanticTokens/range: " + params.toString,Some("methodcall"))
     server.semanticTokensRange(params)
   }
@@ -710,11 +764,12 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   }
 
   override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
+    params.getTextDocument.setUri(LSPServer.VSCodeToURI(params.getTextDocument.getUri))
     log("textDocument/inlayHint: " + params.getTextDocument.getUri + " Line " + params.getRange.getStart.getLine,Some("methodcall"))
     Completable { server.inlayHint(params).asJava }
   }
 
-  override def setTrace(params: SetTraceParams): Unit = server.setTrace(params)
+  override def setTrace(params: SetTraceParams): Unit = Completable { server.setTrace(params) }
 
   override def callHierarchyIncomingCalls(params: CallHierarchyIncomingCallsParams): CompletableFuture[util.List[CallHierarchyIncomingCall]] = super.callHierarchyIncomingCalls(params)
   override def callHierarchyOutgoingCalls(params: CallHierarchyOutgoingCallsParams): CompletableFuture[util.List[CallHierarchyOutgoingCall]] = super.callHierarchyOutgoingCalls(params)
@@ -744,7 +799,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   override def willSaveWaitUntil(params: WillSaveTextDocumentParams): CompletableFuture[util.List[TextEdit]] = super.willSaveWaitUntil(params)
   override def documentColor(params: DocumentColorParams): CompletableFuture[util.List[ColorInformation]] = super.documentColor(params)
   override def colorPresentation(params: ColorPresentationParams): CompletableFuture[util.List[ColorPresentation]] = super.colorPresentation(params)
-  override def prepareRename(params: PrepareRenameParams): CompletableFuture[JEither[lsp4j.Range, PrepareRenameResult]] = super.prepareRename(params)
+  override def prepareRename(params: PrepareRenameParams): CompletableFuture[JEither3[lsp4j.Range, PrepareRenameResult,PrepareRenameDefaultBehavior]] = super.prepareRename(params)
   override def prepareCallHierarchy(params: CallHierarchyPrepareParams): CompletableFuture[util.List[CallHierarchyItem]] = super.prepareCallHierarchy(params)
   override def selectionRange(params: SelectionRangeParams): CompletableFuture[util.List[SelectionRange]] = super.selectionRange(params)
   override def moniker(params: MonikerParams): CompletableFuture[util.List[Moniker]] = super.moniker(params)

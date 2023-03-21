@@ -11,8 +11,9 @@ class RelationalManager(controller : Controller) {
 
   def parse(s: String, nsMap: NamespaceMap) : RelationalElement = {
     s.split(" ").toList match {
-      case List(tp, ind) => Individual(Path.parse(ind, nsMap), parseUnary(tp))
-      case List(rel, subj, obj) => Relation(parseBinary(rel), Path.parse(subj, nsMap), Path.parse(obj, nsMap))
+      case List(tp, ind) => Individual(Path.parse(ind.replace("%20"," "), nsMap), parseUnary(tp))
+      case List(rel, subj, obj) =>
+        Relation(parseBinary(rel), Path.parse(subj.replace("%20"," "), nsMap), Path.parse(obj.replace("%20"," "), nsMap))
       case _ => throw ParseError("not a valid relational element: " + s)
     }
   }

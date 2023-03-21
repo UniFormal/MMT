@@ -226,7 +226,7 @@ object NatLitSubtype extends SubtypingRule {
 }
 
 
-object PVSHOAS extends NestedHOASNotation(HOAS(pvsapply.path,pvslambda.path),LF.hoas)
+object PVSHOAS extends ChurchNestedHOASNotation(HOAS(pvsapply.path,pvslambda.path),LF.hoas)
 
 import PVSTheory._
 

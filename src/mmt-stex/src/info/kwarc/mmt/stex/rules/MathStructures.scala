@@ -11,10 +11,70 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, El
 import info.kwarc.mmt.api.uom.{ExtendedSimplificationEnvironment, Simplifiability, Simplify}
 import info.kwarc.mmt.api.utils.MyList
 import info.kwarc.mmt.lf.OfType
-import info.kwarc.mmt.stex.STeX
+import info.kwarc.mmt.stex.SHTML
 
 import scala.collection.mutable
 import scala.util.Try
+
+object ModelsOf {
+  val tp = SHTML.meta_path ? "record type"
+  val sym = SHTML.meta_path ? "module type"
+  val term = OMS(sym)
+  def apply(mp : MPath, args : Term*) = OMA(this.term,List(OMPMOD(mp,args.toList)))
+  def apply(t : Term) = OMA(this.term,List(t))
+  def unapply(t : Term) : Option[Term] = t match {
+    case OMA(this.term,List(OMPMOD(mp,args))) => Some(OMPMOD(mp,args))
+    case _ => None
+  }
+}
+
+class RecSymbol(name:String) {
+  val path = SHTML.meta_path ? name
+  val term = OMS(path)
+}
+
+object Getfield extends RecSymbol("record field") {
+  def apply(t:Term, f: LocalName) = OMA(this.term, List(t, OML(f)))
+  def unapply(t: Term) : Option[(Term,LocalName)] = t match {
+    case OMA(this.term, List(tm, OML(f,_,_,_,_))) => Some((tm, f))
+    case _ => None
+  }
+}
+
+object RecMerge extends RecSymbol("module type merge") {
+  def apply(tm:Term*) = OMA(this.term,List(SHTML.flatseq(tm.toList)))
+  def unapply(tm : Term) =tm match {
+    case OMA(this.term,List(SHTML.flatseq(args))) => Some(args)
+    case _ => None
+  }
+}
+
+/** unifies record terms and types; the empty record is OMA(this.term,Nil), not this.term */
+abstract class SimpleRecordLike(n: String) extends RecSymbol(n) {
+  // there may not be an apply method that takes a context instead of a List[OML]
+  def apply(v:OML*): Term = apply(v.toList)
+  def apply(fields: List[OML]): Term = if (fields.isEmpty) term else OMA(this.term, fields)
+  // case Some(l) => OMBINDC(this.term, Context(VarDecl(l)), fields)
+  def unapply(t: Term) : Option[RecordBody]
+}
+
+object RecType extends SimpleRecordLike("anonymous record") {
+  def unapply(t : Term) : Option[RecordTypeBody] = t match {
+    case OMA(this.term, OMLList(fs)) => Some(RecordTypeBody(fs))
+    // case OMBINDC(this.term, Context(VarDecl(n, None, None, None, _), rest@_*), OMLList(fs)) if rest.isEmpty => Some(RecordBody(Some(n), fs,isType))
+    case _ => None
+  }
+  def make(fs : OML*) = OMA(this.term,fs.toList)
+}
+
+object RecExp extends SimpleRecordLike("anonymous record") {
+  def unapply(t : Term) : Option[RecordExpBody] = t match {
+    case OMA(this.term, OMLList(fs)) => Some(RecordExpBody(fs))
+    // case OMBINDC(this.term, Context(VarDecl(n, None, None, None, _), rest@_*), OMLList(fs)) if rest.isEmpty => Some(RecordBody(Some(n), fs,isType))
+    case _ => None
+  }
+}
+
 
 class MathStructureFeature extends StructuralFeature("structure") with ParametricTheoryLike {
   //override def getHeaderNotation: List[Marker] = List(LabelArg(1, LabelInfo.none),SimpArg(1))
@@ -31,7 +91,7 @@ class MathStructureFeature extends StructuralFeature("structure") with Parametri
 
 object MathStructureRule extends RuleSet {
   override def getAll: Iterable[Rule] = Seq(
-    StructuralFeatureRule(classOf[MathStructureFeature],"structure"),
+    //StructuralFeatureRule(classOf[MathStructureFeature],"structure"),
     RecordTypeInhabitable,
     RecordTypeTerm,
     RecordExpTerm,
@@ -106,7 +166,8 @@ object RecordsGeneral {
           unappl(RecMerge(nstp:_*)) else None
       case _ => None
     }
-    checker.safeSimplifyUntil(tm)(unappl)
+    val ret = checker.safeSimplifyUntil(tm)(unappl)
+    ret
     /* tpS match {
       case RecordBodyLike(ret) => Some(ret)
       // we might try to handle a unknown here and introduce a fresh unknown for a list of other fields, compare makePi in LF
@@ -176,9 +237,17 @@ object RecordTypeInhabitable extends InhabitableRule(RecType.path) with RecordRu
 
 /** Formation: the type inference rule |- A1:type , ... , |- An:type  --->  |- |{x1:A1,...,xn:An}| : type */
 object RecordTypeTerm extends FormationRule(RecType.path, OfType.path) with RecordRule {
+
+  override def applicable(t: Term): Boolean = t match {
+    case ModelsOf(_) => true
+    case RecType(_) => true
+    case _ => false
+  }
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = safe {
     // if (covered) return Some(Univ(1)) WTF?
     tm match {
+      case ModelsOf(_) =>
+        Some(OMS(ModelsOf.tp))
       case RecType(bd) =>
         /*
         history += "checking record type " + solver.presentObj(tm)
@@ -667,70 +736,12 @@ object RecSubtype extends SubtypingRule with RecordRule {
 /** matches for a list of OMLs */
 object OMLList {
   def unapply(ts: List[Term]): Option[List[OML]] = {
-    val omls = ts map {
-      case o:OML => o
+    val omls = ts flatMap {
+      case o:OML => List(o)
+      case SHTML.flatseq(ls) => unapply(ls).getOrElse(Nil)
       case _ => return None
     }
     Some(omls)
-  }
-}
-
-class RecSymbol(name:String) {
-  val path = STeX.mmtmeta_path ? name
-  val term = OMS(path)
-}
-
-object Getfield extends RecSymbol("getfield") {
-  def apply(t:Term, f: LocalName) = OMA(this.term, List(t, OML(f)))
-  def unapply(t: Term) : Option[(Term,LocalName)] = t match {
-    case OMA(this.term, List(tm, OML(f,_,_,_,_))) => Some((tm, f))
-    case _ => None
-  }
-}
-
-object RecMerge extends RecSymbol("recmerge") {
-  def apply(tm:Term*) = OMA(this.term,tm.toList)
-  def unapply(tm : Term) =tm match {
-    case OMA(this.term,args) => Some(args)
-    case _ => None
-  }
-}
-
-/** unifies record terms and types; the empty record is OMA(this.term,Nil), not this.term */
-abstract class SimpleRecordLike(n: String) extends RecSymbol(n) {
-  // there may not be an apply method that takes a context instead of a List[OML]
-  def apply(v:OML*): Term = apply(v.toList)
-  def apply(fields: List[OML]): Term = if (fields.isEmpty) term else OMA(this.term, fields)
-  // case Some(l) => OMBINDC(this.term, Context(VarDecl(l)), fields)
-  def unapply(t: Term) : Option[RecordBody]
-}
-
-object RecType extends SimpleRecordLike("rectp") {
-  def unapply(t : Term) : Option[RecordTypeBody] = t match {
-    case OMA(this.term, OMLList(fs)) => Some(RecordTypeBody(fs))
-    // case OMBINDC(this.term, Context(VarDecl(n, None, None, None, _), rest@_*), OMLList(fs)) if rest.isEmpty => Some(RecordBody(Some(n), fs,isType))
-    case _ => None
-  }
-  def make(fs : OML*) = OMA(this.term,fs.toList)
-}
-
-object RecExp extends SimpleRecordLike("recexpr") {
-  def unapply(t : Term) : Option[RecordExpBody] = t match {
-    case OMA(this.term, OMLList(fs)) => Some(RecordExpBody(fs))
-    // case OMBINDC(this.term, Context(VarDecl(n, None, None, None, _), rest@_*), OMLList(fs)) if rest.isEmpty => Some(RecordBody(Some(n), fs,isType))
-    case _ => None
-  }
-}
-
-object ModelsOf {
-  val tp = STeX.mmtmeta_path ? "modtype"
-  val sym = STeX.meta_path ? "module-type"
-  val term = OMS(sym)
-  def apply(mp : MPath, args : Term*) = OMA(this.term,List(OMPMOD(mp,args.toList)))
-  def apply(t : Term) = OMA(this.term,List(t))
-  def unapply(t : Term) : Option[Term] = t match {
-    case OMA(this.term,List(OMPMOD(mp,args))) => Some(OMPMOD(mp,args))
-    case _ => None
   }
 }
 
@@ -1119,11 +1130,14 @@ object ModuleType {
     }
     val dones : mutable.HashMap[(MPath,List[Term]),SimpleModule] = mutable.HashMap.empty
     def get(ip : MPath, iargs : List[Term]) : SimpleModule = dones.getOrElseUpdate((ip,iargs),{
-      val th = lookup.getO(ip) match {
+      val th = try{lookup.getO(ip) match {
         case Some(t : Theory) => t
         case _ => throw RecordError("Not a theory: " + ip)
+      }} catch {
+        case nf:NotFound =>
+          throw RecordError("Not found: " + ip)
       }
-      def names = th.getConstants.filter(_.rl.contains("stexsymbol")).map(_.path)
+      def names = th.getConstants/*.filter(_.rl.contains("stexsymbol"))*/.map(_.path)
       new SimpleModule(th,iargs,{ names },ln => getD(ln))
     })
     def getAll(ip : MPath,ia : List[Term]): List[SimpleModule] = {
@@ -1202,7 +1216,8 @@ class SimpleModule(val theory : Theory, args : List[Term], _names : => List[Glob
   }
   override def getTypeForTerm(name: LocalName, cont: LocalName => Option[Term],projectioncase : Term => Option[LocalName])(implicit lookup : Lookup,history: History): Option[Term]
   = {
-    val n = localNames.find(gn => ModuleType.makeName(gn.name) == name).getOrElse(return None)
+    val names = localNames
+    val n = names.find(gn => ModuleType.makeName(gn.name) == name).getOrElse(return None)
     RecordBodyLike.projectTerm(getD(LocalName(n.module) / n.name).tp.getOrElse(return None) /* ^? subs */,cont,projectioncase)
   }
 

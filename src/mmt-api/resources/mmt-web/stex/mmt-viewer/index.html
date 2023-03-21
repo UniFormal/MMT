@@ -3,18 +3,53 @@
 
 <head>
   <script type="text/javascript">
+    var bodyelem = null;
+    var padding = 0;
+    var mainwidth = 0;
+    var innerwidth = 0;
+    function set_bodyelem() {
+      bodyelem = document.getElementById('rustexbody');
+      if (bodyelem !== null) {
+        innerwidth = Number(bodyelem.style.maxWidth.replace(/px$/, ''));
+        padding = Number(bodyelem.style.paddingLeft.replace(/px$/, ''));
+        mainwidth = innerwidth + (2 * padding);
+        bodyelem.style.setProperty('--current-width', innerwidth + "px");
+      }
+    }
+    addEventListener("resize", (e) => {
+      if (bodyelem == null) set_bodyelem();
+      let fullwidth = window.innerWidth;
+      if (fullwidth < mainwidth) {
+        if (fullwidth < innerwidth) {
+          bodyelem.style.paddingLeft = 0;
+          bodyelem.style.paddingRight = 0;
+          bodyelem.style.setProperty('--current-width', fullwidth + "px");
+        } else {
+          const discrep = mainwidth - fullwidth;
+          bodyelem.style.paddingLeft = (padding - (discrep / 2)) + "px";
+          bodyelem.style.paddingRight = (padding - (discrep / 2)) + "px";
+          bodyelem.style.setProperty('--current-width', innerwidth + "px");
+        }
+      } else {
+        bodyelem.style.paddingLeft = padding + "px";
+        bodyelem.style.paddingRight = padding + "px";
+        bodyelem.style.setProperty('--current-width', innerwidth + "px");
+      }
+    });
     function preloadFunc() {
       // Eg. https://mmt.beta.vollki.kwarc.info
-      window.BASE_URL = '';
+      window.BASE_URL = 'BASE_URL_PLACEHOLDER';
       // If 'SHOW_FILE_BROWSER' is set to 'TRUE', then the filebrowser is displayed and all other values are ignored.
       window.SHOW_FILE_BROWSER = 'SHOW_FILE_BROWSER_PLACEHOLDER';
       // Eg. /:sTeX/document?archive=MiKoMH/GenCS&filepath=dmath/mod/addition-function.en.xhtml
       // NOTE: CONTENT_URL must be empty if tours are to be displayed.
       window.CONTENT_URL = 'CONTENT_URL_PLACEHOLDER';
-      // Eg. http://mathhub.info/smglom/sets?subsupset
+      // Eg. http://mathhub.info/smglom/sets/mod?subsupset
       window.TOUR_ID = 'TOUR_ID_PLACEHOLDER';
       // Eg. en
       window.LANGUAGE = 'LANGUAGE_PLACEHOLDER';
+      // Eg. If 'NO_FRILLS' is set to 'TRUE', the sidepanel etc will not be shown
+      window.NO_FRILLS = 'NO_FRILLS_PLACEHOLDER';
     }
     window.onpaint = preloadFunc();
   </script>
@@ -22,10 +57,13 @@
   <title>sTeX Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="/stex/mmt-viewer/styles.85673b03a8c3e281.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.0ddab628634c9ff8.css"></head>
+<link rel="stylesheet" href="/stex/mmt-viewer/styles.5711a0a26518ae57.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.70348e59e6611df2.css">
+  <link rel="stylesheet" href="CONTENT_CSS_PLACEHOLDER">
+  <link rel="stylesheet" href="/stex/fonts.css">
+</head>
 
 <body>
   <div id="root"></div>
-<script src="/stex/mmt-viewer/runtime.b10ae0fcf0b94d88.esm.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.ea02e02df10580eb.esm.js" type="module"></script><script src="/stex/mmt-viewer/main.1a6fd045cbdcafc3.esm.js" type="module"></script></body>
+<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/polyfills.e7ea3970f35d3a98.js" type="module"></script><script src="/stex/mmt-viewer/main.e6c8242cdabd79a3.js" type="module"></script></body>
 
 </html>

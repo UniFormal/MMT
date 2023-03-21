@@ -99,7 +99,7 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
   def add(d : Declaration, at: AddPosition = AtEnd): Unit = {
     val existedAlready = addDecl(d)
     if (!existedAlready)
-      addRef(d, at, false)
+       addRef(d, at, false)
   }
 
   /** like add, but treats the second argument as the name of a [[NarrativeElement]] */
@@ -180,7 +180,7 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
 
   private def addAlternativeNames(s: Declaration): Unit = {
     s.alternativeNames foreach {a =>
-      if (statements.isDefinedAt(a))
+      if (statements.isDefinedAt(a) && statements(a) != s) // TODO should it be able to happen that s already exists at a?
         throw AddError(s, s"name clash, a declaration for the alternative name $a already exists")
       statements(a) = s
     }

@@ -1,16 +1,41 @@
 package info.kwarc.mmt.lsp.mmt
 
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.archives.{BuildManager, TrivialBuildManager}
+import info.kwarc.mmt.api.frontend.{Controller, Run}
 import info.kwarc.mmt.api.utils.MMTSystem
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.{CompletionItem, CompletionList, CompletionOptions, CompletionParams, InitializeParams, InitializeResult, TextDocumentSyncKind}
 
 import scala.jdk.CollectionConverters._
 
 trait MMTClient extends LSPClient
 class MMTLSPWebsocket extends LSPWebsocket(classOf[MMTClient],classOf[MMTLSPServer])
-class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTClient],classOf[MMTLSPServer],classOf[MMTLSPWebsocket])("mmt",port,webport) {
+
+class BuildMMTOmdocMessage(val file: String)
+
+class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTClient], classOf[MMTLSPServer], classOf[MMTLSPWebsocket])("mmt",port,webport) {
   override def newServer(style: RunStyle): MMTLSPServer = new MMTLSPServer(style)
+
+  @JsonNotification("mmt/build/mmt-omdoc")
+  def buildMMTOmdoc(msg: BuildMMTOmdocMessage): Unit = {
+    log(s"building `${msg.file}` to mmt-omdoc")
+  }
+}
+
+object Socket {
+  def main(args: Array[String]) : Unit = {
+    val lsp = new MMTLSP
+    val controller = Run.controller
+    List("lsp", "lsp-mmt")
+      .foreach(s => controller.handleLine(s"log+ $s"))
+    controller.handleLine("log console")
+    controller.handleLine("server on 8090")
+    controller.extman.addExtension(lsp)
+    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
+    controller.extman.addExtension(new TrivialBuildManager)
+    lsp.runSocketListener
+  }
 }
 
 class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])

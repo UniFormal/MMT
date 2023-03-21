@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.lsp.{SyncedDocUnparsed, SyncedDocument}
-import info.kwarc.mmt.stex.STeX
+import info.kwarc.mmt.stex.SHTML
 import info.kwarc.mmt.stex.lsp.sTeXDocument
 import info.kwarc.mmt.stex.parsing._
 import org.eclipse.lsp4j.SymbolKind
@@ -17,90 +17,51 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class MutList(var ls : List[DictionaryModule] = Nil)
-class DictionaryModule(val macr:TeXModuleLike) extends RuleContainer {
+class DictionaryModule(val macr:STeXModuleLike, val meta:Option[DictionaryModule],dict:Dictionary) extends RuleContainer {
   val path = macr.mp
   var archive : Option[Archive] = None
   var file : Option[File] = None
   var lang:String = ""
   var imports : List[(DictionaryModule,Boolean)] = Nil
-  var exportrules : List[TeXRule] = List(ModuleRule(this))
+  var exportrules : List[TeXRule] = Nil //List(ModuleRule(this,false))
   def getRules(lang:String,dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
     dones.ls ::= this
-    val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(_._1.getRules(lang,dones))
+    val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(m => InheritModuleRule(m._1,true) :: m._1.getRules(lang,dones))
     langs.get(lang) match {
       case Some(m) => m.exportrules ::: r
       case _ => r
     }
   }
   val langs = mutable.HashMap.empty[String,DictionaryModule]
-
 }
 
-class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
-
+class Dictionary(val controller:Controller,parser:STeXParser) {
   implicit val ec : ExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool(1000))
 
-  def getMPath(name:String):MPath = {
-    current_modules.headOption match {
-      case None =>
-        current_namespace match {
-          case Some(d) if d.last == name =>
-            d.^ ? name
-          case Some(d) =>
-            d ? LocalName.parse(name)
-          case _ =>
-            throw LaTeXParseError("Error resolving Global Name")
-        }
-      case Some(m) =>
-        m.path.parent ? (m.path.name / LocalName.parse(name))
-    }
-  }
-  def getGlobalName(name:String):GlobalName = current_modules.head.path ? LocalName.parse(name)
-  def getLanguage : String = current_language
-  def getFile : String = current_file.get.toURI.toString
+  private var current_archive: Option[Archive] = None
+  def getCurrentArchive = current_archive
+  private var current_file: Option[File] = None
+  private var current_modules : List[DictionaryModule] = Nil
+  val all_modules = mutable.HashMap.empty[MPath,DictionaryModule]
+  private var current_namespace : Option[DPath] = None
+  private var current_language : String = "en"
+  def getCurrentNS = current_namespace
 
-
-  def getNS(a:Archive) = a.ns match {
-    case Some(p:DPath) => p
+  def getNS(a: Archive) = a.ns match {
+    case Some(p: DPath) => p
     case None => a.properties.get("source-base") match {
-      case Some(s) => Path.parseD(s,NamespaceMap.empty)
+      case Some(s) => Path.parseD(s, NamespaceMap.empty)
       case _ =>
         DPath(a.root.toURI)
     }
   }
 
-  def resolveMPath(archiveid:String,path:String) : MPath = {
-    val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse{
-      throw LaTeXParseError("Archive missing: " + archiveid)
-    })
-    resolveMPath(archive,path)
-  }
-
-  def resolveMPath(archive:Option[Archive],path:String) : MPath = {
-    val (rpath,name) = path.split('?').toList match {
-      case List(n) => (Nil,n)
-      case List(p,n) => (p.split('/').toList,n)
-    }
-    (archive,rpath) match {
-      case (_,Nil) if current_namespace.exists(dp => all_modules.isDefinedAt(dp ? LocalName.parse(name))) =>
-        current_namespace.get ? LocalName.parse(name)
-      case (Some(a),Nil) =>
-        getNS(a) ? LocalName.parse(name)
-      case (Some(a),p) =>
-        p.foldLeft(getNS(a))((d,s) => d / s) ? LocalName.parse(name)
-      case (None,Nil) =>
-        DPath(current_file.head.up.toURI) ? LocalName.parse(name)
-      case (None,p) =>
-        p.foldLeft(DPath(current_file.head.up.toURI))((d,s) => d / s) ? LocalName.parse(name)
-    }
-  }
-
-  private def compute_ns : Unit = {
+  private def compute_ns: Unit = {
     current_file match {
       case Some(f) =>
         current_archive match {
           case Some(a) => getNS(a) match {
-            case d:DPath =>
+            case d: DPath =>
               var sub = (a / source).relativize(f).stripExtension
               sub.getExtension match {
                 case Some(lang) =>
@@ -108,7 +69,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
                   sub = sub.stripExtension
                 case _ =>
               }
-              current_namespace = Some(sub.segments.foldLeft(d)((ns,s) => ns / s))
+              current_namespace = Some(sub.segments.foldLeft(d)((ns, s) => ns / s))
               return
             case _ =>
           }
@@ -126,20 +87,7 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         current_namespace = None
     }
   }
-
-  private var current_archive: Option[Archive] = None
-  private var current_file: Option[File] = None
-  private var current_modules : List[DictionaryModule] = Nil
-  val all_modules = mutable.HashMap.empty[MPath,DictionaryModule]
-  private var current_namespace : Option[DPath] = None
-  private var current_language : String = "en"
-
-  def getModule = current_modules.headOption.getOrElse({
-    throw LaTeXParseError("Only allowed in Module")
-  })
-  def getModuleOpt = current_modules.headOption
-
-  def inFile[A](file : File,a:Option[Archive] = None)(f: => A) : A = {
+  def inFile[A](file: File, a: Option[Archive] = None)(f: => A): A = {
     //filetracker ::= file
     val prevarch = current_archive
     val prevfile = current_file
@@ -160,14 +108,37 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
       current_modules = prevmod
     }
   }
-  def openModule[A <:TeXModuleLike](macr:A)(implicit state: LaTeXParserState) = {
+
+  def openModule[A <: STeXModuleLike](macr: A)(implicit parser: ParseState[Begin.BeginMacro]) = {
+    val meta = macr match {
+      case tmm: STeXModule =>
+        tmm.meta match {
+          case Some(m) =>
+            all_modules.get(m)
+          case _ => None
+        }
+      case _ => None
+    }
+
+    def makenew = {
+      val m = new DictionaryModule(macr, meta,this)
+      m.letters = parser.latex.groups.head.letters
+      m.exportrules = meta.toList.flatMap(_.getRules(getLanguage))
+      m.exportrules.foreach { rl =>
+        m.rules(rl.name) = rl
+      }
+      current_file.foreach(f => m.file = Some(f))
+      current_archive.foreach(a => m.archive = Some(a))
+      m
+    }
+
     val mod = if (macr.sig != "") {
       val language = getLanguage
-      all_modules.getOrElse(macr.mp,{
+      all_modules.getOrElse(macr.mp, {
         val sigfile = current_file.get.stripExtension.stripExtension.setExtension(macr.sig + ".tex")
         Await.result(Future {
           try {
-            parser.applyFormally(sigfile, current_archive)
+            new STeXParser(controller,Some(this)).applyFormally(sigfile,current_archive)
           } catch {
             case e: Throwable =>
               e.printStackTrace()
@@ -177,50 +148,129 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
         all_modules.get(macr.mp) match {
           case None =>
             macr.addError("No module " + macr.mp.toString + " found", Some("In file " + sigfile))
-            new DictionaryModule(macr)
+            makenew
           case Some(m) =>
-            val n = new DictionaryModule(macr)
-            n.imports ::= (m,true)
+            val n = makenew
+            n.imports ::= (m, true)
             m.langs(language) = n
-            n.rules = m.getRules(language)
+            m.getRules(language).foreach(rl => n.rules(rl.name) = rl)
             n
         }
       })
-    } else new DictionaryModule(macr)
-    current_file.foreach(f => mod.file = Some(f))
-    current_archive.foreach(a => mod.archive = Some(a))
+    } else makenew
     current_modules ::= mod
-    state.rules ::= mod
-    mod.rules = parser.moduleRules ::: mod.rules
-    macr match {
-      case tmm: TeXModuleMacro =>
-        tmm.meta match {
-          case Some(m) =>
-            all_modules.get(m) match {
-              case Some(mt) =>
-                mod.imports ::= (mt,false)
-                mod.rules = mod.rules ::: mt.rules
-              case _ =>
-            }
-          case _ =>
-        }
-      case _ =>
-    }
+    parser.latex.groups ::= mod
+    STeXRules.moduleRules(this).foreach(rl => mod.rules(rl.name) = rl)
     macr
   }
-  def closeModule(implicit state: LaTeXParserState) = current_modules.headOption match {
+
+  def closeModule(implicit parser: ParseState[Begin.BeginMacro]) = current_modules.headOption match {
     case Some(m) =>
       val mod = m
-      state.rules = state.rules.filterNot(_ == mod)
+      parser.latex.closegroup
       current_modules = current_modules.tail
       if (mod.macr.sig == "") all_modules(mod.path) = mod
     case _ =>
   }
 
-  //private case class ParseThread(file : File,ft : Future[Unit])
-  //private var filetracker : List[ParseThread] = Nil
-  private var readfiles : List[File] = Nil
+  def moduleOrStructure[A <: TeXTokenLike](pathorname: String)(implicit parser: ParseState[A]) : DictionaryModule = {
+    def default = requireModule(resolveMPath("",pathorname),"",pathorname)
+    if (pathorname.contains('?'))
+      default
+    else {
+      getStructure(pathorname).getOrElse{ default }
+    }
+  }
 
+  private def getStructure[A <: TeXTokenLike](name: String)(implicit parser: ParseState[A]): Option[DictionaryModule] = {
+    val dicts = parser.latex.collectRules {
+      case s@MathStructure(_, _, syminfo, _) if syminfo.macroname == name || syminfo.path.name.toString == name => s
+    }
+    all_modules.values.find(_.macr match {
+      case MathStructure(_,_,si,_) => dicts.exists(_.syminfo.path == si.path)
+      case _ => false
+    })
+  }
+
+  def structure[A <: TeXTokenLike](name: String)(implicit parser: ParseState[A]) : DictionaryModule = {
+    getStructure(name).getOrElse{
+      throw LaTeXParseError("No structure " + name + " found")
+    }
+  }
+
+  def resolveMPath(archiveid: String, path: String): MPath = {
+    val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse {
+      throw LaTeXParseError("Archive missing: " + archiveid)
+    })
+    resolveMPath(archive, path)
+  }
+
+  def resolveFilePath(archiveid: String, path: String): File = {
+    val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse {
+      throw LaTeXParseError("Archive missing: " + archiveid)
+    })
+    archive match {
+      case Some(a) => a / source / (if (path.endsWith(".tex")) path else path + ".tex")
+      case _ => current_file.get.resolve(if (path.endsWith(".tex")) path else path + ".tex")
+    }
+  }
+
+  def resolveMPath(archive: Option[Archive], path: String): MPath = {
+    val (rpath, name) = path.split('?').toList match {
+      case List(n) => (Nil, n)
+      case List(p, n) => (p.split('/').toList, n)
+      case _ => throw LaTeXParseError("Invalid path")
+    }
+    (archive, rpath) match {
+      case (_, Nil) if current_namespace.exists(dp => all_modules.isDefinedAt(dp ? LocalName.parse(name))) =>
+        current_namespace.get ? LocalName.parse(name)
+      case (Some(a), Nil) =>
+        getNS(a) ? LocalName.parse(name)
+      case (Some(a), p) =>
+        p.foldLeft(getNS(a))((d, s) => d / s) ? LocalName.parse(name)
+      case (None, Nil) =>
+        DPath(current_file.head.up.toURI) ? LocalName.parse(name)
+      case (None, p) =>
+        p.foldLeft(DPath(current_file.head.up.toURI))((d, s) => d / s) ? LocalName.parse(name)
+    }
+  }
+
+  def addimport(mp: MPath,archive:String,path:String,export: Boolean)(implicit parser: ParseState[PlainMacro]): InheritModuleRule = {
+    val ret = all_modules.get(mp) match {
+      case Some(mod) =>
+        val ret = InheritModuleRule(mod,export)
+        parser.latex.collectFirstRule{
+          case InheritModuleRule(`mod`, _) if !export => true // TODO this does not work transitively!
+          case InheritModuleRule(`mod`, true) => true
+        } match {
+          case Some(_) =>
+            ret.addError("Redundant Import",None,Level.Info)
+          case None =>
+        }
+        ret
+      case _ =>
+        val mod = requireModule(mp, archive, path)
+        InheritModuleRule(mod,export)
+    }
+    if (export) {
+      getModuleOpt.foreach {m =>
+        m.imports ::= (ret.dm,export)
+        m.rules(ret.name) = ret
+        ret.dm.getRules(getLanguage).foreach{rl =>
+          m.rules(rl.name) = rl
+        }
+      }
+    } else {
+      val head = parser.latex.groups.head
+      head.rules(ret.name) = ret
+      ret.dm.getRules(getLanguage).foreach { rl =>
+        head.rules(rl.name) = rl
+      }
+    }
+    ret
+  }
+
+  private var readfiles : List[File] = Nil
   def requireModule(mp: MPath, arch: String, mpstr: String): DictionaryModule = {
     all_modules.getOrElse(mp, {
       val archive = if (arch == "") current_archive else controller.backend.getArchive(arch)
@@ -239,90 +289,90 @@ class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
           current_file.get.up / p
       }
       val lang = getLanguage
-      val file = if (abs.setExtension("tex").exists()) abs.setExtension("tex")
+      val nabs = abs / name
+      val file = if (nabs.setExtension("tex").exists()) nabs.setExtension("tex")
+      else if (nabs.setExtension(lang + ".tex").exists()) nabs.setExtension(lang + ".tex")
+      else if (nabs.setExtension("en.tex").exists()) nabs.setExtension("en.tex")
+      else if (abs.setExtension("tex").exists()) abs.setExtension("tex")
       else if (abs.setExtension(lang + ".tex").exists()) abs.setExtension(lang + ".tex")
       else if (abs.setExtension("en.tex").exists()) abs.setExtension("en.tex")
       else {
-        val nabs = abs / name
-        if (nabs.setExtension("tex").exists()) nabs.setExtension("tex")
-        else if (nabs.setExtension(lang + ".tex").exists()) nabs.setExtension(lang + ".tex")
-        else if (nabs.setExtension("en.tex").exists()) nabs.setExtension("en.tex")
-        else {
-          throw LaTeXParseError("No candidate file for module " + mp + " found")
-        }
+        throw LaTeXParseError("No candidate file for module " + mp + " found")
       }
-      /*
-      filetracker.find(_.file == file) match {
-        case Some(f) => Await.result(f.ft,Duration.Inf)
-        case None =>
-          val future = Future {
-            try { */
       if (readfiles contains file) {
         throw LaTeXParseError("No module " + mp + " found")
       }
       else {
-        def add() = {
-          readfiles ::= file
-        }
-        try {
-          parser.applyFormally(file, archive)
-        } finally {
-          add()
-        }
-      } /*
-            } catch {
-              case e: Throwable =>
-                e.printStackTrace()
-                print("")
-            } finally {
-              filetracker = filetracker.filterNot(_.file == file)
-            }
-            ()
-          }
-          filetracker ::= ParseThread(file, future)
-          Await.result(future, Duration.Inf)
-      } */
-
-      all_modules.getOrElse(mp, {
-        throw LaTeXParseError("No module " + mp + " found")
-      })
-
+        readfiles ::= file
+        parser.applyFormally(file, archive)
+      }
+      all_modules.get(mp) match {
+        case Some(m) => m
+        case None =>
+          throw LaTeXParseError("No module " + mp + " found in file " + file)
+      }
     })
   }
 
-  def addimport(ima: ImportModuleApp)(implicit state: LaTeXParserState): ImportModuleApp = {
-    val mod = all_modules.get(ima.mp) match {
-      case Some(mod) =>
-        if (state.getRules.contains(ModuleRule(mod))) {
-          ima.addError("Redundant Import",None,Level.Info)
-        }
-        mod
+  def resolveName[A <: TeXTokenLike](namestr: String)(implicit parser: ParseState[A]) = {
+    namestr.split('?') match {
+      case Array(s) =>
+        parser.latex.collectRules{
+          case rl : SemanticMacro if rl.name == s => rl.syminfo
+          case rl : SemanticMacro if rl.syminfo.path.name.toString == s => rl.syminfo
+        }.distinct
+      case a if a.nonEmpty && a.length <= 3 =>
+        parser.latex.collectRules {
+          case rl: SemanticMacro if rl.syminfo.path.module.toString.endsWith(a.init.mkString("?"))
+            && rl.syminfo.path.name.toString == a.last => rl.syminfo
+        }.distinct
       case _ =>
-        requireModule(ima.mp,ima.archivestring,ima.path)
+        throw LaTeXParseError("Too many '?' in symbol identifier", level = Level.Warning)
     }
-    if (ima.isusemodule) {
-      state.rules.headOption.foreach(r => r.rules = mod.getRules(getLanguage) ::: r.rules)
-    } else current_modules.headOption match {
-      case Some(m) =>
-        m.imports ::= (mod, !ima.isusemodule)
-        m.rules = mod.getRules(getLanguage) ::: m.rules
-      case None =>
-        throw LaTeXParseError("Only allowed in module")
-    }
-    ima
   }
 
+  def getGlobalName(name: String): GlobalName = current_modules.head.path ? LocalName.parse(name)
+  def getFile: String = current_file.get.toURI.toString
+  def getModule = current_modules.headOption.getOrElse({
+    throw LaTeXParseError("Only allowed in Module")
+  })
+  def getModuleOpt = current_modules.headOption
+  def defaultMeta(implicit parser: ParseState[Begin.BeginMacro]) = {
+    parser.latex.collectFirstRule {
+      case MetaTheoryRule(mp,_) => mp
+    }.getOrElse {
+      Path.parseM("http://mathhub.info/sTeX/meta?Metatheory")
+    }
+  }
+  def getMPath(name: String): MPath = {
+    current_modules.headOption match {
+      case None =>
+        current_namespace match {
+          case Some(d) if d.last == name =>
+            d.^ ? name
+          case Some(d) =>
+            d ? LocalName.parse(name)
+          case _ =>
+            throw LaTeXParseError("Error resolving Global Name")
+        }
+      case Some(m) =>
+        m.path.parent ? (m.path.name / LocalName.parse(name))
+    }
+  }
+
+  def getLanguage: String = current_language
+
+  var formalOnly = false
 }
 
-class STeXSuperficialParser(controller:Controller) {
+class STeXParser(controller:Controller, dictOpt:Option[Dictionary] = None) {
   def init() = controller.backend.getArchive("sTeX/meta-inf") match {
     case Some(a) =>
       applyFormally((a / source) / "Metatheory.en.tex",Some(a))
     case _ =>
   }
-  val dict = new Dictionary(controller,this)
-  var allsTeXRules = STeXRules.allRules(dict) ::: LaTeXRules.allrules
-  var moduleRules : List[TeXRule] = STeXRules.moduleRules(dict)
+  val dict = dictOpt.getOrElse(new Dictionary(controller,this))
+  var allsTeXRules = STeXRules.allRules(dict) ::: TeXRules.allrules
   def apply(file: File,a:Option[Archive] = None) : List[TeXTokenLike] = apply(File.read(file),file,a)
   def apply(string : String,asFile : File,arch:Option[Archive]) : List[TeXTokenLike] = {
     val sd = new SyncedDocument
@@ -331,25 +381,61 @@ class STeXSuperficialParser(controller:Controller) {
   }
   def apply(sd : SyncedDocument, asFile: File, arch: Option[Archive]): List[TeXTokenLike] = {
     dict.inFile(asFile, arch) {
-      SuperficialLaTeXParser(sd, allsTeXRules)
+      new LaTeXParser(sd.unparsed, allsTeXRules).read
     }
   }
+
   def applyFormally(file: File,a:Option[Archive] = None) : List[TeXTokenLike] = applyFormally(File.read(file),file,a)
   def applyFormally(string : String,asFile : File,arch:Option[Archive]) : List[TeXTokenLike] = {
-    dict.inFile(asFile,arch) {
-      SuperficialLaTeXParser(string,allsTeXRules.filterNot{_.isInstanceOf[NonFormalRule]})
+    val oldformalOnly = dict.formalOnly
+    dict.formalOnly = true
+    try { dict.inFile(asFile,arch) {
+      val sd = new SyncedDocument
+      sd.set(string)
+      new LaTeXParser(sd.unparsed,Begin :: End :: allsTeXRules.filterNot{_.isInstanceOf[NonFormalRule]}).read
+    } } finally {
+      dict.formalOnly = oldformalOnly
     }
   }
 }
 
+
+/*
+class Dictionary(val controller:Controller,parser:STeXSuperficialParser) {
+
+
+  def getGlobalName(name:String):GlobalName = current_modules.head.path ? LocalName.parse(name)
+  def getFile : String = current_file.get.toURI.toString
+
+
+
+
+
+
+
+
+  def getModule = current_modules.headOption.getOrElse({
+    throw LaTeXParseError("Only allowed in Module")
+  })
+  def getModuleOpt = current_modules.headOption
+
+
+
+  //private case class ParseThread(file : File,ft : Future[Unit])
+  //private var filetracker : List[ParseThread] = Nil
+
+}
+
+
 case class SymdeclInfo(macroname:String,path:GlobalName,args:String,assoctype:String,local:Boolean,file:String,start:Int,end:Int,defined:Boolean) {
   def arity = args.length
+  var isDocumented = false
 }
 case class NotationInfo(syminfo:SymdeclInfo,prec:List[Int],id:String,notation:List[TeXTokenLike],opnotation:Option[List[TeXTokenLike]])
 
 object STeXRules {
 
-  val defaultMeta = Path.parseM("http://mathhub.info/sTeX/meta?Metatheory")
+  //val defaultMeta = Path.parseM("http://mathhub.info/sTeX/meta?Metatheory")
 
   def allRules(dict:Dictionary) = List(
     ModuleRule(dict),UseModuleRule(dict),NotationRule(dict),mmtrule,
@@ -357,12 +443,13 @@ object STeXRules {
     DefiniendumRule(dict),DefinameRule(dict),CapDefinameRule(dict),ProblemRule(dict),
     VarDefRule(dict),VarInstanceRule(dict),UseStructureRule(dict),
     patchdefinitionrule,patchassertionrule,stexinline,stexcode,nstexcode,texcode,ProofEnv("sproof"),
-    MMTInterfaceRule(dict)
+    MMTInterfaceRule(dict),SetMetaTheoryRule(dict),
+    DefinitionRule(dict), SParagraphRule(dict),AssertionRule(dict),InlineAssertionRule(dict)
   )
   def moduleRules(dict:Dictionary) = List(
     ImportModuleRule(dict),new SymDefRule(dict),SymDeclRule(dict),new MathStructureRule(dict),
-    ExtStructureRule(dict),TextSymDeclRule(dict),
-    AssertionRule(dict),InlineAssertionRule(dict),InstanceRule(dict),
+    ExtStructureRule(dict),TextSymDeclRule(dict),MMTDef(dict),
+    InstanceRule(dict),
     CopymoduleRule(dict),InterpretmoduleRule(dict),RealizationRule(dict)
   )
 
@@ -379,8 +466,8 @@ object STeXRules {
       }
     }
   }
-  val patchdefinitionrule = new PatchRule("stexpatchdefinition")
-  val patchassertionrule = new PatchRule("stexpatchassertion")
+  val patchdefinitionrule = new PatchRule("stexstyledefinition")
+  val patchassertionrule = new PatchRule("stexstyleassertion")
 
   val stexinline = new InlineVerbRule("stexinline")
   val texcode = new MacroRule {
@@ -430,20 +517,6 @@ object STeXRules {
       } finally {
         state.inmath = inmath
       }
-    }
-  }
-
-  case class SymDeclRule(dict:Dictionary) extends MacroRule with SymDeclRuleLike {
-    val name = "symdecl"
-    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
-      val (sdinfo,children,err,nopt) = parseNameAndOpts(dict.getFile)
-      val ret = SymdeclApp(plain,children,this,sdinfo)
-      if (err != "") ret.addError(err)
-      if (nopt.nonEmpty) ret.addError("Unknown parameters for \\symdecl: " + nopt.mkString(", "))
-      val mod = dict.getModule
-      mod.exportrules ::= ret
-      mod.rules ::= ret
-      ret
     }
   }
 
@@ -501,6 +574,7 @@ object STeXRules {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
       val (info,ntk,alt,ch) = parseSym
+      info.isDocumented = true
       val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch ::: ch2,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
@@ -517,6 +591,7 @@ object STeXRules {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
       val (info,ntk,alt,ch) = parseSym
+      info.isDocumented = true
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
@@ -534,6 +609,7 @@ object STeXRules {
     override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain){
       val (_,ch1) = readOptArg
       val (info,ntk,alt,ch) = parseSym
+      info.isDocumented = true
       //val (_,ch2) = readArg
       val ret = new MacroApplication(plain,ch1 ::: ch,this) with SymRefLike {
         override val syminfo: SymdeclInfo = info
@@ -542,6 +618,45 @@ object STeXRules {
       }
       //if (err != "") ret.addError(err,lvl = Level.Warning)
       ret
+    }
+  }
+  case class DonotCopyRule(dict:Dictionary) extends MacroRule with InStructureRule {
+    val name = "donotcopy"
+
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+      val (domtk, ch) = readArg
+      val path = domtk match {
+        case gr: Group =>
+          gr.content match {
+            case List(t: PlainText) => t.str
+            case _ => {
+              plain.addError("Malformed Argument")
+              return plain
+            }
+          }
+        case _ =>
+          plain.addError("Missing Argument")
+          return plain
+      }
+      val mp = dict.resolveMPath(dict.getCurrentArchive, path)
+      val mod = dict.all_modules.getOrElse(mp,{
+        plain.addError("Module not found: " + mp)
+        return plain
+      })
+      dict.getModule.macr match {
+        case bg: StructureModuleBegin =>
+          mod.getRules(dict.getLanguage).foreach {
+            case sd: SemanticMacro =>
+              val ret = bg.domfields.foreach {
+                case sm if sm.syminfo.path == sd.syminfo.path =>
+                  addToField(sm, isassigned = true)
+                case _ =>
+              }
+            case _ =>
+          }
+        case _ =>
+      }
+      new MacroApplication(plain,ch,this)
     }
   }
 
@@ -574,26 +689,27 @@ object STeXRules {
   case class RenameDeclRule(dict: Dictionary) extends MacroRule with InStructureRule with SymRefRuleLike {
     val name = "renamedecl"
 
-    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       var children: List[TeXTokenLike] = Nil
-      val (maybename,ch1) = readOptArg
+
+      val (domtk,ch2) = readSafeArg("\\renamedecl")
+      children = children ::: ch2
+      val target = getTarget(domtk)
+
+      val (maybename, ch1) = readOptArg
       children = ch1
-      var name : Option[String] = None
+      var name: Option[String] = None
       maybename.foreach { l =>
         val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
         s match {
-          case s if s.trim.startsWith("name=") =>
-            name = Some(s.drop(5))
+          case s /*if s.trim.startsWith("name=")*/ =>
+            name = Some(s.trim)
           case _ =>
             throw LaTeXParseError("Unknown key " + s.trim)
         }
       }
 
-      val (domtk,ch2) = readArg
-      children = children ::: ch2
-      val target = getTarget(domtk)
-
-      val (macronamestr,ch3) = readArg
+      val (macronamestr,ch3) = readSafeArg("\\renamedecl")
       children = children ::: ch3
       val macroname = macronamestr match {
         case g:Group =>
@@ -675,6 +791,50 @@ object STeXRules {
     }
   }
 
+  case class SetMetaTheoryRule(dict:Dictionary) extends MacroRule {
+    val name = "setmetatheory"
+
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = {
+      var children: List[TeXTokenLike] = Nil
+      val (optargs, ch) = readOptArg
+      children = ch
+      val (n, ch2) = readArg
+      val a = optargs match {
+        case List(List(pt: PlainText)) => pt.str
+        case _ => ""
+      }
+      children = children ::: ch2
+      val path = n match {
+        case gr: Group =>
+          gr.content match {
+            case List(t: PlainText) => t.str
+            case _ => {
+              plain.addError("Malformed Argument")
+              return plain
+            }
+          }
+        case _ =>
+          plain.addError("Missing Argument")
+          return plain
+      }
+      val mp = dict.resolveMPath(a, path)
+      dict.all_modules.getOrElse(mp,{
+        dict.requireModule(mp,a,path)
+      })
+      state.addRule(MetaTheoryRule(mp))
+      new MacroApplication(plain,children,this) with HasAnnotations {
+        override def doAnnotations(in: sTeXDocument): Unit = {
+          val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, mp.toString, true)
+          a.addCodeLens(mp.toString, "", Nil, startoffset, endoffset)
+          a.setSemanticHighlightingClass(0)
+        }
+      }
+    }
+  }
+  case class MMTDef(_dict:Dictionary) extends SymDefRule(_dict) {
+    override val name = "mmtdef"
+  }
+
   case class TextSymDeclRule(override val dict: Dictionary) extends SymDefRule(dict) {
     override val name = "textsymdecl"
 
@@ -688,7 +848,7 @@ object STeXRules {
         n
       } {
         val (ninfo, err2, nopt2, nch) = optsAndNotation(sdinfo, nopt)
-        val nsdinfo = SymdeclInfo(sdinfo.macroname + "-sym",sdinfo.path,"","",false,sdinfo.file,sdinfo.start,sdinfo.end,false)
+        val nsdinfo = SymdeclInfo(sdinfo.macroname,sdinfo.path.module ? LocalName.parse(sdinfo.path.name.toString + "-sym"),"","",false,sdinfo.file,sdinfo.start,sdinfo.end,false)
         children = children ::: nch
         val ret = SymdefApp(plain, children, this, nsdinfo, ninfo)
         val ret2 = new SymdefApp(plain,children,this,sdinfo,ninfo) {
@@ -697,12 +857,12 @@ object STeXRules {
             val notation = notations.headOption match {
               case None =>
                 val ret = cons(plain, children, None)
-                if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString)
-                return ret
+                if (requireNotation) ret.addError("No notation found for " + syminfo.path.toString, lvl=Level.Warning)
+                None
               case Some(not) =>
-                not
+                Some(not.notinfo)
             }
-            cons(plain, children, Some(notation.notinfo))
+            cons(plain, children, notation)
           }
         }
         if (err != "") ret.addError(err)
@@ -779,7 +939,9 @@ object STeXRules {
           case s if s.startsWith("def=") =>
             ls = ls.filterNot(_ == l)
             defd = true
-          // TODO?
+          case s if s.startsWith("return=") =>
+            ls = ls.filterNot(_ == l)
+          // TODO
           case s if s.startsWith("op=") || s.startsWith("prec=") || !s.contains('=') =>
           case _ =>
             print("")
@@ -835,12 +997,12 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\instantiate expected")
       }
       val module = state.macrorules.collectFirst {
-        case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          throw LaTeXParseError("No mathstructure" + struct + " found")
+          throw LaTeXParseError("No mathstructure " + struct + " found")
       }
 
       val (_, nch4) = readArg
@@ -908,12 +1070,12 @@ object STeXRules {
         case _ => throw LaTeXParseError("mathstructure name for \\varinstantiate expected")
       }
       val module = state.macrorules.collectFirst {
-        case m:MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+        case m:MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          throw LaTeXParseError("No mathstructure" + struct + " found")
+          throw LaTeXParseError("No mathstructure " + struct + " found")
       }
 
       val (notation, nch4) = readArg
@@ -939,18 +1101,20 @@ object STeXRules {
     override val isusemodule: Boolean = true
   }
 
-  case class InlineAssertionRule(dict:Dictionary) extends InlineStatementRule("inlineass",dict)
-  case class AssertionRule(dict:Dictionary) extends StatementRule("sassertion",dict)
+  case class InlineAssertionRule(_dict:Dictionary) extends InlineStatementRule("inlineass",_dict)
+  case class AssertionRule(_dict:Dictionary) extends StatementRule("sassertion",_dict)
+  case class DefinitionRule(_dict:Dictionary) extends StatementRule("sdefinition",_dict)
+  case class SParagraphRule(_dict: Dictionary) extends StatementRule("sdefinition", _dict)
 
   case class CopymoduleRule(dict:Dictionary) extends EnvironmentRule("copymodule") with StructureLikeRule {
 
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       var children: List[TeXTokenLike] = Nil
-      val (ns,ch0) = readOptArg
-      children = ch0
-      val (n, ch) = readArg
+      val (n2, ch) = readArg
       children = children ::: ch
-      val (n2, ch2) = readArg
+      val (ns, ch0) = readOptArg
+      children = ch0
+      val (n, ch2) = readArg
       children = children ::: ch2
       setupBody(ns,n,Some(n2))((mp,dom) =>
         new StructureModuleBegin(begin.plain,mp,dom,ch,this)
@@ -971,11 +1135,11 @@ object STeXRules {
     }
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
       var children: List[TeXTokenLike] = Nil
+      val (n2, ch) = readArg
+      children = children ::: ch
       val (ns, ch0) = readOptArg
       children = ch0
-      val (n, ch) = readArg
-      children = children ::: ch
-      val (n2, ch2) = readArg
+      val (n, ch2) = readArg
       children = children ::: ch2
       setupBody(ns, n, Some(n2))((mp, dom) =>
         new StructureModuleBegin(begin.plain, mp, dom, ch, this)
@@ -1034,15 +1198,16 @@ object STeXRules {
       optargs.foreach{l =>
         val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
         s match {
-          case s if s.trim.startsWith("name=") =>
-            name = s.drop(5).trim
+          case s if s.trim.startsWith("this=") =>
+          case s =>
+            name = s.trim
           case _ =>
             throw LaTeXParseError("Unknown key:" + s.drop(5).trim)
         }
       }
-      val mp = dict.getMPath(name + "-structure")
+      val mp = dict.getMPath(name + "-module")
       val sympath = dict.getGlobalName(name)
-      val macr = MathStructureMacro(begin.plain,mp,maybename,sympath,begin.children ::: children,this,dict.getFile)
+      val macr = MathStructureMacro(begin.plain,mp,maybename,sympath,begin.children ::: children,this,dict.getFile,dict)
       dict.getModuleOpt match {
         case Some(mod) =>
           mod.exportrules ::= macr
@@ -1060,41 +1225,75 @@ object STeXRules {
     override val name: String = "extstructure"
 
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
-      super.parse(begin) match {
-        case m : MathStructureMacro =>
-          val (args, children) = readArg
-          val ret = MathStructureMacro(m.pm,m.mpi,m.macroname,m.symbolpath,m.ch ::: children,this,m.file)
-          val exts = args match {
-            case g: Group =>
-              g.content.filterNot(_.isInstanceOf[Comment]) match {
-                case List(pt:PlainText) =>
-                  pt.str.split(',').map(_.trim)
-                case _ =>
-                  ret.addError("Expected mathstructures to extend")
-                  return ret
-              }
+      var children: List[TeXTokenLike] = Nil
+      val (n, ch) = readArg
+      children = ch
+      val maybename = n match {
+        case gr: Group =>
+          gr.content match {
+            case List(t: PlainText) => t.str
+            case _ =>
+              throw LaTeXParseError("Name expected")
+          }
+        case _ =>
+          throw LaTeXParseError("Name expected")
+      }
+      val (optargs, ch2) = readOptArg
+      children = children ::: ch2
+      val (iexts, chext) = readArg
+      children = children ::: chext
+      var name = maybename
+      optargs.foreach { l =>
+        val s = l.mkString.flatMap(c => if (c.isWhitespace) "" else c.toString)
+        s match {
+          case s  =>
+            name = s.trim
+          case _ =>
+            throw LaTeXParseError("Unknown key:" + s.drop(5).trim)
+        }
+      }
+      val mp = dict.getMPath(name + "-module")
+      val sympath = dict.getGlobalName(name)
+      val macr = MathStructureMacro(begin.plain, mp, maybename, sympath, begin.children ::: children, this, dict.getFile, dict)
+      dict.getModuleOpt match {
+        case Some(mod) =>
+          mod.exportrules ::= macr
+          mod.rules ::= macr
+        case _ =>
+      }
+      //if (deprecation != "") macr.addError("Deprecated: Use " + deprecation + " instead",lvl=Level.Warning)
+      val ret = safely(macr) {
+        dict.openModule(macr)
+      }
+      val exts = iexts match {
+        case g: Group =>
+          g.content.filterNot(_.isInstanceOf[Comment]) match {
+            case List(pt: PlainText) =>
+              pt.str.split(',').map(_.trim)
             case _ =>
               ret.addError("Expected mathstructures to extend")
               return ret
           }
-          val modules = exts.flatMap { struct =>
-            state.macrorules.collectFirst {
-              case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
-                dict.all_modules.get(m.mpi)
-            }.flatten match {
-              case Some(mod) => Some(mod)
-              case _ =>
-                ret.addError("No mathstructure" + struct + " found")
-                None
-            }
-          }
-          modules.foreach{mod =>
-            dict.addimport(ImportModuleApp(begin.plain,mod.path,Nil,ImportModuleRule(dict),"","",false,None))
-          }
-          ret
-        case o => o
+        case _ =>
+          ret.addError("Expected mathstructures to extend")
+          return ret
+      }
+      val modules = exts.flatMap { struct =>
+        state.macrorules.collectFirst {
+          case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
+            dict.all_modules.get(m.mpi)
+        }.flatten match {
+          case Some(mod) => Some(mod)
+          case _ =>
+            ret.addError("No mathstructure " + struct + " found")
+            None
+        }
       }
 
+      modules.foreach { mod =>
+        dict.addimport(ImportModuleApp(begin.plain, mod.path, Nil, ImportModuleRule(dict), "", "", false, None))
+      }
+      ret
     }
   }
 
@@ -1115,7 +1314,7 @@ object STeXRules {
         case _ =>
           throw LaTeXParseError("{name} expected after \\begin{smodule}")
       }
-      var meta : Option[MPath] = Some(defaultMeta)
+      var meta : Option[MPath] = Some(dict.defaultMeta)
       var lang = dict.getLanguage
       var sig = ""
       var title:String = ""
@@ -1125,7 +1324,7 @@ object STeXRules {
         s match {
           case s if s.trim.startsWith("meta=") =>
             val mod = s.trim.drop(5).trim
-            if (mod == "NONE") meta = None
+            if (mod == "{}") meta = None
             else {
               try {
                 meta = Some(Path.parseM(mod))
@@ -1143,6 +1342,7 @@ object STeXRules {
           case s if s.trim.startsWith("creators=") =>
           case s if s.trim.startsWith("contributors=") =>
           case s if s.trim.startsWith("deprecate=") =>
+          case s if s.trim.startsWith("id=") =>
           case s if s.trim.startsWith("ns=") => // TODO
           case s if s.trim.startsWith("srccite=") =>
             deprecation = s.trim.drop(10).trim
@@ -1164,30 +1364,59 @@ object STeXRules {
     }
   }
 
-  case class UseStructureRule(dict: Dictionary) extends EnvironmentRule("usestructure") {
-    override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
-    override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = {
+  case class UseStructureRule(dict: Dictionary) extends MacroRule {
+    val name = "usestructure"
+
+    //override def finalize(env: Environment)(implicit state: LaTeXParserState): Environment = env
+    override def parse(plain: PlainMacro)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): TeXTokenLike = safely[TeXTokenLike](plain) {
       val (structArg, children) = readArg
       val struct = structArg match {
         case g: Group =>
           g.content match {
             case List(pt: PlainText) => pt.str
-            case _ => throw LaTeXParseError("Could not determine structure name forusestructure", lvl = Level.Warning)
+            case _ => throw LaTeXParseError("Could not determine structure name for \\usestructure", lvl = Level.Warning)
           }
-        case _ => throw LaTeXParseError("mathstructure name for usestructure expected")
+        case _ => throw LaTeXParseError("mathstructure name for \\usestructure expected")
       }
       val module = state.macrorules.collectFirst {
-        case m: MathStructureMacro if m.mpi.name.toString == struct || m.macroname == struct =>
+        case m: MathStructureMacro if m.mpi.name.last.toString == struct + "-module" || m.macroname == struct =>
           dict.all_modules.get(m.mpi)
       }.flatten match {
         case Some(mod) => mod
         case _ =>
-          throw LaTeXParseError("No mathstructure" + struct + " found")
+          throw LaTeXParseError("No mathstructure " + struct + " found")
       }
       module.getRules("").foreach(state.addRule(_))
-      new MacroApplication(begin.plain,begin.children ::: children,this)
+      new MacroApplication(plain, children, this) with HasAnnotations {
+        override def doAnnotations(in: sTeXDocument): Unit = {
+          val a = in.Annotations.add(this, startoffset, endoffset - startoffset, SymbolKind.Module, symbolname = "import")
+          //a.addInlay(im.mp.toString,kind = Some(InlayHintKind.Type),positionOffset = im.endoffset,padleft = true)
+          val pma = in.Annotations.add(plain, plain.startoffset, plain.endoffset - plain.startoffset, SymbolKind.Module, symbolname = "import")
+          pma.setSemanticHighlightingClass(0)
+          a.addCodeLens(module.path.toString, "", Nil, startoffset, endoffset)
+          //dict.all_modules.get(module.).foreach { mod =>
+            module.file.foreach(f => a.setDeclaration(f.toURI.toString, module.macr.startoffset, module.macr.endoffset))
+            module.macr match {
+              case tmm: TeXModuleMacro =>
+                tmm.deprecation match {
+                  case "" =>
+                  case dep =>
+                    pma.setSemanticHighlightingClass(0, List(0))
+                    val start = in._doctext.toLC(startoffset)
+                    val end = in._doctext.toLC(endoffset)
+                    in.client.documentErrors(dict.controller, in, in.uri, SourceError(in.uri, SourceRef(URI(in.uri),
+                      SourceRegion(
+                        SourcePosition(startoffset, start._1, start._2),
+                        SourcePosition(endoffset, end._1, end._2)
+                      )), module.path.toString + " is deprecated", List("Use " + dep + " instead"), Level.Warning)
+                    )
+                }
+              case _ =>
+            }
+          }
+        }
+      }
     }
-  }
 
   case class ProblemRule(dict : Dictionary) extends EnvironmentRule("sproblem") {
     override def parse(begin: MacroApplication)(implicit in: SyncedDocUnparsed, state: LaTeXParserState): MacroApplication = safely[MacroApplication](begin) {
@@ -1195,7 +1424,7 @@ object STeXRules {
       val (optargs,ch) = readOptArg
       children = ch
       var name = ""
-      var meta : Option[MPath] = Some(defaultMeta)
+      var meta : Option[MPath] = Some(dict.defaultMeta)
       var lang = dict.getLanguage
       var sig = ""
       var title:String = ""
@@ -1236,7 +1465,7 @@ object STeXRules {
       }
       if (name == "") {
         val segs = dict.getFile.split('/').last.split('.').init.toList
-        if (STeX.all_languages.contains(segs.last)) name = segs.init.mkString(".")
+        if (SHTML.all_languages.contains(segs.last)) name = segs.init.mkString(".")
         else name = segs.mkString(".")
       }
       val mp = dict.getMPath(name)
@@ -1254,3 +1483,6 @@ object STeXRules {
   }
 
 }
+
+
+ */

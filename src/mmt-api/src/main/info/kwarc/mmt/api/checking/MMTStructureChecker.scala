@@ -615,7 +615,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               case Some(nS: Structure) =>
                 // no need to look for assignments to theories that subsume id.from because thy is flattened
                 mapped // in theories, id is allowed to be undefined; in views, definedness of id is checked elsewhere anyway 
-              case _ => 
+              case _ =>
                 // recurse into includes
                 checkTotal(mod, s.from)
             }
@@ -866,7 +866,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               None
             case hd :: Nil =>
               content.getO(hd)
-            case _ => 
+            case _ =>
               env.errorCont(InvalidObject(s, "ambiguous constant reference " + path))
               None
           }

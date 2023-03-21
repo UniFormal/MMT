@@ -2,8 +2,9 @@ package info.kwarc.mmt.api.utils
 
 import java.net.URLDecoder
 import java.util.jar.JarFile
-
 import info.kwarc.mmt.api._
+
+import java.nio.charset.StandardCharsets
 
 object MMTSystem {
   /** information about how MMT was run, needed to access resources */
@@ -46,7 +47,8 @@ object MMTSystem {
      if (location == null)
         OtherStyle
      else {
-       val classFolder = File(location.getPath)
+       val path = URLDecoder.decode(location.getPath, StandardCharsets.UTF_8)
+       val classFolder = File(path)
        if (classFolder.isFile) {
          if (classFolder.name == "mmt.jar") {
            if (classFolder.up.name == "deploy")
@@ -60,9 +62,9 @@ object MMTSystem {
              ThinJars(classFolder.up.up.up.up / "deploy")
            }
          }
-      } else {
+       } else {
          Classes(classFolder)
-      }
+       }
      }
    }
 

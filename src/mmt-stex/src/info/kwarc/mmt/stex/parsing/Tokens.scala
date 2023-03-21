@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.parsing
-
+/*
 import info.kwarc.mmt.api.Level
 import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.stex.STeXError
@@ -81,3 +81,4 @@ class Environment(val begin:MacroApplication,val end:TeXTokenLike,val children:L
     end.iterate(f)
   }
 }
+*/

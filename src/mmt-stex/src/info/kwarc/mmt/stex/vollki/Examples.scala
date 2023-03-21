@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.vollki
-
+/*
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 
@@ -34,3 +34,5 @@ object Example {
      */
   }
 }
+
+ */

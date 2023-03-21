@@ -325,7 +325,14 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           a
         else a match {
           case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(ApplyMorphs(_, OMCOMP(tl))))
-          case DefLinkAssignment(ahome, aname, afrom, adf) => DefLinkAssignment(home, aname, afrom, OMCOMP(adf :: tl))
+          case s: Structure => s.df match {
+            case Some(df) => DefLinkAssignment(s.home, s.name, s.from, OMCOMP(df :: tl))
+            case None =>
+              // this happens if hd is a realization or view that does not assign a morphism to an include/structure
+              // but maps constants individually
+              // we assign the morphism itself, whose domain will be restricted to s.from
+              DefLinkAssignment(s.home, s.name, s.from, OMCOMP(hd :: tl))
+          }
           case a: RuleConstant => RuleConstant(home, a.name, a.tp.map(ApplyMorphs(_, OMCOMP(tl))), None)
         }
       case OMIDENT(t) =>
@@ -483,84 +490,96 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
   /** auxiliary method of get to unify lookup theories, structures, and views
     * returns an empty Declaration (with only home and name set) if no assignment provided
+    * @param l the theory (if seen as morphism due to a realization) or link in which we look up
+    * @param from the domain of the realization or link (= l.from in the latter case)
+    * @param name the name in from that is mapped
     */
   private def getAssignmentInModuleOrLink(l: ModuleOrLink, from: Term, name: LocalName): Declaration = {
-     def default = {
-        val da = get(from, name) match {
-          case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
-          case d: Structure => new Structure(l.toTerm, name, d.tpC, new TermContainer, false, false)
-          case rc: RuleConstant => new RuleConstant(l.toTerm, name, new TermContainer, None)
-          case _ => throw ImplementationError(s"unimplemented default assignment (while looking up $name in link ${l.path})")
-        }
-        da.setOrigin(DefaultAssignment)
-        da
-     }
-     val nameS = name.simplify
-     l.getMostSpecific(nameS) match {
-        case Some((a, LocalName(Nil))) =>
-          a // perfect match
-        case Some((a, ln)) => a match {
-          case a: Constant =>
-            throw GetError(a.path, s"local name $ln left after resolving $name to constant assignment")
-          case a: Structure =>
-            val aname = a.name
-            val afrom = a.from
-            val adf = a.df getOrElse {
-              (l,a) match {
-                case (_: AbstractTheory, Include(id)) if !(id.isRealization && id.df.isEmpty) =>
-                  // if l is a theory that already includes afrom
-                  // we have to be careful to avoid a cycle because the realization itself is found at this point if an assignment is missing
-                  id.asMorphism
-                case _ =>
-                  throw GetError(a.path, s"different element found while trying to find assignment for $nameS (This may happen when trying to use a realization that is not total.)")
-              }
-            }
-            val dom = afrom.toMPath
-            val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln)
-            // dfAssig has the right definiens, but we need to change its home and name to fit the original request
-            val h = dfAssig.name.head
-            val prefix = if (h.isInstanceOf[ComplexStep] && aname.head == h) aname.init else aname
-            dfAssig.translate(l.toTerm, prefix, IdentityTranslator, Context.empty)
-        }
-        case None =>
-          // check if name lives in a theory theo included into from or directly in from; if the former, use an included morphism
-          val (theo, tname) = nameS.steps match {
-            case ComplexStep(theo)::tname =>
-              if (from == OMMOD(theo))
-                return default
-              else
-                (theo,tname)
-            case _ => return default
-          }
-          def defaultMorph(p: MPath) = IncludeData(l.toTerm, p, Nil, Some(OMIDENT(OMMOD(p))), false)
-          // for declarations of the meta-theory of the parent theory of l.from, we default to the identity if no other assignment is found
-          val defaultMetaMorph = TheoryExp.metas(from, false)(this) map defaultMorph
-          // note: if the parent theory is implicitly visible only, we need to apply the implicit morphism; see the corresponding case in the StructureChecker, which currently forbids this
-          val defaultParentMorph = from match {
-            case OMPMOD(fromP,_) => fromP.superModule.toList map defaultMorph
-            case _ => Nil
-          }
-          // we look for the first assignment in l for a domain that includes theo
-          // (there may be multiple, but they must be equal on theo if l well-formed)
-          // defaultMetaMorph, being last, is only considered as a default
-          (l.getAllIncludes ::: defaultMetaMorph ::: defaultParentMorph) foreach {
-            case IncludeData(_,f,Nil,Some(m), false) =>
-              val impl = getImplicit(theo, f)
-              impl foreach {v =>
-                // theo --v--> f --incl--> l.from --l--> l.to with l|_f == m; thus l|_theo == v;m
-                val vm = OMCOMP(v,m)
-                val vmA = if (tname.isEmpty) {
-                  Include(l.toTerm, theo, Nil, Some(vm))
-                } else {
-                  getDeclarationInTerm(vm, nameS)
-                }
-                return vmA
-              }
-            case _ =>
-              // can only happen if a theory has an undefined include
-          }
-          // otherwise, we use a default assignments
-          return default
+     l.df match {
+       case Some(df) =>
+         get(df, name)
+       case None =>
+         def default = {
+           val da = get(from, name) match {
+             case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
+             case d: Structure => new Structure(l.toTerm, name, d.tpC, new TermContainer, false, false)
+             case rc: RuleConstant => new RuleConstant(l.toTerm, name, new TermContainer, None)
+             case _ => throw ImplementationError(s"unimplemented default assignment (while looking up $name in link ${l.path})")
+           }
+           da.setOrigin(DefaultAssignment)
+           da
+         }
+         val nameS = name.simplify
+         l.getMostSpecific(nameS) match {
+           case Some((a,LocalName(Nil))) =>
+             a // perfect match
+           case Some((a,ln)) => a match {
+             case a: Constant =>
+               throw GetError(a.path,s"local name $ln left after resolving $name to constant assignment")
+             case a: Structure =>
+               val aname = a.name
+               val afrom = a.from
+               val adf = a.df getOrElse {
+                 (l,a) match {
+                   case (_: AbstractTheory,Include(id)) if !(id.isRealization && id.df.isEmpty) =>
+                     // if l is a theory that already includes afrom
+                     // we have to be careful to avoid a cycle because the realization itself is found at this point if an assignment is missing
+
+                     id.asMorphism
+                   case _ =>
+                     throw GetError(a.path,s"different element found while trying to find assignment for $nameS (This may happen when trying to use a realization that is not total.)")
+                 }
+               }
+               val dom = afrom.toMPath
+               val dfAssig = getDeclarationInTerm(adf,ComplexStep(dom) / ln)
+               // dfAssig has the right definiens, but we need to change its home and name to fit the original request
+               val h = dfAssig.name.head
+               val prefix = if (h.isInstanceOf[ComplexStep] && aname.head == h) aname.init else aname
+               dfAssig.translate(l.toTerm,prefix,IdentityTranslator,Context.empty)
+           }
+           case None =>
+             // check if name lives in a theory theo included into from or directly in from; if the former, use an
+             // included morphism
+             val (theo,tname) = nameS.steps match {
+               case ComplexStep(theo) :: tname =>
+                 if (from == OMMOD(theo))
+                   return default
+                 else
+                   (theo,tname)
+               case _ => return default
+             }
+
+             def defaultMorph(p: MPath) = IncludeData(l.toTerm,p,Nil,Some(OMIDENT(OMMOD(p))),false)
+
+             // for declarations of the meta-theory of the parent theory of l.from, we default to the identity if no other assignment is found
+             val defaultMetaMorph = TheoryExp.metas(from,false)(this) map defaultMorph
+             // note: if the parent theory is implicitly visible only, we need to apply the implicit morphism; see the corresponding case in the StructureChecker, which currently forbids this
+             val defaultParentMorph = from match {
+               case OMPMOD(fromP,_) => fromP.superModule.toList map defaultMorph
+               case _ => Nil
+             }
+             // we look for the first assignment in l for a domain that includes theo
+             // (there may be multiple, but they must be equal on theo if l well-formed)
+             // defaultMetaMorph, being last, is only considered as a default
+             (l.getAllIncludes ::: defaultMetaMorph ::: defaultParentMorph) foreach {
+               case IncludeData(_,f,Nil,Some(m),false) =>
+                 val impl = getImplicit(theo,f)
+                 impl foreach {v =>
+                   // theo --v--> f --incl--> l.from --l--> l.to with l|_f == m; thus l|_theo == v;m
+                   val vm = OMCOMP(v,m)
+                   val vmA = if (tname.isEmpty) {
+                     Include(l.toTerm,theo,Nil,Some(vm))
+                   } else {
+                     getDeclarationInTerm(vm,nameS)
+                   }
+                   return vmA
+                 }
+               case _ =>
+               // can only happen if a theory has an undefined include
+             }
+             // otherwise, we use a default assignments
+             return default
+       }
      }
   }
 
@@ -633,18 +652,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   // for a structure, the definiens is the composed morphism (which may be defined for some constants even if it is not defined in general)
   private def translateByLink(decl: Declaration, l: Link) =
     translateByModuleOrLink(decl, l, l.from)
-  private def translateByModuleOrLink(decl: Declaration, l: ModuleOrLink, from: Term): Declaration =
-    l.df match {
-      case Some(df) =>
-        translate(decl, df)
-      case None =>
-        // if necessary, first translate decl along implicit morphism into l.from
-        val imp = implicitGraph(decl.home, from) getOrElse {
-          throw GetError(decl.path, "no implicit morphism to translate declaration to " + from)
-        }
-        val declT = translate(decl, imp)
+  /** @param decl translation to translate
+    * @param l theory (if by realization) or link along which to translate (from is visible to domain of l)
+    * @param from home theory of the declaration
+    */
+  private def translateByModuleOrLink(decl: Declaration,l: ModuleOrLink,from: Term): Declaration = {
+        // it's currently not quite specified at which point implicit morphisms are inserted
+        // here we assume that we don't have to insert implicitGraph(decl.home, from)
         // get the assignment for declT provided by l (if any)
-        val qualName = LocalName(declT.parent) / declT.name
+        val qualName = LocalName(decl.parent) / decl.name
         val assig = getAssignmentInModuleOrLink(l, from, qualName)
         val newName = l match {
           case l: Link => translateNameByLink(qualName, l)
@@ -652,15 +668,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         }
         def mapTerm(t: Term) = ApplyMorphs(t, l.toTerm, Context(from.toMPath))
         // make sure assignment has the expected feature (*)
-        if (assig.feature != declT.feature) {
-          throw InvalidElement(assig, s"link ${l.path} provides ${assig.feature} assignment for ${declT.feature} ${declT.path}")
+        if (assig.feature != decl.feature) {
+          throw InvalidElement(assig, s"link ${l.path} provides ${assig.feature} assignment for ${decl.feature} ${decl.path}")
         }
         val (namePrefix,to) = l match {
           case l: Link => (l.namePrefix,l.to)
-          case t: AbstractTheory => (LocalName(declT.parent),t.toTerm)
+          case t: AbstractTheory => (LocalName(decl.parent),t.toTerm)
         }
         // translate declT along assigOpt
-        val newDecl = declT match {
+        val newDecl = decl match {
           case c: Constant =>
             // c: original constant in domain
             // a: assignment provided by link

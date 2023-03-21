@@ -6,12 +6,12 @@ import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, URI}
-import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
-import info.kwarc.mmt.stex.Extensions.DocumentExtension
+import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument, LSPServer}
 import info.kwarc.mmt.stex.parsing.stex.HasAnnotations
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
-import info.kwarc.mmt.stex.xhtml.{HTMLDefiniendum, HTMLParser, HTMLTopLevelTerm, HasHead, SemanticState}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, SemanticState}
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXParseError, TeXError}
 import info.kwarc.rustex.Params
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
@@ -25,12 +25,7 @@ case class STeXLSPErrorHandler(eh : api.Error => Unit, cont: (Double,String) => 
   override def close: Unit = {}
 }
 
-class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
-
-  print("")
-  lazy val archive = file.flatMap(f => server.controller.backend.resolvePhysical(f).map(_._1))
-  lazy val relfile = archive.map(a => (a / info.kwarc.mmt.api.archives.source).relativize(file.get))
-
+class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],override val server:STeXLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[STeXClient,STeXLSPServer] {
   private val thisdoc = this
   def params(progress : String => Unit) = new Params {
     private var files: List[String] = Nil
@@ -55,7 +50,7 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       files = files.tail
       files.headOption.foreach(progress)
     }
-    val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,thisdoc,uri,e),(_,_) => {})
+    val eh = STeXLSPErrorHandler(e => client.documentErrors(thisdoc,e),(_,s) => progress(s))
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
       val (off1,off2,p) = _doctext.fullLine(files.head._2-1)
       val reg = SourceRegion(SourcePosition(off1,files.head._2,0),SourcePosition(off2,files.head._2,p))
@@ -64,25 +59,20 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
     eh.open
   }
 
-
-
-
   def parsingstate(eh: STeXLSPErrorHandler) = {
-    val extensions = server.stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    new SemanticState(server.controller,rules,eh,DPath(URI(uri)))
+    new SemanticState(server.stexserver,server.stexserver.importRules,eh,dpath)
   }
 
   var html:Option[HTMLNode] = None
 
-  def buildFull() = Future {
+  def buildFull() = Future { synchronized {
     client.resetErrors(uri)
     server.withProgress(uri + "-fullstex","Building " + uri.split('/').last, "full") { update =>
       val target = server.controller.extman.getOrAddExtension(classOf[FullsTeX],"fullstex")
       (target,archive,relfile) match {
         case (Some(t),Some(a),Some(f)) =>
           client.log("Building [" + a.id + "] " + f)
-          val eh = STeXLSPErrorHandler(e => client.documentErrors(server.controller,this, uri, e), update)
+          val eh = STeXLSPErrorHandler(e => client.documentErrors(this, e), update)
           try {
             eh.open
             t.build(a, BuildChanged(), f.toFilePath, Some(eh))
@@ -98,102 +88,73 @@ class sTeXDocument(uri : String,val client:ClientWrapper[STeXClient],val server:
       quickparse
       ((),"Done")
     }
-  }
+  }}
 
-  def buildHTML(): Unit = {
+  def buildHTML(): Unit = Future { this.synchronized {
     client.resetErrors(uri)
     this.file match {
       case Some(f) =>
-        Future { server.safely {
+        server.safely {
           server.withProgress(uri, "Building " + uri.split('/').last, "Building html... (1/2)") { update =>
-            val pars = params(update(0,_))
+            val pars = params(s => update(0,s))
             val html = RusTeX.parseString(f,doctext ,pars,List("c_stex_module_"))
             update(0, "Parsing HTML... (2/2)")
-            this.synchronized {
-              val newhtml = HTMLParser(html)(parsingstate(pars.eh))
+            //this.synchronized {
+              val state = parsingstate(pars.eh)
+              val newhtml = HTMLParser(html)(state)
               pars.eh.close
+              val relman = server.controller.relman
+              relman.extract(state.doc)(server.controller.depstore += _)
+              state.doc.getModulesResolved(server.controller.globalLookup) foreach { mod =>
+                if (!mod.isGenerated) relman.extract(mod)(server.controller.depstore += _)
+              }
               client.log("html parsed")
-              //try {
-                server.stexserver.doHeader(newhtml)
-
-                val exts = server.stexserver.extensions
-                var docrules = exts.collect {
-                  case e: DocumentExtension =>
-                    e.documentRules
-                }.flatten
-
-              val simplestate = new ParsingState(server.controller,Nil)
-/*
-              docrules = docrules ::: List[PartialFunction[HTMLNode,Unit]](,
-                {case t : HasHead if t.termReference.isDefined =>
-                  server.controller.getO(Path.parseS(t.termReference.get)) match {
-                    case Some(c : Constant) =>
-                      DocumentExtension.sidebar(t,{<span style="display:inline">Term {DocumentExtension.makeButton(
-                        "/:" + server.stexserver.pathPrefix + "/fragment?" + c.path + "&language=" + DocumentExtension.getLanguage(t),
-                        "/:" + server.stexserver.pathPrefix + "/declaration?" + c.path + "&language=" + DocumentExtension.getLanguage(t)
-                        ,server.stexserver.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
-                      )}</span>} :: Nil)
-                    case _ =>
-                  }
-                })
-
- */
-
-              //simplestate._top = Some(newhtml)
-              //newhtml.iterate(_.state = simplestate)
-
-                def doE(e: HTMLNode): Unit = {
-                  docrules.foreach(r => r.unapply(e))
-                }
-
-                newhtml.iterate(doE)
-                this.html = Some(newhtml)
-                ((), "Done")
-              /*} catch {
-                case t: Throwable =>
-                  t.printStackTrace()
-                  client.log("Error: " + t.getMessage)
-                  ((), "Failed")
-              }*/
-            }
+              this.html = Some(server.stexserver.present(newhtml.toString)(None).get("body")()().head)
+              ((), "Done")
+            //}
           }
           val msg = new HTMLUpdateMessage
-          msg.html = (server.localServer / (":" + server.lspdocumentserver.pathPrefix) / "fulldocument").toString + "?" + uri // uri
+          msg.html = (server.localServer / (":" + server.htmlserver.get.pathPrefix) / "fulldocument").toString + "?" + LSPServer.URItoVSCode(uri) // uri
           this.client.client.updateHTML(msg)
           quickparse
-        }}
+        }
       case _ =>
     }
-  }
+  }}
 
   override val timercount: Int = 0
-  override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
-    Annotations.notifyOnChange(client.client)
+  override def onChange(annotations: List[(Delta, DocAnnotation)]): Unit = {
+    Annotations.notifyOnChange()
   }
-  def quickparse = try this.synchronized {
+  def quickparse = try this.synchronized { //val (t,_) = Time.measure {
     server.parser.synchronized {
       Annotations.clear
       import info.kwarc.mmt.stex.parsing._
       val ret = server.parser(_doctext, file.getOrElse(File(uri)), archive)
       ret.foreach(_.iterate { elem =>
-        elem.errors.foreach { e =>
-          val start = _doctext.toLC(elem.startoffset)
-          val end = _doctext.toLC(elem.endoffset)
-          client.documentErrors(server.controller, this, uri, SourceError(uri, SourceRef(URI(uri),
-            SourceRegion(
-              SourcePosition(elem.startoffset, start._1, start._2),
-              SourcePosition(elem.endoffset, end._1, end._2)
-            )), e.shortMsg, if (e.extraMessage != "") List(e.extraMessage) else Nil, e.level)
-          )
-        }
         elem match {
           case t: HasAnnotations =>
             t.doAnnotations(this)
           case _ =>
         }
+        elem.errors.foreach { e =>
+          val start = _doctext.toLC(elem.startoffset)
+          val (eo,end) = elem match {
+            case e : Environment => (e.header.last.endoffset,_doctext.toLC(e.header.last.endoffset))
+            case _ => (elem.endoffset,_doctext.toLC(elem.endoffset))
+          }
+          client.documentErrors( this, SourceError(uri, SourceRef(URI(uri),
+            SourceRegion(
+              SourcePosition(elem.startoffset, start._1, start._2),
+              SourcePosition(eo, end._1, end._2)
+            )), e.shortMsg, if (e.extraMessage != "") List(e.extraMessage) else Nil, e.level)
+          )
+        }
       })
       super.onUpdate(Nil)
-    }
+    }/* }
+    println("Parsing took: " + t)
+    print("")*/
   } catch {
     case e: Throwable =>
       e.printStackTrace()

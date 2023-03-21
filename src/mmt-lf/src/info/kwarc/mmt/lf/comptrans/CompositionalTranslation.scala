@@ -54,7 +54,7 @@ class CompositionalTranslation(
 
       case Univ(1) => Some(Arrow(target, Univ(1)))
       // needs to come after case for Univ(1) (to prevent matching on LF's `type` symbol)
-      case OMS(p) => map(p).map(ApplySpine.orSymbol(_, target: _*))
+      case OMS(p) => map(p).map(ApplyGeneral(_, target))
 
       case OMBIND(binder, boundCtx, body) =>
         val newBaseCtx = baseTranslations.flatMap(_.apply(ctx, boundCtx))
@@ -63,7 +63,7 @@ class CompositionalTranslation(
         // For the new target, transform `List(o₁, …, oₙ)` to `List(o₁ @ newBaseCtx, …, oₙ @ newBaseCtx))`
         // where `Some(t) @ newBaseCtx` applies the term `t` to all variables in `newBaseCtx` and
         // `None @ newBaseCtx` is `None`.
-        val newTarget = target.map(ApplySpine.orSymbol(_, newBaseCtx.map(_.toTerm): _*))
+        val newTarget = target.map(ApplyGeneral(_, newBaseCtx.map(_.toTerm)))
 
         val newBody = apply(ctx ++ boundCtx, newTarget, body)
         newBody.map(OMBIND(binder, newBoundCtx, _))

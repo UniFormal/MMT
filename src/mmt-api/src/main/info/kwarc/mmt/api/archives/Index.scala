@@ -29,7 +29,7 @@ trait GeneralImporter extends Extension {
           case SimpleStep(s) => s
           case _ => throw LocalError("document path contains complex step")
         }
-        FilePath(names)
+        if (names.isEmpty) FilePath("") else FilePath(names)
       case None => throw LocalError("document path must start with narration base")
     }
     val narrFile = (a / narration / docPath).setExtension("omdoc")
@@ -71,7 +71,9 @@ trait GeneralImporter extends Extension {
     log("[  -> relational]     " + relFile.getPath)
     val relFileHandle = File.Writer(relFile)
     controller.relman.extract(se) {
-      r => relFileHandle.write(r.toPath + "\n")
+      r =>
+        relFileHandle.write(r.toPath + "\n")
+        controller.depstore += r
     }
     relFileHandle.close
   }

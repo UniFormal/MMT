@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.vollki
-
+/*
 import info.kwarc.mmt.api.{GlobalName, Path}
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.utils.File
@@ -67,3 +67,6 @@ class UserModels extends Extension {
     }
   }
 }
+
+
+ */

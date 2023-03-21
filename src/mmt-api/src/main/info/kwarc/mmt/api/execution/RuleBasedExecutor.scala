@@ -5,15 +5,16 @@ import objects._
 import symbols._
 import frontend._
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.Obj.getConstants
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
+import scala.collection.immutable.List
 import scala.collection.mutable
+import scala.util.Sorting
 
 class RuntimeEnvironment(val stack: execution.Stack, val rules: RuleSet) {
   val stdin = System.in
   val stdout = System.out
-  lazy val execRules = rules.get(classOf[ExecutionRule])
+  lazy val execRules = rules.getOrdered(classOf[ExecutionRule])
   private var instanceCounter = -1
   def nextInstance = {instanceCounter += 1; instanceCounter}
 }
@@ -22,15 +23,25 @@ class RuleBasedExecutor() extends Executor {
   def apply(theory: Theory,context: Context, prog: Term) = {
      // we don't want to deal with an explicit heap anymore
      // instead we embedd the objects onto the JVM heap
-     val stack = new execution.Stack
+    val stack = new execution.Stack
      stack.setTop(context)
-     val rules = RuleSet.collectRules(controller, context)
-     val env = new RuntimeEnvironment(stack, rules)
+     val tmp = filterRules(RuleSet.collectRules(controller, context))
+     val rules = RuleSet(Sorting.stableSort(tmp.providedRules, (x :Rule) => x.priority) :_*)
+     //val mutableRules = new MutableRuleSet()
+     //mutableRules.add(rules)
+
      val defined_rules = gather_definitions(theory,context, rules)
-     // print(definedas)
+     val env = new RuntimeEnvironment(stack, rules)
+
+    // print(definedas)
      val runtime = new Runtime(controller, env,defined_rules, logPrefix)
      log("executing " + prog + " with rules " + env.execRules.map(_.toString).mkString(", "))
+     // val sol = Solver.infer(controller,context, prog, Some(rules))
      runtime.execute(prog)
+  }
+  def filterRules(rules: RuleSet): RuleSet = {
+    val tmp = rules.getAll map (x=>x.getClass.getName)
+    rules.filter(r => ! r.getClass.getName.contains("lf.Beta"))
   }
   def traverseTree(queue:mutable.ListBuffer[MPath],includedSet:mutable.Set[MPath],constants: mutable.ListBuffer[Theory]): Unit = {
     /**
@@ -54,7 +65,7 @@ class RuleBasedExecutor() extends Executor {
     }
     traverseTree(queue, includedSet, constants)
   }
-  def gather_definitions(theory:Theory,con : Context, rules: MutableRuleSet) = {
+  def gather_definitions(theory:Theory,con : Context, rules: RuleSet) = {
     controller.simplifier(theory)
     val paths  = theory.getAllIncludes
     val tmp = paths map {q =>  controller.getTheory(q.from)
@@ -92,7 +103,7 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, defined_rules: It
 
    def execute(progOrg: Term): Term = {
       val context = env.stack.top
-      val prog = controller.simplifier(progOrg, SimplificationUnit(context, true,false, true),rules=env.rules)
+      val prog = controller.simplifier(progOrg, SimplificationUnit(context, true,false, false),rules=env.rules)
       prog match {
         // foundation-independent cases
         case l: OMLITTrait =>
@@ -121,17 +132,18 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, defined_rules: It
           }
         // apply foundation-specific rule
         case t =>
+          log("trying defined rules")
+          val defs = defined_rules.filter(_.applicable(t))
+          defs foreach { r =>
+            log("trying to apply rule" + r.toString)
+            return r(controller, this, env, t)
+          }
           val rules = env.execRules.filter(_.applicable(t))
           rules foreach {r =>
             log("trying to apply rule " + r.toString)
             return r(controller,this, env, t)
           }
-          log("no scala rule, trying defined rules")
-          val defs = defined_rules.filter(_.applicable(t))
-          defs foreach { r=>
-            log("trying to apply rule" + r.toString)
-            return r(controller,this,env,t)
-          }
+
           log("no applicable rule")
           executeChildren(prog)
       }
@@ -150,10 +162,19 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, defined_rules: It
          // a prominent example of this is substituting in a function in a mutable reference:
          // you were unable to execute e.g. OMA(OMV(f),...) but now it's OMA(OMBINDC(..),...) which can be executed
          // this mirrors the basic structure of all rules: execute arguments, then execute term.
-         execute(ComplexTerm(p, subs, cont, argsE))
+         // typededInstance OMID(?Counter)
+         val cT = ComplexTerm(p, subs, cont, argsE)
+
+         if(cT hasheq prog)
+           cT
+         else
+          execute(cT)
+
        case _ => prog
        //case t =>
        //  throw ExecutionError("cannot execute: " + t)
      }
    }
+
+
 }

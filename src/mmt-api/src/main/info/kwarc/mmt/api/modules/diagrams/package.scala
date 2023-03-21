@@ -47,7 +47,7 @@ package info.kwarc.mmt.api.modules
   * <h2>Design Decisions of the Framework</h2>
   *
   *  - separate interfaces for <strong>anonymous operators and operators bound to an MMT symbol</strong>
-  *    This is useful to support named parametric operators that create anonymous (parametrized operators at runtime.
+  *    This is useful to support named parametric operators that create anonymous (parametrized) operators at runtime.
   *    Moreover, we expect operators to also be repeatedly called programmatically in the future (in contrast to solely
   *    being invoked from surface syntax).
   *    <p>Note that parametric operators differ from [[info.kwarc.mmt.api.ParametricRule ParametricRule]]s in that

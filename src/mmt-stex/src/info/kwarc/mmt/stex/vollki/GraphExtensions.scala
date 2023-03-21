@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.vollki
 
-import info.kwarc.mmt.api.{DPath, MPath, NamespaceMap, Path, StructuralElement}
+import info.kwarc.mmt.api.{DPath, GlobalName, MPath, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Theory, View}
@@ -9,24 +9,184 @@ import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
-import info.kwarc.mmt.stex.Extensions.DocumentExtension
 import info.kwarc.mmt.stex.xhtml.HTMLParser
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, empty}
-import info.kwarc.mmt.stex.{STeX, STeXServer}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
+
+import scala.util.Try
+//import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, empty}
+import info.kwarc.mmt.stex.{SHTML, STeXServer}
 
 import scala.collection.{Set, mutable}
 import scala.xml.{Elem, Node, XML}
 
-class STeXGraphPopulator extends Extension {
+class VollKi(server:STeXServer) extends ServerExtension("vollki") {
+  import server._
+
+  def apply(request: ServerRequest): ServerResponse = {
+    val path = request.parsedQuery("path").flatMap(s => Try(Path.parse(s.replace(".xhtml",".omdoc"))).toOption)
+    val language = request.parsedQuery("lang") match {
+      case Some(l) => l
+      case None => "en"
+    }
+    request.path.lastOption match {
+      case Some(":vollki") =>
+        var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+        html = html.replace("TOUR_ID_PLACEHOLDER", path.map(_.toString).getOrElse(""))
+        html = html.replace("BASE_URL_PLACEHOLDER", "")
+        html = html.replace("CONTENT_URL_PLACEHOLDER", "")
+        html = html.replace("USER_MODEL_PLACEHOLDER", "")
+        html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
+        html = html.replace("LANGUAGE_PLACEHOLDER", language)
+        html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + server.pathPrefix + "/css?None")
+        ServerResponse(html, "text/html")
+      case Some("frag") =>
+        path match {
+          case Some(gn : GlobalName) =>
+            getSymdocs(gn, language).headOption match {
+              case Some(ht) => ServerResponse(ht.toString, "text/html")
+              case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
+            }
+          case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
+        }
+      case Some("list") =>
+        ServerResponse.JsonResponse(JSONArray())
+      case Some("tour") =>
+        path match {
+          case Some(n: GlobalName) =>
+            val ret = guidedTour(n, language)
+            ServerResponse.JsonResponse(ret)
+          case None =>
+            ServerResponse("Unknown query: " + request.query, "text/plain")
+        }
+      case Some("deps") =>
+        path match {
+          case Some(p:GlobalName) =>
+            getSymdocs(p, language).headOption match {
+              case None =>
+                ServerResponse.JsonResponse(JSONArray())
+              case Some(doc) =>
+                val html = HTMLParser(doc.toString())(new ParsingState(controller, Nil))
+                var syms: List[GlobalName] = Nil
+                html.iterate { n =>
+                  n.plain.attributes.get((HTMLParser.ns_shtml, "definiendum")) match {
+                    case Some(s) if s!= p.toString => Try({ syms ::= Path.parseS(s) })
+                    case _ =>
+                      n.plain.attributes.get((HTMLParser.ns_shtml, "term")) match {
+                        case Some("OMID") =>
+                          n.plain.attributes.get((HTMLParser.ns_shtml, "head")) match {
+                            case Some(p2) if p2 != p.toString => Try({ syms ::= Path.parseS(p2) })
+                            case _ =>
+                          }
+                        case _ =>
+                          n.plain.attributes.get((HTMLParser.ns_shtml, "comp")) match {
+                            case Some(p2) if p2 != p.toString => Try({ syms ::= Path.parseS(p2) })
+                            case _ =>
+                          }
+                      }
+                  }
+                }
+                ServerResponse.JsonResponse(JSONArray(
+                  syms.distinct.map(p => JSONString(p.toString)) :_*
+                ))
+            }
+          case None =>
+            ServerResponse("Unknown query: " + request.query, "text/plain")
+        }
+    }
+  }
+
+  def guidedTour(sym:GlobalName,language:String) = {
+    val map = mutable.HashMap.empty[GlobalName, Deps]
+    def getDep(s: GlobalName): Deps = map.getOrElse(s, {
+      val dep = new Deps(s)
+      map(s) = dep
+      dep.fill
+      dep
+    })
+
+    class Dones {
+      class MutList(var ls: List[Deps] = Nil, var count: Int = 0)
+
+      val map = mutable.HashMap.empty[Deps, MutList]
+    }
+    class Deps(val symbol:GlobalName) {
+      var dependencies : Set[Deps] = Set.empty
+      lazy val doc = getSymdocs(symbol,language).headOption
+      lazy val html = doc.map{d =>
+        HTMLParser(d.toString())(new ParsingState(controller, Nil))
+      }
+      def transitive: Set[GlobalName] = {
+        dependencies.map(_.symbol) + symbol ++ dependencies.flatMap(_.transitive)
+      }
+      def fill : Unit = {
+        var syms : List[GlobalName] = Nil
+        html.toList.foreach { html =>
+          html.iterate{ n =>
+            n.plain.attributes.get((HTMLParser.ns_shtml,"definiendum")) match {
+              case Some(s) => Try({map(Path.parseS(s)) = this})
+              case _ =>
+                n.plain.attributes.get((HTMLParser.ns_shtml, "term")) match {
+                  case Some("OMID") =>
+                    n.plain.attributes.get((HTMLParser.ns_shtml, "head")) match {
+                      case Some(p) => Try({
+                        syms ::= Path.parseS(p)
+                      })
+                      case _ =>
+                    }
+                  case _ =>
+                    n.plain.attributes.get((HTMLParser.ns_shtml,"comp")) match {
+                      case Some(p) => Try({
+                        syms ::= Path.parseS(p)
+                      })
+                      case _ =>
+                    }
+                }
+            }
+          }
+        }
+        syms.distinct.foreach(getDep(_) match {
+          case o if o.transitive.contains(this.symbol) =>
+          case o => dependencies += o
+        })
+        //syms.distinct.foreach(s => dependencies += getDep(s))
+      }
+      def getSorted = {
+        val d = new Dones()
+        getSortedI(d)
+        JSONArray(d.map.toList.sortBy(_._2.count).map(p => JSONObject(
+          ("id", JSONString(p._1.symbol.toString)),
+          ("title", JSONString(p._1.symbol.name.toString())),
+          ("successors", JSONArray(p._2.ls.map(c => JSONString(c.symbol.toString)): _*))
+        )): _*)
+      }
+      private def getSortedI(d : Dones = new Dones()): Unit = if (!d.map.contains(this)){
+        val ls = new d.MutList()
+        ls.count = dependencies.size
+        d.map(this) = ls
+        dependencies.foreach {dep => if (dep.html.isDefined) {
+          dep.getSortedI(d)
+          val c = d.map(dep)
+          c.ls ::= this
+          ls.count += c.count
+        }}
+      }
+    }
+    getDep(sym).getSorted
+  }
+}
+
+class STeXGraphPopulator extends Extension { /*
   override def start(args: List[String]): Unit = {
     if (controller.extman.get(classOf[STeXServer]).isEmpty) controller.extman.addExtension("info.kwarc.mmt.stex.STeXServer",Nil)
     if (!controller.extman.get(classOf[Extension]).contains(FullsTeXGraph)) controller.extman.addExtension(FullsTeXGraph)
     FullsTeXGraph.populate()
     controller.extman.removeExtension(this)
-  }
+  } */
 }
 
 object FullsTeXGraph extends ServerExtension("vollki") {
+  override def apply(request: ServerRequest): ServerResponse = ServerResponse.apply("","")
+  /*
 
   lazy val server = controller.extman.get(classOf[STeXServer]).head
 
@@ -52,6 +212,10 @@ object FullsTeXGraph extends ServerExtension("vollki") {
           html = html.replace("USER_MODEL_PLACEHOLDER",user.map(_.f.name).getOrElse(""))
           html = html.replace("LANGUAGE_PLACEHOLDER",language)
           ServerResponse(html, "text/html")
+      case Some("list") =>
+        ServerResponse.JsonResponse(JSONArray(
+          getAll().map(e => JSONObject(("value",JSONString(e.id)),("label",JSONString(e.getTitle(language).toString())))) :_*
+        ))
       case Some("frag") =>
         path.foreach {node =>
           val doc = node.getDocument(language).getOrElse(node.getDocument("en").getOrElse(node.getDocument("").get))
@@ -473,5 +637,6 @@ object STeXGraph extends JGraphExporter("stexgraph") {
         f
     }
   }
+  */
 
 }

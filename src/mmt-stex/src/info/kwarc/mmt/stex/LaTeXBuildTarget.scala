@@ -10,9 +10,10 @@ import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, So
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
-import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState, SimpleHTMLRule}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState}
 import info.kwarc.rustex.Params
 
+import java.io.FileOutputStream
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.sys.process.Process
@@ -29,6 +30,21 @@ object TeXError {
 object RusTeX {
   import info.kwarc.rustex.RusTeXBridge
   private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
+  lazy val mh = {
+    sys.env.get("MATHHUB") match {
+      case Some(v) =>
+        File(v) / ".rustex"
+      case _ => sys.env.get("HOME") match {
+        case Some(f) if (File(f) / ".stex" / "mathhub.path").exists() =>
+          val tf = File(f) / ".stex" / "mathhub.path"
+          val nf = File(File.read(tf).trim)
+          if (nf.exists()) nf else ???
+        case Some(f) => File(f) / "MathHub"
+        case _ => ???
+      }
+    }
+  }
+  def initialize = initializeBridge(mh)
 
   def initializeBridge(f : => File): Unit = this.synchronized {
     if (!RusTeXBridge.initialized) {
@@ -40,8 +56,8 @@ object RusTeX {
       RusTeXBridge.initialize(path.toString)
     }
   }
-  def parse(f : File,p:Params,memories:List[String] = Nil) = {
-    if (RusTeXBridge.initialized) this.synchronized {
+  def parse(f : File,p:Params,memories:List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","true"))) = {
+    if (this.synchronized {RusTeXBridge.initialized}) {
       val sb = RusTeXBridge.mainBridge
       sb.setMemories(memories)
       sb.setParams(p)
@@ -49,8 +65,8 @@ object RusTeX {
     } else ""
   }
 
-  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil) = {
-    if (RusTeXBridge.initialized) this.synchronized {
+  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","false"))) =  {
+    if (this.synchronized { RusTeXBridge.initialized }) {
       val sb = RusTeXBridge.mainBridge
       sb.setMemories(memories)
       sb.setParams(p)
@@ -80,20 +96,8 @@ trait XHTMLParser extends TraversingBuildTarget {
       throw t
   }
 
-  def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
-    RusTeX.initializeBridge{
-      sys.env.get("MATHHUB") match {
-        case Some(v) =>
-          File(v) / ".rustex"
-        case _ => sys.env.get("HOME") match {
-          case Some(f) if (File(f) / ".stex" / "mathhub.path").exists() =>
-            val tf = File(f) / ".stex" / "mathhub.path"
-            val nf = File(File.read(tf).trim)
-            if (nf.exists()) nf else ???
-          case _ => ???
-        }
-      }
-    } // c_stex_module_
+  def buildFileActually(archive:Archive,inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
+    RusTeX.initialize
     var errored = false
     log("building " + inFile)
     val self = this
@@ -107,8 +111,8 @@ trait XHTMLParser extends TraversingBuildTarget {
       override def write_other(s: String): Unit = self.log(s,Some("rustex-other"))
       override def message(s: String): Unit = self.log(s,Some("rustex-msg"))
       def file_open(s: String): Unit = {
-        files ::= s
-        self.log(s,Some("rustex-file"))
+        files ::= s.trim
+        self.log(s.trim,Some("rustex-file"))
        /* if (s.contains("MathHub/smglom") && s.contains(".en.tex")) {
           println(s.trim)
         }*/
@@ -123,7 +127,8 @@ trait XHTMLParser extends TraversingBuildTarget {
         errorCont(TeXError(inFile.toURI.toString,msg,stacktrace,region))
       }
     }
-    val html = RusTeX.parse(inFile,params,List("c_stex_module_"))
+    val html = RusTeX.parse(inFile,params)//,List("c_stex_module_"))
+    val texerrored = errored
     File.write(outFile.setExtension("shtml"),html)
     val doc = try { controller.library.synchronized {
       HTMLParser(outFile.setExtension("shtml"))(state)
@@ -132,10 +137,31 @@ trait XHTMLParser extends TraversingBuildTarget {
         e.printStackTrace()
         throw e
     }
+    val imgdir = archive / RedirectableDimension(".img")
+    imgdir.mkdirs()
+    doc.get("img")()().foreach { n =>
+      n.plain.attributes.get((HTMLParser.ns_html,"src")) match {
+        case Some(s) if s.startsWith("data:image/png;base64,") =>
+          val ns = s.drop(22)
+          val bs = java.util.Base64.getDecoder.decode(ns)
+          val md = java.security.MessageDigest.getInstance("MD5").digest(bs)
+          val sb = new StringBuilder
+          md.foreach(b => sb ++= Integer.toHexString(0xFF & b))
+          val md5str = sb.mkString
+          val file = imgdir / (md5str + ".png")
+          file.createNewFile()
+          val out = new FileOutputStream(file.toString)
+          out.write(bs)
+          out.close()
+          n.plain.attributes((HTMLParser.ns_html,"src")) = "shtml/" + archive.id + "/" + md5str
+        case _ =>
+      }
+    }
+
     doc.get("head")()().head.children.foreach(_.delete)
     outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
-    (errored,doc)
+    (errored,texerrored,doc)
   }
 
 }
@@ -147,11 +173,8 @@ class LaTeXToHTML extends XHTMLParser {
   def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
 
   override def buildFile(bf: BuildTask): BuildResult = {
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    //val state = new XHTMLParsingState(xhtmlrules,bf.errorCont)
-    val state = new HTMLParser.ParsingState(controller,rules)
-    val (errored,doc) = buildFileActually(bf.inFile,bf.outFile,state,bf.errorCont)
+    val state = new HTMLParser.ParsingState(controller,stexserver.importRules)
+    val (errored,_,doc) = buildFileActually(bf.archive,bf.inFile,bf.outFile,state,bf.errorCont)
     log("Finished: " + bf.inFile)
     if (errored) BuildFailure(Nil,List(PhysicalDependency(bf.outFile)))
     else BuildSuccess(Nil,List(PhysicalDependency(bf.outFile)))
@@ -172,9 +195,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
       bt.errorCont(SourceError(bt.inFile.toString,SourceRef.anonymous(""),"xhtml file " + inFile.toString + " does not exist"))
       BuildFailure(Nil,Nil)
     }
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    val state = new SemanticState(controller, rules, bt.errorCont, dpath)
+    val state = new SemanticState(stexserver, stexserver.importRules, bt.errorCont, dpath)
     controller.library.synchronized{HTMLParser(inFile)(state)}
     index(state.doc)
     log("Finished: " + inFile)
@@ -192,7 +213,10 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     }.filterNot(results.contains)
     state.missings match {
       case Nil => BuildSuccess(used,results)
-      case o => MissingDependency(o.map(LogicalDependency),results,used)
+      case o => MissingDependency(o.flatMap {
+        case mp:MPath => Some(LogicalDependency(mp))
+        case _ => None
+      },results,used)
     }
   }
 }
@@ -215,9 +239,7 @@ class HTMLToLucene extends XHTMLParser {
       BuildFailure(Nil,Nil)
     }
 
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
-    val state = new SearchOnlyState(controller,rules,bt.errorCont,dpath)
+    val state = new SearchOnlyState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     controller.library.synchronized{HTMLParser(inFile)(state)}
     val doc = state.Search.makeDocument(bt.outFile.stripExtension,bt.inFile,bt.archive)
 
@@ -236,13 +258,11 @@ class STeXToOMDoc extends Importer with XHTMLParser {
   val inExts = List("tex")
   override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / RedirectableDimension("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(controller,rules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     outFile.up.mkdirs()
-    val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
+    val (errored,_,_) = buildFileActually(bt.archive,bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
     index(state.doc)
     log("Finished: " + bt.inFile)
@@ -260,7 +280,10 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     }.filterNot(results.contains)
     if (errored) BuildFailure(used,results) else state.missings match {
       case Nil => BuildSuccess(used,results)
-      case o => MissingDependency(o.map(LogicalDependency),results,used)
+      case o => MissingDependency(o.flatMap {
+        case mp: MPath => Some(LogicalDependency(mp))
+        case _ => None
+      },results,used)
     }
   }
 }
@@ -277,24 +300,29 @@ object PdfLatex {
       pdffile.setExtension("blg"),
       pdffile.setExtension("out"),
       pdffile.setExtension("idx"),
+      pdffile.setExtension("ilg"),
+      pdffile.setExtension("ind"),
       pdffile.setExtension("mw"),
       pdffile.setExtension("nav"),
       pdffile.setExtension("snm"),
       pdffile.setExtension("vrb"),
+      pdffile.setExtension("sms2"),
+      pdffile.setExtension("hd"),
+      pdffile.setExtension("glo"),
       pdffile.setExtension("bcf"),
       pdffile.setExtension("blg"),
       pdffile.setExtension("fdb_latexmk"),
       pdffile.setExtension("fls"),
       //pdffile.setExtension("sref"),
-      pdffile.setExtension("sms"),
+      //pdffile.setExtension("sms"),
       File(pdffile.stripExtension.toString + ".run.xml"),
       File(pdffile.stripExtension.toString + ".synctex.gz"),
       File(pdffile.stripExtension.toString + "-blx.bib")
     )
     supportfiles.foreach(f => if (f.exists()) f.delete())
   }
-  def pdflatex(file : File) : (Option[File],List[String]) = {
-    val pb = Process(Seq("pdflatex","-interaction","nonstopmode","-halt-on-error",file.stripExtension.getName),file.up)
+  def pdflatex(file : File,envs:(String,String)*) : (Option[File],List[String]) = {
+    val pb = Process(Seq("pdflatex","-interaction","nonstopmode","-halt-on-error",file.stripExtension.getName),file.up,envs:_*)
     val output = pb.lazyLines_!.toList
     if (output.exists(_.contains("!  ==> Fatal error"))) {
       val err = output.drop(output.indexWhere(_.startsWith("!")))
@@ -308,8 +336,8 @@ object PdfLatex {
     }
   }
   case class PdflatexError(errs : List[String]) extends Throwable
-  def buildSingle(bf: BuildTask) : File = {
-    pdflatex(bf.inFile) match {
+  def buildSingle(bf: BuildTask,envs:(String,String)*) : File = {
+    pdflatex(bf.inFile,envs:_*) match {
       case (Some(pdffile),Nil) =>
         File.copy(pdffile,bf.outFile,true)
         pdffile
@@ -384,9 +412,14 @@ class PdfBibLatex extends TraversingBuildTarget {
 
 
 class FullsTeX extends Importer with XHTMLParser {
-  override def onBlock(qt : QueuedTask,br:BuildResult) = {
-    val bt = controller.extman.getOrAddExtension(classOf[HTMLToOMDoc],"xhtml-omdoc").getOrElse(this)
-    qt.copy(bt,br)
+  class PDFFailure(u:List[Dependency],p:List[ResourceDependency]) extends BuildFailure(u,p)
+
+  class RusTeXFailure(u: List[Dependency], p: List[ResourceDependency]) extends BuildFailure(u, p)
+  override def onBlock(qt : QueuedTask,br:BuildResult) = br match {
+    case _:PDFFailure|_:RusTeXFailure => qt
+    case _ =>
+      val bt = controller.extman.getOrAddExtension(classOf[HTMLToOMDoc],"xhtml-omdoc").getOrElse(this)
+      qt.copy(bt,br)
   }
   val key = "fullstex"
   override val inDim = info.kwarc.mmt.api.archives.source
@@ -406,15 +439,14 @@ class FullsTeX extends Importer with XHTMLParser {
       }
     }
     import PdfLatex._
-    val extensions = stexserver.extensions
-    val rules = extensions.flatMap(_.rules)
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(controller,rules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
     outFile.up.mkdirs()
     try {
       ilog("Building pdflatex " +  bt.inPath + " (first run)")
-      val pdffile = buildSingle(bt)
+      val pdffile = buildSingle(bt,("STEX_WRITESMS","true"))
+      bt.outFile.delete()
       if (pdffile.setExtension(".bcf").exists()) {
         ilog("    -       biber " +  bt.inPath)
         Process(Seq("biber",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
@@ -423,11 +455,13 @@ class FullsTeX extends Importer with XHTMLParser {
         Process(Seq("bibtex",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       }
       ilog("    -    pdflatex " + bt.inPath + " (second run)")
-      buildSingle(bt)
+      buildSingle(bt,("STEX_USESMS","true"))
+      bt.outFile.delete()
       ilog("    -    pdflatex " + bt.inPath + " (final run)")
-      buildSingle(bt)
+      buildSingle(bt,("STEX_USESMS","true"))
+      bt.outFile.delete()
       ilog("    -       omdoc " + bt.inPath)
-      val (errored,_) = buildFileActually(bt.inFile, outFile, state, bt.errorCont)
+      val (errored,texerrored,_) = buildFileActually(bt.archive,bt.inFile, outFile, state, bt.errorCont)
       val npdffile = (bt.archive / RedirectableDimension("export") / "pdf") / bt.inPath.setExtension("pdf").toString
       File.copy(pdffile,npdffile,true)
       pdffile.delete()
@@ -451,17 +485,21 @@ class FullsTeX extends Importer with XHTMLParser {
         case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
         case _ =>  Nil
       }.filterNot(results.contains)
-      if (errored) BuildFailure(used,results) else state.missings match {
+      if (texerrored) new RusTeXFailure(used,results)
+      else if (errored) BuildFailure(used,results) else state.missings match {
         case Nil => BuildSuccess(used, results)
-        case o => MissingDependency(o.map(LogicalDependency), results, used)
+        case o => MissingDependency(o.flatMap {
+          case mp: MPath => Some(LogicalDependency(mp))
+          case _ => None
+        }, results, used)
       }
     } catch {
       case PdflatexError(Nil) =>
         bt.errorCont(SourceError(bt.inFile.toString, SourceRef.anonymous(""), "(No error message)"))
-        BuildFailure(Nil,Nil)
+        new PDFFailure(Nil,Nil)
       case PdflatexError(ls) =>
         bt.errorCont(SourceError(bt.inFile.toString, SourceRef.anonymous(""), ls.head, ls.tail))
-        BuildFailure(Nil,Nil)
+        new PDFFailure(Nil,Nil)
     }
   }
 }
