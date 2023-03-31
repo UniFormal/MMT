@@ -35,7 +35,11 @@ object DRef{
 }
 
 object MRef {
-   def apply(p : DPath, t : MPath) = new MRef(p, LocalName(t), t)
+   def apply(p : DPath, t : MPath, generated: Boolean = false) = {
+     val mr = new MRef(p, LocalName(t), t)
+     if (generated) mr.setOrigin(GeneratedMRef)
+     mr
+   }
 }
 
 /** reference to a [[info.kwarc.mmt.api.symbols.Declaration]]} */
