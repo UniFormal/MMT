@@ -485,7 +485,6 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
     log("shutdown",Some("methodcall"))
     Completable{
       val r = server.shutdown
-      this.controller.extman.removeExtension(this)
       r.asInstanceOf[Object]
     }
   }

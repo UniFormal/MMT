@@ -1,4 +1,9 @@
 @font-face {
+    font-family: 'Latin Modern Math';
+    font-display: swap;
+    src: url('/stex/fonts/latinmodern-math.otf')
+}
+@font-face {
     font-family: 'Latin Modern SmallCaps';
     font-style: normal;
     font-weight: normal;
