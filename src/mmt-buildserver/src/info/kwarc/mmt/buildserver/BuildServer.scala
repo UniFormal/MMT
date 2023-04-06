@@ -538,7 +538,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
 
         FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, (used ::: olddeps).distinct, (provided ::: oldprovides).distinct)
         val needed = (used ::: olddeps).filter(g => State.blocked.exists(_.willProvide.contains(g)) || State.queue.exists(_.willProvide.contains(g))).distinct
-        if (needed.nonEmpty && qt.allowblocking) {
+        if (used.nonEmpty && needed.nonEmpty && qt.allowblocking) {
           qt.willProvide = (provided ::: oldprovides).distinct.collect {case r : ResourceDependency => r}
           qt.missingDeps = needed
           log("blocked")

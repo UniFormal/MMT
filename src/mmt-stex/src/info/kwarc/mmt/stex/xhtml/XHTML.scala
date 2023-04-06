@@ -66,10 +66,7 @@ object HTMLParser {
 
     private[HTMLParser] var header : String = ""
     def throwError(s : String) = throw new STeXError(s,None,None)
-    def error(s : String) : Unit = {
-      println(s)
-      ???
-    }
+    def error(s : String) : Unit = throwError(s)
 
     object SourceReferences {
       private val files = mutable.Map.empty[File, String]
@@ -192,7 +189,7 @@ object HTMLParser {
     }
     private[HTMLParser] def close(label : String) = {
       if (!_parent.exists(_.label == label)) {
-        error("Malformed HTML: </" + label + "> does not close any currently open node")
+        throwError("Malformed HTML: </" + label + "> does not close any currently open node")
       }
       val elem = _parent.get
       elem.onAdd
@@ -316,7 +313,7 @@ object HTMLParser {
                 val attr = in.takeWhile(_ != '=').trim
                 in.next()
                 val bgchar = if (in.head == '\"') '\"' else if (in.head == '\'') '\'' else
-                  state.error("???")
+                  state.throwError("???")
                 in.next()
                 val value = in.takeWhile(_ != bgchar).trim
                 in.next()
@@ -344,7 +341,7 @@ object HTMLParser {
             state.openclose(n)
           }
         case _ =>
-          state.error("???")
+          state.throwError("???")
       }
       doNext
     }

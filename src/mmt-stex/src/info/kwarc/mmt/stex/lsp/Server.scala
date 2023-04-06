@@ -564,7 +564,10 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      val d = documents.synchronized {
        documents.getOrElseUpdate(a.file, newDocument(a.file))
      }
-     d.buildHTML()
+     (d.archive, d.file) match {
+       case (Some(a), Some(f)) if !(a / source <= f) =>
+       case _ => d.buildHTML()
+     }
    }
 
    override def workspaceSymbol(params: WorkspaceSymbolParams): List[WorkspaceSymbol] = {

@@ -49,7 +49,7 @@ trait HTMLNode {
       case (before, _ :: after) =>
         this.plain._parent.get.plain._children = before ::: this :: after
       case _ =>
-        state.error("???")
+        state.throwError("???")
     })
   }
 
@@ -200,7 +200,7 @@ class HTMLPlainNode(var _state: ParsingState, override val namespace: String, va
     case Array(a) =>
       attributes((namespace, a)) = value
     case _ =>
-      state.error("???")
+      state.throwError("???")
   }
 
   def onAdd = {}

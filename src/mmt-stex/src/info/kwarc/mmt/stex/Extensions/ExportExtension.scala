@@ -212,11 +212,11 @@ trait ExportExtension { self : STeXServer =>
     val (rules,bindings) = getRules(withbindings)
     val doc = cleanHTML(HTMLParser(getDocument(params))(new ParsingState(controller,rules.values.toList)),!top,true)
     val ret = if (top) {
-      val bd = doc.get("div")()("body").head
+      val bd = doc.get("div")()("rustex-body").head
       bd.add(footer)
       doc.get("body")()().head
     } else {
-      val bd = doc.get("div")()("body").head
+      val bd = doc.get("div")()("rustex-body").head
       bd.plain.attributes.remove((bd.namespace,"style"))
       bd.plain.attributes.remove((bd.namespace, "id"))
       bd
