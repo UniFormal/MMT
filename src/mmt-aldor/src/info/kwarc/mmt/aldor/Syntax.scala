@@ -40,7 +40,7 @@ abstract class ADeclaration {
   def addIf(c: Option[AExpression]): ADeclaration
 }
 /** plain constant at toplevel or inside a category or domain */
-case class AConstant(name: AId, condition: Option[AExpression], params: List[ABinding], tp: Option[AExpression], df: Option[AExpression],
+case class AConstant(id: AId, condition: Option[AExpression], params: List[ABinding], tp: Option[AExpression], df: Option[AExpression],
                      documentation: Option[String], default: Boolean = false) extends ADeclaration {
   def addIf(c: Option[AExpression]) = copy(condition=NormalizedCategory.mergeConditions(condition,c))
 }
@@ -59,14 +59,20 @@ object NormalizedCategory {
   def flatten(e:AExpression): AExpression = e match {
     case AWith(i,ds) =>
       AWith(ANil,(AInclude(None,i)::ds) flatMap flattenDecl)
-    case AJoin(_) => flatten(AWith(e, Nil))
+    case AAdd(i,ds) =>
+      AAdd(ANil,(AInclude(None,i)::ds) flatMap flattenDecl)
+    case AJoin(_) =>
+      flatten(AWith(e, Nil))
     case e => e
   }
   /** normal form: AConstant or AInclude of atomic category */
   def flattenDecl(d: ADeclaration): List[ADeclaration] = d match {
+    case AInclude(c, AOperator(AParser.Comma.name, es)) =>
+      es map {e => AInclude(c, e)} flatMap flattenDecl
     case AInclude(c,AJoin(es)) => es map {e => AInclude(c,e)} flatMap flattenDecl
     case AInclude(c,AWith(e,ds)) => (AInclude(c,e) :: ds.map(_.addIf(c))) flatMap flattenDecl
-    case AInclude(c,AOperator("If", List(c2, th, ANil))) => flattenDecl(AInclude(mergeConditions(c,Some(c2)), th))
+    case AInclude(c,AAdd(e,ds)) => (AInclude(c,e) :: ds.map(_.addIf(c))) flatMap flattenDecl
+    case AInclude(c,AOperator(AParser.If.name, List(c2, th, ANil))) => flattenDecl(AInclude(mergeConditions(c,Some(c2)), th))
     case AInclude(_,ANil) => Nil
     case d => List(d)
   }
@@ -94,6 +100,8 @@ abstract class AExpression
   * @param typeHash disambiguates between overloaded names
   */
 case class AId(name: String, kind: Option[String], typeHash: Option[Int]) extends AExpression
+/** the $ operator that accesses a component of a domain */
+case class AQualify(id: AId, parent: AExpression) extends AExpression
 /** other built-in operators */
 case class AOperator(operator: String, args: List[AExpression]) extends AExpression
 /** local variable */
@@ -132,14 +140,18 @@ object AParser {
   def error(m: String) = throw info.kwarc.mmt.api.ParseError(m)
   // abbreviations for ids; these enable unapply-syntax
   val Id = SExpressionId("Id")
+  val Qualify = SExpressionId("Qualify")
   /* matcher for possibly qualified ids */
   object QId {
     def unapply(e: SExpression) = e match {
       case Id(SExpressionId(n),SExpressionId(kd),SExpressionNumber(th)) => Some(AId(n,Some(kd),Some(th)))
-      case Id(SExpressionId(n),SExpressionNumber(i), SExpressionId(kd),SExpressionNumber(th)) =>
-        // weird case, maybe disambiguated local variable?
-        Some(AId(n+"."+i.toString,Some(kd),Some(th)))
+      case Id(SExpressionId(n)) => Some(AId(n,None,None))
       case SExpressionId(n) => Some(AId(n,None,None))
+      // rarely ids appear with a number, maybe a disambiguating index? we merge the number into the name
+      case Id(SExpressionId(n),SExpressionNumber(i), SExpressionId(kd),SExpressionNumber(th)) =>
+        Some(AId(n+"."+i.toString,Some(kd),Some(th)))
+      case Id(SExpressionId(n),SExpressionNumber(i)) =>
+        Some(AId(n+"."+i.toString,None,None))
       case _ => None
     }
   }
@@ -150,6 +162,7 @@ object AParser {
   val Import = SExpressionId("Import")
   val Export = SExpressionId("Export")
   val If = SExpressionId("If")
+  val Label = SExpressionId("Label")
   val Comma = SExpressionId("Comma") // list of bindings
   val Sequence = SExpressionId("Sequence") // list of declarations or other
   val Join = SExpressionId("Join") // union of categories, possibly anonymous
@@ -162,7 +175,7 @@ object AParser {
   val With = SExpressionId("With")
   val Add = SExpressionId("Add")
   val Record = SExpressionId("Record")
-  val RecordId = Id(Record, SExpressionId("Import"), SExpressionNumber(0))
+  val RecordId = Id(Record, SExpressionId("Import"), SExpressionNumber(849204484))
 
   val Foreign = SExpressionId("Foreign")
   val Assign = SExpressionId("Assign")
@@ -207,8 +220,8 @@ object AParser {
         val testA = expr(test)
         val dsA = declarations(ds)
         dsA map {
-          case c: AConstant => c.copy(condition = Some(testA))
-          case i: AInclude => i.copy(condition = Some(testA))
+          case c: AConstant => c.copy(condition = NormalizedCategory.mergeConditions(Some(testA), c.condition))
+          case i: AInclude => i.copy(condition = NormalizedCategory.mergeConditions(Some(testA), i.condition))
         }
       case Local(_*) => Nil
       // makes identifiers available without qualifier, can be ignored
@@ -240,6 +253,7 @@ object AParser {
       case SExpressionString(s) => AString(s)
       case Apply(ArrowId, bs, bd) => APi(bindings(bs), expr(bd))
       case Apply(JoinId, mods@_*) => AJoin(mods.toList map modexpr)
+      case Apply(Id(Join), mods@_*) => AJoin(mods.toList map modexpr) // Join sometimes occurs without extra data
       // local definition
       case Declare(QId(id), tp, _) =>
         ADeclare(id.name, expr(tp), None)
@@ -248,6 +262,8 @@ object AParser {
       // a different local definition
       case Assign(Declare(QId(id), tp, mt), df) =>
         AAssign(id.name, expr(tp), expr(df))
+      // cut out labels
+      case Label(_,e) => expr(e)
       case Apply(RecordId, ds@_*) => ARecord(ds.toList flatMap declarations)
       case Lambda(bs,rt,bd) => ALambda(bindings(bs), Some(expr(rt)), expr(bd))
       case With(e, ds) => AWith(expr(e), declarations(ds))
@@ -255,9 +271,9 @@ object AParser {
       case Foreign(Declare(QId(id), tp, _), _) => AForeign(id.name, expr(tp))
       // general cases, must come last to allow for more specific cases above
       case Apply(fun, args @_*) => AApply(expr(fun), args.toList map expr)
+      case Qualify(QId(id), parent) => AQualify(id, expr(parent))
       case QId(id) => id
-      case Define(_*) =>
-        ANil
+      case Builtin(Declare(QId(id),tp,_)) => AOperator(id.name,List(expr(tp)))
       case SExpressionList(SExpressionId(op)::args) => AOperator(op, args map expr)
       case SExpressionList(Nil) => ANil
       case e =>

@@ -84,12 +84,12 @@ class TheoryGraph(rs: RelStore) {
    /** return the domain of this link, if any */
    def domain(link: Path) : Option[Path] = {
       rs.query(link, +HasDomain)(p => return Some(p))
-      return None
+      None
    }
    /** return the codomain of this link, if any */
    def codomain(link: Path) : Option[Path] = {
       rs.query(link, +HasCodomain)(p => return Some(p))
-      return None
+      None
    }
 }
 
@@ -98,7 +98,7 @@ class TheoryGraph(rs: RelStore) {
  *  @param views the minimal set of views to include
  *  @param tg the theory graph from which further information is obtained
  */
-class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: TheoryGraph) {
+class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: TheoryGraph, report: frontend.Report, includeMeta: Boolean = true) {
    private def gexfNode(id:Path, tp: String) =
       <node id={id.toPath} label={id.last}><attvalues><attvalue for="type" value={tp}/></attvalues></node>
    private def gexfEdge(id:String, from: Path, to: Path, tp: String) =
@@ -117,7 +117,8 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
            edges ::= gexfEdge("source: " + s.toPath, from, s, "source")
            edges ::= gexfEdge("target: " + s.toPath, s, to, "target")
          case EdgeTo(to, MetaEdge, _) =>
-           edges ::= gexfEdge("meta: " + from.toPath + "--" + to.toPath, from, to, "meta")
+           if (includeMeta)
+             edges ::= gexfEdge("meta: " + from.toPath + "--" + to.toPath, from, to, "meta")
          case EdgeTo(to, IncludeEdge, _) =>
            edges ::= gexfEdge("include: " + from.toPath + "--" + to.toPath, from, to, "include")
      }}}
@@ -198,7 +199,7 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
             addEdge(Some(v), from, to, "view", external)
          case EdgeTo(to, StructureEdge(s), false) =>
             addEdge(Some(s), from, to, "structure", external)
-         case EdgeTo(to, MetaEdge, false) =>
+         case EdgeTo(to, MetaEdge, false) if includeMeta =>
             addEdge(None,    from, to, "meta", external)
          case EdgeTo(to, IncludeEdge, false) =>
             addEdge(None,    from, to, "include", external)
@@ -222,12 +223,12 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
               addNodeIfNeeded(to)
               addEdge(Some(view), from, to, "view", false)
            case _ =>
-              throw GeneralError("domain/codomain of view not loaded (did you load the relational data?): " + view)
+              report("thygraph", "domain/codomain of view not part of loaded relational data: " + view)
         }
      }
 
      // all the links from/out of the minimal theories that aren't part of the minimal views
-     // TODO make more preactical choices for enriching the graph
+     // TODO make more practical choices for enriching the graph
      theories.foreach {from =>
        tg.edgesFrom(from) foreach {case (to, etos) =>
           val externalNode = addNodeIfNeeded(to) // true if the partner node is from a different document
@@ -237,7 +238,7 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
                addEdge(Some(v), to, from, "view", externalNode)
             case EdgeTo(_, StructureEdge(s), true) =>
                addEdge(Some(s), to, from, "structure", externalNode)
-            case EdgeTo(_, MetaEdge, true) =>
+            case EdgeTo(_, MetaEdge, true) if includeMeta =>
                addEdge(None,    to, from, "meta", externalNode)
             case EdgeTo(_, IncludeEdge, true) =>
                addEdge(None,    to, from, "include", externalNode)

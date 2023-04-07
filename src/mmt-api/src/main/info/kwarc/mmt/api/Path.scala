@@ -290,7 +290,7 @@ object LNStep {
             ComplexStep(Obj.fromPathEncoding(xml.decodeURI(s)).toMPath)
          else ComplexStep(Path.parseM(xml.decodeURI(ns), nsMap))
       } else
-         SimpleStep(s)
+         SimpleStep(xml.decodeURI(s))
    }
    val empty = SimpleStep("")
 }
