@@ -125,6 +125,19 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
       sb.toString()
    }
 
+  /** read characters that satisfy a condition, stops when string is empty (rather than throwing an error) */
+  def takeWhileSafe(test: Char => Boolean): String = {
+    val sb = new StringBuilder
+    while (input.isDefinedAt(current) && {
+      val testchar = if (remainder.startsWith("\r\n")) '\n' else head
+      test(testchar)
+    }) {
+      if (remainder.startsWith("\r\n")) next()
+      sb += next()
+    }
+    sb.toString()
+  }
+
    import scala.util.matching.Regex
    /** matches at the beginning of the stream and returns the matched prefix */
    def takeRegex(regex: String): Regex.Match = {
