@@ -328,7 +328,7 @@ object HTMLParser {
             if (close) state.openclose(n) else state.open(n)
           }
         case c =>
-          var txt = s"${c}${in.takeWhileSafe(_ != '<')}"
+          var txt = s"${c}${in.takeWhile(c => c != '<' && !in.empty)}"
           val endWS = txt.lastOption.exists(_.isWhitespace)
           txt = if (txt.trim == empty.toString) empty.toString else txt.trim/*Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
             print("")
