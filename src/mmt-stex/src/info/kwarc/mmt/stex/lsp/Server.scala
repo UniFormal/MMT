@@ -166,6 +166,24 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    } }
 
+
+   @JsonNotification("sTeX/exportSimpleHTML")
+   def exportSimpleHTML(msg: ExportMessage): Unit = Future {
+     safely {
+       msg.file = LSPServer.VSCodeToURI(msg.file)
+       log("Exporting file " + msg.file)
+       val d = documents.synchronized {
+         documents.getOrElseUpdate(msg.file, newDocument(msg.file))
+       }
+       withProgress(msg,"Exporting HTML...",""){update =>
+         val pars = d.params(s => update(0,s))
+         val ret = RusTeX.parseString(d.file.getOrElse(File(msg.file)), d.doctext,pars,envs = List(("STEX_USESMS","true")))
+         File.write(File(msg.dir),ret)
+         ((), "Done")
+       }
+     }
+   }
+
    @JsonNotification("sTeX/buildArchive")
    def buildFile(msg: BuildGroupMessage): Unit = Future { withProgress(msg,"Building") { update =>
      log("Building file(s) " + msg.file + " in " + msg.archive)
@@ -569,6 +587,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
        case _ => d.buildHTML()
      }
    }
+
 
    override def workspaceSymbol(params: WorkspaceSymbolParams): List[WorkspaceSymbol] = {
      print("")

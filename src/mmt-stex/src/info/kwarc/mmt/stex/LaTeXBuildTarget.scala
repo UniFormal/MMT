@@ -56,18 +56,20 @@ object RusTeX {
       RusTeXBridge.initialize(path.toString)
     }
   }
-  def parse(f : File,p:Params,memories:List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","true"))) = {
+  def parse(f : File,p:Params,memories:List[String] = Nil,envs:List[(String,String)] = List(("STEX_USESMS","true"))) = {
     if (this.synchronized {RusTeXBridge.initialized}) {
       val sb = RusTeXBridge.mainBridge
+      sb.setEnvs(envs:_*)
       sb.setMemories(memories)
       sb.setParams(p)
       sb.parse(f.toString)
     } else ""
   }
 
-  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","false"))) =  {
+  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,envs:List[(String,String)] = List(("STEX_USESMS","false"))) =  {
     if (this.synchronized { RusTeXBridge.initialized }) {
       val sb = RusTeXBridge.mainBridge
+      sb.setEnvs(envs:_*)
       sb.setMemories(memories)
       sb.setParams(p)
       sb.parseString(f.toString,text)
