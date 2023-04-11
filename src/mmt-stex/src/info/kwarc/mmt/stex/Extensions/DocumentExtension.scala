@@ -476,7 +476,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       override def onAdd = {
         super.onAdd
         val chs = this.children
-        val span = this.add(<span></span>)
+        val span = this.add(<span style="display:contents"></span>)
         chs.foreach(span.add)
         title.foreach(_.plain.classes ::= "shtml-title-" + s)
       }
