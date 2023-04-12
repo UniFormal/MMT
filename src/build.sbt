@@ -168,7 +168,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
+    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, stexml,mathhub, latex, openmath, oeis, repl, coq, glf,
     tiscaf, lfcatalog,
     jedit, intellij,buildserver
   ).
@@ -492,6 +492,11 @@ lazy val imps = (project in file("mmt-imps")).
 lazy val specware = (project in file("mmt-specware")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-specware"): _*)
+
+lazy val stexml = (project in file("mmt-stexml")).dependsOn(api,lsp,stex).settings(
+  mmtProjectsSettings("mmt-stexml"),
+  Compile / unmanagedJars += baseDirectory.value / "lib" / "huggingface.jar"
+)
 
 // plugin for reading stex. Maintainer: Dennis
 lazy val stex = (project in file("mmt-stex")).

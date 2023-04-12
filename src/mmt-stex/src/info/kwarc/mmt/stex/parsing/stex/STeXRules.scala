@@ -617,7 +617,7 @@ case class MetaTheoryRule(mp : MPath,dict:Dictionary) extends STeXRule {
   val name = "meta theory rule"
 }
 
-class SymrefApp(dict:Dictionary,val alternatives:List[SymdeclInfo],asPlainString: => String,trivial:Boolean,val reftokens:List[TeXTokenLike]) extends SymRefLike {
+class SymrefApp(dict:Dictionary,val alternatives:List[SymdeclInfo],val asPlainString: String,trivial:Boolean,val reftokens:List[TeXTokenLike]) extends SymRefLike {
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this, startoffset, endoffset - startoffset)
     a.setHover(alternatives.head.path.toString + {
