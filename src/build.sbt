@@ -495,7 +495,7 @@ lazy val specware = (project in file("mmt-specware")).
 
 lazy val stexml = (project in file("mmt-stexml")).dependsOn(api,lsp,stex).settings(
   mmtProjectsSettings("mmt-stexml"),
-  Compile / unmanagedJars += baseDirectory.value / "lib" / "huggingface.jar"
+  //Compile / unmanagedJars += baseDirectory.value / "lib" / "huggingface.jar"
 )
 
 // plugin for reading stex. Maintainer: Dennis
