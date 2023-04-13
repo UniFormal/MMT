@@ -14,13 +14,13 @@ case class LaTeXParseError(msg : String,extraMsg : Option[String] = None,overrid
 trait TeXTokenLike {
   def startoffset : Int
   def endoffset: Int
-  def iterate(f : TeXTokenLike => Unit) = f(this)
+  def iterate(f : TeXTokenLike => Unit): Unit = {f(this);this.iterateChildren{_.iterate(f)}}
+  def iterateChildren(f : TeXTokenLike => Unit) = {}
   val attributes = mutable.HashMap.empty[String,Any]
   var errors : List[LaTeXParseError] = Nil
   def addError(msg : String,extramsg : Option[String] = None,lvl : Level = Level.Error) = {
     errors ::= LaTeXParseError(msg, extramsg, lvl)
   }
-  def =?=(that : TeXTokenLike) : Boolean = false
   def asPlain : String = toString
 }
 object TeXTokenLike {
@@ -37,6 +37,8 @@ case class Group(children:List[TeXTokenLike], startoffset:Int,endoffset:Int) ext
     f(this)
     children.foreach(_.iterate(f))
   }
+
+  override def iterateChildren(f: TeXTokenLike => Unit) = children.foreach(f(_))
   override def toString: String = "{" + children.mkString + "}"
 
   override def asPlain: String = "{" + children.map(_.asPlain).mkString + "}"
@@ -47,6 +49,12 @@ case class Math(children:List[TeXTokenLike], startdelim:TeXTokenLike,enddelim:Te
     startdelim.iterate(f)
     children.foreach(_.iterate(f))
     enddelim.iterate(f)
+  }
+
+  override def iterateChildren(f: TeXTokenLike => Unit) = {
+    f(startdelim)
+    children.foreach(f(_))
+    f(enddelim)
   }
   override def toString: String = startdelim.toString + children.mkString + enddelim.toString
 

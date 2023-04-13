@@ -11,9 +11,8 @@ class MacroApplication extends TeXTokenLike {
   def startoffset = children.head.startoffset
   def endoffset: Int = children.last.endoffset
 
-  override def iterate(f: TeXTokenLike => Unit): Unit = {
-    f(this)
-    children.foreach(_.iterate(f))
+  override def iterateChildren(f: TeXTokenLike => Unit): Unit = {
+    children.foreach(f(_))
   }
 
   override def toString: String = children.mkString
