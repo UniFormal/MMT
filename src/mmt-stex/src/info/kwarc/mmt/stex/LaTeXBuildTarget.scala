@@ -17,7 +17,6 @@ import java.io.FileOutputStream
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.sys.process.Process
-import scala.xml.parsing.XhtmlParser
 
 object TeXError {
   def apply(uri:String,msg:String,stacktrace:List[(String,String)],reg:SourceRegion) =
@@ -79,7 +78,7 @@ object RusTeX {
 
 }
 
-trait XHTMLParser extends TraversingBuildTarget {
+trait XHTMLParser extends BuildTarget {
 
   var stexserver : STeXServer = null
 
@@ -168,7 +167,7 @@ trait XHTMLParser extends TraversingBuildTarget {
 
 }
 
-class LaTeXToHTML extends XHTMLParser {
+class LaTeXToHTML extends TraversingBuildTarget with XHTMLParser {
   val key = "stex-xhtml"
   val outDim = Dim("xhtml")
   val inDim = info.kwarc.mmt.api.archives.source
@@ -223,7 +222,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
   }
 }
 
-class HTMLToLucene extends XHTMLParser {
+class HTMLToLucene extends TraversingBuildTarget with XHTMLParser {
   val key = "xhtml-lucene"
   override val outDim: ArchiveDimension = Dim("export", "lucene")
   val inDim = info.kwarc.mmt.api.archives.source

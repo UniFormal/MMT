@@ -14,6 +14,7 @@ decltree    info.kwarc.mmt.api.ontology.DeclarationTreeExporter
 index       info.kwarc.mmt.api.archives.OMDocImporter
 pvs-omdoc   info.kwarc.mmt.pvs.Plugin
 diagram     info.kwarc.mmt.api.modules.diagrams.InstallDiagram
+xhtml-ilias info.kwarc.mmt.stex.vollki.IliasExporter
 
 pdflatex   info.kwarc.mmt.stex.PdfLatex
 pdfbiblatex info.kwarc.mmt.stex.PdfBibLatex

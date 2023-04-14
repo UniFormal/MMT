@@ -276,18 +276,16 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         val obj = JSON.parse(File.read(jsonfile)).asInstanceOf[JSONObject]
         obj.map.foreach {
           case (JSONString(bts),o:JSONObject) =>
-            controller.extman.getOrAddExtension(classOf[TraversingBuildTarget],bts,Nil) match {
-              case Some(bt) =>
+            controller.extman.getOrAddExtension(classOf[BuildTarget],bts,Nil) match {
+              case Some(bt:TraversingBuildTarget) =>
                 timestamps(bt) = o.getAs(classOf[BigInt],"timestamp").toLong
                 val ylds = o.getAsList(classOf[JSONArray],"yields").map(Dependency.parse)
                 ylds.foreach{y => targets(y) = (bt,a,sourcefile)}
                 yields(bt) = ylds
                 dependson(bt) = o.getAsList(classOf[JSONArray],"dependencies").map(Dependency.parse)
               case _ =>
-                println("???")
             }
           case _ =>
-            println("???")
         }
       } catch {
         case _: JSONError | _: java.lang.StringIndexOutOfBoundsException =>

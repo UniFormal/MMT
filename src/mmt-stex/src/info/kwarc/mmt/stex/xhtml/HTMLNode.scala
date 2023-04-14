@@ -146,8 +146,9 @@ abstract class HTMLNodeWrapper(val inner:HTMLNode) extends HTMLNode {
   def onOpen = {}
 }
 
-class HTMLPlainNode(var _state: ParsingState, override val namespace: String, var _label: String) extends HTMLNode {
+class HTMLPlainNode(var _state: ParsingState, var _namespace: String, var _label: String) extends HTMLNode {
   def onOpen = {}
+  override def namespace = _namespace
   override def toString: String = state.present(this)
   def plain = this
   override def state = _state
