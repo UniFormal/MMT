@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.parsing.stex
 
-import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.api.{ComplexStep, DPath, GlobalName, Level, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.lsp.Annotation
 import info.kwarc.mmt.stex.lsp.{SemanticHighlighting, sTeXDocument}
@@ -168,11 +168,16 @@ case class MHLike(name:String,fileexts:List[String],dict:Dictionary) extends STe
     val archive = parser.readOptAgument.flatMap(_.consumeStr("archive"))
     val path = parser.readArgument.asname
     val file = dict.resolveFilePath(archive.getOrElse(""),path,false)
-    var works = false
     var foundfile = file
-    fileexts.foreach(ext =>
-      if (file.setExtension(ext).exists()) {works = true;foundfile=file.setExtension(ext)}
-    )
+    var works = false
+    if (fileexts.exists(ext => file.toString.endsWith("." + ext)) && file.exists()) {
+      works = true
+    } else {
+      fileexts.foreach{ext => if (File(file.toString + "." + ext).exists()) {
+        works = true
+        foundfile = File(file.toString + "." + ext)
+      }}
+    }
     val ret = new MacroApplication with STeXMacro {
       if (!works) addError("File not found: " + file.toString)
 
@@ -181,7 +186,7 @@ case class MHLike(name:String,fileexts:List[String],dict:Dictionary) extends STe
         if (foundfile.exists()) {
           a.addDefinition(foundfile.toString, 0, 0)
         }
-        a.setHover(foundfile.toString)
+        a.setHover("`" + foundfile.toString + "`\n\n-----\n![](" + foundfile.toJava.toURI.toString +")")
         a.setSemanticHighlightingClass(SemanticHighlighting.file)
       }
     }
