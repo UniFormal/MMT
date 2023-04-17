@@ -25,8 +25,12 @@ object STeXRules {
     SkipCommand("stexstyleproblem", "ovv"),
     VarDefRule(dict),VarSeqRule(dict),
     SDefinitionRule(dict),SAssertionRule(dict),SParagraphRule(dict),
-    InlineDefRule(dict),InlineAssRule(dict:Dictionary),
-    InputrefRule(dict)
+    InlineDefRule(dict),InlineAssRule(dict),
+    InputrefRule(dict),
+    MHLike("mhgraphics",List("bmp","png","jpg","jpeg","pdf","BMP","PNG","JPG","JPEG","PDF"),dict),
+    MHLike("cmhgraphics",List("bmp","png","jpg","jpeg","pdf","BMP","PNG","JPG","JPEG","PDF"), dict),
+    MHLike("mhtikzinput", List("tex"), dict),
+    MHLike("cmhtikzinput", List("tex"), dict)
   )
   def moduleRules(dict:Dictionary) : List[TeXRule] = List(
     SymDeclRule(dict),SymDefRule(dict),NotationRule(dict),TextSymDeclRule(dict),
@@ -156,6 +160,34 @@ trait ImportModuleRuleLike extends STeXRule with MacroRule {
     val path = readArgument.asname
     val mp = dict.resolveMPath(archive,path)
     dict.addimport(mp,archive,path,export)
+  }
+}
+
+case class MHLike(name:String,fileexts:List[String],dict:Dictionary) extends STeXRule with MacroRule {
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    val archive = parser.readOptAgument.flatMap(_.consumeStr("archive"))
+    val path = parser.readArgument.asname
+    val file = dict.resolveFilePath(archive.getOrElse(""),path)
+    var works = false
+    var foundfile = file
+    fileexts.foreach(ext =>
+      if (file.setExtension(ext).exists()) {works = true;foundfile=file.setExtension(ext)}
+    )
+    val ret = new MacroApplication with STeXMacro {
+      if (!works) addError("File not found: " + file.toString)
+
+      override def doAnnotations(in: sTeXDocument): Unit = {
+        val a = in.Annotations.add(this, this.startoffset, endoffset - startoffset)
+        if (file.exists()) {
+          a.addDefinition(file.toString, 0, 0)
+          a.addCodeLens(file.toString, "", Nil, startoffset, endoffset)
+        }
+        a.setHover(foundfile.toString)
+        a.setSemanticHighlightingClass(SemanticHighlighting.file)
+      }
+    }
+    ret
+
   }
 }
 
