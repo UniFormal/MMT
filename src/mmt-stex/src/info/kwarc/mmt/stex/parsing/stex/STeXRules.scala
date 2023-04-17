@@ -167,7 +167,7 @@ case class MHLike(name:String,fileexts:List[String],dict:Dictionary) extends STe
   override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
     val archive = parser.readOptAgument.flatMap(_.consumeStr("archive"))
     val path = parser.readArgument.asname
-    val file = dict.resolveFilePath(archive.getOrElse(""),path)
+    val file = dict.resolveFilePath(archive.getOrElse(""),path,false)
     var works = false
     var foundfile = file
     fileexts.foreach(ext =>
@@ -178,9 +178,8 @@ case class MHLike(name:String,fileexts:List[String],dict:Dictionary) extends STe
 
       override def doAnnotations(in: sTeXDocument): Unit = {
         val a = in.Annotations.add(this, this.startoffset, endoffset - startoffset)
-        if (file.exists()) {
-          a.addDefinition(file.toString, 0, 0)
-          a.addCodeLens(file.toString, "", Nil, startoffset, endoffset)
+        if (foundfile.exists()) {
+          a.addDefinition(foundfile.toString, 0, 0)
         }
         a.setHover(foundfile.toString)
         a.setSemanticHighlightingClass(SemanticHighlighting.file)
@@ -198,7 +197,7 @@ case class InputrefRule(dict:Dictionary) extends STeXRule with MacroRule with No
     parser.readChar('*')
     val archive = parser.readOptAgument.map(_.asname).getOrElse("")
     val path = parser.readArgument.asname
-    val file = dict.resolveFilePath(archive,path)
+    val file = dict.resolveFilePath(archive,path,true)
     val ret = new MacroApplication with STeXMacro {
       if (!file.exists()) addError("File not found: " + file.toString)
 

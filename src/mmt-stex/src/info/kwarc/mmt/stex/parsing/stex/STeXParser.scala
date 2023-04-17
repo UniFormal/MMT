@@ -205,13 +205,13 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     resolveMPath(archive, path)
   }
 
-  def resolveFilePath(archiveid: String, path: String): File = {
+  def resolveFilePath(archiveid: String, path: String,ext:Boolean): File = {
     val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse {
       throw LaTeXParseError("Archive missing: " + archiveid)
     })
     archive match {
-      case Some(a) => a / source / (if (path.endsWith(".tex")) path else path + ".tex")
-      case _ => current_file.get.resolve(if (path.endsWith(".tex")) path else path + ".tex")
+      case Some(a) => a / source / (if (path.endsWith(".tex")) path else if (ext) path + ".tex" else path)
+      case _ if ext => current_file.get.resolve(if (path.endsWith(".tex")) path else if (ext) path + ".tex" else path)
     }
   }
 
