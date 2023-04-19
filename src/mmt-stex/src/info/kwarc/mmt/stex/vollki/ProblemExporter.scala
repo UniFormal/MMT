@@ -7,10 +7,9 @@ import info.kwarc.mmt.stex.XHTMLParser
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, HTMLText, SHTMLNode, SHTMLParsingRule}
 
 import scala.util.Try
-import scala.xml.NodeSeq
-
-
+import scala.xml.{NodeSeq, PCData}
 import info.kwarc.mmt.api.archives._
+
 class IliasExporter extends BuildTarget with XHTMLParser {
   val key = "xhtml-ilias"
   val inExts = List("xhtml")
@@ -141,6 +140,210 @@ class IliasExporter extends BuildTarget with XHTMLParser {
       }
       BuildSuccess(Nil,Nil)
     }
+
+  case class ProblemState(f : HTMLNode => Unit) extends HTMLParser.ParsingState(controller,rules(f)) {
+    var in_solution = false
+  }
+  private def rules(f:HTMLNode => Unit) = List(
+    SHTMLParsingRule("problem", (str, n, _) => {
+      val mp = Path.parseM(str)
+      val ret = new Problem(mp, n)
+      f(ret)
+      ret
+    }),
+    SHTMLParsingRule("multiple-choice-block",(_,n,_) => new MCB(n)),
+    SHTMLParsingRule("mcc",(s,n,_) => new MCC(n,s=="true")),
+    SHTMLParsingRule("mcc-solution", (_, n, _) => new MCCSol(n)),
+    SHTMLParsingRule("fillinsol", (_, n, _) => new FillInSol(n)),
+    SHTMLParsingRule("solution", (_, n, _) => new Solution(n)),
+  )
+  private class Problem(val path:MPath,node:HTMLNode) extends SHTMLNode(node) {
+    var tp : Option[IsProblemType] = None
+    def copy = {
+      val ret = new Problem(path, node.copy)
+      ret.tp = tp
+      ret
+    }
+  }
+  sealed trait IsProblemType extends SHTMLNode
+  private class Solution(node:HTMLNode) extends SHTMLNode(node) {
+    def copy=new Solution(node.copy)
+    val insol = state.asInstanceOf[ProblemState].in_solution
+    state.asInstanceOf[ProblemState].in_solution = true
+
+    override def onAdd: Unit = {
+      state.asInstanceOf[ProblemState].in_solution = insol
+      this.delete
+    }
+  }
+  private class MCB(node:HTMLNode) extends SHTMLNode(node) with IsProblemType {
+    def copy = new MCB(node.copy)
+    var mccs : List[MCC] = Nil
+
+    override def onAdd: Unit = {
+      super.onAdd
+      if (!state.asInstanceOf[ProblemState].in_solution) findAncestor {
+        case p: Problem => p.tp = Some(this)
+      }
+      clean(this)
+      this.delete
+    }
+  }
+  private class FillInSol(node:HTMLNode) extends SHTMLNode(node) with IsProblemType {
+    def copy = new FillInSol(node.copy)
+
+    var solution: String = ""
+
+    override def onAdd: Unit = {
+      this.iterate {
+        case txt:HTMLText => solution += txt.text
+        case _ =>
+          print("")
+      }
+      super.onAdd
+      if (!state.asInstanceOf[ProblemState].in_solution) findAncestor {
+        case p: Problem => p.tp = Some(this)
+      }
+      clean(this)
+      this.delete
+    }
+  }
+  private class MCC(node:HTMLNode,val correct:Boolean) extends SHTMLNode(node) {
+    def copy = new MCC(node.copy,correct)
+
+    var feedback: Option[MCCSol] = None
+
+    override def onAdd: Unit = {
+      super.onAdd
+      if (!state.asInstanceOf[ProblemState].in_solution) findAncestor {
+        case mcb: MCB => mcb.mccs ::= this
+      }
+      clean(this)
+      this.delete
+    }
+  }
+  private class MCCSol(node:HTMLNode) extends SHTMLNode(node) {
+    def copy = new MCCSol(node.copy)
+
+    override def onAdd: Unit = {
+      super.onAdd
+      if (!state.asInstanceOf[ProblemState].in_solution) findAncestor {
+        case mcc: MCC => mcc.feedback = Some(this)
+      }
+      clean(this)
+      this.delete
+    }
+  }
+
+  /** clean this target in a given archive */
+  override def clean(a: Archive, in: FilePath): Unit = {}
+}
+
+
+class MoodleExporter extends BuildTarget with XHTMLParser {
+  val key = "xhtml-moodle"
+  val inExts = List("xhtml")
+  def wrap(ns : NodeSeq) = {
+    <quiz>{ns}</quiz>
+  }
+  def cleanI(node:HTMLNode)(delete:HTMLNode => Unit) = node.iterate{ n =>
+    n.plain._sourceref = None
+    n.plain._namespace = HTMLParser.ns_html
+    n.plain.attributes.foreach {
+      case ((HTMLParser.ns_shtml,"visible"),"false") => delete(n)
+      case (p@(HTMLParser.ns_shtml| HTMLParser.ns_mmt | HTMLParser.ns_rustex,_),_) => n.plain.attributes.remove(p)
+      case (k@(ns,ik),v) if ns != HTMLParser.ns_html =>
+        n.plain.attributes.remove(k)
+        n.plain.attributes((HTMLParser.ns_html,ik)) = v
+      case _ => // TODO CSS
+    }
+  }
+  def clean(node:HTMLNode) = {
+    var todelete : List[HTMLNode] = Nil
+    cleanI(node){n => todelete ::= n}
+    todelete.foreach(_.delete)
+  }
+
+  def doMCC(p : Problem) = {
+    val mcb = p.tp.get.asInstanceOf[MCB]
+    val mccs = mcb.mccs.zipWithIndex
+    val title = p.path.parent.uri.path.mkString("/") + "?" + p.path.name
+    val uri = p.path.toString
+
+    <question type="multichoice">
+      <name><text>{title}</text></name>
+      <questiontext format="html"><text>
+        {new PCData(p.toString)}
+      </text></questiontext>
+      <defaultgrade>{mccs.count(_._1.correct).toDouble.toString}</defaultgrade>
+      <penalty>0.333333</penalty>
+      <hidden>0</hidden>
+      <idnumber/>
+      <single>false</single>
+      <shuffleanswers>false</shuffleanswers>
+      <answernumbering>abc</answernumbering>
+      <showstandardinstruction>0</showstandardinstruction>
+      <correctfeedback format="html"><text>Correct</text></correctfeedback>
+      <partiallycorrectfeedback format="html"><text>Partially Correct</text></partiallycorrectfeedback>
+      <incorrectfeedback format="html"><text>Incorrect</text></incorrectfeedback>
+      <shownumcorrect/>
+      {mccs.map{mcc =>
+      <answer fraction={if (mcc._1.correct) "100" else "-50"} format="html">
+        <text>{new PCData(mcc._1.toString)}</text>
+        <feedback format="html"><text>{new PCData(mcc._1.feedback.map(_.toString).getOrElse(""))}</text></feedback>
+      </answer>
+    }}
+    </question>
+  }
+
+  def doFile(inFile:File) = {
+    log("Building moodle " + inFile)
+    var problems: List[Problem] = Nil
+    val state = ProblemState({
+      case p: Problem => problems ::= p
+      case _ =>
+    })
+    controller.library.synchronized {
+      HTMLParser(inFile)(state)
+    }
+    problems = problems.filter(_.tp.isDefined)
+    problems.foreach(clean)
+    problems.map { p =>
+      p.tp match {
+        case Some(_: MCB) => doMCC(p)
+        case Some(_: FillInSol) => // TODO
+          ???
+        case _ =>
+          ???
+      }
+    }
+  }
+
+  override def build(a: Archive, which: Build, in: FilePath, errorCont: Option[ErrorHandler]): Unit = {
+    val f = a / Dim("xhtml") / in
+    if (f.isFile) {
+      buildFile(f,a / Dim("export") / "moodle" / in)
+    } else {
+      val problems = f.descendants.flatMap(f => try {
+        doFile(f)
+      } catch {
+        case e : Throwable =>
+          e.printStackTrace()
+          Nil
+      })
+      val out = (a / Dim("export") / "moodle" / in).setExtension("xml")
+      File.write(out, wrap(problems.toSeq).toString())
+    }
+  }
+
+
+  def buildFile(inFile:File,outFile:File): BuildResult = {
+    val problems = doFile(inFile)
+    if (problems.nonEmpty) {
+      File.write(outFile.setExtension("xml"),wrap(problems.toSeq).toString())
+    }
+    BuildSuccess(Nil,Nil)
+  }
 
   case class ProblemState(f : HTMLNode => Unit) extends HTMLParser.ParsingState(controller,rules(f)) {
     var in_solution = false

@@ -9,6 +9,10 @@ case object NonSemantic extends TargetClass
 case object Semantic extends TargetClass
 case class PreToken(str:String,tk: TeXTokenLike,cls:TargetClass)
 
+case class SubResult(str: String, score: Float, start: Int, end: Int)
+
+case class Result(str: String, tk: TeXTokenLike, res: List[SubResult])
+
 class Model(jarfile:File,zipfile:File,macrostrip:Boolean) {
   private val reflection = new Reflection(jarfile)
   import info.kwarc.mmt.api.utils.Reflection._
@@ -23,6 +27,7 @@ class Model(jarfile:File,zipfile:File,macrostrip:Boolean) {
     var ret: List[PreToken] = Nil
 
     def dostuff(tk: TeXTokenLike): Unit = tk match {
+      case info.kwarc.mmt.stex.parsing.Math(_,_,_) =>
       case txt: PlainText if !txt.str.isBlank =>
         ret ::= PreToken(txt.str, txt, NonSemantic)
       case ma: SymrefApp => ma.rule match {
@@ -45,7 +50,30 @@ class Model(jarfile:File,zipfile:File,macrostrip:Boolean) {
   def predict(textokens: List[TeXTokenLike]) = {
     predictOnTokens(tokenize(textokens))
   }
-  def predictOnTokens(ls:List[PreToken]) = {
+  def predictOnTokens(ls: List[PreToken]) = {
+    var todo : List[PreToken] = Nil
+    var ret : List[Result] = Nil
+    var reti : Int = 0
+    var curr = 0.0
+    ls.foreach { tk =>
+      todo ::= tk
+      curr += tk.str.length.toDouble / 3.5
+      if (curr > 512) {
+        curr = 0
+        val (a,i) = predictOnTokensI(todo)
+        todo = Nil
+        reti += i
+        ret = ret ::: a
+      }
+    }
+    if (todo.nonEmpty) {
+      val (a, i) = predictOnTokensI(todo)
+      reti += i
+      ret = ret ::: a
+    }
+    (ret,reti)
+  }
+  private def predictOnTokensI(ls:List[PreToken]) = {
     val orig = predictOrig(ls.map(_.str).toArray)
     val numTokens = orig.field("numTokens",int)
     val groupedPredictions = orig.field("groupedPredictions",JList(JLinkedList(Reflected(singleprediction))))
@@ -58,6 +86,4 @@ class Model(jarfile:File,zipfile:File,macrostrip:Boolean) {
       })
     },numTokens)
   }
-  case class SubResult(str:String,score:Float,start:Int,end:Int)
-  case class Result(str:String,tk: TeXTokenLike,res:List[SubResult])
 }

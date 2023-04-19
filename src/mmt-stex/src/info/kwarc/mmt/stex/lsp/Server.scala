@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, JSON, JSONObject, JSONString, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, SandboxedWebSocket, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.stex.ml.Model
 import info.kwarc.mmt.stex.parsing.stex.STeXParser
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
@@ -81,6 +82,13 @@ class ExportMessage {
   var dir: String = null
 }
 
+class NERMessage {
+  var jar: String = null
+  var zip: String = null
+}
+
+class ThresholdMessage { var threshold:Float = 0.0.toFloat }
+
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
@@ -149,6 +157,28 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
 
    import scala.concurrent.ExecutionContext.Implicits._
+
+
+   var nermodel = new {
+     private var model : Option[Model] = None
+     def set(jar : File, zip : File) = {
+       if (jar.exists() && zip.exists())
+        model = Some(new Model(jar,zip,true))
+     }
+     def foreach(f : Model => Unit) = {
+       model.foreach(f)
+     }
+   }//: Option[Model] = None
+   var ner_threshold = 0.4
+   @JsonNotification("sTeX/initializeNER")
+   def initializeNER(msg: NERMessage): Unit = Future { safely {
+     nermodel.set(File(msg.jar),File(msg.zip))
+   }}
+
+   @JsonNotification("sTeX/setThreshold")
+   def setThreshold(msg: ThresholdMessage): Unit = {
+     ner_threshold = msg.threshold
+   }
 
    @JsonNotification("sTeX/exportHTML")
    def exportHTML(msg: ExportMessage): Unit = Future { safely {
@@ -787,6 +817,7 @@ object Main {
   @throws[InterruptedException]
   //@throws[ExecutionException]
   def main(args: Array[String]): Unit = {
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off")
     val controller = Run.controller
     sys.env.get("HOME") match {
       case Some(f) =>

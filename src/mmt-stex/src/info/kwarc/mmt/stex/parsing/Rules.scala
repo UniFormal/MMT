@@ -10,6 +10,7 @@ class MacroApplication extends TeXTokenLike {
   private[parsing] var children: List[TeXTokenLike] = Nil
   def startoffset = children.head.startoffset
   def endoffset: Int = children.last.endoffset
+  def allChildren = children
 
   override def iterateChildren(f: TeXTokenLike => Unit): Unit = {
     children.foreach(f(_))

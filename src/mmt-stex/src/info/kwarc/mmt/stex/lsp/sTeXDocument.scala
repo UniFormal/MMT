@@ -131,6 +131,23 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
       Annotations.clear
       import info.kwarc.mmt.stex.parsing._
       val ret = server.parser(_doctext, file.getOrElse(File(uri)), archive)
+      server.nermodel.foreach {model =>
+        val alltks = if (doctext.contains("\\begin{document"))
+          ret.collectFirst{case e : Environment if e.toString.startsWith("\\begin{document") => e.allChildren}.getOrElse(ret)
+        else ret
+        val tks = model.predict(alltks)
+        tks._1.foreach {res =>
+          val subs = res.res.filter(_.score >= server.ner_threshold)
+          subs.foreach { sub =>
+            val start = _doctext.toLC(sub.start)
+            val end = _doctext.toLC(sub.end)
+            client.documentErrors(this,SourceError(uri,SourceRef(URI(uri),
+              SourceRegion(SourcePosition(sub.start,start._1,start._2),
+                SourcePosition(sub.end,end._1,end._2)
+              )),"Should possibly be a symbol reference: " + sub.str,level = Level.Info))
+          }
+        }
+      }
       ret.foreach(_.iterate { elem =>
         elem match {
           case t: HasAnnotations =>
