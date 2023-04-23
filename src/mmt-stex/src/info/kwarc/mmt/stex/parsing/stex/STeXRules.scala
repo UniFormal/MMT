@@ -44,7 +44,7 @@ object STeXRules {
 trait STeXRule extends TeXRule {
   val dict:Dictionary
   def addExportRule(rl : TeXRule) = dict.getModuleOpt.foreach{ mod =>
-      mod.exportrules ::= rl
+      mod.exportrules = mod.exportrules + (rl.name -> rl)
       mod.rules(rl.name) = rl
   }
 }

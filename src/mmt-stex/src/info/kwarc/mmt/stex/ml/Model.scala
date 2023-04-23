@@ -1,8 +1,8 @@
 package info.kwarc.mmt.stex.ml
 
 import info.kwarc.mmt.api.ParseError
-import info.kwarc.mmt.api.archives.source
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.archives.{Archive, source}
+import info.kwarc.mmt.api.frontend.{Controller, Run}
 import info.kwarc.mmt.api.utils.{File, Reflection}
 import info.kwarc.mmt.stex.parsing.stex.{DefinameRule, DefiniendumRule, ImportModuleRuleLike, STeXParser, SymDeclRule, SymDefRule, SymnameRule, SymnamesRule, SymrefApp, SymrefRule, TextSymDeclRule, UseStructureRule, VarDefRule, VarSeqRule}
 import info.kwarc.mmt.stex.parsing.{Environment, MacroApplication, PlainMacro, PlainText, SkipCommand, TeXTokenLike}
@@ -19,16 +19,81 @@ case class SubResult(str: String, score: Float, start: Int, end: Int)
 case class Result(str: String, tk: TeXTokenLike, res: List[SubResult])
 
 object Model {
+
+  @throws[InterruptedException]
+  //@throws[ExecutionException]
+  def main(args: Array[String]): Unit = {
+    val controller = Run.controller
+    var i = 0
+    var jarfile:File = null
+    var modelfile:File = null
+    while (args.isDefinedAt(i)) args(i) match {
+      case "--model" =>
+        i += 1
+        if (args.isDefinedAt(i)) {
+          modelfile = File(args(i))
+          if (!modelfile.exists()) {
+            println("File does not exist: " + modelfile)
+            sys.exit()
+          }
+        } else {
+          println("Expected file after --model")
+          sys.exit()
+        }
+        i += 1
+      case "--jar" =>
+        i += 1
+        if (args.isDefinedAt(i)) {
+          jarfile = File(args(i))
+          if (!jarfile.exists()) {
+            println("File does not exist: " + jarfile)
+            sys.exit()
+          }
+        } else {
+          println("Expected file after --jar")
+          sys.exit()
+        }
+        i += 1
+      case "--mathhub" =>
+        i += 1
+        if (args.isDefinedAt(i)) {
+          val mh = File(args(i))
+          if (mh.exists() && mh.isDirectory) {
+            controller.handleLine("mathpath archive " + mh.toString)
+            controller.backend.openArchive(mh)
+          } else {
+            println("Directory does not exist:" + mh.toString)
+          }
+        } else {
+          println("Expected directory after --mathhub")
+          sys.exit()
+        }
+        i += 1
+    }
+    if (jarfile == null) {
+      println("--jar missing")
+      sys.exit()
+    }
+    if (modelfile == null) {
+      println("--model missing")
+      sys.exit()
+    }
+    fineTuneAll(controller,jarfile,modelfile,true)
+    sys.exit()
+  }
+
   def tokenizeAll(controller:Controller,macrostrip:Boolean = true)(cont : List[PreToken] => Unit) = {
+    tokenizeOnly(controller,controller.backend.getArchives,macrostrip)(cont)
+  }
+  def tokenizeOnly(controller:Controller,archives:List[Archive],macrostrip:Boolean=true)(cont : List[PreToken] => Unit) = {
     val parser = new STeXParser(controller)
     parser.init()
-    val files = controller.backend.getArchives.collect {
+    val files = archives.collect {
       case a if a.properties.get("format").contains("stex") && (a / source).exists() =>
-        (a,(a / source).descendants.filter{f => f.getExtension.contains("tex") && !a.ignore((a / source).relativize(f).toFilePath)})
+        (a, (a / source).descendants.filter { f => f.getExtension.contains("tex") && !a.ignore((a / source).relativize(f).toFilePath) })
     }
-    files.foreach {case (a,fs) => fs.foreach { f =>
+    files.foreach { case (a, fs) => fs.foreach { f =>
       try {
-        print(".")
         tokenize(parser(f, Some(a)), macrostrip) match {
           case Nil =>
           case tks => cont(tks)
@@ -41,13 +106,41 @@ object Model {
 
 
   case class Result(training_loss:Float,validation_loss:Float,epochs:Int)
-  def fineTune(controller:Controller,jarfile:File,modelpath:File,macrostrip:Boolean = true) = {
+  def fineTuneOnly(controller:Controller,archives:List[Archive],jarfile:File,modelpath:File,macrostrip:Boolean = true): Unit = {
+    val reflection = new Reflection(jarfile)
+    import info.kwarc.mmt.api.utils.Reflection._
+    val model = reflection.getRefClass("info.kwarc.mmt.stex.lsp.languagemodel.HuggingFaceTokenModel").getInstance()
+    var tks: List[Array[String]] = Nil
+    var lbls: List[Array[Int]] = Nil
+    tokenizeOnly(controller,archives,macrostrip) { ls =>
+      tks ::= ls.map(_.str).toArray
+      lbls ::= ls.map(_.cls match {
+        case NonSemantic => 0
+        case Semantic => 1
+      }).toArray
+    }
+    import scala.jdk.CollectionConverters._
+    val jtks = tks.reverse.asJava
+    val jlbls = lbls.reverse.asJava
+    val rescls = reflection.getRefClass("ai.djl.training.TrainingResult")
+    val res = reflection.safely {
+      model.method("finetune", Reflected(rescls), modelpath.toString, jtks, jlbls)
+    }
+    val ret = Result(
+      res.method("getTrainLoss", float),
+      res.method("getValidateLoss", float),
+      res.method("getEpoch", int)
+    )
+    print("Done")
+    ret
+  }
+  def fineTuneAll(controller:Controller,jarfile:File,modelpath:File,macrostrip:Boolean = true) = {
     val reflection = new Reflection(jarfile)
     import info.kwarc.mmt.api.utils.Reflection._
     val model = reflection.getRefClass("info.kwarc.mmt.stex.lsp.languagemodel.HuggingFaceTokenModel").getInstance()
     var tks:List[Array[String]] = Nil
     var lbls:List[Array[Int]] = Nil
-    tokenizeAll(controller) { ls =>
+    tokenizeAll(controller,macrostrip) { ls =>
       tks ::= ls.map(_.str).toArray
       lbls ::= ls.map(_.cls match {
         case NonSemantic => 0
@@ -66,7 +159,6 @@ object Model {
       res.method("getValidateLoss",float),
       res.method("getEpoch",int)
     )
-    print("Done")
     ret
   }
 

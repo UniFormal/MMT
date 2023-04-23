@@ -23,12 +23,12 @@ class DictionaryModule(val macr:STeXModuleLike, val meta:Option[DictionaryModule
   var file : Option[File] = None
   var lang:String = ""
   var imports : List[(DictionaryModule,Boolean)] = Nil
-  var exportrules : List[TeXRule] = Nil //List(ModuleRule(this,false))
+  var exportrules : Map[String,TeXRule] = Map.empty //List(ModuleRule(this,false))
   def getRules(lang:String,dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
     dones.ls ::= this
-    val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(m => InheritModuleRule(m._1,true) :: m._1.getRules(lang,dones))
+    val r = exportrules.values.toList ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(m => InheritModuleRule(m._1,true) :: m._1.getRules(lang,dones))
     langs.get(lang) match {
-      case Some(m) => m.exportrules ::: r
+      case Some(m) => m.exportrules.values.toList ::: r
       case _ => r
     }
   }
@@ -123,9 +123,9 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     def makenew = {
       val m = new DictionaryModule(macr, meta,this)
       m.letters = parser.latex.groups.head.letters
-      m.exportrules = meta.toList.flatMap(_.getRules(getLanguage))
-      m.exportrules.foreach { rl =>
-        m.rules(rl.name) = rl
+      m.exportrules = meta.toList.flatMap(_.getRules(getLanguage)).map(rl => (rl.name,rl)).toMap
+      m.exportrules.foreach { case (n,rl) =>
+        m.rules(n) = rl
       }
       current_file.foreach(f => m.file = Some(f))
       current_archive.foreach(a => m.archive = Some(a))
@@ -158,6 +158,7 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
         }
       })
     } else makenew
+    if (mod.macr.sig == "") all_modules(mod.path) = mod
     current_modules ::= mod
     parser.latex.groups ::= mod
     STeXRules.moduleRules(this).foreach(rl => mod.rules(rl.name) = rl)
