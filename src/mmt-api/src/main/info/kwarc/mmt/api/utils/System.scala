@@ -69,7 +69,7 @@ object MMTSystem {
    }
 
   /** the manifest file (if run from fat jar) */
-  lazy val manifest = (try {Some(getResourceAsString("/META-INF/MANIFEST.MF"))} catch {case e: Exception => None}) map File.readPropertiesFromString 
+  lazy val manifest = (try {Some(getResourceAsString("/META-INF/MANIFEST.MF"))} catch {case e: Exception => None}) map File.readPropertiesFromString
   
   /** the version of MMT being used */
   lazy val version: String = {

@@ -1,60 +1,61 @@
 package info.kwarc.mmt.api.utils
 
-import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.{Executable, InvocationTargetException}
 import scala.concurrent.{Await, Future}
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
-import scala.reflect.runtime.universe
-import scala.concurrent.ExecutionContext.Implicits._
+import java.net.URLClassLoader
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 class Reflection(jarfile:File,parentClassLoader:Option[ClassLoader] = None) {
   private val classLoader = new URLClassLoader(Array(jarfile.toURI.toURL),parentClassLoader.getOrElse(this.getClass.getClassLoader))
-  private val mirror = universe.runtimeMirror(classLoader)
 
   def safely[A](f: => A): A = {
     val result = Future {
       Thread.currentThread().setContextClassLoader(classLoader)
       f
-    }
+    }(scala.concurrent.ExecutionContext.global)
     Await.result(result,Duration.Inf)
   }
 
   def getRefClass(fqcp : String): ReflectedClass = new ThisReflectedClass(fqcp)
 
   private class ThisReflectedClass(val fqcp : String) extends ReflectedClass {
-    private val cls =  mirror.reflectClass(mirror.staticClass(fqcp))
-    private val constructor = cls.symbol.toType.decl(universe.termNames.CONSTRUCTOR).asMethod
+    private[utils] val cls = classLoader.loadClass(fqcp)
     def getInstance(args:Any*) = {
-      new ThisReflectedInstance(cls.reflectConstructor(constructor).apply(args:_*),this)
+      val const = findM(cls.getConstructors,args:_*)
+      new ThisReflectedInstance(const.get.newInstance(args:_*),this)
+    }
+    def findM[A <: Executable](ls:Iterable[A],args:Any*) = {
+      ls.find(c =>
+        c.getParameterCount ==  args.length &&
+          c.getParameterTypes.zip(args.map(_.getClass)).forall {
+            case (decl, actual) => decl.isAssignableFrom(actual)
+          }
+      )
     }
 
     def asInstance(a: Any): ReflectedInstance = {
       new ThisReflectedInstance(a,this)
     }
   }
-  private class ThisReflectedInstance(private[Reflection] val instance : Any,val reflectedClass : ReflectedClass) extends ReflectedInstance {
-    private val symbol = mirror.classSymbol(instance.getClass)
-    private val reflected = mirror.reflect(instance)
+  private class ThisReflectedInstance(private[Reflection] val instance : Any,val reflectedClass : ThisReflectedClass) extends ReflectedInstance {
     def field[A](name: String,tp: Reflection.ReturnType[A]): A = {
-      val decl = symbol.typeSignature.decl(universe.TermName(name)).asTerm
-      tp.resolve(reflected.reflectField(decl).get)
+      val value = reflectedClass.cls.getField(name).get(instance)
+      tp.resolve(value)
     }
     def method[A](name : String,tp : Reflection.ReturnType[A], args : Any*) : A = {
       val rargs = args.map {
         case r:ThisReflectedInstance => r.instance
         case a => a
       }
-      val decl = symbol.toType.decl(universe.TermName(name)).asMethod//.member(universe.TermName(name)).asInstanceOf[universe.MethodSymbol]
-      val t = decl.asMethod.returnType
-      val method = reflected.reflectMethod(decl)
+      val method = reflectedClass.findM(reflectedClass.cls.getMethods.filter(_.getName == name),args:_*)
       val res = try {
-        method.apply(rargs:_*)
+        method.get.invoke(instance,rargs:_*)
       } catch {
         case e : InvocationTargetException =>
           throw e.getCause
       }
-      val ret = mirror.reflect(res).instance
-      tp.resolve(ret)
+      tp.resolve(res)
     }
   }
 }

@@ -321,6 +321,10 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
           case rl : SemanticMacro if rl.name == s => rl.syminfo
           case rl : SemanticMacro if rl.syminfo.path.name.toString == s => rl.syminfo
         }.distinct
+      case Array(m,s) =>
+        parser.latex.collectRules {
+          case rl:SemanticMacro if rl.syminfo.path.module.name.toString == m && rl.syminfo.path.name.toString == s => rl.syminfo
+        }.distinct
       case a if a.nonEmpty && a.length <= 3 =>
         parser.latex.collectRules {
           case rl: SemanticMacro if rl.syminfo.path.module.toString.endsWith(a.init.mkString("?"))

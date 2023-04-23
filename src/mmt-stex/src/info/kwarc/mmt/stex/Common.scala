@@ -1,13 +1,16 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{DPath, Error, ErrorHandler, GlobalName, Level, MPath, NamespaceMap, Stacktrace}
 import info.kwarc.mmt.api.informal.{FlexiformalNode, FlexiformalTerm, FlexiformalXML, Informal, Narration}
 import info.kwarc.mmt.api.objects.{OMS, Obj, Term}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.utils.{MMT_TODO, xml}
+import info.kwarc.mmt.api.utils.{File, FilePath, MMT_TODO, xml}
 
+import scala.collection.mutable
 import scala.xml.{Elem, Node}
+
 
 class STeXError(msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends Error(msg) {
 

@@ -319,7 +319,7 @@ trait SymRefLike extends STeXMacro {
   val alternatives : List[SymdeclInfo]
   val reftokens : List[TeXTokenLike]
   def annotateWithAlternatives(a : Annotation,in:sTeXDocument): Unit = if (alternatives.length > 1) {
-    addError("Ambiguous symbol reference", lvl = Level.Warning)
+    addError("Ambiguous symbol reference: " + alternatives.head.path.name, lvl = Level.Warning)
     class mutvar(val path: GlobalName) {
       var string = path.module.name.toString + "?" + path.name
     }

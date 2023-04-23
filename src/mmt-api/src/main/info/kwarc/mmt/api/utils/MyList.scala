@@ -5,7 +5,7 @@ object SkipThis extends Throwable
 /** Wrapper around List to provide some custom extensions */
 case class MyList[A](l: List[A]) {
   /** returns the first non-None result of applying the argument function to elements of the list */
-  def mapFind[B](f: A => Option[B]): Option[B] = l match {
+  def mapFind[B](f: A => Option[B]): Option[B] = l match { // DM: Isn't this just .collectFirst?
     case Nil => None
     case hd :: tl => f(hd) match {
       case Some(b) => Some(b)
@@ -14,7 +14,7 @@ case class MyList[A](l: List[A]) {
   }
 
   /** like map but with a partial function; removes all results that are <code>None</code> */
-  def mapPartial[B](f: A => Option[B]): List[B] = l.map(f).filter(_.isDefined).map(_.get)
+  def mapPartial[B](f: A => Option[B]): List[B] = l.map(f).filter(_.isDefined).map(_.get) // DM: This is just .collect, but less efficient
 
   /** like map but with a partial function; returns a result only if no results are <code>None</code> */
   def mapPartialStrict[B](f: A => Option[B]): Option[List[B]] = {

@@ -132,12 +132,9 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
       import info.kwarc.mmt.stex.parsing._
       val ret = server.parser(_doctext, file.getOrElse(File(uri)), archive)
       server.nermodel.foreach {model =>
-        val alltks = if (doctext.contains("\\begin{document"))
-          ret.collectFirst{case e : Environment if e.toString.startsWith("\\begin{document") => e.allChildren}.getOrElse(ret)
-        else ret
-        val tks = model.predict(alltks)
+        val tks = model.predict(ret)
         tks._1.foreach {res =>
-          val subs = res.res.filter(_.score >= server.ner_threshold)
+          val subs = res.res.filter(_.score >= server.nermodel.ner_threshold)
           subs.foreach { sub =>
             val start = _doctext.toLC(sub.start)
             val end = _doctext.toLC(sub.end)

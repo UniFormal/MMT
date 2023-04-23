@@ -467,6 +467,8 @@ object TeXRules {
     SkipCommand("NewDocumentEnvironment", "vvvv"),
     SkipCommand("DeclareDocumentEnvironment", "vvvv"),
     SkipCommand("hbox","t"),SkipCommand("vbox","t"),SkipCommand("fbox","t"),SkipCommand("text","t"),
-    SkipCommand("texttt","t"),SkipCommand("ensuremath","m"),SkipCommand("scalebox","vt")
+    SkipCommand("texttt","t"),SkipCommand("ensuremath","m"),SkipCommand("scalebox","vt"),
+    SkipCommand("ref", "v"), SkipCommand("label", "v"), SkipCommand("cite", "v"),
+    SkipCommand("includegraphics","ov"),SkipCommand("url","ov")
   )
 }
