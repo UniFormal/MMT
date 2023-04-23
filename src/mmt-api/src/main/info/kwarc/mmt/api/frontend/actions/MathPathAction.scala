@@ -45,7 +45,8 @@ case class AddArchive(folder: java.io.File) extends MathPathAction {
 object AddArchiveCompanion extends ActionCompanion("add catalog entries for a set of local copies", "mathpath archive") {
   import Action._
   override val addKeywords = false
-  def parserActual(implicit state: ActionState) = ("mathpath archive" | "archive add") ~> file ^^ { f => AddArchive(f) }
+  def parserActual(implicit state: ActionState) =
+    ("mathpath archive" | "archive add") ~> file ^^ { f => AddArchive(f) }
 }
 
 case class AddMathPathFS(uri: URI, file: File) extends MathPathAction {

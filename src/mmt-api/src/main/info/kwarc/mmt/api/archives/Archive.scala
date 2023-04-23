@@ -42,6 +42,10 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   val archString = root.up.getName + "/" + root.getName
   val id = properties("id")
   def classpath = utils.splitAtWhitespace(properties.getOrElse("classpath",""))
+  /** gets the direct dependencies of an archive */
+  def dependencies: List[String] = {
+    stringToList(properties.getOrElse("dependencies", "").replace(",", " "))
+  }
   val narrationBase = properties.get("narration-base").map(utils.URI(_)).getOrElse(FileURI(root))
   /** the NamespaceMap built from the ns and ns-prefix properties */
   val ns = properties.get("ns").map(s => Path.parse(
@@ -201,11 +205,6 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       }
     }
     ret.distinct
-  }
-
-  /** gets the direct dependencies of an archive */
-  def dependencies: List[String] = {
-    stringToList(properties.getOrElse("dependencies", "").replace(",", " "))
   }
 
   /** returns the list of loaded transitive dependencies of this archive, including itself */

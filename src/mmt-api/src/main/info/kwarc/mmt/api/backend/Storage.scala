@@ -187,7 +187,11 @@ trait RealizationStorage {
   }
 }
 
-/** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it */
+/** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it
+  * @param files the locations from which to load classes
+  * @param parent returns the archive whose loader is the parent class loader
+  *    This is needed because Java-dependent classes must be loaded by connected class loaders.
+  */
 class RealizationArchive(val files: List[File], parent : Unit => Option[RealizationArchive]) extends Storage with RealizationStorage {
   override def toString = "realization archive for " + files.mkString(", ")
 

@@ -1,0 +1,24 @@
+// This script builds all files in this archive in an appropriate order.
+
+// preparation: logging, settings, etc.
+
+// log to the console
+log console
+// also log to a file using HTML syntax
+log html build.html
+// log commands related to archives
+log+ archive
+// log commands related to building *.mmt files into *.omdoc
+// mmt-omdoc is the main build command used with MMT and includes parsing and type-checking.
+log+ mmt-omdoc
+
+// The command 'build <archive id> <BuildTarget key> <optional path>'
+// runs a build target (given by an instance of the class BuildTarget that must be on the class path)
+// over an archive (given by its id as declared in in MANIFEST.MF file). '.' refers to the archive containing this file.
+// 'mmt-omdoc' is the main build target for checking an '.mmt' file. 
+// It may restricted to a path relative to the build target's input folder.
+
+build . mmt-omdoc helloworld.mmt
+// Files must be built in dependency order. So you must add a build command for every new file here.
+// build . mmt-omdoc OTHERFILE.mmt
+

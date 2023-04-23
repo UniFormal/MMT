@@ -1,0 +1,13 @@
+// You can use the declaration below to set a root namespace for the toplevel declarations of this file.
+   Without this declaration, the namespace declared in this project's manifest is used.❚
+// namespace URI❚
+
+theory Nat : ur:?LF =
+  nat : type❙
+  zero: nat❙
+  succ: nat ⟶ nat❘ # succ 1 prec 100❙
+  
+  plus: nat ⟶ nat ⟶ nat ❘ # 1 + 2 prec 50❙
+ 
+  double: nat ⟶ nat❘ = [n: nat] n+n❙ 
+❚
