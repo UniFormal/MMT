@@ -115,9 +115,9 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
    /** read characters that satisfy a condition */
    def takeWhile(test: Char => Boolean): String = {
       val sb = new StringBuilder
-      while ({
-         val testchar = if (remainder.startsWith("\r\n")) '\n' else head
-         test(testchar)
+      while ((!empty) && {
+        val testchar = if (remainder.startsWith("\r\n")) '\n' else head
+        test(testchar)
       }) {
         if (remainder.startsWith("\r\n")) next()
         sb += next()

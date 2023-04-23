@@ -1,6 +1,5 @@
 package info.kwarc.mmt.api.utils
 
-import java.net.URLDecoder
 import java.util.jar.JarFile
 import info.kwarc.mmt.api._
 
@@ -47,7 +46,7 @@ object MMTSystem {
      if (location == null)
         OtherStyle
      else {
-       val path = URLDecoder.decode(location.getPath, StandardCharsets.UTF_8)
+       val path = URI.decode(location.getPath)
        val classFolder = File(path)
        if (classFolder.isFile) {
          if (classFolder.name == "mmt.jar") {
@@ -147,7 +146,7 @@ object MMTSystem {
 
         // open the jar and find all files in it
         import scala.jdk.CollectionConverters._
-        val entries = new JarFile(URLDecoder.decode(jarPath, "UTF-8")).entries.asScala.map(e => "/" + e.getName)
+        val entries = new JarFile(URI.decode(jarPath)).entries.asScala.map(e => "/" + e.getName)
 
         // find all the resources within the given path, then remove the prefix
         entries.filter(e => e.startsWith(path) && !e.endsWith("/")).map(_.stripPrefix(path)).toList

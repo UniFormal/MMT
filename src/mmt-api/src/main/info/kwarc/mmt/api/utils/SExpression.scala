@@ -77,7 +77,7 @@ object SExpression {
           // idchar-only identifiers do not need to be |-wrapped
           // in that case lower-case is allowed but counts as uppercase, \c is c
           var chars : String = ""
-          def readMore {
+          def readMore : Unit = {
             if (u.empty) return
             val h = u.head
             if (isIDChar(h)) {
