@@ -21,10 +21,14 @@ import java.util.concurrent.atomic.AtomicInteger
   */
 class ServerState(val contentValidator: ContentValidator, initialSituationTheory: Option[SituationTheory])(implicit val ctrl: Controller) extends Logger {
 
+  // @SR: manage the following variables within lobbies
   private val factCounter = new AtomicInteger(1)
   private val scrollViewCounter = new AtomicInteger(1)
   private val situationTheoryCounter = new AtomicInteger(1)
 
+  // @SR: maintain a list of lobbies here
+
+  // @SR: every pair (player, lobby) should have the notion of a current situation theory
   var curSituationTheory: SituationTheory = initialSituationTheory.getOrElse {
     new SituationTheory(FrameWorld.defaultRootSituationTheory).descend(nextSituationTheoryName())
   }

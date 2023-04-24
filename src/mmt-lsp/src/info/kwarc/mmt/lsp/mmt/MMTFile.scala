@@ -1,21 +1,17 @@
 package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.checking.Solver
-import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, GlobalName, MPath, NamespaceMap, RuleSet, StructuralElement}
-import info.kwarc.mmt.api.documents.{Document, FixedMeta, MRef, Namespace, NamespaceImport}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.notations.{HOASNotation, Pragmatics}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMMOD, Term, Traverser}
-import info.kwarc.mmt.api.parser.{KeywordBasedParser, NotationBasedParser, ParsingStream, SourceRef, StructureParser, StructureParserContinuations}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, NestedModule, Structure}
-import info.kwarc.mmt.api.utils.{File, URI}
-import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPClient, LSPDocument}
-import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, MessageParams, MessageType, PublishDiagnosticsParams, SymbolKind, VersionedTextDocumentIdentifier}
-
-import scala.util.Try
+import info.kwarc.mmt.api.notations.Pragmatics
+import info.kwarc.mmt.api.objects.{OMA, OMMOD, Traverser}
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
+import org.eclipse.lsp4j.SymbolKind
 
 class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[MMTClient,MMTLSPServer] {
   val controller = server.controller
@@ -225,6 +221,7 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
       }
       getElems(d)
     }
+    client.resetErrors(uri)
     client.documentErrors(controller,this,uri,errorCont.getErrors:_*)
     errorCont.reset
   }
