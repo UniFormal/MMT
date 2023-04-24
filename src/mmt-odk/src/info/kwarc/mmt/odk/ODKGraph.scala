@@ -54,7 +54,7 @@ class ODKGraph extends RelationGraphExporter {
     log("Doing ODKGraph. Theories/Views...")
     val (theories,views) = (alltheories.filter(odkpath),allviews.filter(odkpath))
     log("theory graph...")
-    val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
+    val tgf = new ontology.TheoryGraphFragment(theories, views, tg, report)
     val basedot = tgf.toDot
     log("Eliminating Metas and adding Alignments...")
     val nedges : Iterable[DotEdge] = basedot.edges.filterNot(_.cls == "graphmeta").toList ::: alignments.flatMap(pq => try {

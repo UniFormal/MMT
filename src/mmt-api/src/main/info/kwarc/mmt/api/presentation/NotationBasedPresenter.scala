@@ -113,7 +113,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     * called by doDefaultTerm to render variables
     */
    def doVariable(n: LocalName)(implicit pc: PresentationContext): Unit = {
-      pc.out(n.toPath)
+      pc.out(n.toString)
    }
    /**
     * called by doDefaultTerm to render literals

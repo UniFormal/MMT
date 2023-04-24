@@ -111,6 +111,15 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       ServerResponse.JsonResponse(JSONArray(as.map(JSONString): _*))
     case List("queue") =>
       ServerResponse.JsonResponse(getQueueInfo)
+    case List("redo") =>
+      State.synchronized {
+        val id = request.query.toInt
+        State.failed.find(_._1.hashCode() == id).foreach { p =>
+          State.failed = State.failed.filterNot(_ == p)
+          State.queue.prepend(p._1)
+        }
+      }
+      ServerResponse.JsonResponse(JSONObject())
     case _ =>
       ServerResponse.apply(
         MMTSystem.getResourceAsString("/mmt-web/buildserver.html"),"text/html"
@@ -127,7 +136,8 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     val bs = State.blocked.map(_.toJson)
     val fs = (State.finished ::: State.failed).map {
       case (d,r) =>
-        JSONObject("dependency" -> d.toJson, "result" -> r.toJson)
+        JSONObject("dependency" -> d.toJson, "result" -> r.toJson,
+        "taskid" -> JSONInt(d.hashCode()))
     }
     JSONObject("count" -> JSONInt(qSize),
       "queue" -> JSONArray(q: _*),
@@ -266,18 +276,16 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         val obj = JSON.parse(File.read(jsonfile)).asInstanceOf[JSONObject]
         obj.map.foreach {
           case (JSONString(bts),o:JSONObject) =>
-            controller.extman.getOrAddExtension(classOf[TraversingBuildTarget],bts,Nil) match {
-              case Some(bt) =>
+            controller.extman.getOrAddExtension(classOf[BuildTarget],bts,Nil) match {
+              case Some(bt:TraversingBuildTarget) =>
                 timestamps(bt) = o.getAs(classOf[BigInt],"timestamp").toLong
                 val ylds = o.getAsList(classOf[JSONArray],"yields").map(Dependency.parse)
                 ylds.foreach{y => targets(y) = (bt,a,sourcefile)}
                 yields(bt) = ylds
                 dependson(bt) = o.getAsList(classOf[JSONArray],"dependencies").map(Dependency.parse)
               case _ =>
-                println("???")
             }
           case _ =>
-            println("???")
         }
       } catch {
         case _: JSONError | _: java.lang.StringIndexOutOfBoundsException =>
@@ -528,7 +536,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
 
         FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, (used ::: olddeps).distinct, (provided ::: oldprovides).distinct)
         val needed = (used ::: olddeps).filter(g => State.blocked.exists(_.willProvide.contains(g)) || State.queue.exists(_.willProvide.contains(g))).distinct
-        if (needed.nonEmpty && qt.allowblocking) {
+        if (used.nonEmpty && needed.nonEmpty && qt.allowblocking) {
           qt.willProvide = (provided ::: oldprovides).distinct.collect {case r : ResourceDependency => r}
           qt.missingDeps = needed
           log("blocked")

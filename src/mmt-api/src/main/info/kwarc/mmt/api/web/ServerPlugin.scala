@@ -16,28 +16,7 @@ import scala.util.Try
 
 /**
   * Creates an MMT extension that, upon being added to controller, hooks up with MMT's web server to listen at
-  *
   * [[http://server:port/:pathPrefix/PATH?QUERY]]
-  *
-  * @example Here's a very simple implementation of a server extension that responds at
-  *          [[http://server:port/:example]] (and all "longer URIs") with a JSON-serialized form of
-  *          the HTTP request you send to it:
-  * {{{
-  * class ExampleServerExtension extends ServerExtension("example") {
-  *   final override val logPrefix = "example"
-  *
-  *   final override def start(args: List[String]): Unit = {
-  *     // do nothing (yet)
-  *   }
-  *
-  *   final override def apply(request: ServerRequest): ServerResponse = {
-  *     ServerResponse.fromJSON(JSONString(request.toString))
-  *   }
-  * }
-  *
-  * // don't forget to add it to the controller, e.g. by doing this:
-  * ctrl.extman.addExtension(new ExampleServerExtension)
-  * }}}
   */
 abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtension {
   /**

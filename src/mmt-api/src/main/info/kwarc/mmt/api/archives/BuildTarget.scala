@@ -141,6 +141,9 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
 
   /** the DPath corresponding to the inFile if inFile is in a narration-structured dimension */
   def narrationDPath: DPath = DPath(base / inPath.segments)
+  /** the omdoc narration DPath corresponding to the inFile */
+  def narrationDPathOMDoc: DPath = DPath(base / inPath.toFile.setExtension("omdoc").toFilePath.segments)
+
 
   def isDir      : Boolean = children.isDefined
   def isEmptyDir : Boolean = children.isDefined && children.get.isEmpty

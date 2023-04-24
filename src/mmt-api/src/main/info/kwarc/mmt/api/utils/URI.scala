@@ -202,4 +202,7 @@ object URI {
     }
     conn.getInputStream
   }
+
+  /** URLDecoder.decode without second argument is deprecated and leads to crashes on more recent JDKs */
+  def decode(url: String) = java.net.URLDecoder.decode(url, "UTF-8")
 }

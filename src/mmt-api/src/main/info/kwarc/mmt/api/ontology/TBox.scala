@@ -139,7 +139,7 @@ abstract class RelationalElement {
  */
 case class Individual(path : Path, tp : Unary) extends RelationalElement {
    def toNode = <individual path={path.toPath} predicate={tp.toString}/>
-   def toPath = tp.toString + " " + path.toPath
+   def toPath = tp.toString + " " + path.toPath.replace(" ","%20")
 }
 
 /**
@@ -150,5 +150,5 @@ case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalEle
    val path = subj
    def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
    override def toString = subj.toString + " " + dep.toString + " " + obj.toString
-   def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
+   def toPath = dep.toString + " " + subj.toPath.replace(" ","%20") + " " + obj.toPath.replace(" ","%20")
 }

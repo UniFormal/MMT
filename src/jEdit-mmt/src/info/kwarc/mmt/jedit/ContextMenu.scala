@@ -15,8 +15,10 @@ class ContextMenu extends DynamicContextMenuService {
     val view = jEditTextArea.getView
 
     val menu = new JMenu("MMT")
-    menu.add(ContextMenu.item("Show Normalization",mmt.editActions.showNormalization(view, false)))
-    menu.add(ContextMenu.item("Normalize",mmt.editActions.showNormalization(view, true)))
+    menu.add(ContextMenu.item("Show Full Normalization",mmt.editActions.showNormalization(view, false, true)))
+    menu.add(ContextMenu.item("Normalize",mmt.editActions.showNormalization(view, true, true)))
+    menu.add(ContextMenu.item("Show One-Step Normalization",mmt.editActions.showNormalization(view, false, false)))
+    menu.add(ContextMenu.item("Normalize One Step",mmt.editActions.showNormalization(view, true, false)))
     menu.add(ContextMenu.item("Introduce Hole",mmt.editActions.introduceHole(view)))
     menu.add(mmt.editActions.viewfindermenu(view))
     Array(menu)

@@ -1,4 +1,5 @@
 package info.kwarc.mmt.lsp
+import info.kwarc.mmt.api.{DPath, NamespaceMap, ParseError, Path}
 import info.kwarc.mmt.api.utils.{File, URI}
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
 
@@ -34,6 +35,8 @@ class SyncedDocument {
     override def first: Char = currline match {
       case Some(line) if _char < line.line.length => line.line(_char)
       case Some(line) if _char == line.line.length => '\n'
+      case _ =>
+        throw ParseError("parsestring empty")
     }
     def startsWith(s : String): Boolean = {
       if (s.isEmpty) return true
@@ -98,7 +101,7 @@ class SyncedDocument {
 
     def drop(s:String) = {
       if (!startsWith(s)) {
-        print("")
+        throw ParseError(s + " expected")
       }
       drop(s.length)
     }
@@ -152,6 +155,7 @@ class SyncedDocument {
     add(new Line(curro, currline.toString(), ""))
   }
   def set(s : String) = this.synchronized {
+    lines = Nil
     doLines(s,lines ::= _)
     lines = lines.reverse
   }
@@ -180,7 +184,9 @@ class SyncedDocument {
       val full = ln.full
       val idx = offset - lastoff
       (line,if (full.isDefinedAt(idx)) idx else full.length)
-    } else (lines.length-1,lines.lastOption.map(_.line.length-1).getOrElse(0))
+    } else (lines.length-1,lines.lastOption.map{l =>
+      if (l.line.isEmpty) 0 else l.line.length-1
+    }.getOrElse(0))
   }
 
   def change(startl:Int,startc:Int,endl:Int,endc:Int, newtext:String) = this.synchronized {
@@ -229,6 +235,9 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,protected
     val f = File(URI(uri).pathAsString)
     if (f.exists()) Some(f) else None
   }
+  lazy val archive = file.flatMap(f => server.controller.backend.resolvePhysical(f).map(_._1))
+  lazy val relfile = archive.map(a => (a / info.kwarc.mmt.api.archives.source).relativize(file.get))
+  lazy val dpath = archive.flatMap(a => relfile.map(r => Path.parseD(a.narrationBase.toString + "/" + r.setExtension("omdoc").toString,NamespaceMap.empty))).getOrElse(Path.parseD(uri,NamespaceMap.empty))
 
   private object Timer {
     private var timer = 0
@@ -264,9 +273,9 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,protected
 
   case class Delta(oldStart : Int, oldEnd : Int, newText : String)
 
-  protected def updateNow: Unit = {
+  protected def updateNow: Unit = synchronized {
     Timer.busy = true
-    val deltas = synchronized {
+    val deltas =  {
       val changes = {
         val ch = _changes
         _changes = Nil
@@ -298,18 +307,22 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,protected
   }
 }
 
+trait Annotation {
+  def addCodeActionEdit(title:String,kind:String,edits:List[(String,List[(Int,Int,Int,Int,String)])]) : Unit
+}
+
 trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[A,B] {
 
-  class Annotation(__offset : Int, __length : Int, val value : Any,
-                   val symbolkind : SymbolKind = null,
-                   val symbolname : String = "",
-                   val foldable : Boolean = false) {
+  class DocAnnotation(__offset : Int, __length : Int, val value : Any,
+                      val symbolkind : SymbolKind = null,
+                      val symbolname : String = "",
+                      val foldable : Boolean = false) extends Annotation {
     private var _offset: Int = __offset
     private var _length = __length
     private[AnnotatedDocument] var _semantic: Option[(Int, List[Int])] = None
     private[AnnotatedDocument] var _hover: Option[Unit => String] = None
-    private[AnnotatedDocument] var _parent: Option[Annotation] = None
-    private[AnnotatedDocument] var _children: List[Annotation] = Nil
+    private[AnnotatedDocument] var _parent: Option[DocAnnotation] = None
+    private[AnnotatedDocument] var _children: List[DocAnnotation] = Nil
     def children = _children
 
 
@@ -385,7 +398,7 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
     }
   }
 
-  def onChange(annotations : List[(Delta,Annotation)]) : Unit
+  def onChange(annotations : List[(Delta,DocAnnotation)]) : Unit
 
   override protected def onUpdate(changes: List[Delta]): Unit = {
     super.onUpdate(changes)
@@ -401,10 +414,10 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
       client.client.refreshInlayHints()
       client.republishErrors(uri)
     }
-    private var _annotations : List[Annotation] = Nil
+    private var _annotations : List[DocAnnotation] = Nil
     def getAll = _annotations
-    def add(value : Any, offset : Int, length: Int,symbolkind : SymbolKind = null, symbolname : String = "", foldable : Boolean = false) : Annotation = {
-      val a = new Annotation(offset,length,value,symbolkind,symbolname,foldable)
+    def add(value : Any, offset : Int, length: Int,symbolkind : SymbolKind = null, symbolname : String = "", foldable : Boolean = false) : DocAnnotation = {
+      val a = new DocAnnotation(offset,length,value,symbolkind,symbolname,foldable)
       add(a)
       a
     }
@@ -421,7 +434,7 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
       ).map((d,_))).distinct
       onChange(changed)
     }
-    def add(annotation : Annotation) : Unit = {
+    def add(annotation : DocAnnotation) : Unit = {
       _annotations.filter(a =>
         a.offset <= annotation.offset && a.end >= annotation.end
       ).sortBy(_.length).headOption match {

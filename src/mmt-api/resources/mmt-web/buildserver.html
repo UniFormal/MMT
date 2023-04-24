@@ -55,6 +55,9 @@
     <ul>
         <li ng-repeat="e in queue.finished" ng-class="colorOf(e.result.result)">
             {{e.dependency}} {{e.result.result}}
+            <div ng-if="e.result.result == 'failure'">
+                <button ng-click="redo(e.taskid)">rebuild</button>
+            </div>
             <span ng-show="e.result.needed.length > 0">missing</span>
             <ul>
                 <li ng-repeat="n in e.result.needed">

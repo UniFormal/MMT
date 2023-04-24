@@ -1,20 +1,16 @@
 package info.kwarc.mmt.api.backend
 
-import java.io.BufferedReader
-import java.util.zip._
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils._
-import parser._
-import info.kwarc.mmt.api.ontology._
 
 /** the backend of a [[Controller]]
   *
   * holds a list of [[Storage]]s and uses them to dereference MMT URIs,
   */
-class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.Report) extends Logger {
+class Backend(controller: Controller) extends Logger {
+  protected val report = controller.report
   /** the registered storages */
   private var stores: List[Storage] = List(DefaultRealizationLoader)
   val logPrefix = "backend"
@@ -115,20 +111,23 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       if (f.isFile) {
         val t1 = f.toString
         val t2 = f.getCanonicalPath
-        if (t1 != t2) log("manifest: " + t1 + "\ndoes not match: " + t2)
-        else log("manifest file: " + t1)
         t1 == t2
       }
       else false
     }
 
+  /**
+    * like openArchiveIf but with trivial condition
+    */
+  def openArchive(root: File): List[Archive] = openArchiveIf(root, _ => true)
   /** opens archives: an archive folder, or a mar file, or any other folder recursively
     *
     * @param root the file/folder containing the archive(s)
+    * @param cond condition on whether to add a found archive
     * @return the opened archives
-    * @throws NotApplicable if the root is neither a folder nor a mar file
+    * throws NotApplicable if the root is neither a folder nor a mar file
     */
-  def openArchive(root: File): List[Archive] = {
+  def openArchiveIf(root: File, cond: Archive => Boolean): List[Archive] = {
     if (getArchive(root).isDefined) {
        // already open
        Nil
@@ -137,45 +136,59 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       manifestOpt match {
         case Some(manifest) =>
           val properties = File.readProperties(manifest)
-          if (properties.isDefinedAt("id")) {
-            log("adding archive defined by " + manifest)
-          } else {
+          if (!properties.isDefinedAt("id")) {
             val generatedId = root.up.getName + "/" + root.getName
-            log(manifest.toString + " does not contain id, creating " + generatedId)
             properties += (("id", generatedId))
           }
           val arch = new Archive(root, properties, report)
-          getArchive(arch.id) match {
-            case Some(a) =>
-               logError(s"an archive with id ${arch.id} already exists at location ${a.root}")
-            case None =>
-          }
-          addStore(arch)
-          val files = arch.classpath.map {cp =>
-            val rF = root / cp
-            log("loading realization archive" + rF)
-            rF
-          }
-          val parent : Unit => Option[RealizationArchive] = arch.properties.get("scaladep") match {
-            case None => _ => None
-            case Some(a) =>
-              _ => {
-                getArchive(a) match {
-                  case Some(arch) =>
-                    stores.collectFirst {
-                      case ra: RealizationArchive if ra.files.exists(arch.root <= _) => ra
-                    }
-                  case _ => None
+          if (!cond(arch)) Nil else {
+            log(s"adding archive ${arch.id} defined by $manifest")
+            getArchive(arch.id) match {
+              case Some(a) =>
+                logError(s"an archive with id ${arch.id} already exists at location ${a.root}")
+              case None =>
+            }
+            addStore(arch)
+            val files = arch.classpath.map {cp =>
+              val rF = root / cp
+              log("loading realization archive" + rF)
+              rF
+            }
+            val parent: Unit => Option[RealizationArchive] = arch.properties.get("scaladep") match {
+              case None => _ => None
+              case Some(a) =>
+                _ => {
+                  getArchive(a) match {
+                    case Some(arch) =>
+                      stores.collectFirst {
+                        case ra: RealizationArchive if ra.files.exists(arch.root <= _) => ra
+                      }
+                    case _ => None
+                  }
+                }
+            }
+            val ra = new RealizationArchive(files,parent)
+            addStore(ra)
+            // try to open all dependencies as well by searching for them under the mathhub root
+            val dependencyArchives = {
+              val neededDeps = arch.dependencies.filter(id => getArchive(id).isEmpty)
+              if (neededDeps.isEmpty) Nil else {
+                controller.getMathHub match {
+                  case None =>
+                    log("cannot load dependencies because no mathhub root is set")
+                    Nil
+                  case Some(mh) =>
+                    log("loading dependencies: " + neededDeps.mkString(", "))
+                    openArchiveIf(mh.local,a => neededDeps contains a.id)
                 }
               }
+            }
+            arch :: dependencyArchives
           }
-          val ra = new RealizationArchive(files,parent)
-          addStore(ra)
-          List(arch)
         case None =>
           log(root.toString + " is not an archive - recursing")
           // folders beginning with . are skipped
-          root.list.toList.sorted flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
+          root.list.toList.sorted flatMap (n => if (n.startsWith(".")) Nil else openArchiveIf(root / n, cond))
       }
     } else if (root.isFile && root.getPath.endsWith(".mar")) {
       // a MAR archive file

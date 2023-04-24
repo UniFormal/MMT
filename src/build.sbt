@@ -161,14 +161,13 @@ lazy val excludedProjects = {
 // Main MMT Projects
 // =================================
 
-// the aggregating meta project, used for manual testing
-// and building api documentation
+// the aggregating meta project, used for manual testing and building api documentation
 lazy val src = (project in file(".")).
   enablePlugins(ScalaUnidocPlugin).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, coq, glf,
+    lf, concepts, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, latex, openmath, oeis, repl, aldor, coq, glf,
     tiscaf, lfcatalog,
     jedit, intellij,buildserver
   ).
@@ -183,7 +182,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, coq, lean, glf, lsp, buildserver).
+  dependsOn(stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, mathhub, python, intellij, aldor, coq, lean, glf, lsp, buildserver).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -298,15 +297,19 @@ lazy val lean = (project in file("mmt-lean")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-lean"): _*)
   
+lazy val aldor = (project in file("mmt-aldor")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-aldor"): _*)
+
 lazy val lsp = (project in file("mmt-lsp")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lsp"): _*).
   settings(
-    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.14.0",
-    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.14.0",
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.19.0",
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.19.0",
     //libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
     //libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
-    libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.46.v20220331",
+    libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.50.v20221201",
     libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
   )
 /*
@@ -495,7 +498,7 @@ lazy val specware = (project in file("mmt-specware")).
 
 // plugin for reading stex. Maintainer: Dennis
 lazy val stex = (project in file("mmt-stex")).
-  dependsOn(api,odk,lsp).
+  dependsOn(api,odk,lsp,tiscaf).
   settings(
     mmtProjectsSettings("mmt-stex"),
     libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r",

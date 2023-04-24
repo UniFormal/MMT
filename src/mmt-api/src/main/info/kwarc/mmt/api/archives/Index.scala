@@ -71,7 +71,9 @@ trait GeneralImporter extends Extension {
     log("[  -> relational]     " + relFile.getPath)
     val relFileHandle = File.Writer(relFile)
     controller.relman.extract(se) {
-      r => relFileHandle.write(r.toPath + "\n")
+      r =>
+        relFileHandle.write(r.toPath + "\n")
+        controller.depstore += r
     }
     relFileHandle.close
   }

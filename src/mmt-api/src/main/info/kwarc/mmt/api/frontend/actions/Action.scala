@@ -98,6 +98,8 @@ object Action extends CompRegexParsers {
   /** regular expression for non-empty word without whitespace */
   def str(implicit state: ActionState) = "\\S+" r
 
+  def reststr(implicit state: ActionState) = ".+" r
+
   /** repeating strings with a prefix
     * precondition: prefix should be a regex with a single  */
   def strs(prefix: String)(implicit state: ActionState) = {

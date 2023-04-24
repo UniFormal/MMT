@@ -26,7 +26,6 @@ class ExecuteFromShell extends ShellExtension("run") {
      val theory = controller.getTheory(thy)
      controller.handleLine("log+ object-checker")
      // controller.handleLine("log+ debug")
-     controller.handleLine("file /home/alexander/Dokumente/Studium/MMTWorkspace/MMT/LATIN2/source/computation/build.msl ")
      // TODO this is an inefficient way to fill the mathpath: load everything we know
      controller.getConfig.getEntries(classOf[LMHConf]).foreach { e => controller.addArchive(e.local)}
      val con = Context(thy)

@@ -40,8 +40,7 @@ abstract class Interpreter extends Importer {
   
   /** converts the interface of [[Importer]] to the one of [[Parser]] */
   protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
-    val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").toFilePath
-    val dPath = DPath(bf.archive.narrationBase / inPathOMDoc.segments) // bf.narrationDPath except for extension
+    val dPath = bf.narrationDPathOMDoc
     val nsMap = controller.getNamespaceMap ++ bf.archive.namespaceMap
     val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(dPath), nsMap, format, File.Reader(bf.inFile)).diesWith(bf)
     (dPath,ps)

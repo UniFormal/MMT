@@ -37,6 +37,8 @@ mmt-insert-GS.label=Insert Module Delimiter (MD)
 mmt-introduce-hole.label=Introduce hole for expected type
 mmt-show-normalization.label=Show normalization
 mmt-normalize-selection.label=Normalize selection
+mmt-show-normalization-onstep.label=Show one-step normalization
+mmt-normalize-selection-onestep.label=Normalize selection one step
 
 # labels for actions defined in browser.actions.xml
 mmt-browser-build.label=Build

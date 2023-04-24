@@ -1,11 +1,13 @@
 package info.kwarc.mmt.stex.lsp
 
+import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
-import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, URLEscaping}
+import info.kwarc.mmt.api.frontend.Extension
+import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem, URLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.STeXExtension
+import info.kwarc.mmt.stex.STeXServer
 import info.kwarc.mmt.stex.search.Searcher
-import info.kwarc.mmt.stex.xhtml.HTMLParser
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, HTMLText}
 import org.eclipse.jgit.api.Git
 
 import java.io.{FileOutputStream, PrintWriter, StringWriter}
@@ -33,33 +35,53 @@ class MathHubRepo extends MathHubEntry {
   var localPath : String = ""
 }
 
-trait MathHubServer { this : STeXLSPServer =>
+class SearchResultServer extends Extension {
+  lazy val server = controller.extman.get(classOf[STeXServer]).head
+  var locals: List[String] = Nil
+  var remotes: List[String] = Nil
 
-  object SearchResultServer extends STeXExtension {
-    var locals : List[String] = Nil
-    var remotes : List[String] = Nil
-    override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.lastOption match {
-      case Some("searchresult") =>
-        val i = request.parsedQuery("num").get.toInt
-        val (html,body) = server.emptydoc
-        html.get("head")()().head.add(new HTMLParser.HTMLText(body.state,
-          """<link rel="stylesheet" href="/stex/rustex-min.css"></link>"""
-        ))//)
-        if (request.parsedQuery("type").contains("local")) {
-          body.add(locals(i))
-        }
-        else {
-          body.add(remotes(i))
-        }
-        body.attributes.remove((body.namespace, "style"))
-        html.get("body")()().foreach(_.attributes.remove((body.namespace,"style")))
-        body.get("div")()("paragraph").foreach {par =>
-          par.attributes.remove((par.namespace,"style"))
-        }
-        Some(ServerResponse.apply(html.toString,"text/html"))
-      case _ => None
-    }
+  def serverReturn(request: ServerRequest): ServerResponse = request.path.lastOption match {
+    case Some("searchresult") =>
+      var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+      html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + server.pathPrefix + "/searchresultI?" + request.query)
+      html = html.replace("BASE_URL_PLACEHOLDER", "")
+      html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
+      html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
+      html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + server.pathPrefix + "/css?" + request.parsedQuery("archive").getOrElse(""))
+      ServerResponse(html, "text/html")
+    case Some("searchresultI") =>
+      val i = request.parsedQuery("num").get.toInt
+      val ret = if (request.parsedQuery("type").contains("local"))
+        server.present(locals(i), true)(None)
+      else
+        server.present(remotes(i), true)(None)
+      ServerResponse.apply(ret.toString, "text/html")
+
+      /*
+      val (html, body) = server.emptydoc
+      html.get("head")()().head.add(new HTMLText(body.state,
+        """<link rel="stylesheet" href="/stex/rustex-min.css"></link>"""
+      )) //)
+      if (request.parsedQuery("type").contains("local")) {
+        body.add(locals(i))
+      }
+      else {
+        body.add(remotes(i))
+      }
+      body.plain.attributes.remove((body.namespace, "style"))
+      html.get("body")()().foreach(_.plain.attributes.remove((body.namespace, "style")))
+      body.get("div")()("paragraph").foreach { par =>
+        par.plain.attributes.remove((par.namespace, "style"))
+      }
+      ServerResponse.apply(body.toString, "text/html")
+
+       */
+    case _ =>
+      ServerResponse("Unknown request: \"" + request.path.lastOption + "\"\n" + request.query + "\n" + request.parsedQuery.pairs, "text/plain")
   }
+}
+
+trait MathHubServer { this : STeXLSPServer =>
 
   protected var remoteServer = "https://stexmmt.mathhub.info/:sTeX"
   private var searchinitialized = false
@@ -67,6 +89,8 @@ trait MathHubServer { this : STeXLSPServer =>
     searchinitialized = true
     new Searcher(controller)
   }
+
+  lazy val searchresultserver = new SearchResultServer
 
   private val available_updates = mutable.HashMap.empty[Archive,List[(String,List[File])]]
 
@@ -100,11 +124,16 @@ trait MathHubServer { this : STeXLSPServer =>
     }
   }
 
-  def searchI(q : String,tps:List[String]) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {
+  def searchI(q : String,tps:List[String],syms: Boolean) : (java.util.List[LSPSearchResult],java.util.List[LSPSearchResult]) = if (q.nonEmpty) {
     val archs = controller.backend.getArchives.map(_.id)
-    val url = URLEscaping.apply(remoteServer + "/search?skiparchs=" + archs.mkString(",") + "&types=" + tps.mkString(",") + "&query=" + q)
+    val url = URLEscaping.apply(remoteServer + "/search?skiparchs=" +
+      archs.mkString(",") +
+      "&types=" + tps.mkString(",") +
+      "&infors=" + syms.toString +
+      "&query=" + q
+    )
     val attempt = Try(io.Source.fromURL(url)("UTF8"))
-    SearchResultServer.remotes = Nil
+    searchresultserver.remotes = Nil
      val rems = if (attempt.isSuccess) {
        val res = attempt.get.toBuffer.mkString
        val tr = Try({
@@ -116,31 +145,48 @@ trait MathHubServer { this : STeXLSPServer =>
                r.local = false
                r.archive = jo.getAsString("archive")
                r.sourcefile = jo.getAsString("sourcefile")
-               r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=remote&num=" + SearchResultServer.remotes.length
-               SearchResultServer.remotes ::= jo.getAsString("html")
+               r.preview = remoteServer + "/fulldocument?archive=" + jo.getAsString("archive") + "&filepath=" + jo.getAsString("sourcefile").replace(".tex",".xhtml")
+               r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=remote&num=" + searchresultserver.remotes.length
+               searchresultserver.remotes ::= jo.getAsString("html")
                r
              }
-             SearchResultServer.remotes = SearchResultServer.remotes.reverse
+             searchresultserver.remotes = searchresultserver.remotes.reverse
              ret
          }
        })
        tr.getOrElse(Nil)
      } else Nil
-    val local = searcher.search(q,10,tps)
-    SearchResultServer.locals = Nil
+    val local = searcher.search(q,10,tps,infors = syms)
+    searchresultserver.locals = Nil
     val localres = local.map {
       case res =>
         val r = new LSPSearchResult
         r.local = true
         r.archive = res.archive
         r.sourcefile = res.sourcefile
-        r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=local&num=" + SearchResultServer.locals.length
+        r.preview = localServer.toString + ":sTeX/fulldocument?archive=" + res.archive + "&filepath=" + res.sourcefile.replace(".tex",".xhtml")
+        res.module match {
+          case Some(mod) =>
+            controller.backend.getArchive(r.archive) match {
+              case Some(a) =>
+                val ns = a.ns.map(_.toString).orElse(a.properties.get("source-base"))
+                ns match {
+                  case Some(p) if mod.toString.startsWith(p) =>
+                    r.module = mod.toString.drop(p.length)
+                    if (r.module.startsWith("/")) r.module = r.module.drop(1)
+                  case _ =>
+                }
+              case _ =>
+            }
+          case _ =>
+        }
+        r.html = (localServer / ":sTeX" / "searchresult").toString + "?type=local&num=" + searchresultserver.locals.length
         val html = res.fragments.collectFirst{case p if p._1 != "title" => p._3}.getOrElse(res.fragments.head._3)
-        SearchResultServer.locals ::= html
+        searchresultserver.locals ::= html
         r.fileuri = (controller.backend.getArchive(res.archive).get / info.kwarc.mmt.api.archives.source / res.sourcefile).toURI.toString
         r
     }
-    SearchResultServer.locals = SearchResultServer.locals.reverse
+    searchresultserver.locals = searchresultserver.locals.reverse
     (localres.asJava,rems.asJava)
   } else (Nil.asJava,Nil.asJava)
 

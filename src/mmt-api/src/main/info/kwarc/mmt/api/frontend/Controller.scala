@@ -86,7 +86,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** maintains all extensions */
   val extman = new ExtensionManager(this)
   /** the interface to physical storgae */
-  val backend = new Backend(extman, report)
+  val backend = new Backend(this)
 
   /** maintains all knowledge: structural elements, relational data, etc. */
   val memory = new Memory(extman, report)

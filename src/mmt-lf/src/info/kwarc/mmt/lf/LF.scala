@@ -177,6 +177,14 @@ object FunType {
     case t => Some(Nil, t)
   }
 
+  /** only defined for Pi-like contexts */
+  def apply(in: Context, t: Term): Term = apply(contextAsArgs(in), t)
+
+  /** inverse of contextAsArgs but only for Pi-like contexts */
+  def contextAsArgs(c: Context): List[(Option[LocalName],Term)] = c.getDeclarations.map {
+    case VarDecl(n, None, Some(t), None, _) => if (n == OMV.anonymous) (None,t) else (Some(n),t)
+  }
+
   def argsAsContext(args: List[(Option[LocalName], Term)]): Context = args.map {
     case (Some(n), t) => VarDecl(n, t)
     case (None, t) => VarDecl(OMV.anonymous, t)

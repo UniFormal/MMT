@@ -92,6 +92,7 @@ a {
     max-width:100%;
     justify-content:inherit;
     align-content:inherit;
+    white-space:normal;
 }
 hr {
     width: 100%;
@@ -103,7 +104,7 @@ hr {
     flex-wrap: nowrap;
     align-content: center;
     justify-content: flex-end;
-    width:max-content;
+    width:fit-content;
     max-width:100%;
     text-align:justify;
     align-self: center;
@@ -115,8 +116,8 @@ hr {
     justify-content: flex-start;
     align-content: inherit;
     align-items: baseline;
-    width:max-content;
-    height:max-content;
+    width:fit-content;
+    height:fit-content;
     max-width:100%;
 }
 .matrix {
@@ -148,8 +149,8 @@ foreignObject {
 table {
     border-spacing:0;
     white-space:nowrap;
-    width:max-content;
-    height:max-content;
+    width:fit-content;
+    height:fit-content;
     display:initial;
 }
 td {
@@ -189,8 +190,8 @@ td {
     height:0;
 }
 math {
-    width:max-content;
-    height:max-content;
+    width:fit-content;
+    height:fit-content;
     font-size:85%;
 }
 .displaymath {
@@ -205,8 +206,7 @@ math {
 .definiendum{color:#ed028c}
 .varcomp{color:#828282}
 .symcomp{color:#0e90d2}
-.frame{background-color:#fff;display:flex;flex-direction:column;margin:0 auto}
-.frame{border:2px solid #000;border-radius:5px;overflow-y:auto;padding:1%;width:97%}
+.frame{background-color:#fff;margin:0 auto;border:2px solid #000;border-radius:5px;overflow-y:auto;padding:1%;width:97%}
 .halign{display:table}.row{display: table-row}.cell{display: table-cell}
 .inner-frame{
     overflow-wrap:initial;
@@ -219,8 +219,10 @@ math {
     align-self: center;
     width:100%;
 }
-.inputref-container{
-    width:99%;
-    vertical-align: top;
-    display: inline-flex;
+.rustex-scaled{
+    width: var(--this-width);
+    min-width: var(--this-width);
+}
+.rustex-scaled>*:first-child {
+    --current-width:var(--this-width);
 }

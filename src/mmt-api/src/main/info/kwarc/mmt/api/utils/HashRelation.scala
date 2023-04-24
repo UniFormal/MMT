@@ -157,38 +157,40 @@ class IncrementalTransitiveClosure[T] {
     if (f == t) 1 else numPaths.getOrElse((f,t), 0)
   }
 
+  private def logout(s : String) = {} // could be println(s), but generating "non-catchable" stdout output is dangerous, e.g. for LSP
+
   private def checkInvariant(s: String): Unit = {
     //println(s)
     numPaths.keys foreach {case (a,b) =>
       if (! (pathsFrom(a) contains b)) {
-        println("class invariant violated after " + s)
-        println(s"no path from $a to $b exists but number of paths is non-zero")
+        logout("class invariant violated after " + s)
+        logout(s"no path from $a to $b exists but number of paths is non-zero")
       }
       if (! (pathsTo(b) contains a)) {
-        println("class invariant violated after " + s)
-        println(s"no path to $b from $a exists but number of paths is non-zero")
+        logout("class invariant violated after " + s)
+        logout(s"no path to $b from $a exists but number of paths is non-zero")
       }
     }
     pathsFrom foreach {case (f,ts) =>
       ts foreach {t =>
         if (!(pathsTo(t) contains f)) {
-          println("class invariant violated after " + s)
-          println(s"path from $f to $t but no path to $t from $f")
+          logout("class invariant violated after " + s)
+          logout(s"path from $f to $t but no path to $t from $f")
         }
       }
     }
     pathsTo foreach {case (t,fs) =>
       fs foreach {f =>
         if (!(pathsFrom(f) contains t)) {
-          println("class invariant violated after " + s)
-          println(s"path to $t from $f but no path from $f to $t")
+          logout("class invariant violated after " + s)
+          logout(s"path to $t from $f but no path from $f to $t")
         }
       }
     }
     edges foreach {case (f,t) =>
       if (!apply(f,t)) {
-        println("class invariant violated after " + s)
-        println(s"edge $f -> $t but no path $f -> $t")
+        logout("class invariant violated after " + s)
+        logout(s"edge $f -> $t but no path $f -> $t")
       }
     }
     pathsFrom.keys foreach {f =>
@@ -200,9 +202,9 @@ class IncrementalTransitiveClosure[T] {
         val npExpected = if (f == t) 1 else pathsAfter.map(_._2).sum
         val npStored = getNumPaths(f,t)
         if (npExpected != npStored) {
-          println("class invariant violated after " + s)
-          println(s"paths $f -> $t via: " + pathsAfter.mkString("\n","\n",""))
-          println(s"$npExpected paths exist but $npStored paths stored")
+          logout("class invariant violated after " + s)
+          logout(s"paths $f -> $t via: " + pathsAfter.mkString("\n","\n",""))
+          logout(s"$npExpected paths exist but $npStored paths stored")
           //throw GeneralError(s"invalid state")
         }
       }
@@ -211,7 +213,7 @@ class IncrementalTransitiveClosure[T] {
 
   /** add a number of paths from f to t */
   @inline private def addPaths(f:T, t: T, num: Int): Unit = {
-    if (f == t) println(s"invariant violated: self-edge $f -> $t")
+    if (f == t) logout(s"invariant violated: self-edge $f -> $t")
     numPaths((f,t)) = getNumPaths(f,t) + num
     pathsFrom(f) += t
     pathsTo(t) += f

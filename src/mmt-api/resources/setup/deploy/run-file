@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# This is like run except that it automatically loads an msl file passed as an argument.
+# You may want to associate the msl file ending with this script.
+dir="$(dirname $0)"
+java -Xmx8192m -cp "$dir/lib/*:$dir/mmt.jar" info.kwarc.mmt.api.frontend.Run :file $1

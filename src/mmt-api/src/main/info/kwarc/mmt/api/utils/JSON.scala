@@ -152,14 +152,6 @@ object JSONConversions {
 }
 
 object JSON {
-   // for quick testing
-   /*
-   def main(args: Array[String]) {
-      val j = JSON.parse(""" { "xx":["a", 1, -5, 1.23, -2.5E-5, true, false, null],
-        "bla" : "\\\\", "foo" : [{} ], "fooo": []} """)
-      println(j)
-   }*/
-
    case class JSONError(s: String) extends java.lang.Exception(s)
 
    /** to select a field in an JSONObject or a value in a JSONArray */
@@ -218,17 +210,15 @@ object JSON {
       jn
    }
 
-  def parseString(s : Unparsed) = {
+  def takeQuotedString(s : Unparsed, error: String => Nothing): String = {
     s.drop("\"")
     val sb = new mutable.StringBuilder()
     var instring = true
-    while(instring) {
-      if (s.empty)
-        throw JSONError("unclosed string")
+    while (instring) {
+      if (s.empty) error("unclosed string")
       s.next() match {
         case '\\' =>
-          if (s.empty)
-            throw JSONError("unclosed escaped")
+          if (s.empty) error("unclosed escaped")
           s.next() match {
             case n@('"' | '\\' | '/') => sb.addOne(n)
             case 'b' => sb.addOne('\b')
@@ -241,50 +231,20 @@ object JSON {
               s.drop(4)
               val char = Integer.parseInt(hex, 16).toChar
               sb.addOne(char)
-            case c => throw JSONError("Illegal starting character for JSON string escape: " + c)
+            case c => error("Illegal starting character for string escape: " + c)
           }
         case '"' => instring = false
         case o => sb.addOne(o)
       }
     }
-    JSONString(sb.toString())
+    sb.toString()
   }
-/*
-   def parseString(s: Unparsed) = {
-     s.drop("\"")
-     val (p,closed) = s.takeUntilChar('"', '\\')
-     if (!closed)
-       throw JSONError("unclosed string")
-      var escaped = p
-      var unescaped = ""
-      while (escaped.nonEmpty) {
-        val first = escaped(0)
-        val (next, length) = if (first != '\\') {
-          (first.toString,1)
-        } else {
-            if (escaped.length <= 1)
-               throw JSONError("unclosed escaped")
-             val second = escaped(1)
-          second match {
-               case '"' | '\\' | '/' => (second.toString, 2)
-               case 'b' => ("\b", 2)
-               case 'f' => ("\f", 2)
-               case 'n' => ("\n", 2)
-               case 'r' => ("\r", 2)
-               case 't' => ("\t", 2)
-               case 'u' =>
-                 val hex = escaped.substring(2,6)
-                 val char = Integer.parseInt(hex, 16).toChar
-                 (char, 6)
-               case _ => throw JSONError("Illegal starting character for JSON string escape: " + escaped(1))
-            }
-        }
-         unescaped += next
-       escaped = escaped.substring(length)
-      }
-     JSONString(unescaped)
-   }
-*/
+
+  def parseString(u : Unparsed) = {
+    val s = takeQuotedString(u, m => throw JSONError(m))
+    JSONString(s)
+  }
+
    def parseObject(s: Unparsed): JSONObject = {
       s.trim
       s.drop("{")
