@@ -126,12 +126,7 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     val errors = mutable.ListBuffer[api.Error]()
     controller.build(File(msg.uri))(errors.append)
     client.resetErrors(doc.uri)
-    client.documentErrors(
-      controller,
-      doc,
-      doc.uri,
-      errors.toList : _*
-    )
+    client.documentErrors(doc, errors.toSeq : _*)
     client.log(s"Build finished of `${msg.uri}`!")
   }
 }

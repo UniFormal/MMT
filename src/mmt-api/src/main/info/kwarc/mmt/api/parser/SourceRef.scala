@@ -32,17 +32,24 @@ object SourceRegion {
   val none = SourceRegion(SourcePosition.none,SourcePosition.none)
 }
 
-/** position in a source block; both one and two-dimensional coordinates are maintained
- * @param offset one-dimensional coordinate, -1 if omitted
- * @param line vertical two-dimensional coordinate
- * @param column horizontal two-dimensional coordinate
- * all coordinates start from 0
- *
- * Unicode code points above FFFF count as 2 characters.
- * Arguably that is wrong.
- * But it corresponds to the implementation in Java Strings (see http://docs.oracle.com/javase/6/docs/api/java/lang/Character.html#unicode).
- * Therefore, the current source references work better with, e.g., jEdit.
- */
+/**
+  * Position in a source block; both one and two-dimensional coordinates are maintained.
+  *
+  * By convention, throughout MMT offsets in strings are counted wrt. UTF-16 encoding (matching
+  * [[https://devdocs.io/openjdk~19/java.base/java/lang/string Java's encoding of strings]]).
+  * Thus, all Unicode characters with code points above FFFF are counted as 2 source positions.
+  * For example, in the string "a𐐀b" the grapheme "a", "𐐀", and "b" have source positions 0, 1, and 3, respectively
+  * since "𐐀" is represented by a surrogate pair in UTF-16.
+  *
+  * Consumers of source references (e.g., MMT plugins for jEdit and VSCode) need to watch out for this.
+  *
+  * @param offset one-dimensional coordinate, -1 if omitted
+  * @param line vertical two-dimensional coordinate
+  * @param column horizontal two-dimensional coordinate
+  *
+  * All coordinates are zero-based.
+  *
+  */
 case class SourcePosition(offset: Int, line: Int, column: Int) {
   /** inverse of SourcePosition.parse */
   override def toString = s"$offset.$line.$column"
