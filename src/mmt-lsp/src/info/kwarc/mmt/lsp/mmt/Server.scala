@@ -93,6 +93,7 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     val progress = new Progresser(file, (s1, s2) => note(s1, s2))
     ps.addListener(progress)
     clearFile(file.toString)*/
+    client.resetErrors(doc.uri)
     doc.Annotations.clear
     doc.onUpdate(Nil)
     // doc.errorCont.getErrors
