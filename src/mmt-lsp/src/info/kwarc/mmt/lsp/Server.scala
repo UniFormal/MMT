@@ -50,7 +50,8 @@ import scala.jdk.CollectionConverters._
  *    }
  *    provides methods runLocal, runSocketListener and runWebSocketListener, that run a local server or listen
  *    for a connection via sockets or websockets, respectively.
- *    @prefix: used for logging. The server logs at lsp-{prefix}-server, and additionally logs every request
+ *
+ * @param prefix used for logging. The server logs at lsp-{prefix}-server, and additionally logs every request
  *      at lsp-{prefix}-server-methodcall.
  */
 

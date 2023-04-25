@@ -305,8 +305,8 @@ lazy val lsp = (project in file("mmt-lsp")).
   dependsOn(api,lf).
   settings(mmtProjectsSettings("mmt-lsp"): _*).
   settings(
-    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.19.0",
-    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.19.0",
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.20.1",
+    libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j.websocket" % "0.20.1",
     //libraryDependencies += "org.eclipse.jetty" % "jetty-server" % "11.0.9",
     //libraryDependencies += "org.eclipse.jetty" % "jetty-servlet" % "11.0.9",
     libraryDependencies += "org.eclipse.jetty.websocket" % "javax-websocket-server-impl" % "9.4.50.v20221201",

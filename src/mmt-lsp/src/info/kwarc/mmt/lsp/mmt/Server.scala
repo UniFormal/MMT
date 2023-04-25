@@ -22,21 +22,6 @@ class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTCli
   override def newServer(style: RunStyle): MMTLSPServer = new MMTLSPServer(style)
 }
 
-object Socket {
-  def main(args: Array[String]) : Unit = {
-    val lsp = new MMTLSP
-    val controller = Run.controller
-    List("lsp", "lsp-mmt")
-      .foreach(s => controller.handleLine(s"log+ $s"))
-    controller.handleLine("log console")
-    controller.handleLine("server on 8090")
-    controller.extman.addExtension(lsp)
-    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
-    controller.extman.addExtension(new TrivialBuildManager)
-    lsp.runSocketListener
-  }
-}
-
 class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
   with TextDocumentServer[MMTClient,MMTFile]
   with WithAutocomplete[MMTClient]
@@ -60,7 +45,10 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     super.initialize(params,result)
     params.getWorkspaceFolders.asScala.map(_.getUri).foreach(uri => {
       val workspacePath = URI(uri.replace("c%3A", "C:")).path.mkString(java.io.File.separator)
-      controller.addArchive(File(workspacePath))
+      // todo: controller.addArchive(File(workspacePath)) no longer needed?
+
+      controller.handleLine("mathpath archive " + workspacePath)
+      controller.handleLine("lmh root " + workspacePath)
     })
   }
 
