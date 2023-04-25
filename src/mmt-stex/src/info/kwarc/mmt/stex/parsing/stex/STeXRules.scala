@@ -417,7 +417,7 @@ class SymdeclApp(val syminfo:SymdeclInfo,val dict:Dictionary)(val name : String 
       pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
     }
     if (!syminfo.isDocumented) {
-      this.addError("Symbol is not documented",Some("Consider adding an {sdefinition} or {sparagraph}[style=symdoc] for this symbol"),Level.Info)
+      this.addError("Symbol is not documented: " + syminfo.path.name,Some("Consider adding an {sdefinition} or {sparagraph}[style=symdoc] for this symbol"),Level.Info)
     }
   }
 }
