@@ -50,7 +50,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
       files = files.tail
       files.headOption.foreach(progress)
     }
-    val eh = STeXLSPErrorHandler(e => client.documentErrors(thisdoc,e),(_,s) => progress(s))
+    val eh = STeXLSPErrorHandler(e => client.documentErrors(thisdoc,false,e),(_,s) => progress(s))
     def error(msg : String, stacktrace : List[(String, String)],files:List[(String,Int,Int)]) : Unit = {
       val (off1,off2,p) = _doctext.fullLine(files.head._2-1)
       val reg = SourceRegion(SourcePosition(off1,files.head._2,0),SourcePosition(off2,files.head._2,p))
@@ -72,7 +72,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
       (target,archive,relfile) match {
         case (Some(t),Some(a),Some(f)) =>
           client.log("Building [" + a.id + "] " + f)
-          val eh = STeXLSPErrorHandler(e => client.documentErrors(this, e), update)
+          val eh = STeXLSPErrorHandler(e => client.documentErrors(this,false, e), update)
           try {
             eh.open
             t.build(a, BuildChanged(), f.toFilePath, Some(eh))
@@ -138,7 +138,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
           subs.foreach { sub =>
             val start = _doctext.toLC(sub.start)
             val end = _doctext.toLC(sub.end)
-            client.documentErrors(this,SourceError(uri,SourceRef(URI(uri),
+            client.documentErrors(this,true,SourceError(uri,SourceRef(URI(uri),
               SourceRegion(SourcePosition(sub.start,start._1,start._2),
                 SourcePosition(sub.end,end._1,end._2)
               )),"Should possibly be a symbol reference: " + sub.str,level = Level.Info))
@@ -157,7 +157,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
             case e : Environment => (e.header.last.endoffset,_doctext.toLC(e.header.last.endoffset))
             case _ => (elem.endoffset,_doctext.toLC(elem.endoffset))
           }
-          client.documentErrors( this, SourceError(uri, SourceRef(URI(uri),
+          client.documentErrors( this, true,SourceError(uri, SourceRef(URI(uri),
             SourceRegion(
               SourcePosition(elem.startoffset, start._1, start._2),
               SourcePosition(eo, end._1, end._2)

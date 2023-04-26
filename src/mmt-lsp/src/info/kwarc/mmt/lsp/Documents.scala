@@ -1,4 +1,5 @@
 package info.kwarc.mmt.lsp
+import info.kwarc.mmt.api.parser.SourceRegion
 import info.kwarc.mmt.api.{DPath, NamespaceMap, ParseError, Path}
 import info.kwarc.mmt.api.utils.{File, URI}
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
@@ -405,6 +406,7 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
     synchronized{ Annotations.update(changes) }
   }
 
+  private val self = this
   object Annotations {
     def clear = _annotations = Nil
     def notifyOnChange() = {//[A <: LSPClient](client:ClientWrapper[A]) = {
@@ -421,6 +423,13 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
       add(a)
       a
     }
+    def addReg(value: Any, src:SourceRegion, symbolkind: SymbolKind = null, symbolname: String = "", foldable: Boolean = false): DocAnnotation = {
+      val offset = self._doctext.toOffset(src.start.line,src.start.column)
+      val length = self._doctext.toOffset(src.end.line,src.end.column) - offset
+      val a = new DocAnnotation(offset, length, value, symbolkind, symbolname, foldable)
+      add(a)
+      a
+    }
     def update(deltas : List[Delta]) = {
       deltas.foreach{d => _annotations.foreach {a =>
         if (d.oldEnd <= a.offset) {
@@ -434,7 +443,7 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
       ).map((d,_))).distinct
       onChange(changed)
     }
-    def add(annotation : DocAnnotation) : Unit = {
+    private def add(annotation : DocAnnotation) : Unit = {
       _annotations.filter(a =>
         a.offset <= annotation.offset && a.end >= annotation.end
       ).sortBy(_.length).headOption match {

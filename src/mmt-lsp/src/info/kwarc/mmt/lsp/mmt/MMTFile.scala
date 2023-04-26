@@ -45,38 +45,35 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
     def getErrors = errors
   }
 
-  private def forSource[A](e : HasMetaData)(f : (Int,Int) => A) : Option[A] = SourceRef.get(e).map { src =>
-    val start = src.region.start.offset
-    val length = src.region.end.offset - start
-    f(start,length)
+  private def forSource[A](e : HasMetaData)(f : SourceRegion => A) : Option[A] = SourceRef.get(e).map { src =>
+    //val start = src.region.start.offset
+    //val length = src.region.end.offset - start
+    f(src.region)
   }
 
   private def getElems(top : StructuralElement) : Unit = top match {
     case d : Document =>
-      forSource(d){(start,length) => Annotations.add(d,start,length,SymbolKind.Package,d.path.toString) }
+      forSource(d){reg => Annotations.addReg(d,reg,SymbolKind.Package,d.path.toString) }
       d.getDeclarations.foreach {
       case n : Namespace =>
-        forSource(n){(start,length) =>
-          Annotations.add(n,start,length,SymbolKind.Namespace,n.namespace.toString)
-          val urlstart = start + 10
-          val urllength = length - 10
-          val a = Annotations.add(n.namespace,urlstart,urllength)
+        forSource(n){reg =>
+          Annotations.addReg(n,reg,SymbolKind.Namespace,n.namespace.toString)
+          val urlreg = SourceRegion(reg.start.copy(offset = reg.start.offset + 10,column = reg.start.column + 10),reg.end)
+          val a = Annotations.addReg(n.namespace,urlreg)
           a.setHover{ n.namespace.toString }
         }
       case n : NamespaceImport =>
-        forSource(n){(start,length) =>
-          Annotations.add(n,start,length,SymbolKind.Namespace,n.prefix)
-          val urlstart = start + 8 + n.prefix.length
-          val urllength = length - (8 + n.prefix.length)
-          val a = Annotations.add(n.namespace,urlstart,urllength)
+        forSource(n){reg =>
+          Annotations.addReg(n,reg,SymbolKind.Namespace,n.prefix)
+          val urlreg = SourceRegion(reg.start.copy(offset = reg.start.offset + 8, column = reg.start.column + 8), reg.end)
+          val a = Annotations.addReg(n.namespace,urlreg)
           a.setHover{ n.namespace.toString }
         }
       case n : FixedMeta =>
-        forSource(n){(start,length) =>
-          Annotations.add(n,start,length,SymbolKind.Namespace,n.meta.toString)
-          val urlstart = start + 8
-          val urllength = length - 8
-          val a = Annotations.add(n.meta,urlstart,urllength)
+        forSource(n){reg =>
+          Annotations.addReg(n,reg,SymbolKind.Namespace,n.meta.toString)
+          val urlreg = SourceRegion(reg.start.copy(offset = reg.start.offset + 8, column = reg.start.column + 8), reg.end)
+          val a = Annotations.addReg(n.meta,urlreg)
           a.setHover{ n.meta.toString }
         }
       case mr : MRef =>
@@ -85,13 +82,13 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
         print("")
     }
     case t : Theory =>
-      forSource(t){(start,length) => Annotations.add(t,start,length,SymbolKind.Module,t.name.toString,true)}
+      forSource(t){reg => Annotations.addReg(t,reg,SymbolKind.Module,t.name.toString,true)}
       t.getPrimitiveDeclarations.foreach(getElems)
     case d : DerivedDeclaration =>
-      forSource(d){(start,length) => Annotations.add(d,start,length,SymbolKind.Struct,d.name.toString,true)}
+      forSource(d){reg => Annotations.addReg(d,reg,SymbolKind.Struct,d.name.toString,true)}
       d.getPrimitiveDeclarations.foreach(getElems)
     case s : Structure =>
-      forSource(s){(start,length) => Annotations.add(s,start,length,SymbolKind.Constant,s.from match {
+      forSource(s){reg => Annotations.addReg(s,reg,SymbolKind.Constant,s.from match {
         case OMMOD(mp) => mp.toString
         case OMA(OMMOD(mp), _) => mp.toString
         case _ =>
@@ -100,12 +97,12 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
       },!s.isInclude)}
       s.getPrimitiveDeclarations.foreach(getElems)
     case c : Constant =>
-      forSource(c){(start,length) => Annotations.add(c,start,length,SymbolKind.Constant,c.name.toString,true)}
+      forSource(c){reg => Annotations.addReg(c,reg,SymbolKind.Constant,c.name.toString,true)}
       val hl = new HighlightList(c)
       c.tp.foreach(termHighlighter(_,hl))
       c.df.foreach(termHighlighter(_,hl))
     case nm : NestedModule =>
-      forSource(nm){(start,length) => Annotations.add(nm,start,length,SymbolKind.Module,nm.name.toString,true)}
+      forSource(nm){reg => Annotations.addReg(nm,reg,SymbolKind.Module,nm.name.toString,true)}
       nm.module.getPrimitiveDeclarations.foreach(getElems)
     case _ =>
       print("")
@@ -135,22 +132,25 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
       def headString(tm : Term) = tm.head.map(_.toString).getOrElse("No head")
       t match {
         case o@OMV(_) =>
-          forSource(o){(start,length) =>
-            val a = Annotations.add(o,start,length+1)
+          forSource(o){reg =>
+            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1,column = reg.end.column + 1))
+            val a = Annotations.addReg(o,nreg)
             a.setSemanticHighlightingClass(Colors.termvariable)
             a.setHover({ headString(o) })
           }
           o
         case o : OMLITTrait =>
-          forSource(o){(start,length) =>
-            val a = Annotations.add(o,start,length+1)
+          forSource(o){reg =>
+            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val a = Annotations.addReg(o,nreg)
             a.setSemanticHighlightingClass(Colors.termomlit)
             a.setHover({ headString(o) })
           }
           o
         case o : OML =>
-          forSource(o){(start,length) =>
-            val a = Annotations.add(o,start,length+1)
+          forSource(o){reg =>
+            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val a = Annotations.addReg(o,nreg)
             a.setSemanticHighlightingClass(Colors.termoml)
             a.setHover({ headString(o) })
           }
@@ -172,8 +172,9 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
           state.meta.foreach { mt =>
             controller.library.forDeclarationsInScope(OMMOD(mt)) {
               case (_, _, d) if pragma.head.contains(d.path) =>
-                forSource(tm){(start,length) =>
-                  val a = Annotations.add(tm,start,length+1)
+                forSource(tm){reg =>
+                  val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+                  val a = Annotations.addReg(tm,nreg)
                   a.setSemanticHighlightingClass(Colors.termconstantmeta)
                   a.setHover({ headString(pragma) })
                 }
@@ -181,8 +182,9 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
               case _ =>
             }
           }
-          forSource(tm){(start,length) =>
-            val a = Annotations.add(tm,start,length+1)
+          forSource(tm){reg =>
+            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val a = Annotations.addReg(tm,nreg)
             a.setHover({ headString(pragma) })
             // TODO ?
           }
@@ -194,8 +196,9 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
 
     override def traverseContext(cont: Context)(implicit con: Context, state: HighlightList): Context = {
       cont.foreach{vd =>
-        forSource(vd){(start,_) =>
-          val a = Annotations.add(vd,start,vd.name.length)
+        forSource(vd){reg =>
+          val nreg = reg.copy(end = reg.start.copy(offset = reg.start.offset + vd.name.length,column = reg.start.column + vd.name.length))
+          val a = Annotations.addReg(vd,nreg)
           a.setSemanticHighlightingClass(Colors.termvariable)
         }
       }
@@ -222,7 +225,7 @@ class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) 
       getElems(d)
     }
 
-    client.documentErrors(this, errorCont.getErrors:_*)
+    client.documentErrors(this, true,errorCont.getErrors:_*)
     errorCont.reset
   }
 
