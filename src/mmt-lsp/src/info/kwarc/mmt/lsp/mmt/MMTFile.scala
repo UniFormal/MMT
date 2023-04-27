@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.notations.Pragmatics
 import info.kwarc.mmt.api.objects.{OMA, OMMOD, Traverser}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.utils.{File, FilePath, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import org.eclipse.lsp4j.SymbolKind
 
@@ -70,7 +70,8 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
     * Uses the instance-specific [[Annotations]] object of this class to add annotations (e.g., hover or
     * go-to-declaration information) to the source regions in this MMT document applicable to the given
     * structural element.
-    * @param elem The structural element to dissect into subterms and inspect and to add annotations for.
+    * @param elem The structural element to dissect into subelements and inspect and to add annotations for.
+    * @see [[annotateTerm]] for the [[Traverser]] to which the task is delegated on term level.
     */
   private def annotateElement(elem: StructuralElement): Unit = elem match {
     case d: Document =>
@@ -128,8 +129,8 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
     case c: Constant =>
       forSource(c) { reg => Annotations.addReg(c, reg, SymbolKind.Constant, c.name.toString, true) }
       val hl = new HighlightList(c)
-      c.tp.foreach(termHighlighter(_, hl))
-      c.df.foreach(termHighlighter(_, hl))
+      c.tp.foreach(annotateTerm(_, hl))
+      c.df.foreach(annotateTerm(_, hl))
     case nm: NestedModule =>
       forSource(nm) { reg => Annotations.addReg(nm, reg, SymbolKind.Module, nm.name.toString, true) }
       nm.module.getPrimitiveDeclarations.foreach(annotateElement)
@@ -153,7 +154,14 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
 
   private val pragmatics = controller.extman.get(classOf[Pragmatics]).headOption
 
-  private object termHighlighter extends Traverser[HighlightList] {
+  /**
+    * Uses the instance-specific [[Annotations]] object of this class to add annotations (e.g., hover or
+    * go-to-declaration information) to the source regions in this MMT document applicable to the given
+    * [[info.kwarc.mmt.api.objects.Term Term]].
+    *
+    * @see [[annotateElement]] for the same task on the level of [[StructuralElement]]s
+    */
+  private object annotateTerm extends Traverser[HighlightList] {
 
     import info.kwarc.mmt.api.objects._
 
@@ -220,6 +228,18 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
                   a.setHover({
                     headString(pragma)
                   })
+
+                  SourceRef.get(d).map(src => {
+                    controller.backend.resolveLogical(src.container) match {
+                      case Some((originArchive, originFilepathParts)) =>
+                        val originFile = originArchive.root / archives.source.toString / FilePath(originFilepathParts)
+                        val originRegion = src.region
+
+                        // todo: consumer of added definitions converts offsets into line/column coordinates using
+                        //       the current document, not originFile!
+                        a.addDefinition(originFile.toURI.getPath, originRegion.start.offset, originRegion.end.offset)
+                    }
+                  })
                 }
                 return ret
               case _ =>
@@ -232,21 +252,6 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
               headString(pragma)
             })
 
-            tm match {
-              case OMS(p) =>
-                controller.library.getO(p) match {
-                  case Some(declaringElement) =>
-                    SourceRef.get(declaringElement).map(src => {
-
-                      val x = controller.backend.resolveLogical(src.container)
-                      println(x)
-                      /*
-                      a.setDeclaration(src., region.start.offset, region.end.offset)
-                      })*/
-                    })
-                }
-              case _ => /* do nothing */
-            }
             // TODO ?
           }
           ret
