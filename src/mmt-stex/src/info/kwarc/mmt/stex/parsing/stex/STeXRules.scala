@@ -23,6 +23,8 @@ object STeXRules {
     SkipCommand("stexstyleparagraph", "ovv"),
     SkipCommand("stexstyleexample", "ovv"),
     SkipCommand("stexstyleproblem", "ovv"),
+    SkipCommand("mmlintent","vn"),
+    SkipCommand("mmlarg", "vn"),
     VarDefRule(dict),VarSeqRule(dict),
     SDefinitionRule(dict),SAssertionRule(dict),SParagraphRule(dict),
     InlineDefRule(dict),InlineAssRule(dict),
