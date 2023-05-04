@@ -13,6 +13,7 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, Include, Structure}
 import info.kwarc.mmt.api.utils.{HTML, mmt, xml}
 import info.kwarc.mmt.api.utils.xml.{closeTag, namespace, openTag}
 
+import scala.util.Try
 import scala.xml.NodeSeq
 //import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLText
 //import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
@@ -411,7 +412,7 @@ class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
 
   override protected def preparePresentation(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {
     origin.map(_.parent).foreach {
-      case p: ContentPath => if (p.module != p) controller.simplifier(p.module)
+      case p: ContentPath => if (p.module != p) Try(controller.simplifier(p.module))
       case _ =>
     }
     val globalCont = (o,origin) match {

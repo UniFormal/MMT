@@ -3,9 +3,10 @@ package info.kwarc.mmt.stex.lsp
 import info.kwarc.mmt.api.archives.{Archive, BuildChanged, BuildManager, RedirectableDimension, TrivialBuildManager, source}
 import info.kwarc.mmt.api.frontend.{Controller, Report, Run}
 import info.kwarc.mmt.api.utils.time.Time
-import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
+import info.kwarc.mmt.api.utils.{File, JSON, JSONObject, JSONString, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, SandboxedWebSocket, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.stex.ml.Model
 import info.kwarc.mmt.stex.parsing.stex.STeXParser
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.SemanticState
@@ -16,6 +17,7 @@ import org.eclipse.lsp4j.services.LanguageClient
 import java.io.IOException
 import java.util.concurrent.{CompletableFuture, TimeUnit}
 import scala.concurrent.{Await, Future}
+import scala.util.Try
 
 class MainFileMessage {
   var mainFile: String = null
@@ -80,6 +82,17 @@ class ExportMessage {
   var dir: String = null
 }
 
+class NERMessage {
+  var jar: String = null
+  var zip: String = null
+}
+
+class NEROnMessage {
+  var on:Boolean = false
+}
+
+class ThresholdMessage { var threshold:Float = 0.0.toFloat }
+
 @JsonSegment("stex")
 trait STeXClient extends LSPClient {
   @JsonRequest def updateHTML(msg: HTMLUpdateMessage): CompletableFuture[Unit]
@@ -131,10 +144,10 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
 
 
    override def shutdown: Any = style match {
-     case LocalStyle => scala.sys.exit()
+     case LocalStyle => this.hashCode()
      case _ =>
    }
-   override def exit: Unit = shutdown
+   override def exit: Unit = { sys.exit(0)}
 
    lazy val stexserver = controller.extman.get(classOf[STeXServer]) match {
      case Nil =>
@@ -148,6 +161,34 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
    }
 
    import scala.concurrent.ExecutionContext.Implicits._
+
+
+   var nermodel = new {
+     private var model : Option[Model] = None
+     var ner_threshold = 0.4
+     var on : Boolean = true
+     def set(jar : File, zip : File) = {
+       if (jar.exists() && zip.exists())
+        model = Some(new Model(jar,zip,true))
+     }
+     def foreach(f : Model => Unit) = if (on) {
+       model.foreach(f)
+     }
+   }//: Option[Model] = None
+   @JsonNotification("sTeX/initializeNER")
+   def initializeNER(msg: NERMessage): Unit = Future { safely {
+     nermodel.set(File(msg.jar),File(msg.zip))
+   }}
+
+   @JsonNotification("sTeX/setNER")
+   def setNER(msg: NEROnMessage): Unit = {
+     nermodel.on = msg.on
+   }
+
+   @JsonNotification("sTeX/setThreshold")
+   def setThreshold(msg: ThresholdMessage): Unit = {
+     nermodel.ner_threshold = msg.threshold
+   }
 
    @JsonNotification("sTeX/exportHTML")
    def exportHTML(msg: ExportMessage): Unit = Future { safely {
@@ -165,17 +206,33 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      }
    } }
 
+
+   @JsonNotification("sTeX/exportSimpleHTML")
+   def exportSimpleHTML(msg: ExportMessage): Unit = Future {
+     safely {
+       msg.file = LSPServer.VSCodeToURI(msg.file)
+       log("Exporting file " + msg.file)
+       val d = documents.synchronized {
+         documents.getOrElseUpdate(msg.file, newDocument(msg.file))
+       }
+       withProgress(msg,"Exporting HTML...",""){update =>
+         val pars = d.params(s => update(0,s))
+         val ret = RusTeX.parseString(d.file.getOrElse(File(msg.file)), d.doctext,pars,envs = List(("STEX_USESMS","true")))
+         File.write(File(msg.dir),ret)
+         ((), "Done")
+       }
+     }
+   }
+
    @JsonNotification("sTeX/buildArchive")
    def buildFile(msg: BuildGroupMessage): Unit = Future { withProgress(msg,"Building") { update =>
      log("Building file(s) " + msg.file + " in " + msg.archive)
      msg.file = msg.file.replace(".xhtml",".tex")
      controller.backend.getArchive(msg.archive) match {
        case Some(a) if msg.file.isEmpty =>
-         val reg = a.properties.get("ignore").map(_.replace(".", "\\.").replace("*", ".*").r)
-         def regfilter(f: File): Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
          val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
          val src = a / source
-         val files = src.descendants.filter(f => f.getExtension.contains("tex") && regfilter(f)).map(src.relativize)
+         val files = src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore(src.relativize(f).toFilePath)).map(src.relativize)
          val eh = STeXLSPErrorHandler(_ => {}, update)
          files.foreach{f =>
            update(0, "Building " + a.id + ": " + f)
@@ -185,11 +242,9 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          a.readRelational(Nil,controller,"rel")
          ((),"Done")
        case Some(a) if File(a / source / msg.file).isDirectory =>
-         val reg = a.properties.get("ignore").map(_.replace(".", "\\.").replace("*", ".*").r)
-         def regfilter(f: File): Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
          val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
          val src = (a / source) / msg.file
-         val files = src.descendants.filter(f => f.getExtension.contains("tex") && regfilter(f)).map(f => src.relativize(f))
+         val files = src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore((a/source).relativize(f).toFilePath)).map(f => src.relativize(f))
          val eh = STeXLSPErrorHandler(_ => {}, update)
          files.foreach { f =>
            update(0, "Building " + a.id + ": " + f)
@@ -213,9 +268,7 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          val eh = STeXLSPErrorHandler(_ => {}, update)
          archs.foreach {a =>
            val src = a / source
-           val reg = a.properties.get("ignore").map(_.replace(".", "\\.").replace("*", ".*").r)
-           def regfilter(f: File): Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
-           val files = src.descendants.filter(f => f.getExtension.contains("tex") && regfilter(f)).map(src.relativize)
+           val files = src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore(src.relativize(f).toFilePath)).map(src.relativize)
            files.foreach {f =>
              update(0, "Building " + a.id + ": " + f)
              log("Building " + a.id + ": " + f)
@@ -232,8 +285,80 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      a.file = LSPServer.VSCodeToURI(a.file)
      log("Building file " + a.file)
      val d = documents.synchronized{documents.getOrElseUpdate(a.file,newDocument(a.file))}
-     d.buildFull()
+     (d.archive,d.file) match {
+       case (Some(a),Some(f)) if !(a / source <= f) =>
+       case _ => d.buildFull()
+     }
    }
+
+   trait TemplateFileDir{
+     val name: String
+     def apply(f:File)(archive_id:String,namespace:String,url_base:String): Unit
+   }
+   private class TemplateDir(val name:String) extends TemplateFileDir {
+     var children:List[TemplateFileDir] = Nil
+     def apply(f:File)(archive_id:String,namespace:String,url_base:String) = {
+       val path = f / name
+       path.mkdirs()
+       children.foreach(_.apply(path)(archive_id,namespace,url_base))
+     }
+   }
+   private class TemplateFile(val name:String,val content:String) extends TemplateFileDir {
+     def apply(f:File)(archive_id:String,namespace:String,url_base:String) = {
+       val path = f / name
+       File.write(path,content.replace("%%ARCHIVE%%",archive_id).replace("%%NAMESPACE%%",namespace).replace("%%URLBASE%%",url_base))
+     }
+   }
+   private class Template(val id:String,val descr:String,val deps:List[String],val open:List[String],var files:List[TemplateFileDir]) {
+     def apply(archive_id:String,namespace:String,url_base:String): Unit = {
+       mathhub_top.foreach{mh =>
+         val top = archive_id.split('/').foldLeft(mh)((f,s) => f / s)
+         top.mkdirs()
+         files.foreach(_.apply(top)(archive_id:String,namespace:String,url_base:String))
+       }
+     }
+   }
+   private object Template {
+     def parse(j:JSONObject):Template = {
+       val id = j.getAsString("id")
+       val descr = j.getAsString("descr")
+       val open = j.getAsList(classOf[JSONString],"open").map(_.value)
+       val deps = Try(j.getAsList(classOf[JSONString],"dependencies").map(_.value)).getOrElse(Nil)
+       val filejs = j.getAsList(classOf[JSONObject],"files")
+       val files = filejs.map(parseFile)
+       // TODO parameters
+       new Template(id,descr,deps,open,files)
+     }
+     private def parseFile(js:JSONObject):TemplateFileDir = {
+       val name = js.getAsString("name")
+       js("content") match {
+         case Some(str:JSONString) =>
+           new TemplateFile(name,str.value)
+         case None =>
+           val chsjs = js.getAsList(classOf[JSONObject],"children")
+           val dir = new TemplateDir(name)
+           chsjs.foreach{j =>
+             dir.children ::= parseFile(j)
+           }
+           dir
+       }
+     }
+   }
+   private def templates = {
+     mathhub_top.toList.flatMap { mh =>
+       val templatedir = mh / "sTeX" / "templates"
+       if (templatedir.exists() && templatedir.isDirectory) {
+         templatedir.descendants.flatMap{
+           case f if f.getExtension.contains("json") =>
+             Try(
+               Template.parse(JSON.parse(File.read(f)).asInstanceOf[JSONObject])
+             ).toOption
+           case _ => None
+         }
+       } else Nil
+     }
+   }
+
    private def do_manifest(s : String,ns: Option[String],urlbase:Option[String]) =
      s"""
         |id:$s
@@ -340,9 +465,8 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          if (needsdoing) d.synchronized {
            d.archive match {
              case Some(a) =>
-               val reg = a.properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
-               def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (a / info.kwarc.mmt.api.archives.source).relativize(f).toString))
-               if (regfilter(f)) d.init(File.read(f))
+               val relfile = (a / source).relativize(f).toFilePath
+               if (!a.ignore(relfile)) d.init(File.read(f))
              case _ =>
                d.init(File.read(f))
            }
@@ -491,8 +615,12 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      val d = documents.synchronized {
        documents.getOrElseUpdate(a.file, newDocument(a.file))
      }
-     d.buildHTML()
+     (d.archive, d.file) match {
+       case (Some(a), Some(f)) if !(a / source <= f) =>
+       case _ => d.buildHTML()
+     }
    }
+
 
    override def workspaceSymbol(params: WorkspaceSymbolParams): List[WorkspaceSymbol] = {
      print("")
@@ -692,6 +820,7 @@ object Main {
   @throws[InterruptedException]
   //@throws[ExecutionException]
   def main(args: Array[String]): Unit = {
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off")
     val controller = Run.controller
     sys.env.get("HOME") match {
       case Some(f) =>

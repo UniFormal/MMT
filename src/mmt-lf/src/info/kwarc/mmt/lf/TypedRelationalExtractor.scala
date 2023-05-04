@@ -16,7 +16,7 @@ import ontology._
  * The TypedRelationalExtractor adds a few more typing related informations to the .rel files.
  */
 class TypedRelationalExtractor extends RelationalExtractor {
-   val allUnary = List(IsDatatypeConstructor, IsDataConstructor, IsJudgementConstructor, IsRule, IsHighUniverse)
+   val allUnary = List(IsUntypedConstant,IsDatatypeConstructor, IsDataConstructor, IsJudgementConstructor, IsRule, IsHighUniverse)
    val allBinary = Nil
            
    /** Discriminate the constant declarations contained in every structural element into the types data constructor, datatype constructor, rule, judgement constructor and high universe. 
@@ -32,27 +32,27 @@ class TypedRelationalExtractor extends RelationalExtractor {
       e match {
          case t: Module =>
           t.getDeclarations foreach {
-							case c: Constant =>
-								val declType: Unary = c.tp match {
-									case Some(x) => x match {
-										case FunType(_, tp) => tp match {
-											case Univ(1) =>
-												if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
-													IsJudgementConstructor
-												}
-												else {
-													IsDatatypeConstructor
-												}
-											case Univ(n) if n > 1 => IsHighUniverse
-											case _ =>
-												if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) IsRule else IsDataConstructor
-										}
-									}
-									case None => IsUntypedConstant
-								}
-								f(declType(c.path))
-							case _ =>
-						}
+              case c: Constant =>
+                  val declType: Unary = c.tp match {
+                      case Some(x) => x match {
+                          case FunType(_, tp) => tp match {
+                              case Univ(1) =>
+                                  if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
+                                      IsJudgementConstructor
+                                  }
+                                  else {
+                                      IsDatatypeConstructor
+                                  }
+                              case Univ(n) if n > 1 => IsHighUniverse
+                              case _ =>
+                                  if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) IsRule else IsDataConstructor
+                          }
+                      }
+                      case None => IsUntypedConstant
+                  }
+                  f(declType(c.path))
+              case _ =>
+          }
          case _ =>
       }
   }

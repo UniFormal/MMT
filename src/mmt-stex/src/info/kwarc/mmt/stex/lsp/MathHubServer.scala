@@ -286,7 +286,7 @@ trait MathHubServer { this : STeXLSPServer =>
                   val max = files.length
                   val count = new AtomicInteger(0)
                   val done = new AtomicInteger(0)
-                  files.par.foreach{ case (dim, f) =>
+                  files.foreach{ case (dim, f) =>
                     val nc = count.incrementAndGet()
                     update(nc.toDouble / max, "Downloading " + (nc + 1) + "/" + max + "... (" + dim + "/" + f + ")")
 

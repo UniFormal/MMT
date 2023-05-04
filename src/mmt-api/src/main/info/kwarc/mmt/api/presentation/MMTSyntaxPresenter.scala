@@ -9,18 +9,9 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.URI
 
 /**
-  * Presents (hopefully) parsable MMT surface syntax from [[StructuralElement]]s like
-  * [[Theory theories]], [[View views]], [[Constant constants]], etc.
-  *
-  * @example ''controller.presenter.asString(element)'' to present a
-  *          [[StructuralElement]] ''element'' to a String.
-  *          If you repeatedly present elements to strings, it might be more efficient
-  *          to use the [[apply()]] method with a [[StringBuilder]] (from the
-  *          mmt.api.presentation API!)
+  * Presents (hopefully) parsable MMT surface syntax from [[StructuralElement]]s
   *
   * @see The server ''info.kwarc.mmt.api.web.SyntaxPresenterServer'' exposes this syntax presenter to the web.
-  *
-  * @author Among others, ComFreek knows the code somewhat well, esp. on the generated indentations.
   */
 
 class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends Presenter(objectPresenter) {
@@ -443,8 +434,6 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     }
   }
 }
-
-
 
 /** flattened */
 class FlatMMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends MMTSyntaxPresenter(objectPresenter) {

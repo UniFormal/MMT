@@ -129,7 +129,7 @@ class TheoryGraphExporter extends RelationGraphExporter {
       case nm: NestedModule => return buildGraph(nm.module)
       case d: Declaration => return buildGraph(controller.get(d.parent))
     }
-    val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
+    val tgf = new ontology.TheoryGraphFragment(theories, views, tg, report, includeMeta = false)
     tgf.toDot
   }
 }
@@ -167,7 +167,7 @@ class PathGraphExporter extends RelationGraphExporter {
     log("Doing " + dpath)
     val (theories,views) = (alltheories.filter(dpath <= _),allviews.filter(dpath <= _))
 
-    val tgf = new ontology.TheoryGraphFragment(theories, views, tg)
+    val tgf = new ontology.TheoryGraphFragment(theories, views, tg, report)
     log("Done.")
     tgf.toDot
   }

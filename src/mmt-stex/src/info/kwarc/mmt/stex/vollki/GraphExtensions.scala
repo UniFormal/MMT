@@ -43,7 +43,7 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
         path match {
           case Some(gn : GlobalName) =>
             getSymdocs(gn, language).headOption match {
-              case Some(ht) => ServerResponse(ht.toString, "text/html")
+              case Some(ht) => ServerResponse(present(ht.toString())(None).toString.trim, "text/html")
               case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
             }
           case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")

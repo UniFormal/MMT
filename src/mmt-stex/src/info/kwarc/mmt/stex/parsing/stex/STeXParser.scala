@@ -23,12 +23,12 @@ class DictionaryModule(val macr:STeXModuleLike, val meta:Option[DictionaryModule
   var file : Option[File] = None
   var lang:String = ""
   var imports : List[(DictionaryModule,Boolean)] = Nil
-  var exportrules : List[TeXRule] = Nil //List(ModuleRule(this,false))
+  var exportrules : Map[String,TeXRule] = Map.empty //List(ModuleRule(this,false))
   def getRules(lang:String,dones : MutList = new MutList()) : List[TeXRule] = if (dones.ls.contains(this)) Nil else {
     dones.ls ::= this
-    val r = exportrules ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(m => InheritModuleRule(m._1,true) :: m._1.getRules(lang,dones))
+    val r = exportrules.values.toList ::: imports.filter(p => p._2 && !dones.ls.contains(p._1)).flatMap(m => InheritModuleRule(m._1,true) :: m._1.getRules(lang,dones))
     langs.get(lang) match {
-      case Some(m) => m.exportrules ::: r
+      case Some(m) => m.exportrules.values.toList ::: r
       case _ => r
     }
   }
@@ -123,9 +123,9 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     def makenew = {
       val m = new DictionaryModule(macr, meta,this)
       m.letters = parser.latex.groups.head.letters
-      m.exportrules = meta.toList.flatMap(_.getRules(getLanguage))
-      m.exportrules.foreach { rl =>
-        m.rules(rl.name) = rl
+      m.exportrules = meta.toList.flatMap(_.getRules(getLanguage)).map(rl => (rl.name,rl)).toMap
+      m.exportrules.foreach { case (n,rl) =>
+        m.rules(n) = rl
       }
       current_file.foreach(f => m.file = Some(f))
       current_archive.foreach(a => m.archive = Some(a))
@@ -158,6 +158,7 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
         }
       })
     } else makenew
+    if (mod.macr.sig == "") all_modules(mod.path) = mod
     current_modules ::= mod
     parser.latex.groups ::= mod
     STeXRules.moduleRules(this).foreach(rl => mod.rules(rl.name) = rl)
@@ -205,13 +206,13 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
     resolveMPath(archive, path)
   }
 
-  def resolveFilePath(archiveid: String, path: String): File = {
+  def resolveFilePath(archiveid: String, path: String,ext:Boolean): File = {
     val archive = if (archiveid == "") current_archive else Some(controller.backend.getArchive(archiveid).getOrElse {
       throw LaTeXParseError("Archive missing: " + archiveid)
     })
     archive match {
-      case Some(a) => a / source / (if (path.endsWith(".tex")) path else path + ".tex")
-      case _ => current_file.get.resolve(if (path.endsWith(".tex")) path else path + ".tex")
+      case Some(a) => a / source / (if (path.endsWith(".tex")) path else if (ext) path + ".tex" else path)
+      case _ if ext => current_file.get.resolve(if (path.endsWith(".tex")) path else if (ext) path + ".tex" else path)
     }
   }
 
@@ -320,6 +321,10 @@ class Dictionary(val controller:Controller,parser:STeXParser) {
         parser.latex.collectRules{
           case rl : SemanticMacro if rl.name == s => rl.syminfo
           case rl : SemanticMacro if rl.syminfo.path.name.toString == s => rl.syminfo
+        }.distinct
+      case Array(m,s) =>
+        parser.latex.collectRules {
+          case rl:SemanticMacro if rl.syminfo.path.module.name.toString == m && rl.syminfo.path.name.toString == s => rl.syminfo
         }.distinct
       case a if a.nonEmpty && a.length <= 3 =>
         parser.latex.collectRules {

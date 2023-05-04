@@ -1,11 +1,10 @@
 package info.kwarc.mmt.api.web
 
-import java.net.{URLDecoder, URLEncoder}
-import info.kwarc.mmt.api.{ParseError, utils}
-import info.kwarc.mmt.api.utils.JSON
+import java.net.URLEncoder
+import info.kwarc.mmt.api.ParseError
+import info.kwarc.mmt.api.utils._
 
 import scala.collection.immutable
-import scala.collection.immutable.TreeMap
 import scala.xml.Node
 
 /**
@@ -35,7 +34,7 @@ case class ServerRequest(method: RequestMethod.Value, val headers: Map[String, S
   }
 
   /** a decoded version of the query string */
-  lazy val decodedQuery = URLDecoder.decode(query, "UTF-8")
+  lazy val decodedQuery = URI.decode(query)
   /** a parsed version of the query string */
   lazy val parsedQuery = WebQuery(query)
 
@@ -157,14 +156,14 @@ object WebQuery {
     * @return
     */
   def apply(query: String): WebQuery = {
-    val kvs = utils.stringToList(query, """&""")
+    val kvs = stringToList(query, """&""")
     val pairs = kvs map { s =>
       val i = s.indexOf("=")
 
       val (k, v) = if (i == -1 || i == s.length - 1) (s, "")
       else (s.substring(0, i), s.substring(i + 1))
 
-      (URLDecoder.decode(k, "UTF-8"), URLDecoder.decode(v, "UTF-8"))
+      (URI.decode(k), URI.decode(v))
     }
     WebQuery(pairs)
   }

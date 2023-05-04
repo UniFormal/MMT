@@ -17,7 +17,6 @@ import java.io.FileOutputStream
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.sys.process.Process
-import scala.xml.parsing.XhtmlParser
 
 object TeXError {
   def apply(uri:String,msg:String,stacktrace:List[(String,String)],reg:SourceRegion) =
@@ -56,18 +55,20 @@ object RusTeX {
       RusTeXBridge.initialize(path.toString)
     }
   }
-  def parse(f : File,p:Params,memories:List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","true"))) = {
+  def parse(f : File,p:Params,memories:List[String] = Nil,envs:List[(String,String)] = List(("STEX_USESMS","true"))) = {
     if (this.synchronized {RusTeXBridge.initialized}) {
       val sb = RusTeXBridge.mainBridge
+      sb.setEnvs(envs:_*)
       sb.setMemories(memories)
       sb.setParams(p)
       sb.parse(f.toString)
     } else ""
   }
 
-  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,evs:List[(String,String)] = List(("STEX_USESMS","false"))) =  {
+  def parseString(f: File,text:String, p: Params, memories: List[String] = Nil,envs:List[(String,String)] = List(("STEX_USESMS","false"))) =  {
     if (this.synchronized { RusTeXBridge.initialized }) {
       val sb = RusTeXBridge.mainBridge
+      sb.setEnvs(envs:_*)
       sb.setMemories(memories)
       sb.setParams(p)
       sb.parseString(f.toString,text)
@@ -77,7 +78,7 @@ object RusTeX {
 
 }
 
-trait XHTMLParser extends TraversingBuildTarget {
+trait XHTMLParser extends BuildTarget {
 
   var stexserver : STeXServer = null
 
@@ -166,7 +167,7 @@ trait XHTMLParser extends TraversingBuildTarget {
 
 }
 
-class LaTeXToHTML extends XHTMLParser {
+class LaTeXToHTML extends TraversingBuildTarget with XHTMLParser {
   val key = "stex-xhtml"
   val outDim = Dim("xhtml")
   val inDim = info.kwarc.mmt.api.archives.source
@@ -221,7 +222,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
   }
 }
 
-class HTMLToLucene extends XHTMLParser {
+class HTMLToLucene extends TraversingBuildTarget with XHTMLParser {
   val key = "xhtml-lucene"
   override val outDim: ArchiveDimension = Dim("export", "lucene")
   val inDim = info.kwarc.mmt.api.archives.source

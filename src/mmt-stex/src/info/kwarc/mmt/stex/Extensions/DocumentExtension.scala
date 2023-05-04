@@ -77,7 +77,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
         ServerResponse(html, "text/html")
       case Some("document") =>
         val ret = doDocument
-        val bd = ret.get("div")()("body").head
+        val bd = ret.get("div")()("rustex-body").head
         bd.plain.attributes.remove((bd.namespace, "style"))
         bd.plain.attributes.remove((bd.namespace, "id"))
         ServerResponse(bd.toString.trim, "text/html")
@@ -465,7 +465,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   def stripMargins(ltx: HTMLNode) = {
     val body = ltx.get("body")()().head
     body.plain.attributes((HTMLParser.ns_html, "style")) = "margin:0;padding:0;"
-    val doc = body.get("div")()("body").head
+    val doc = body.get("div")()("rustex-body").head
     doc.plain.attributes((HTMLParser.ns_html, "style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
   }
 
@@ -475,6 +475,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
     case class Statement(s: String, orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
         super.onAdd
+        val chs = this.children
+        val span = this.add(<span style="display:contents"></span>)
+        chs.foreach(span.add)
         title.foreach(_.plain.classes ::= "shtml-title-" + s)
       }
 

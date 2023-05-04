@@ -42,6 +42,10 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   val archString = root.up.getName + "/" + root.getName
   val id = properties("id")
   def classpath = utils.splitAtWhitespace(properties.getOrElse("classpath",""))
+  /** gets the direct dependencies of an archive */
+  def dependencies: List[String] = {
+    stringToList(properties.getOrElse("dependencies", "").replace(",", " "))
+  }
   val narrationBase = properties.get("narration-base").map(utils.URI(_)).getOrElse(FileURI(root))
   /** the NamespaceMap built from the ns and ns-prefix properties */
   val ns = properties.get("ns").map(s => Path.parse(
@@ -111,6 +115,11 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   def MMTPathToContentPath(m: MPath): File = this / content / Archive.MMTPathToContentPath(m)
 
   import scala.collection.parallel.CollectionConverters._
+  private lazy val ignore_regex = properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
+  def ignore(fp:FilePath) = ignore_regex match {
+    case None => false
+    case Some(reg) => reg.matches("/" + fp.toString)
+  }
 
   /** traverses a dimension calling continuations on files and subdirectories */
   def traverse[A](dim: ArchiveDimension, in: FilePath, mode: TraverseMode, sendLog: Boolean = true, forClean: Boolean = false)
@@ -119,9 +128,9 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     def recurse(n: String): List[A] =
       traverse(dim, in / n, mode, sendLog)(onFile, onDir).toList
 
-    lazy val reg = properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
+    //lazy val reg = properties.get("ignore").map(_.replace(".","\\.").replace("*",".*").r)
     // if (reg.exists(_.matches("/" + inPath.toString))
-    def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (this / source).relativize(f).toString))
+    //def regfilter(f : File) : Boolean = !reg.exists(_.matches("/" + (this / source).relativize(f).toString))
     val inFile = this / dim / in
     val inFileName = inFile.getName
     if (inFile.isDirectory) {
@@ -133,7 +142,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
-    } else if (filter(inFileName) && regfilter(inFile) && filterDir(inFile.up.getName)) {
+    } else if (filter(inFileName) && !ignore(in) && filterDir(inFile.up.getName)) {
       if (!forClean && !inFile.existsCompressed) {
         throw ArchiveError(id, "file does not exist: " + inFile)
       } else
@@ -196,11 +205,6 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       }
     }
     ret.distinct
-  }
-
-  /** gets the direct dependencies of an archive */
-  def dependencies: List[String] = {
-    stringToList(properties.getOrElse("dependencies", "").replace(",", " "))
   }
 
   /** returns the list of loaded transitive dependencies of this archive, including itself */

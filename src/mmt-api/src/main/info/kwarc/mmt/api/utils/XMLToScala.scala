@@ -28,18 +28,18 @@ case class BacktrackableExtractError(token: Int, msg: String) extends Exception(
  * An XML node is parsed into a case class instance as follows
  *  * the case class whose name is the tag name is used except that
  *    * XML - is treated as Scala _
- *    * XML names that are Scala reserved words are prefixed by 'XML' in Scala
+ *    * XML names that are reserved words in Scala are prefixed by 'XML' in Scala
  *    * if a Scala class with name N does not exist, N_ is tried as a fallback (e.g., useful if N cannot be a Scala class name)
  *  * the arguments to the class (technically: the single apply method of the companion object) are computed as follows:
- *   * k: String: the value of the attribute with key s, or the content of the child with tag k, ("" if neither present)
+ *   * k: String: the value of the attribute with key k, or the content of the child with tag k, ("" if neither present)
  *   * k: Int: accordingly
  *   * k: Boolean: accordingly (false if not present)
  *   * t: A where A is one the case classes: recursive call on the single child of the child with tag t
  *   * t: Option[A]: accordingly, but the child may be absent
  *   * t: List[A]: accordingly but the child may have any number of children
  *   * t: G <: Group:  All arguments of G are computed and an instance of G constructed.
+  *        Effectively, all fields of G are imported into the current case class.
  *   * _a: A, Option[A], List[A] (where A may be a subtype of Group): like the t-cases above but taking the next available child(ren) of type A
- *        Effectively, all fields of G are imported into the current case class.
  *   The type A does not have to be a case class, e.g., the elements in a list can have the tags of subclasses of A.
  */
 class XMLToScala(pkg: String) {

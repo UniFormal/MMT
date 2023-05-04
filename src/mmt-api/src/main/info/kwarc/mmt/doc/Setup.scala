@@ -36,7 +36,7 @@ class Setup extends ShellExtension("setup") {
 
    def run(shell: Shell, args: List[String]): Option[Level.Level] = {
       log("\n\n\n\nThis is MMT's setup routine.\n" +
-              "It will create a few auxiliary files, clone and build example repositories and setup the integration with jEdit.\n"
+         "It will create a few auxiliary files, clone and build example repositories and setup the integration with jEdit.\n"
       )
       val l = args.length
       if (l > 4) {
@@ -45,24 +45,30 @@ class Setup extends ShellExtension("setup") {
       }
 
       val (sysFolder, conFolder, installContent, jeditSettingsFolder, customizeJEdit) = if (l == 0) {
+        val folderWarning = "Make sure this is an unrestricted folder and not, e.g., a subfolder of 'Downloads'."
         // interactive setup
         // choose system folder, content folder, and possibly fatjar to copy
         // the latter applies if the fat jar was run from outside MMT's directory structure, i.e., by running a binary-only download
         val (sf, cf) = shell.runStyle match {
           case d: DeployRunStyle =>
             val mmt = d.deploy.up
-            val con = shell.getFile("Enter a folder into which archives should be checked out", Some(mmt.up / "MMT-content"))
+            val folderPrompt = "Enter a folder into which archives should be checked out." + folderWarning
+            val con = shell.getFile(folderPrompt, Some(mmt.up / "MMT-content"))
             (mmt, con)
           case _ =>
-            val root = shell.getFile("Enter a folder into which MMT should be installed: ", Some(shell.controller.getHome / "MMT"))
-            (root / "systems" / "MMT", root / "MMT-content")
+            val folderPrompt = "Enter a folder into which MMT should be installed."
+            val root = shell.getFile(folderPrompt, Some(shell.controller.getHome / "MMT"))
+            (root / "systems" / "MMT", root / "content")
         }
         // get jEdit folder (if any)
         val jsf = OS.jEditSettingsFolder orElse {
           log("\n\nMMT can provide an IDE by acting as a jEdit plugin, but no jEdit settings folder was detected.\n" +
                    "You can cancel setup, install jEdit, and rerun setup,\n" +
-                   "     or manually enter the path to your jEdit settings folder now,\n" +
-                   "     or press return to skip jEdit integration for now.")
+                   "     or manually enter the path to your jEdit settings folder,\n" +
+                   "     or press return to skip jEdit integration for now.\n" +
+                   "If you are installing the jEdit plugin, make sure jEdit is closed - otherwise, some settings are not saved correctly.\n" +
+                      "In some versions, this requires clicking File-Exit in jEdit rather than just closing the window."
+            )
            val j = shell.getFile("", None)
            if (j.segments.isEmpty) None
            else Some(File(j))
@@ -202,6 +208,8 @@ class Setup extends ShellExtension("setup") {
                   val ec = rf.doIt(contentFolderMMT / a / "build.msl")
                   if (ec.get > Level.Info) {
                     log("errors while building " + a + " (see output above)")
+                  } else {
+                    log("build succeeded (any error called a 'gap' can be ignored)")
                   }
                 }
             }

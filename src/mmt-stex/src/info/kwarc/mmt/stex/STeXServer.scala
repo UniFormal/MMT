@@ -129,7 +129,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
   def emptydoc = {
     val state = new ParsingState(controller,Nil)
     val doc = HTMLParser.apply(MMTSystem.getResourceAsString("mmt-web/stex/emptydoc.xhtml"))(state)
-    (doc,doc.get("div")()("body").head)
+    (doc,doc.get("div")()("rustex-body").head)
   }
 
 

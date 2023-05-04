@@ -1,41 +1,25 @@
 package info.kwarc.mmt.lsp.mmt
 
+import info.kwarc.mmt.api
+import info.kwarc.mmt.api.{DPath, ErrorHandler, utils}
 import info.kwarc.mmt.api.archives.{BuildManager, TrivialBuildManager}
 import info.kwarc.mmt.api.frontend.{Controller, Run}
-import info.kwarc.mmt.api.utils.MMTSystem
+import info.kwarc.mmt.api.parser.ParsingStream
+import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
-import org.eclipse.lsp4j.{CompletionItem, CompletionList, CompletionOptions, CompletionParams, InitializeParams, InitializeResult, TextDocumentSyncKind}
+import org.eclipse.lsp4j.{CompletionItem, CompletionList, CompletionOptions, CompletionParams, InitializeParams, InitializeResult, SemanticTokensWithRegistrationOptions, TextDocumentSyncKind}
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 trait MMTClient extends LSPClient
 class MMTLSPWebsocket extends LSPWebsocket(classOf[MMTClient],classOf[MMTLSPServer])
 
-class BuildMMTOmdocMessage(val file: String)
+class BuildMessage(val uri: String)
 
 class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTClient], classOf[MMTLSPServer], classOf[MMTLSPWebsocket])("mmt",port,webport) {
   override def newServer(style: RunStyle): MMTLSPServer = new MMTLSPServer(style)
-
-  @JsonNotification("mmt/build/mmt-omdoc")
-  def buildMMTOmdoc(msg: BuildMMTOmdocMessage): Unit = {
-    log(s"building `${msg.file}` to mmt-omdoc")
-  }
-}
-
-object Socket {
-  def main(args: Array[String]) : Unit = {
-    val lsp = new MMTLSP
-    val controller = Run.controller
-    List("lsp", "lsp-mmt")
-      .foreach(s => controller.handleLine(s"log+ $s"))
-    controller.handleLine("log console")
-    controller.handleLine("server on 8090")
-    controller.extman.addExtension(lsp)
-    controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
-    controller.extman.addExtension(new TrivialBuildManager)
-    lsp.runSocketListener
-  }
 }
 
 class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
@@ -46,7 +30,10 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
 
   override def controller: Controller = super.controller
 
-  lazy val parser = {
+  override val scopes: List[String] = Colors.scopes
+  override val modifiers: List[String] = Colors.modifiers
+
+  lazy val parser: IterativeParser = {
     val p = new IterativeParser()
     controller.extman.addExtension(p)
     p
@@ -56,11 +43,16 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
 
   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
     super.initialize(params,result)
+    params.getWorkspaceFolders.asScala.map(_.getUri).foreach(uri => {
+      val workspacePath = URI(uri.replace("c%3A", "C:")).path.mkString(java.io.File.separator)
+      // todo: controller.addArchive(File(workspacePath)) no longer needed?
+
+      controller.handleLine("mathpath archive " + workspacePath)
+      controller.handleLine("lmh root " + workspacePath)
+    })
   }
 
   override val triggerChar: Char = 'j'
-  val scopes = Colors.scopes
-  val modifiers = Colors.modifiers
 
   val completionls = {
     val pairstrings = (MMTSystem.getResourceAsString("unicode/unicode-latex-map") + "\n" +
@@ -82,7 +74,50 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     case _ =>
   }
 
-  override def connect: Unit = client.log("Connected to MMT!")
+  override def connect: Unit = client.log(s"Connected to MMT v${MMTSystem.version}.")
+
+  @JsonNotification("mmt/typecheck")
+  def typecheck(msg: BuildMessage): Unit = {
+    val doc: MMTFile = documents.find {
+      case (uri, _) => File(msg.uri).toURI.toURL.sameFile(URI(uri).toJava.toURL)
+    }.map(_._2).getOrElse {
+      client.logError(s"Internal error File ${msg.uri} requested to build was not communicated to be" +
+        s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
+      return
+    }
+
+    client.log(s"Typechecking `${doc.uri}`...")
+
+    /*val ps = ParsingStream.fromString(doc.toString)
+    // (text, DPath(URI(uri)), file.getExtension.getOrElse(""), Some(nsMap))
+    val progress = new Progresser(file, (s1, s2) => note(s1, s2))
+    ps.addListener(progress)
+    clearFile(file.toString)*/
+    client.resetErrors(doc.uri)
+    doc.Annotations.clear
+    doc.onUpdate(Nil)
+    // doc.errorCont.getErrors
+
+
+    client.log(s"Typechecking finished of `${doc.uri}`.")
+  }
+  @JsonNotification("mmt/build/mmt-omdoc")
+  def buildMMTOmdoc(msg: BuildMessage): Unit = {
+    val doc: MMTFile = documents.find {
+      case (uri, _) => File(msg.uri).toURI.toURL.sameFile(URI(uri).toJava.toURL)
+    }.map(_._2).getOrElse {
+      client.logError(s"Internal error File ${msg.uri} requested to build was not communicated to be" +
+        s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
+      return
+    }
+
+    client.log(s"Building `${doc.uri}` to mmt-omdoc...")
+    val errors = mutable.ListBuffer[api.Error]()
+    controller.build(File(msg.uri))(errors.append)
+    client.resetErrors(doc.uri)
+    client.documentErrors(doc,true, errors.toSeq : _*)
+    client.log(s"Build finished of `${msg.uri}`!")
+  }
 }
 
 object Colors {

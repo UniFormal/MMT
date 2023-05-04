@@ -50,7 +50,8 @@ import scala.jdk.CollectionConverters._
  *    }
  *    provides methods runLocal, runSocketListener and runWebSocketListener, that run a local server or listen
  *    for a connection via sockets or websockets, respectively.
- *    @prefix: used for logging. The server logs at lsp-{prefix}-server, and additionally logs every request
+ *
+ * @param prefix used for logging. The server logs at lsp-{prefix}-server, and additionally logs every request
  *      at lsp-{prefix}-server-methodcall.
  */
 
@@ -161,16 +162,19 @@ class ClientWrapper[+A <: LSPClient](val client : A,server:LSPServer[A]) {
     client.publishDiagnostics(params)
   }
 
-  def documentErrors(doc : LSPDocument[LSPClient,LSPServer[LSPClient]],errors : info.kwarc.mmt.api.Error*) = this.synchronized {if (errors.nonEmpty) {
+  def documentErrors(doc : LSPDocument[LSPClient,LSPServer[LSPClient]],useRegion:Boolean,errors : info.kwarc.mmt.api.Error*) = this.synchronized {if (errors.nonEmpty) {
     val controller = server.controller
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(doc.uri))
     def get(sr : SourceRef,lvl:Level,msg : String) = {
       val d = new Diagnostic()
-      val start = sr.region.start.offset
-      val end = sr.region.end.offset + 1
-      val (sl, sc) = doc._doctext.toLC(start)
-      val (el, ec) = doc._doctext.toLC(end)
+      val ((sl,sc),(el,ec)) = if (useRegion) {
+        ((sr.region.start.line,sr.region.start.column),(sr.region.end.line,sr.region.end.column))
+      } else {
+        val start = sr.region.start.offset
+        val end = sr.region.end.offset + 1
+        (doc._doctext.toLC(start),doc._doctext.toLC(end))
+      }
       d.setRange(new lsp4j.Range(new Position(sl, sc), new Position(el, ec)))
       d.setMessage(msg)
       d.setSeverity(lvl match {
@@ -417,9 +421,9 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
 }
 
 object LSPServer {
-  def URItoVSCode(s : String) : String = URLEncoder.encode(s.replace("+","%2B"),StandardCharsets.UTF_8)
+  def URItoVSCode(s : String) : String = URLEncoder.encode(s.replace("+","%2B"),"UTF-8")
   def VSCodeToURI(s : String) : String = {
-    val dec = URLDecoder.decode(s,StandardCharsets.UTF_8)
+    val dec = URLDecoder.decode(s,"UTF-8")
     if (dec.startsWith("file:///") && dec(9) == ':') {
       dec.take(8) + dec(8).toUpper + dec.drop(9)
     } else dec
@@ -485,7 +489,6 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
     log("shutdown",Some("methodcall"))
     Completable{
       val r = server.shutdown
-      this.controller.extman.removeExtension(this)
       r.asInstanceOf[Object]
     }
   }

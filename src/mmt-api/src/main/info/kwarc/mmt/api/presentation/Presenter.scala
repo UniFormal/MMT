@@ -184,7 +184,7 @@ object ObjectTextPresenter extends ObjectPresenter {
 }
 
 /**
-  * Presents MMT knowledge items by means of claling their ''toString'' method.
+  * Presents MMT knowledge items by means of calling their ''toString'' method.
   *
   * @example ''TextPresenter.asString(item)''
   */

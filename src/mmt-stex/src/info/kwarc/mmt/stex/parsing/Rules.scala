@@ -10,10 +10,10 @@ class MacroApplication extends TeXTokenLike {
   private[parsing] var children: List[TeXTokenLike] = Nil
   def startoffset = children.head.startoffset
   def endoffset: Int = children.last.endoffset
+  def allChildren = children
 
-  override def iterate(f: TeXTokenLike => Unit): Unit = {
-    f(this)
-    children.foreach(_.iterate(f))
+  override def iterateChildren(f: TeXTokenLike => Unit): Unit = {
+    children.foreach(f(_))
   }
 
   override def toString: String = children.mkString
@@ -467,6 +467,8 @@ object TeXRules {
     SkipCommand("NewDocumentEnvironment", "vvvv"),
     SkipCommand("DeclareDocumentEnvironment", "vvvv"),
     SkipCommand("hbox","t"),SkipCommand("vbox","t"),SkipCommand("fbox","t"),SkipCommand("text","t"),
-    SkipCommand("texttt","t"),SkipCommand("ensuremath","m"),SkipCommand("scalebox","vt")
+    SkipCommand("texttt","t"),SkipCommand("ensuremath","m"),SkipCommand("scalebox","vt"),
+    SkipCommand("ref", "v"), SkipCommand("label", "v"), SkipCommand("cite", "v"),
+    SkipCommand("includegraphics","ov"),SkipCommand("url","ov")
   )
 }

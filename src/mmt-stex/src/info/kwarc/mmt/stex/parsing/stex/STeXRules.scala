@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.parsing.stex
 
-import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.api.{ComplexStep, DPath, GlobalName, Level, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.lsp.Annotation
 import info.kwarc.mmt.stex.lsp.{SemanticHighlighting, sTeXDocument}
@@ -23,10 +23,16 @@ object STeXRules {
     SkipCommand("stexstyleparagraph", "ovv"),
     SkipCommand("stexstyleexample", "ovv"),
     SkipCommand("stexstyleproblem", "ovv"),
+    SkipCommand("mmlintent","vn"),
+    SkipCommand("mmlarg", "vn"),
     VarDefRule(dict),VarSeqRule(dict),
     SDefinitionRule(dict),SAssertionRule(dict),SParagraphRule(dict),
-    InlineDefRule(dict),InlineAssRule(dict:Dictionary),
-    InputrefRule(dict)
+    InlineDefRule(dict),InlineAssRule(dict),
+    InputrefRule(dict),
+    MHLike("mhgraphics",List("bmp","png","jpg","jpeg","pdf","BMP","PNG","JPG","JPEG","PDF"),dict),
+    MHLike("cmhgraphics",List("bmp","png","jpg","jpeg","pdf","BMP","PNG","JPG","JPEG","PDF"), dict),
+    MHLike("mhtikzinput", List("tex"), dict),
+    MHLike("cmhtikzinput", List("tex"), dict)
   )
   def moduleRules(dict:Dictionary) : List[TeXRule] = List(
     SymDeclRule(dict),SymDefRule(dict),NotationRule(dict),TextSymDeclRule(dict),
@@ -40,7 +46,7 @@ object STeXRules {
 trait STeXRule extends TeXRule {
   val dict:Dictionary
   def addExportRule(rl : TeXRule) = dict.getModuleOpt.foreach{ mod =>
-      mod.exportrules ::= rl
+      mod.exportrules = mod.exportrules + (rl.name -> rl)
       mod.rules(rl.name) = rl
   }
 }
@@ -159,6 +165,38 @@ trait ImportModuleRuleLike extends STeXRule with MacroRule {
   }
 }
 
+case class MHLike(name:String,fileexts:List[String],dict:Dictionary) extends STeXRule with MacroRule {
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    val archive = parser.readOptAgument.flatMap(_.consumeStr("archive"))
+    val path = parser.readArgument.asname
+    val file = dict.resolveFilePath(archive.getOrElse(""),path,false)
+    var foundfile = file
+    var works = false
+    if (fileexts.exists(ext => file.toString.endsWith("." + ext)) && file.exists()) {
+      works = true
+    } else {
+      fileexts.foreach{ext => if (File(file.toString + "." + ext).exists()) {
+        works = true
+        foundfile = File(file.toString + "." + ext)
+      }}
+    }
+    val ret = new MacroApplication with STeXMacro {
+      if (!works) addError("File not found: " + file.toString)
+
+      override def doAnnotations(in: sTeXDocument): Unit = {
+        val a = in.Annotations.add(this, this.startoffset, endoffset - startoffset)
+        if (foundfile.exists()) {
+          a.addDefinition(foundfile.toString, 0, 0)
+        }
+        a.setHover("`" + foundfile.toString + "`\n\n-----\n![](" + foundfile.toJava.toURI.toString +")")
+        a.setSemanticHighlightingClass(SemanticHighlighting.file)
+      }
+    }
+    ret
+
+  }
+}
+
 case class InputrefRule(dict:Dictionary) extends STeXRule with MacroRule with NonFormalRule {
   val name = "inputref"
 
@@ -166,7 +204,7 @@ case class InputrefRule(dict:Dictionary) extends STeXRule with MacroRule with No
     parser.readChar('*')
     val archive = parser.readOptAgument.map(_.asname).getOrElse("")
     val path = parser.readArgument.asname
-    val file = dict.resolveFilePath(archive,path)
+    val file = dict.resolveFilePath(archive,path,true)
     val ret = new MacroApplication with STeXMacro {
       if (!file.exists()) addError("File not found: " + file.toString)
 
@@ -283,7 +321,7 @@ trait SymRefLike extends STeXMacro {
   val alternatives : List[SymdeclInfo]
   val reftokens : List[TeXTokenLike]
   def annotateWithAlternatives(a : Annotation,in:sTeXDocument): Unit = if (alternatives.length > 1) {
-    addError("Ambiguous symbol reference", lvl = Level.Warning)
+    addError("Ambiguous symbol reference: " + alternatives.head.path.name, lvl = Level.Warning)
     class mutvar(val path: GlobalName) {
       var string = path.module.name.toString + "?" + path.name
     }
@@ -381,7 +419,7 @@ class SymdeclApp(val syminfo:SymdeclInfo,val dict:Dictionary)(val name : String 
       pa.setSemanticHighlightingClass(SemanticHighlighting.declaration)
     }
     if (!syminfo.isDocumented) {
-      this.addError("Symbol is not documented",Some("Consider adding an {sdefinition} or {sparagraph}[style=symdoc] for this symbol"),Level.Info)
+      this.addError("Symbol is not documented: " + syminfo.path.name,Some("Consider adding an {sdefinition} or {sparagraph}[style=symdoc] for this symbol"),Level.Info)
     }
   }
 }
@@ -617,7 +655,7 @@ case class MetaTheoryRule(mp : MPath,dict:Dictionary) extends STeXRule {
   val name = "meta theory rule"
 }
 
-class SymrefApp(dict:Dictionary,val alternatives:List[SymdeclInfo],asPlainString: => String,trivial:Boolean,val reftokens:List[TeXTokenLike]) extends SymRefLike {
+class SymrefApp(dict:Dictionary,val alternatives:List[SymdeclInfo],val asPlainString: String,trivial:Boolean,val reftokens:List[TeXTokenLike]) extends SymRefLike {
   override def doAnnotations(in: sTeXDocument): Unit = {
     val a = in.Annotations.add(this, startoffset, endoffset - startoffset)
     a.setHover(alternatives.head.path.toString + {

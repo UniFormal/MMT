@@ -245,7 +245,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   object Search {
     def makeDocument(outdir: File, source: File, archive: Archive) = {
       val doc = new SearchDocument(outdir, source, archive, dpath)
-      val body = maindoc.get()()("body").head
+      val body = maindoc.get()()("rustex-body").head
       doc.add("content", makeString(body), body.children.map(_.toString).mkString, doctitle.toList.flatMap { t =>
         val nt = t.copy
         nt.plain.attributes.remove((nt.namespace, "style"))
