@@ -84,6 +84,7 @@ abstract class Test(val archivepath: String,
   */
 object MagicTest {
   lazy private val home = File(System.getProperty("user.home"))
+  lazy private val currentContext = File(System.getProperty("user.dir")) // <your path>\MMT\src
 
   /** the root for archives to use */
   lazy val archiveRoot: File = {
@@ -104,7 +105,9 @@ object MagicTest {
       // John
       home / "Documents" / "mmt_and_archives" / "archives",
       // alexander
-      home / "Dokumente" / "Studium" / "MMTWorkspace"/"MMT"
+      home / "Dokumente" / "Studium" / "MMTWorkspace"/"MMT",
+      // relative path to archives repo next to MMT repo
+      currentContext.up.up / "archives"
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 
