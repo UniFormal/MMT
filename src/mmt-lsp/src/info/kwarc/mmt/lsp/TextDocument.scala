@@ -229,31 +229,31 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
   }
 
   override def declaration(params: DeclarationParams): List[Location] = {
-    val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
+    val (_,as) = getAnnotations(params.getTextDocument,params.getPosition)
     as.flatMap(_.getDeclaration).map { case (s,i,j) =>
-      new Location({
-        if (s.startsWith("file:///")) s else
-          if (s.startsWith("file:/")) "file:///" + s.drop(6)
-          else s
-      },new lsp4j.Range({
-        val (l,p) =doc.get._doctext.toLC(i)
-        new Position(l,Math.max(p,0))
-      },{
-        val (l,p) = doc.get._doctext.toLC(j)
-        new Position(l,Math.max(p,0))
+      val sdoc = if (s.startsWith("file:///")) s else if (s.startsWith("file:/")) "file:///" + s.drop(6) else s
+      val sd = documents.getOrElse(sdoc,newDocument(sdoc))
+      new Location(sdoc, new lsp4j.Range({
+        val (l, p) = sd._doctext.toLC(i)
+        new Position(l, Math.max(p, 0))
+      }, {
+        val (l, p) = sd._doctext.toLC(j)
+        new Position(l, Math.max(p, 0))
       }))
     }
   }
 
   override def definition(params: DefinitionParams): (Option[List[Location]],Option[List[LocationLink]]) = {
-    val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
+    val (_,as) = getAnnotations(params.getTextDocument,params.getPosition)
     val ls = as.flatMap(_.getDefinitions).map { case (s,i,j) =>
-      new Location(s,new lsp4j.Range({
-        val (l,p) = doc.get._doctext.toLC(i)
-        new Position(l,p)
-      },{
-        val (l,p) = doc.get._doctext.toLC(j)
-        new Position(l,p)
+      val sdoc = if (s.startsWith("file:///")) s else if (s.startsWith("file:/")) "file:///" + s.drop(6) else s
+      val sd = documents.getOrElse(sdoc, newDocument(sdoc))
+      new Location(sdoc, new lsp4j.Range({
+        val (l, p) = sd._doctext.toLC(i)
+        new Position(l, Math.max(p, 0))
+      }, {
+        val (l, p) = sd._doctext.toLC(j)
+        new Position(l, Math.max(p, 0))
       }))
     }
     (Some(ls),None)
