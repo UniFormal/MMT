@@ -362,6 +362,7 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
         new lsp4j.Position(start._1, start._2),
         new lsp4j.Position(end._1, end._2)
       ))
+      println((_doctext.toLC(offset), _doctext.toLC(this.end)).toString + " --> " + (file, start, end).toString)
     }
     def getDefinitionsLC: List[lsp4j.Location] = _definitionsLC
 
