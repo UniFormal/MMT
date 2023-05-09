@@ -247,7 +247,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
 
   override def definition(params: DefinitionParams): (Option[List[Location]],Option[List[LocationLink]]) = {
     val (doc,as) = getAnnotations(params.getTextDocument,params.getPosition)
-    val ls = as.flatMap(_.getDefinitions).map { case (s,i,j) =>
+    val ls: List[Location] = as.flatMap(_.getDefinitions).map { case (s,i,j) =>
       new Location(s,new lsp4j.Range({
         val (l,p) = doc.get._doctext.toLC(i)
         new Position(l,p)
@@ -255,7 +255,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
         val (l,p) = doc.get._doctext.toLC(j)
         new Position(l,p)
       }))
-    }
+    } ::: as.flatMap(_.getDefinitionsLC)
     (Some(ls),None)
   }
 

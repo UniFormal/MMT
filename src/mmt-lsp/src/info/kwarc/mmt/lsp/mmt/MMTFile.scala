@@ -206,45 +206,6 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
         case tm if tm.head.isDefined =>
           lazy val pragma = pragmatics.map(_.mostPragmatic(tm)).getOrElse(tm)
 
-          def ret = tm match {
-            case OMID(_) => tm
-            case OMA(_, args) =>
-              args.foreach(traverse(_))
-              // TODO: archives.source
-              tm
-            case OMBINDC(_, ctx, bd) =>
-              traverseContext(ctx)
-              bd.foreach(traverse(_))
-              tm
-          }
-
-          state.meta.foreach { mt =>
-            controller.library.forDeclarationsInScope(OMMOD(mt)) {
-              case (_, _, d) if pragma.head.contains(d.path) =>
-                forSource(tm) { reg =>
-                  val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-                  val a = Annotations.addReg(tm, nreg)
-                  a.setSemanticHighlightingClass(Colors.termconstantmeta)
-                  a.setHover({
-                    headString(pragma)
-                  })
-
-                  SourceRef.get(d).map(src => {
-                    controller.backend.resolveLogical(src.container) match {
-                      case Some((originArchive, originFilepathParts)) =>
-                        val originFile = originArchive.root / archives.source.toString / FilePath(originFilepathParts)
-                        val originRegion = src.region
-
-                        // todo: consumer of added definitions converts offsets into line/column coordinates using
-                        //       the current document, not originFile!
-                        a.addDefinition(originFile.toURI.getPath, originRegion.start.offset, originRegion.end.offset)
-                    }
-                  })
-                }
-                return ret
-              case _ =>
-            }
-          }
           forSource(tm) { reg =>
             val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
             val a = Annotations.addReg(tm, nreg)
@@ -252,9 +213,57 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
               headString(pragma)
             })
 
-            // TODO ?
+            val headFromMeta = pragma.head.exists(p => {
+              state.meta.exists(mt => controller.library.hasImplicit(p.module, mt))
+            })
+            if (headFromMeta) {
+              a.setSemanticHighlightingClass(Colors.termconstantmeta)
+              val x = pragma.head.flatMap(controller.getO)
+              val y = x.flatMap(SourceRef.get)
+              y.foreach((src: SourceRef) =>
+                controller.backend.resolveLogical(src.container) match {
+                  case Some((originArchive, originFilepathParts)) =>
+                    val originFile = originArchive.root / archives.source.toString / FilePath(originFilepathParts)
+                    val originRegion = src.region
+
+                    a.addDefinitionLC(
+                      originFile.toURI.getPath,
+                      (originRegion.start.line, originRegion.start.column),
+                      (originRegion.end.line, originRegion.end.column)
+                    )
+                }
+              )
+            }
+
+            /*// register "go to definition" functionality
+            //val x = Some(tm).collect { case OMS(p) => p }.flatMap(controller.getO)
+            val x = pragma.head.flatMap(controller.getO)
+            val y = x.flatMap(SourceRef.get)
+            y.foreach((src: SourceRef) =>
+              controller.backend.resolveLogical(src.container) match {
+                case Some((originArchive, originFilepathParts)) =>
+                  val originFile = originArchive.root / archives.source.toString / FilePath(originFilepathParts)
+                  val originRegion = src.region
+
+                  a.addDefinitionLC(
+                    originFile.toURI.getPath,
+                    (originRegion.start.line, originRegion.start.column),
+                    (originRegion.end.line, originRegion.end.column)
+                  )
+              }
+            )*/
           }
-          ret
+
+          tm match {
+            case OMS(_) => tm
+            case OMA(_, args) =>
+              args.foreach(traverse(_))
+              tm
+            case OMBINDC(_, ctx, bd) =>
+              traverseContext(ctx)
+              bd.foreach(traverse(_))
+              tm
+          }
         case _ =>
           Traverser(this, t)
       }
