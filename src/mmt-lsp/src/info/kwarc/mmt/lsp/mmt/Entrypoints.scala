@@ -8,7 +8,7 @@ object Socket {
   def main(args: Array[String]) : Unit = {
     val lsp = new MMTLSP
     val controller = Run.controller
-    List("lsp", "lsp-mmt")
+    List("lsp", "lsp-mmt", "lsp-mmt-socket")
       .foreach(s => controller.handleLine(s"log+ $s"))
     controller.handleLine("log console")
     controller.handleLine("server on 8090")

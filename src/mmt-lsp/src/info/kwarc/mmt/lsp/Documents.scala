@@ -2,6 +2,7 @@ package info.kwarc.mmt.lsp
 import info.kwarc.mmt.api.parser.SourceRegion
 import info.kwarc.mmt.api.{DPath, NamespaceMap, ParseError, Path}
 import info.kwarc.mmt.api.utils.{File, URI}
+import org.eclipse.lsp4j
 import org.eclipse.lsp4j.{InlayHintKind, SymbolKind}
 
 import scala.collection.mutable
@@ -354,6 +355,16 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
     private[AnnotatedDocument] var _definitions: List[(String,Int,Int)] = Nil
     def addDefinition(file:String,start:Int,end:Int) = _definitions ::= (file,start,end)
     def getDefinitions = _definitions
+
+    private[AnnotatedDocument] var _definitionsLC: List[lsp4j.Location] = Nil
+    def addDefinitionLC(file: String, start: (Int, Int), end: (Int, Int)): Unit = {
+      _definitionsLC ::= new lsp4j.Location(file, new lsp4j.Range(
+        new lsp4j.Position(start._1, start._2),
+        new lsp4j.Position(end._1, end._2)
+      ))
+      println((_doctext.toLC(offset), _doctext.toLC(this.end)).toString + " --> " + (file, start, end).toString)
+    }
+    def getDefinitionsLC: List[lsp4j.Location] = _definitionsLC
 
     private[AnnotatedDocument] var _codelenses: List[(String,String,List[AnyRef],Int,Int)] = Nil
     def addCodeLens(title:String,commandname:String,arguments:List[AnyRef]=Nil,start:Int,end:Int) = _codelenses ::= (title,commandname,arguments,start,end)

@@ -255,7 +255,7 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
         val (l, p) = sd._doctext.toLC(j)
         new Position(l, Math.max(p, 0))
       }))
-    }
+    } ::: as.flatMap(_.getDefinitionsLC)
     (Some(ls),None)
   }
 
