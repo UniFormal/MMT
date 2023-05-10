@@ -18,7 +18,7 @@ class SearchPane(controller: Controller) extends JPanel {
    private val formatText = new JTextField(10)
    formatText.setText("mmt")
    private val searchButton = Swing.Button("search")(search)
-   theory.setText("http://cds.omdoc.org/examples?PL")
+   theory.setText("latin:/")
    query.add(new JLabel("theory:"))
    query.add(theory)
    queryText.setText("$x,y: x ⇒ y")

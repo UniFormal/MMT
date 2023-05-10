@@ -17,25 +17,29 @@ import java.awt.event.{MouseAdapter, MouseEvent}
 
 import info.kwarc.mmt.api.frontend.actions.Navigate
 
+// Tree model as used in the MMT GUI's content pane
+
 abstract class MMTNode {
    def children: List[MMTNode]
 }
 
+/** root */
 class ControllerNode(controller: Controller) extends MMTNode {
    override def toString = "MMT"
    def children = {
      val as = controller.backend.getArchives.sortBy(a => a.id)
      as.map {a =>
-      new PathNode(DPath(a.narrationBase), controller)
+      new ArchiveNode(a, controller)
      }
    }
 }
 
+/** any MMT structural element */
 class StructuralElementNode(val se: StructuralElement, controller: Controller) extends MMTNode {
    override def toString = se.path.name.toString
    lazy val children = se.getDeclarations.mapPartial[MMTNode] {
       case r: NRef =>
-         Some(new PathNode(r.target, controller))
+         Some(new StructuralElementNode(controller.get(r.target), controller))
       //case o: Obj =>
       //    Some(new ObjNode(o))
       case e: StructuralElement =>
@@ -45,14 +49,16 @@ class StructuralElementNode(val se: StructuralElement, controller: Controller) e
    }
 }
 
+/** MMT objects and their subobjects */
 class ObjNode(val obj: Obj) extends MMTNode {
    override def toString = obj.toString
    def children = Nil
 }
 
-class PathNode(path: Path, controller: Controller) extends MMTNode {
-   override def toString = path.last
-   lazy val seNode = new StructuralElementNode(controller.get(path), controller)
+/** archives */
+class ArchiveNode(arch: Archive, controller: Controller) extends MMTNode {
+   override def toString = arch.id
+   lazy val seNode = new StructuralElementNode(controller.get(DPath(arch.narrationBase)), controller)
    def children = seNode.children
 }
 
@@ -100,7 +106,7 @@ class MMTTree(controller: Controller) extends JTree(new MMTTreeModel(controller)
          val node = jpath.getLastPathComponent.asInstanceOf[MMTNode]
          val se = node match {
             case seNode: StructuralElementNode => seNode.se
-            case pn: PathNode => pn.seNode.se
+            case an: ArchiveNode => an.seNode.se
             case _ => null
          }
          clickOn(se,e)
