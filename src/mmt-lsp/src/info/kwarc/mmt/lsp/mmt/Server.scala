@@ -1,14 +1,15 @@
 package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{DPath, ErrorHandler, utils}
-import info.kwarc.mmt.api.archives.{BuildManager, TrivialBuildManager}
-import info.kwarc.mmt.api.frontend.{Controller, Run}
-import info.kwarc.mmt.api.parser.ParsingStream
-import info.kwarc.mmt.api.utils.{File, MMTSystem, URI}
-import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.api.{GlobalName, Path}
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.ontology.Binary.toRelation
+import info.kwarc.mmt.api.ontology.{DependsOn, IsConstant, Transitive}
+import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, URI}
+import info.kwarc.mmt.lsp._
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
-import org.eclipse.lsp4j.{CompletionItem, CompletionList, CompletionOptions, CompletionParams, InitializeParams, InitializeResult, SemanticTokensWithRegistrationOptions, TextDocumentSyncKind}
+import org.eclipse.lsp4j._
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -42,13 +43,20 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
   override def newDocument(uri: String): MMTFile = new MMTFile(uri,client,this)
 
   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
-    super.initialize(params,result)
+    super.initialize(params, result)
+
+    val refOptions = new ReferenceOptions()
+    refOptions.setWorkDoneProgress(true)
+    result.getCapabilities.setReferencesProvider(refOptions)
+
     params.getWorkspaceFolders.asScala.map(_.getUri).foreach(uri => {
       val workspacePath = URI(uri.replace("c%3A", "C:")).path.mkString(java.io.File.separator)
       // todo: controller.addArchive(File(workspacePath)) no longer needed?
 
+      client.log(s"Registering `$workspacePath` as mathpath archive.")
       controller.handleLine("mathpath archive " + workspacePath)
       controller.handleLine("lmh root " + workspacePath)
+      client.log(s"Found archives: ${controller.backend.getArchives.map(_.id).mkString(", ")}.")
     })
   }
 
@@ -68,6 +76,30 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
   }
 
   override def completion(doc : String, line : Int, char : Int): List[Completion] = completionls
+
+  override def references(params: ReferenceParams): List[Location] = {
+    // load all relational data of archives
+    controller.backend.getArchives.foreach(archive => {
+      archive.allContent
+      archive.readRelational(FilePath("/"), controller, "rel")
+    })
+
+    val doc = documents.getOrElse(params.getTextDocument.getUri, return Nil)
+    val offset = doc._doctext.toOffset(params.getPosition.getLine, params.getPosition.getCharacter)
+
+    val matchingDeclarations: List[GlobalName] = doc.Annotations.getAll.filter(a => {
+      a.offset <= offset && offset <= a.end && a.symbolkind == SymbolKind.Constant
+    }).collect {
+      case a if a.value.isInstanceOf[Declaration] => a.value.asInstanceOf[Declaration]
+    }.map(_.path)
+
+    val dependencies: Set[Path] = matchingDeclarations.flatMap(path => {
+      controller.depstore.querySet(path, Transitive(-DependsOn))
+    }).toSet
+    println(dependencies)
+
+    Nil
+  }
 
   override def shutdown: Any = style match {
     case LocalStyle => scala.sys.exit()
