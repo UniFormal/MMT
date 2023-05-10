@@ -275,7 +275,7 @@ class ContentMathMLPresenter extends ObjectPresenter {
 }
 
 object ContentMathMLPresenter {
-  def apply(o: Obj): scala.xml.Node = applyContext(o)(MathMLContext.forContent(Nil, None))
+  def apply(o: Obj, origin: Option[CPath] = None): scala.xml.Node = applyContext(o)(MathMLContext.forContent(Nil, origin))
   def apply(sf: SemiFormalObject): scala.xml.Node = applyContext(sf)(MathMLContext.forContent(Nil, None))
 
   def applyContext(o: Obj)(implicit context: MathMLContext): scala.xml.Node = context(applyImpl(o))
@@ -364,8 +364,8 @@ class ParallelMathMLPresenter extends PresentationMathMLPresenter {
   * A MathML Context is a context used for exporting objects as MathML
   *
   * @param qvars qvars
-  * @param position The current position within the term being presentated
-  * @param origin Optional origin for the object being exported. When true, will set an xref attribute pointing to an appropriate Presentation object.
+  * @param position The current position within the term being presented
+  * @param origin Optional origin for the object being exported. If give, adds xref attribute to an appropriate Presentation object.
   *
   */
 case class MathMLContext(qvars: Context, position: Position, origin: Option[CPath], isPresentation: Boolean) {
