@@ -66,7 +66,7 @@ class SearchPane(controller: Controller) extends JPanel {
                   val sobjS = obj match {
                      case None => ""
                      case Some(t) =>
-                        val sobj = t.subobject(answ.pos)._2
+                        val sobj = t.subobject(answ.pos, cmlXPath = true)._2
                         ": " + controller.presenter.asString(sobj)
                   }
                   val n = new DefaultMutableTreeNode("subterm at " + answ.pos.toString + ": " + sobjS)
