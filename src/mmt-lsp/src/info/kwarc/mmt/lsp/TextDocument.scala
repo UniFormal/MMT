@@ -250,10 +250,10 @@ trait WithAnnotations[ClientType <: LSPClient,DocumentType <: AnnotatedDocument[
       val sd = documents.getOrElse(sdoc, newDocument(sdoc))
       new Location(sdoc, new lsp4j.Range({
         val (l, p) = sd._doctext.toLC(i)
-        new Position(l, Math.max(p, 0))
+        new Position(Math.max(l, 0), Math.max(p, 0))
       }, {
         val (l, p) = sd._doctext.toLC(j)
-        new Position(l, Math.max(p, 0))
+        new Position(Math.max(l, 0), Math.max(p, 0))
       }))
     } ::: as.flatMap(_.getDefinitionsLC)
     (Some(ls),None)
