@@ -1,12 +1,14 @@
 package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{CPath, ContentPath, DefComponent, GlobalName, Path, TypeComponent, archives}
+import info.kwarc.mmt.api.{CPath, ContentPath, DefComponent, GlobalName, MPath, Path, TypeComponent, archives}
+import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.ontology.Binary.toRelation
+import info.kwarc.mmt.api.ontology.RelationExp.AnyDep
 import info.kwarc.mmt.api.ontology.{DependsOn, IsConstant, Transitive}
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, URI}
 import info.kwarc.mmt.lsp._
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -86,33 +88,60 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     * @todo So far it only allows constants, e.g., not theories or views.
     */
   override def references(params: ReferenceParams): List[Location] = {
-    withProgress(params, "Searching References", "Searching References")(update => {
-      if (!hasLoadedRelational) { // load all relational data of archives
-        update(0.0, "Loading relational data from all archives")
-        controller.backend.getArchives.foreach(archive => {
-          archive.allContent
-          archive.readRelational(FilePath("/"), controller, "rel")
-        })
-        hasLoadedRelational = true
-      }
-      update(50.0, "Loaded relational data from all archives")
-
-      val doc = documents.getOrElse(params.getTextDocument.getUri, return Nil)
+    // helper function wrapped in withProgress below
+    def action(progress: (Double, String) => Unit): (List[Location], String) = {
+      // Step 1: determine whose element we should seek references for
+      //         (i.e., where has the user put their cursor in the active document?)
+      val doc = documents.getOrElse(params.getTextDocument.getUri, {
+        return (Nil, "Could not determine active document")
+      })
       val offset = doc._doctext.toOffset(params.getPosition.getLine, params.getPosition.getCharacter)
 
-      val matchingDeclarations: List[GlobalName] = doc.Annotations.getAll.filter(a => {
-        a.offset <= offset && offset <= a.end && a.symbolkind == SymbolKind.Constant
-      }).collect {
-        case a if a.value.isInstanceOf[Declaration] => a.value.asInstanceOf[Declaration]
-      }.map(_.path)
+      val path: ContentPath = {
+        // first try to match constants
+        val constant = doc.Annotations.getAll.collect {
+          case a if a.value.isInstanceOf[Declaration] &&
+            a.offset <= offset && offset <= a.end && a.symbolkind == SymbolKind.Constant
+          => (a.length, a.value.asInstanceOf[Constant].path)
+        }.sortBy(_._1).map(_._2).headOption
 
-      update(60.0, "Querying relational data for references")
-      val dependencies: Set[Path] = matchingDeclarations.flatMap(path => {
-        controller.depstore.querySet(path $ TypeComponent, -DependsOn) ++
-          controller.depstore.querySet(path $ DefComponent, -DependsOn)
-      }).toSet
-      update(75.0, "Queried relational data, now post-processing results")
+        constant match {
+          case x@Some(_) => x
+          case None =>
+            doc.Annotations.getAll.collect {
+              case a if a.value.isInstanceOf[Module] &&
+                a.offset <= offset && offset <= a.end && a.symbolkind == SymbolKind.Module
+              => (a.length, a.value.asInstanceOf[Module].path)
+            }.sortBy(_._1).map(_._2).headOption
+        }
+      }.getOrElse {
+        return (Nil, "Could not determine element for which to seek references")
+      }
 
+      // Step 2
+      progress(0.0, "Initializing relational data of archives")
+      if (!hasLoadedRelational) { // not yet loaded
+        controller.backend.getArchives.foreach(_.readRelational(FilePath("/"), controller, "rel"))
+        hasLoadedRelational = true
+      }
+      progress(50.0, "Loaded relational data of archives")
+
+      // Step 3
+      progress(60.0, "Querying relational data for references")
+      val dependencies: Set[Path] = path match {
+        case p: GlobalName =>
+          // Note (1): We need to specialize to type and def component here because
+          //           the relation DependsOn is component-component and module-module.
+          // Note (2): As in the case below for MPaths, we could also use -AnyDep as the
+          //           query here. Not sure if this is wanted.
+          controller.depstore.querySet(p $ TypeComponent, -DependsOn) ++
+            controller.depstore.querySet(p $ DefComponent, -DependsOn)
+        case mp: MPath =>
+          controller.depstore.querySet(mp, -AnyDep(controller.relman))
+      }
+
+      // Step 4
+      progress(75.0, "Post-processing results")
       val references: List[Location] = dependencies.map {
         case cp: CPath => cp.parent
         case path => path
@@ -122,25 +151,27 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
           client.log(s"Reference `$dep` found in relational but not contents data.")
           None
       }.map(e => (e, SourceRef.get(e))).flatMap {
-          case (e, Some(src)) => Some((e, src))
-          case (e, None) =>
-            client.log(s"Reference `$e` found in relational and content data, but no source references available.")
-            None
-        }.map { case (e, src) => (e, src, resolveSourceFilepath(src)) }.flatMap {
-          case (_, src, Some(srcPath)) =>
-            val (start, end) = (src.region.start, src.region.end)
-            Some(new Location(srcPath.toURI.getPath, new Range(
-              new Position(start.line, start.column),
-              new Position(end.line, end.column)
-            )))
+        case (e, Some(src)) => Some((e, src))
+        case (e, None) =>
+          client.log(s"Reference `$e` found in relational and content data, but no source references available.")
+          None
+      }.map { case (e, src) => (e, src, resolveSourceFilepath(src)) }.flatMap {
+        case (_, src, Some(srcPath)) =>
+          val (start, end) = (src.region.start, src.region.end)
+          Some(new Location(srcPath.toURI.getPath, new Range(
+            new Position(start.line, start.column),
+            new Position(end.line, end.column)
+          )))
 
-          case (e, _, None) =>
-            client.log(s"Reference `$e` found in relational and content data, but source references failed to resolve to an existing archive on disk.")
-            None
-        }.toList // todo: impose some user-friendly order?
+        case (e, _, None) =>
+          client.log(s"Reference `$e` found in relational and content data, but source references failed to resolve to an existing archive on disk.")
+          None
+      }.toList // todo: impose some user-friendly order?
 
       (references, "Loaded all references")
-    })
+    }
+
+    withProgress(params, "Searching References", "Searching References")(action)
   }
 
   /**
