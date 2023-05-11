@@ -225,30 +225,15 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
             // ====================================
             val headDecl = pragma.head.flatMap(controller.getO)
             headDecl.flatMap(SourceRef.get).foreach((src: SourceRef) => {
-              val declOrigin: Option[(Archive, List[String])] = {
-                // TODO: The case distinction below is awkward.
-                //       NR conjectures that whenever the file containing headDecl has already been built
-                //       to mmt-omdoc, src.container is a logical path.
-                //       Otherwise, e.g., if we are currently merely typechecking an individual file,
-                //       and headDecl happens to be declared therein (i.e., in the same file that is getting
-                //       typechecked), then src.container will be a physical path.
-                controller.backend.resolveLogical(src.container) match {
-                  case x@Some(_) => x
-                  case None => controller.backend.resolvePhysical(File(src.container.toURL.getFile))
-                }
-              }
+              server.resolveSourceFilepath(src) foreach(originFile => {
+                val originRegion = src.region
 
-              declOrigin foreach {
-                case (originArchive, originFilepathParts) =>
-                  val originFile = originArchive.root / archives.source.toString / FilePath(originFilepathParts)
-                  val originRegion = src.region
-
-                  a.addDefinitionLC(
-                    originFile.toURI.getPath,
-                    (originRegion.start.line, originRegion.start.column),
-                    (originRegion.end.line, originRegion.end.column)
-                  )
-              }
+                a.addDefinitionLC(
+                  originFile.toURI.getPath,
+                  (originRegion.start.line, originRegion.start.column),
+                  (originRegion.end.line, originRegion.end.column)
+                )
+              })
             })
           }
 

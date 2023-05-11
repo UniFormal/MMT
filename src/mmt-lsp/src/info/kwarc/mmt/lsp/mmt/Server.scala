@@ -1,10 +1,11 @@
 package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{GlobalName, Path}
+import info.kwarc.mmt.api.{CPath, ContentPath, DefComponent, GlobalName, Path, TypeComponent, archives}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.ontology.Binary.toRelation
 import info.kwarc.mmt.api.ontology.{DependsOn, IsConstant, Transitive}
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, URI}
 import info.kwarc.mmt.lsp._
@@ -77,28 +78,93 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
 
   override def completion(doc : String, line : Int, char : Int): List[Completion] = completionls
 
+  // todo: atomic?
+  private var hasLoadedRelational = false
+
+  /**
+    * Finds all usages ("references") of an MMT [[info.kwarc.mmt.api.StructuralElement StructuralElement]].
+    * @todo So far it only allows constants, e.g., not theories or views.
+    */
   override def references(params: ReferenceParams): List[Location] = {
-    // load all relational data of archives
-    controller.backend.getArchives.foreach(archive => {
-      archive.allContent
-      archive.readRelational(FilePath("/"), controller, "rel")
+    withProgress(params, "Searching References", "Searching References")(update => {
+      if (!hasLoadedRelational) { // load all relational data of archives
+        update(0.0, "Loading relational data from all archives")
+        controller.backend.getArchives.foreach(archive => {
+          archive.allContent
+          archive.readRelational(FilePath("/"), controller, "rel")
+        })
+        hasLoadedRelational = true
+      }
+      update(50.0, "Loaded relational data from all archives")
+
+      val doc = documents.getOrElse(params.getTextDocument.getUri, return Nil)
+      val offset = doc._doctext.toOffset(params.getPosition.getLine, params.getPosition.getCharacter)
+
+      val matchingDeclarations: List[GlobalName] = doc.Annotations.getAll.filter(a => {
+        a.offset <= offset && offset <= a.end && a.symbolkind == SymbolKind.Constant
+      }).collect {
+        case a if a.value.isInstanceOf[Declaration] => a.value.asInstanceOf[Declaration]
+      }.map(_.path)
+
+      update(60.0, "Querying relational data for references")
+      val dependencies: Set[Path] = matchingDeclarations.flatMap(path => {
+        controller.depstore.querySet(path $ TypeComponent, -DependsOn) ++
+          controller.depstore.querySet(path $ DefComponent, -DependsOn)
+      }).toSet
+      update(75.0, "Queried relational data, now post-processing results")
+
+      val references: List[Location] = dependencies.map {
+        case cp: CPath => cp.parent
+        case path => path
+      }.map(dep => (dep, controller.getO(dep))).flatMap {
+        case (_, Some(e)) => Some(e)
+        case (dep, None) =>
+          client.log(s"Reference `$dep` found in relational but not contents data.")
+          None
+      }.map(e => (e, SourceRef.get(e))).flatMap {
+          case (e, Some(src)) => Some((e, src))
+          case (e, None) =>
+            client.log(s"Reference `$e` found in relational and content data, but no source references available.")
+            None
+        }.map { case (e, src) => (e, src, resolveSourceFilepath(src)) }.flatMap {
+          case (_, src, Some(srcPath)) =>
+            val (start, end) = (src.region.start, src.region.end)
+            Some(new Location(srcPath.toURI.getPath, new Range(
+              new Position(start.line, start.column),
+              new Position(end.line, end.column)
+            )))
+
+          case (e, _, None) =>
+            client.log(s"Reference `$e` found in relational and content data, but source references failed to resolve to an existing archive on disk.")
+            None
+        }.toList // todo: impose some user-friendly order?
+
+      (references, "Loaded all references")
     })
+  }
 
-    val doc = documents.getOrElse(params.getTextDocument.getUri, return Nil)
-    val offset = doc._doctext.toOffset(params.getPosition.getLine, params.getPosition.getCharacter)
+  /**
+    * Tries to resolve the physical file path corresponding to the given [[SourceRef source reference]].
+    *
+    * A [[SourceRef]] normally contains an MMT logical path, e.g. `http://docs.omdoc.org/urtheories/lf.mmt#966.46.3:998.46.35`.
+    * Using [[controller]] and [[Controller.backend.resolveLogical()]] this is resolved to a physical file path
+    * (e.g., `<some user-specific path>/urtheories/source/lf.mmt`) hopefully pointing to the file in which
+    * the content element for which `src` is the source references was declared.
+    */
+  private[mmt] def resolveSourceFilepath(src: SourceRef): Option[File] = {
+    // TODO: The consecutive tries of resolving below are awkward, but necessary due to an MMT peculiarity (bug?)
+    //       Concretely, if the element pointed to by src was *built* to mmt-omdoc, src.container happens to be
+    //       a logical path as expected. If it was merely typechecked in-memory (e.g., via our LSP functionality),
+    //       then src.container happens to be a physical path.
+    val origin = controller.backend.resolveLogical(src.container) match {
+      case x@Some(_) => x
+      case None => controller.backend.resolvePhysical(File(src.container.toURL.getFile))
+    }
 
-    val matchingDeclarations: List[GlobalName] = doc.Annotations.getAll.filter(a => {
-      a.offset <= offset && offset <= a.end && a.symbolkind == SymbolKind.Constant
-    }).collect {
-      case a if a.value.isInstanceOf[Declaration] => a.value.asInstanceOf[Declaration]
-    }.map(_.path)
-
-    val dependencies: Set[Path] = matchingDeclarations.flatMap(path => {
-      controller.depstore.querySet(path, Transitive(-DependsOn))
-    }).toSet
-    println(dependencies)
-
-    Nil
+    origin.map {
+      case (originArchive, originFileparts) =>
+        originArchive.root / archives.source.toString / FilePath(originFileparts)
+    }
   }
 
   override def shutdown: Any = style match {
