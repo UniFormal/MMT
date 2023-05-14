@@ -2,7 +2,6 @@ package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.HasMetaData
@@ -11,7 +10,7 @@ import info.kwarc.mmt.api.notations.Pragmatics
 import info.kwarc.mmt.api.objects.{OMA, OMMOD, Traverser}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.{File, FilePath, URI}
+import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import org.eclipse.lsp4j.SymbolKind
 
@@ -28,7 +27,9 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
   override def onUpdate(changes: List[Delta]): Unit = {
     if (synchronized {
       Annotations.getAll.isEmpty
-    }) parseTop
+    }) {
+      reparse(None)
+    }
     super.onUpdate(changes)
   }
 
@@ -130,8 +131,20 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
     case c: Constant =>
       forSource(c) { reg => Annotations.addReg(c, reg, SymbolKind.Constant, c.name.toString, true) }
       val hl = new HighlightList(c)
-      c.tp.foreach(annotateTerm(_, hl))
-      c.df.foreach(annotateTerm(_, hl))
+
+      c.getComponents.collect {
+        case x if x.value.isInstanceOf[TermContainer] => (x.key, x.name, x.value.asInstanceOf[TermContainer])
+      }.flatMap {
+        case (key, name, tc) if tc.get.isDefined => Some((key, name, tc, tc.get.get))
+        case _ => None
+      }.map {
+        case (key, name, tc, t) =>
+          forSource(t) { reg =>
+            Annotations.addReg(tc, reg, SymbolKind.Object, key.toString, true)
+          }
+          annotateTerm(t, hl)
+      }
+
     case nm: NestedModule =>
       forSource(nm) { reg => Annotations.addReg(nm, reg, SymbolKind.Module, nm.name.toString, true) }
       nm.module.getPrimitiveDeclarations.foreach(annotateElement)
@@ -177,7 +190,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
         case o@OMV(_) =>
           forSource(o) { reg =>
             val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-            val a = Annotations.addReg(o, nreg)
+            val a = Annotations.addReg(o, nreg, SymbolKind.Property, o.name.toString)
             a.setSemanticHighlightingClass(Colors.termvariable)
             a.setHover({
               headString(o)
@@ -197,7 +210,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
         case o: OML =>
           forSource(o) { reg =>
             val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-            val a = Annotations.addReg(o, nreg)
+            val a = Annotations.addReg(o, nreg, SymbolKind.Boolean, headString(o))
             a.setSemanticHighlightingClass(Colors.termoml)
             a.setHover({
               headString(o)
@@ -209,7 +222,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
 
           forSource(tm) { reg =>
             val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-            val a = Annotations.addReg(tm, nreg)
+            val a = Annotations.addReg(tm, nreg, SymbolKind.Function, tm.head.map(_.name.toString).orNull, true)
             a.setHover({
               headString(pragma)
             })
@@ -237,6 +250,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
             })
           }
 
+          Traverser(this, t)
           tm match {
             case OMS(_) => tm
             case OMA(_, args) =>
@@ -256,7 +270,10 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
       cont.foreach { vd =>
         forSource(vd) { reg =>
           val nreg = reg.copy(end = reg.start.copy(offset = reg.start.offset + vd.name.length, column = reg.start.column + vd.name.length))
-          val a = Annotations.addReg(vd, nreg)
+          val a = Annotations.addReg(vd, nreg, SymbolKind.Property, vd.name.toString, true)
+          // todo: add parent annotation for tp and df component
+          vd.tp.foreach(t => Traverser(this, t))
+          vd.df.foreach(t => Traverser(this, t))
           a.setSemanticHighlightingClass(Colors.termvariable)
         }
       }
@@ -273,11 +290,11 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
   /**
     * (Re)parse the whole MMT document and (re)set all LSP annotations and warnings.
     */
-  private def parseTop: Unit = {
+  def reparse(progressCont: Option[MMTTaskProgressListener]): Unit = {
     synchronized {
       errorCont.resetErrs
       val d = try {
-        server.parser.apply(errorCont, docuri, doctext, nsMap)
+        server.parser.apply(errorCont, progressCont, docuri, doctext, nsMap)
       } catch {
         case t: Throwable =>
           t.printStackTrace()
@@ -300,8 +317,10 @@ class IterativeParser(objectParser: IterativeOParser = new IterativeOParser) ext
     controller.extman.addExtension(objectParser)
   }
 
-  def apply(errorCont: ErrorHandler, dpath: DPath, docstring: String, nsmap: NamespaceMap = controller.getNamespaceMap.copy()): StructuralElement = {
+  def apply(errorCont: ErrorHandler, progressCont: Option[MMTTaskProgressListener], dpath: DPath, docstring: String, nsmap: NamespaceMap = controller.getNamespaceMap.copy()): StructuralElement = {
     val ps = ParsingStream.fromString(docstring, dpath, "mmt", Some(nsmap))
+    progressCont foreach ps.addListener
+
     implicit val spc = new StructureParserContinuations(errorCont) {
       override def onElement(se: StructuralElement): Unit = se match {
         case _: Document | _: Namespace | _: NamespaceImport | _: MRef | _: Theory =>
