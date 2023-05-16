@@ -84,7 +84,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case Some("documentTop") =>
         ServerResponse(doDocument.toString.trim, "text/html")
       case Some("fragment") =>
-        ServerResponse(doFragment.toString.trim, "text/html")
+        ServerResponse(doFragment.toString.trim.replace("&amp;","&"), "text/html")
       case Some("declaration") =>
         doDeclaration
       case Some("css") =>
@@ -368,7 +368,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
                 body.add(htm)
               case _ =>
             }
-            ServerResponse("<body>" + body.toString.trim + "</body>", "text/html")
+            ServerResponse("<body>" + body.toString.trim.replace("&amp;","&") + "</body>", "text/html")
           case Some(d) =>
             ServerResponse("Not yet implemented: " + d.getClass.toString, "txt")
           case _ =>
