@@ -430,7 +430,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         case NotFound(_,_) =>
       }
     case _ =>
-      println("Here!")
+      //println("Here!")
   }
   private case class BuildThread(num:Int) extends Thread {
     private def getNext(currents: List[QueuedTask]) : Option[QueuedTask] = {
@@ -545,7 +545,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           State.failed ::= (qt,res)
         }
       case _ =>
-        println("Here!")
+        //println("Here!")
     }
     State.running(num) = None
   }
