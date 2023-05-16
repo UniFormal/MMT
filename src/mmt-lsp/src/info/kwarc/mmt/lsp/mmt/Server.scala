@@ -28,8 +28,7 @@ class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTCli
 class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
   with TextDocumentServer[MMTClient,MMTFile]
   with WithAutocomplete[MMTClient]
-  with WithAnnotations[MMTClient,MMTFile]
-{
+  with WithAnnotations[MMTClient,MMTFile] {
 
   override def controller: Controller = super.controller
 
@@ -42,7 +41,7 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     p
   }
 
-  override def newDocument(uri: String): MMTFile = new MMTFile(uri,client,this)
+  override def newDocument(uri: String): MMTFile = new MMTFile(uri, client, this)
 
   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
     super.initialize(params, result)
@@ -69,21 +68,22 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
       MMTSystem.getResourceAsString("unicode/unicode-ascii-map")).split("\n")
     val pairs: List[(String, String)] = pairstrings.collect { case s if s.nonEmpty && !s.trim.startsWith("//") =>
       val ps = s.splitAt(s.lastIndexOf('|'))
-      (ps._1.trim,ps._2.trim.drop(1))
+      (ps._1.trim, ps._2.trim.drop(1))
     }.toList
     pairs.map {
-      case (a,b) =>
-        Completion(a + " | " + b,filterText = a,insertText = b)
+      case (a, b) =>
+        Completion(a + " | " + b, filterText = a, insertText = b)
     }
   }
 
-  override def completion(doc : String, line : Int, char : Int): List[Completion] = completionls
+  override def completion(doc: String, line: Int, char: Int): List[Completion] = completionls
 
   // todo: atomic?
   private var hasLoadedRelational = false
 
   /**
     * Finds all usages ("references") of an MMT [[info.kwarc.mmt.api.StructuralElement StructuralElement]].
+    *
     * @todo So far it only allows constants, e.g., not theories or views.
     */
   override def references(params: ReferenceParams): List[Location] = {
@@ -204,15 +204,22 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
 
   override def connect: Unit = client.log(s"Connected to MMT v${MMTSystem.version}.")
 
+  private def findDocument(uri: String): Option[MMTFile] = {
+    val target = File(uri).toURI
+    documents.find {
+      case (uri2, _) => target.toURL.sameFile(URI(uri2).toJava.toURL)
+    } match {
+      case Some((_, doc)) => Some(doc)
+      case None =>
+        client.logError(s"Internal error: file `${uri}` requested to build was not communicated to be" +
+          s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
+        None
+    }
+  }
+
   @JsonNotification("mmt/typecheck")
   def typecheck(msg: BuildMessage): Unit = {
-    val doc: MMTFile = documents.find {
-      case (uri, _) => File(msg.uri).toURI.toURL.sameFile(URI(uri).toJava.toURL)
-    }.map(_._2).getOrElse {
-      client.logError(s"Internal error: file `${msg.uri}` requested to build was not communicated to be" +
-        s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
-      return
-    }
+    val doc: MMTFile = findDocument(msg.uri).getOrElse(return)
 
     val docShortname = URI(doc.uri).path.last
     withProgress(msg, s"Typechecking ${docShortname}")(progress => {
@@ -236,13 +243,7 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
   }
   @JsonNotification("mmt/build/mmt-omdoc")
   def buildMMTOmdoc(msg: BuildMessage): Unit = {
-    val doc: MMTFile = documents.find {
-      case (uri, _) => File(msg.uri).toURI.toURL.sameFile(URI(uri).toJava.toURL)
-    }.map(_._2).getOrElse {
-      client.logError(s"Internal error File ${msg.uri} requested to build was not communicated to be" +
-        s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
-      return
-    }
+    val doc: MMTFile = findDocument(msg.uri).getOrElse(return)
 
     val docShortname = URI(doc.uri).path.last
     withProgress(msg, s"Building ${docShortname}")(progress => {
