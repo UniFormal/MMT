@@ -1,18 +1,17 @@
 package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{CPath, ContentPath, DefComponent, GlobalName, MPath, Path, TypeComponent, archives}
-import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.ontology.Binary.toRelation
+import info.kwarc.mmt.api.modules.Module
+import info.kwarc.mmt.api.ontology.DependsOn
 import info.kwarc.mmt.api.ontology.RelationExp.AnyDep
-import info.kwarc.mmt.api.ontology.{DependsOn, IsConstant, Transitive}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, URI}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.lsp._
-import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j._
+import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -29,8 +28,7 @@ class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTCli
 class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
   with TextDocumentServer[MMTClient,MMTFile]
   with WithAutocomplete[MMTClient]
-  with WithAnnotations[MMTClient,MMTFile]
-{
+  with WithAnnotations[MMTClient,MMTFile] {
 
   override def controller: Controller = super.controller
 
@@ -43,7 +41,7 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     p
   }
 
-  override def newDocument(uri: String): MMTFile = new MMTFile(uri,client,this)
+  override def newDocument(uri: String): MMTFile = new MMTFile(uri, client, this)
 
   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
     super.initialize(params, result)
@@ -70,21 +68,22 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
       MMTSystem.getResourceAsString("unicode/unicode-ascii-map")).split("\n")
     val pairs: List[(String, String)] = pairstrings.collect { case s if s.nonEmpty && !s.trim.startsWith("//") =>
       val ps = s.splitAt(s.lastIndexOf('|'))
-      (ps._1.trim,ps._2.trim.drop(1))
+      (ps._1.trim, ps._2.trim.drop(1))
     }.toList
     pairs.map {
-      case (a,b) =>
-        Completion(a + " | " + b,filterText = a,insertText = b)
+      case (a, b) =>
+        Completion(a + " | " + b, filterText = a, insertText = b)
     }
   }
 
-  override def completion(doc : String, line : Int, char : Int): List[Completion] = completionls
+  override def completion(doc: String, line: Int, char: Int): List[Completion] = completionls
 
   // todo: atomic?
   private var hasLoadedRelational = false
 
   /**
     * Finds all usages ("references") of an MMT [[info.kwarc.mmt.api.StructuralElement StructuralElement]].
+    *
     * @todo So far it only allows constants, e.g., not theories or views.
     */
   override def references(params: ReferenceParams): List[Location] = {
@@ -205,47 +204,59 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
 
   override def connect: Unit = client.log(s"Connected to MMT v${MMTSystem.version}.")
 
+  private def findDocument(uri: String): Option[MMTFile] = {
+    val target = File(uri).toURI
+    documents.find {
+      case (uri2, _) => target.toURL.sameFile(URI(uri2).toJava.toURL)
+    } match {
+      case Some((_, doc)) => Some(doc)
+      case None =>
+        client.logError(s"Internal error: file `${uri}` requested to build was not communicated to be" +
+          s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
+        None
+    }
+  }
+
   @JsonNotification("mmt/typecheck")
   def typecheck(msg: BuildMessage): Unit = {
-    val doc: MMTFile = documents.find {
-      case (uri, _) => File(msg.uri).toURI.toURL.sameFile(URI(uri).toJava.toURL)
-    }.map(_._2).getOrElse {
-      client.logError(s"Internal error File ${msg.uri} requested to build was not communicated to be" +
-        s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
-      return
-    }
+    val doc: MMTFile = findDocument(msg.uri).getOrElse(return)
 
-    client.log(s"Typechecking `${doc.uri}`...")
+    val docShortname = URI(doc.uri).path.last
+    withProgress(msg, s"Typechecking ${docShortname}")(progress => {
+      client.log(s"Typechecking `${doc.uri}`...")
 
-    /*val ps = ParsingStream.fromString(doc.toString)
-    // (text, DPath(URI(uri)), file.getExtension.getOrElse(""), Some(nsMap))
-    val progress = new Progresser(file, (s1, s2) => note(s1, s2))
-    ps.addListener(progress)
-    clearFile(file.toString)*/
-    client.resetErrors(doc.uri)
-    doc.Annotations.clear
-    doc.onUpdate(Nil)
-    // doc.errorCont.getErrors
+      client.resetErrors(doc.uri)
+      doc.Annotations.clear
+      doc.reparse(Some {
+        case Parsed(e) =>
+          progress(1.0, s"Parsed ${e.path.name}?${e.name}")
+        case Checked(e) =>
+          progress(1.0, s"Checked ${e.path.name}?${e.name}")
+        case Elaborated(e) =>
+          progress(1.0, s"Elaborated ${e.path.name}?${e.name}")
+        case _ => /* ignore */
+      })
 
-
-    client.log(s"Typechecking finished of `${doc.uri}`.")
+      client.log(s"Typechecking finished of `${doc.uri}`.")
+      ((), s"Typechecking of $docShortname finished")
+    })
   }
   @JsonNotification("mmt/build/mmt-omdoc")
   def buildMMTOmdoc(msg: BuildMessage): Unit = {
-    val doc: MMTFile = documents.find {
-      case (uri, _) => File(msg.uri).toURI.toURL.sameFile(URI(uri).toJava.toURL)
-    }.map(_._2).getOrElse {
-      client.logError(s"Internal error File ${msg.uri} requested to build was not communicated to be" +
-        s" open to LSP server. Open documents known to LSP server are: ${documents.keys.mkString(", ")}.")
-      return
-    }
+    val doc: MMTFile = findDocument(msg.uri).getOrElse(return)
 
-    client.log(s"Building `${doc.uri}` to mmt-omdoc...")
-    val errors = mutable.ListBuffer[api.Error]()
-    controller.build(File(msg.uri))(errors.append)
-    client.resetErrors(doc.uri)
-    client.documentErrors(doc,true, errors.toSeq : _*)
-    client.log(s"Build finished of `${msg.uri}`!")
+    val docShortname = URI(doc.uri).path.last
+    withProgress(msg, s"Building ${docShortname}")(progress => {
+      client.log(s"Building `${doc.uri}` to mmt-omdoc...")
+
+      val errors = mutable.ListBuffer[api.Error]()
+      controller.build(File(msg.uri))(errors.append)
+      client.resetErrors(doc.uri)
+      client.documentErrors(doc, true, errors.toSeq: _*)
+
+      client.log(s"Build finished of `${doc.uri}`!")
+      ((), s"Build of $docShortname finished")
+    })
   }
 }
 

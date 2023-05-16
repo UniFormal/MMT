@@ -220,7 +220,7 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
             }
           case _ => null
         }
-        tt + " " // last character often cut off
+        if (tt == null) null else tt + " " // last character often cut off
       } catch {case e: Exception =>
         e.getMessage
       }

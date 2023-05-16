@@ -918,7 +918,7 @@ case class SHTMLParagraph(orig:HTMLNode) extends HTMLStatement("paragraph",orig)
         val node = if (inline) {
           val cp = this.plaincopy
           cp._label = "div"
-          cp.classes ::= "paragraph"
+          cp.classes ::= "rustex-paragraph"
           cp.node
         } else this.plain.node
         s.addSymdoc(fors,id,node,lang)
@@ -958,7 +958,7 @@ case class SHTMLDefinition(orig:HTMLNode) extends HTMLStatement("definition",ori
       val node = if (inline) {
         val cp = this.plaincopy
         cp._label = "div"
-        cp.classes ::= "paragraph"
+        cp.classes ::= "rustex-paragraph"
         cp.node
       } else this.plain.node
       s.addSymdoc(fors, id, node, lang)
@@ -982,7 +982,7 @@ case class SHTMLAssertion(orig:HTMLNode) extends HTMLStatement("assertion",orig)
       val node = if (inline) {
         val cp = this.plaincopy
         cp._label = "div"
-        cp.classes ::= "paragraph"
+        cp.classes ::= "rustex-paragraph"
         cp.node
       } else this.plain.node
       s.addSymdoc(fors, id, node, lang)
