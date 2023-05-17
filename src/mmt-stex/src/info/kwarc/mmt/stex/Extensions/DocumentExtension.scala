@@ -697,11 +697,56 @@ trait SHTMLDocumentServer { this : STeXServer =>
         plain.attributes((this.namespace, "data-problem-solution")) = "true"
       }
     }
+    case class ProblemHint(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Solution(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-hint")) = "true"
+      }
+    }
+    case class ProblemNote(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Solution(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-note")) = "true"
+      }
+    }
+    case class ProblemGNote(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Solution(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-g-note")) = "true"
+      }
+    }
+    case class ProblemPoints(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Solution(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-points")) = "true"
+      }
+    }
+    case class ProblemMinutes(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Solution(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-minutes")) = "true"
+      }
+    }
 
     def simple(s: String,f : HTMLNode => SHTMLNode) = map(s) = PresentationRule(s,(_,_,n) => Some(f(n)))
     def tuple(s:String,f:(String,HTMLNode) => SHTMLNode) = map(s) = PresentationRule(s,(ns,_,n) => Some(f(ns,n)))
 
     simple("solution",n => Solution(n))
+    simple("problemhint", n => ProblemHint(n))
+    simple("problemnote", n => ProblemNote(n))
+    simple("problemgnote", n => ProblemGNote(n))
+    simple("problempoints", n => ProblemPoints(n))
+    simple("problemminutes", n => ProblemMinutes(n))
     simple("multiple-choice-block",n => MCB(n))
     simple("mcc",n => MC(n))
     simple("mcc-solution",n => MCSolution(n))
