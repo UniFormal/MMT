@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.{Path, utils}
 import info.kwarc.mmt.api.utils._
 
 /** generates statistics for the RelStore */
-trait RelStoreStatistics { this: RelStore =>
+trait RelStoreStatistics { this: ClassicRelStore =>
 
   /**
     * Make a statistic for the document or theory at the given path
