@@ -45,7 +45,7 @@ import scala.collection.mutable.{HashMap, HashSet}
   * the set of third components can be retrieved efficiently.
  */
 object RelStore {
-  val use_rdf = false
+  val use_rdf = true
   val use_rel = true
 }
 

@@ -18,17 +18,19 @@ import org.eclipse.rdf4j.sparqlbuilder.rdf.RdfPredicate
 import java.io.FileOutputStream
 
 
-/*object Implicits {
-import java.net.{URLDecoder, URLEncoder}
+object Implicits {
+  import java.net.{URLDecoder, URLEncoder}
+  val path_namespace = "mmt://path#"
   implicit def pathToIri(p: Path): IRI = iri(
-    URLEncoder.encode(p.toPath(false),"UTF-8").replaceFirst("%3A",":")
+    path_namespace + URLEncoder.encode(p.toPath(false),"UTF-8").replaceFirst("%3A",":")
   )
-  def iriToPath(i: IRI) = Path.parse(URLDecoder.decode(i.toString,"UTF-8"))
+  def iriToPath(i: IRI) = Path.parse(URLDecoder.decode(i.getLocalName,"UTF-8"))
   implicit def asResource(e: ULOTrait): Resource = e.toIri
+  def isPath(i:Value) = i.isIRI && i.asInstanceOf[IRI].getNamespace == path_namespace
 
   implicit def URIToIRI(uri:URI): IRI = iri(uri.toString)
 }
-import Implicits._*/
+import Implicits._
 
 trait ULOStatement {
   def triples : Seq[(Resource,IRI,Value)]
@@ -623,7 +625,7 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
     def foreach(f: org.eclipse.rdf4j.model.Statement => Unit) = toIterator.foreach(f)
     def toRelational: List[RelationalElement] = toIterator.toList.map { statement =>
       statement.getPredicate match {
-        case RDF.TYPE =>
+        case RDF.TYPE if isPath(statement.getSubject) =>
           Individual(
             iriToPath(statement.getSubject.asInstanceOf[IRI]),
             ULO.toULO(statement.getObject.toString) match {
@@ -631,7 +633,7 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
               case _ =>
                 ???
             })
-        case pred =>
+        case pred if isPath(statement.getSubject) && isPath(statement.getObject) =>
           Relation(
             ULO.toULO(pred.toString) match {
               case op: ObjectProperty => op.toBinary
@@ -753,7 +755,7 @@ trait RDFRelStoreLike extends RelStoreLike { this : RDFStore =>
     val values = conn.prepareTupleQuery(query.getQueryString).evaluate().iterator().asScala.toList.map { s =>
       cls match {
         case Some(c) => Individual(iriToPath(s.getBinding("qv").getValue.asInstanceOf[IRI]), c.toUnary)
-        case None if s.hasBinding("qo") && s.getBinding("qv").getValue.isIRI =>
+        case None if s.hasBinding("qo") && isPath(s.getBinding("qv").getValue) =>
           Individual(iriToPath(s.getBinding("qv").getValue.asInstanceOf[IRI]), ULO.toULO(s.getBinding("qo").getValue.toString).asInstanceOf[ULOClass].toUnary)
         case _ =>
           ???
@@ -770,7 +772,7 @@ trait RDFRelStoreLike extends RelStoreLike { this : RDFStore =>
     import scala.jdk.CollectionConverters._
     repo.getConnection.prepareTupleQuery(query.getQueryString).evaluate().forEach { res =>
       val vl = res.getBinding("qv").getValue
-      if (vl.isIRI)
+      if (Implicits.isPath(vl))
         add(iriToPath(vl.asInstanceOf[IRI]))
     }
   }
