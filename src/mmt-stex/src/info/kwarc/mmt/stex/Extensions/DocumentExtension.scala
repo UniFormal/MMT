@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex.Extensions
 
 import info.kwarc.mmt.api.{DPath, DefComponent, GlobalName, MPath, NamespaceMap, Path, StructuralElement, TypeComponent, presentation}
-import info.kwarc.mmt.api.archives.RedirectableDimension
+import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.documents.{DRef, Document}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{OMA, OMID, OMMOD, OMS, Term}
@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse, WebQuery}
 import info.kwarc.mmt.stex.rules.{IntLiterals, StringLiterals}
-import info.kwarc.mmt.stex.vollki.FullsTeXGraph
+import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, VirtualArchive}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.{ErrorReturn, SHTML, STeXServer}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, SHTMLFrame, SHTMLNode, SHTMLRule, SHTMLState}
@@ -29,7 +29,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     lazy val path = q.pairs.find(p => p._2.isEmpty && p._1.contains('?') && !p._1.endsWith("="))
       .map(p => Path.parse(p._1))
     lazy val language = q("language")
-    lazy val archive = q("archive").flatMap{id => controller.backend.getArchive(id)}
+    lazy val archive = q("archive").flatMap{id => getArchive(id)}
     lazy val filepath = q("filepath")
     lazy val bindings = {
       val bnds = q("bindings").map(LateBinding.fromNum)
@@ -49,8 +49,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
         html = html.replace("%%PDFSOURCE%%", this.pathPrefix + "/pdf?" + request.query)
         ServerResponse(html, "text/html")
       case Some("pdf") =>
-        val a = params.archive.getOrElse{
-          return ServerResponse("No archive given", "txt")
+        val a = params.archive match {
+          case Some(a:Archive) => a
+          case _ => return ServerResponse("No archive given", "txt")
         }
         val path = params.filepath.getOrElse {
           return ServerResponse("No path given", "txt")
@@ -65,7 +66,12 @@ trait SHTMLDocumentServer { this : STeXServer =>
         html = html.replace("BASE_URL_PLACEHOLDER", "")
         html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
         html = html.replace("NO_FRILLS_PLACEHOLDER", "FALSE")
-        html = html.replace("CONTENT_CSS_PLACEHOLDER","/:" + this.pathPrefix + "/css?" + request.parsedQuery("archive").getOrElse(""))
+        params.archive match {
+          case Some(a:VirtualArchive) =>
+            html = html.replace("<link rel=\"stylesheet\" href=\"CONTENT_CSS_PLACEHOLDER\">",a.getHeader(params.filepath.get).map(_.toString).mkString.trim)
+          case _ =>
+            html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?" + request.parsedQuery("archive").getOrElse(""))
+        }
         ServerResponse(html, "text/html")
       case Some("symbol") =>
         var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
@@ -105,9 +111,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
     ServerResponse(s,"txt")
   }
   def css(a : String): String = {
-    controller.backend.getArchive(a) match {
+    getArchive(a) match {
       case None => ""
-      case Some(a) =>
+      case Some(a : Archive) =>
         var retstr = ""
         iterateLibs(a){f =>
           val css = f / "lib.css"
@@ -116,6 +122,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
           }
         }
         retstr
+      case Some(_) => ""
     }
   }
 
@@ -221,7 +228,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
         val (doc, bd) = this.emptydoc
         bd.add(<b>{"Archive not found"}</b>)
         doc.toString
-      case (Some(a),None) =>
+      case (Some(a: Archive),None) =>
         val (doc, bd) = this.emptydoc
         bd.add(<b style="text-align: center">{a.id}</b>)
         a.properties.collectFirst {
@@ -233,7 +240,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
             bd.add("<div>" + t + "</div>")
         }
         doc.toString
-      case (Some(a),Some(path)) =>
+      case (Some(a:Archive),Some(path)) =>
         val top = a / RedirectableDimension("xhtml")
         val fn = top / path
         if (fn.exists() && fn.isDirectory) {
@@ -252,6 +259,13 @@ trait SHTMLDocumentServer { this : STeXServer =>
           bd.add(<b>{"Document does not exist: " + a.id + "/" + path}</b>)
           doc.toString
         }
+      case (Some(_),None) =>
+        val (doc, bd) = this.emptydoc
+        doc.toString
+      case (Some(a: VirtualArchive),Some(fp)) =>
+        val (doc, bd) = this.emptydoc
+        a.getDoc(fp).foreach(bd.add)
+        doc.toString
     }
   }
 
@@ -848,7 +862,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       val in = this.plain.attributes.get((HTMLParser.ns_shtml,"srefin")).flatMap{s =>
         s.split("::").toList match {
           case List(a,b) =>
-            controller.backend.getArchive(a) match {
+            getArchive(a) match {
               case Some(a) => Some((a,File(b.replace(".tex",".xhtml"))))
               case _ => None
             }
