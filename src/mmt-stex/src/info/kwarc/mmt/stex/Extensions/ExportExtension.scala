@@ -151,7 +151,7 @@ trait ExportExtension { self : STeXServer =>
             }
             (fname, fname)
           } else {
-            val prefix = controller.backend.getArchives.collectFirst {
+            val prefix = getArchives.collectFirst {
               case a if a.ns.exists(ns => s.startsWith(ns.toString)) =>
                 a.properties.get("url-base") match {
                   case Some(p) => if (p.endsWith("/")) p else p + "/"
@@ -172,7 +172,7 @@ trait ExportExtension { self : STeXServer =>
             }
             fname
           } else {
-            val prefix = controller.backend.getArchives.collectFirst {
+            val prefix = getArchives.collectFirst {
               case a if a.ns.exists(ns => s.startsWith(ns.toString)) =>
                 a.properties.get("url-base") match {
                   case Some(p) => if (p.endsWith("/")) p else p + "/"

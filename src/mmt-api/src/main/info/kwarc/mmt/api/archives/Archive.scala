@@ -28,6 +28,14 @@ abstract class ROArchive extends Storage with Logger {
   val logPrefix = "archive"
 }
 
+trait ArchiveLike extends ROArchive {
+  val narrationBase : URI
+  lazy val id = properties("id")
+  lazy val ns = properties.get("ns").map(s => Path.parse(
+    s, //if (s.last == '/') s.dropRight(1) else s,
+    NamespaceMap.empty))
+}
+
 /** archive management
   *
   * Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
@@ -36,21 +44,18 @@ abstract class ROArchive extends Storage with Logger {
   * @param properties a key value map
   * @param report the reporting mechanism
   */
-class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ZipArchive {
+class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ArchiveLike with Validate with ZipArchive {
 
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
-  val id = properties("id")
   def classpath = utils.splitAtWhitespace(properties.getOrElse("classpath",""))
   /** gets the direct dependencies of an archive */
   def dependencies: List[String] = {
     stringToList(properties.getOrElse("dependencies", "").replace(",", " "))
   }
-  val narrationBase = properties.get("narration-base").map(utils.URI(_)).getOrElse(FileURI(root))
+
+  override val narrationBase = properties.get("narration-base").map(utils.URI(_)).getOrElse(FileURI(root))
   /** the NamespaceMap built from the ns and ns-prefix properties */
-  val ns = properties.get("ns").map(s => Path.parse(
-    s,//if (s.last == '/') s.dropRight(1) else s,
-    NamespaceMap.empty))
   val namespaceMap = {
     var nsMap = NamespaceMap.empty
     val Matcher = utils.StringMatcher("", "-", "")

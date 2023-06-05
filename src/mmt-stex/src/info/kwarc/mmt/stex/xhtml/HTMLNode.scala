@@ -89,8 +89,11 @@ trait HTMLNode {
 
   protected def get(matches: HTMLNode => Boolean): List[HTMLNode] = plain._children.filter(matches) ::: plain._children.flatMap(_.plain.get(matches))
 
-  def delete = plain._parent.foreach { p =>
-    p.plain._children = p.plain._children.filterNot(_ == this)
+  def delete = {
+    plain._parent.foreach { p =>
+      p.plain._children = p.plain._children.filterNot(_ == this)
+    }
+    plain._parent = None
   }
 
   def add(n: Node): HTMLNode = add(n.toString())
