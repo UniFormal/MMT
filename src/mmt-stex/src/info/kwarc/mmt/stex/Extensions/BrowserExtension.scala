@@ -1,8 +1,9 @@
 package info.kwarc.mmt.stex.Extensions
 
-import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
+import info.kwarc.mmt.api.archives.{Archive, ArchiveLike, RedirectableDimension}
 import info.kwarc.mmt.api.utils.{FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
+import info.kwarc.mmt.stex.vollki.VirtualArchive
 import info.kwarc.mmt.stex.{ErrorReturn, STeXServer}
 
 trait SHTMLBrowser { this : STeXServer =>
@@ -69,11 +70,11 @@ trait SHTMLBrowser { this : STeXServer =>
 
   def doMenu: JSON = {
     import JavaScript._
-    val archives = controller.backend.getArchives.filter(_.properties.get("format").contains("stex")).sortBy(_.id).map { a => (a.id.split('/'), a) }
+    val archives = getArchives.sortBy(_.id).map { a => (a.id.split('/'), a) }
 
     def iterateGroup(in: List[String]): JSON = {
       val as = archives.filter(_._1.startsWith(in)).map(p => (p._1.drop(in.length), p._2))
-      val archs = as.filter(_._1.length == 1).map(a => iterateArchive(a._2))
+      val archs = as.filter(_._1.length == 1).map(a => iterateArchiveLike(a._2))
       val groups = as.filter(_._1.length > 1).map(_._1.head).distinct.map(s => iterateGroup(in ::: List(s)))
       val children = JSONArray(groups ::: archs: _*)
       if (in.isEmpty) children else {
@@ -88,6 +89,23 @@ trait SHTMLBrowser { this : STeXServer =>
           ))
         )
       }
+    }
+
+    def iterateArchiveLike(a: ArchiveLike): JSON = a match {
+      case a:Archive => iterateArchive(a)
+      case va:VirtualArchive => iterateVirtualArchive(va)
+    }
+
+    def iterateVirtualArchive(a: VirtualArchive): JSON = {
+      JSONObject(
+        ("label", JSONString(a.id.split('/').last)),
+        ("children", JSONArray(a.getIndex :_*)),
+        ("link", doJs(
+          doLink("/:" + this.pathPrefix + "/browser?archive=" + a.id),
+          setCurrentArchive(a.id),
+          setCurrentPath(""),
+          deactivateButtons
+        )))
     }
 
     def iterateArchive(a: Archive): JSON = {
