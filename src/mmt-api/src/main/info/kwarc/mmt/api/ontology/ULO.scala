@@ -22,11 +22,35 @@ object Implicits {
   import java.net.{URLDecoder, URLEncoder}
   val path_namespace = "mmt://path#"
   implicit def pathToIri(p: Path): IRI = iri(
-    path_namespace + URLEncoder.encode(p.toPath(false),"UTF-8").replaceFirst("%3A",":")
+    p.toPath(false)
+      .replace("[","%5B")
+      .replace("]","%5D")
+      .replace(" ","%20")
+      .replace(">","%3E")
+      .replace("<", "%3C")
+      .replace("|","%7C")
+      .replace("\\","%5C")
+      .replace("{","%7B")
+      .replace("}","%7D")
+      .replace("#","%23")
+      .replace("^", "%5E") + "#"
+    //p.toPath(false) + "#"
+    //path_namespace + URLEncoder.encode(p.toPath(false),"UTF-8").replaceFirst("%3A",":")
   )
-  def iriToPath(i: IRI) = Path.parse(URLDecoder.decode(i.getLocalName,"UTF-8"))
+  def iriToPath(i: IRI) = Path.parse(i.getNamespace.init
+    .replace("%5B","[")
+    .replace("%5D","]")
+    .replace("%20"," ")
+    .replace("%3E",">")
+    .replace("%3C","<")
+    .replace("%7C","|")
+    .replace("%5C","\\")
+    .replace("%7B","{")
+    .replace("%7D","}")
+    .replace("%23","#")
+    .replace("%5E","^"))//URLDecoder.decode(i.getLocalName,"UTF-8"))
   implicit def asResource(e: ULOTrait): Resource = e.toIri
-  def isPath(i:Value) = i.isIRI && i.asInstanceOf[IRI].getNamespace == path_namespace
+  def isPath(i:Value) = i.isIRI && i.asInstanceOf[IRI].getLocalName.isEmpty//.getNamespace == path_namespace
 
   implicit def URIToIRI(uri:URI): IRI = iri(uri.toString)
 }
