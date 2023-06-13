@@ -1,10 +1,14 @@
 package info.kwarc.mmt.stex.vollki
 
-import info.kwarc.mmt.api.{GlobalName, Path, utils}
+import info.kwarc.mmt.api.{DPath, ErrorLogger, GlobalName, Path, StructuralElement, utils}
 import info.kwarc.mmt.api.archives.ArchiveLike
+import info.kwarc.mmt.api.documents.{ArchiveLevel, Document, FolderLevel}
 import info.kwarc.mmt.api.frontend.{Controller, Report}
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.symbols.Include
 import info.kwarc.mmt.api.utils.{FilePath, JSON, JSONArray, JSONObject, JSONString, URI}
-import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, HTMLText, SHTMLDefiniendum, SHTMLDefinition, SHTMLNode, SHTMLOMS, SHTMLParsingRule, SHTMLRule}
+import info.kwarc.mmt.stex.STeXServer
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, HTMLText, SHTMLDefiniendum, SHTMLDefinition, SHTMLImportModule, SHTMLNode, SHTMLOMS, SHTMLParsingRule, SHTMLRule, SHTMLTheory, SHTMLUseModule, SemanticState}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
 import scala.collection.mutable
@@ -17,7 +21,11 @@ abstract class VirtualArchive extends ArchiveLike {
   val narrationBase = properties.get("narration-base").map(utils.URI(_)).getOrElse(utils.URI(url))
   val controller : Controller
   val report = controller.report
-  override def load(path: Path)(implicit controller: Controller): Unit = ???
+  protected val elements = mutable.HashMap.empty[Path,StructuralElement]
+  override def load(path: Path)(implicit controller: Controller): Unit = elements.get(path) match {
+    case Some(e) => controller.add(e)
+    case None =>
+  }
   def getIndex: List[JSONObject]
   def getDoc(fp:String) : List[HTMLNode]
   def getHeader(fp:String) : List[HTMLNode]
@@ -41,7 +49,9 @@ abstract class VirtualArchive extends ArchiveLike {
       )
 
     def files : List[URI] = if (fp == "") children.flatMap(_.files) else
-      (urlbase / fp.replace(".xhtml", ".html")) :: children.flatMap(_.files)
+      {
+        fp.replace(".xhtml",".html").split('/').foldLeft(urlbase)((a,b) => a / b)
+      } :: children.flatMap(_.files)
 
     private def uglyhack(fp: String): String = {
       val pairstr = if (fp == "") id else id + "&filepath=" + fp.replace(".html", ".xhtml")
@@ -62,10 +72,34 @@ class JupyterBookArchive(val controller:Controller,val properties: mutable.Map[S
   private val name_to_uri = mutable.HashMap.empty[String,GlobalName]
   private val nameoccs = mutable.HashMap.empty[String,GlobalName => Unit]
 
+  lazy val server = controller.extman.get(classOf[STeXServer]) match {
+    case Nil =>
+      val s = new STeXServer
+      controller.extman.addExtension(s)
+      s
+    case s :: _ =>
+      s
+  }
+  lazy val eh = new ErrorLogger(controller.report)
   case class DummyNode(n : HTMLNode) extends SHTMLNode(n) {
     def copy = DummyNode(n.copy)
   }
-  def importAll = {
+  private def URIToModule(f:URI) = DPath(f.^) ? f.path.last.replace(".html","").replace(".md","")
+  def importAll = index.flatMap(_.files).foreach(importOne)
+  def importOne(f:URI) : Unit = {
+    val dictionary = mutable.HashMap.empty[String,GlobalName]
+    def addToDict(th:Theory) : Unit = {
+      th.getDeclarations.foreach {
+        case c: info.kwarc.mmt.api.symbols.Constant =>
+          dictionary(c.name.toString) = c.path
+        case Include(i) =>
+          controller.getO(i.from).foreach {
+            case t: Theory => addToDict(t)
+            case _ =>
+          }
+        case _ =>
+      }
+    }
     val rules = List(
       new SHTMLRule(-100) {
         def apply(s: HTMLParser.ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = if (attrs.nonEmpty && !n.isInstanceOf[DummyNode]) {
@@ -73,9 +107,59 @@ class JupyterBookArchive(val controller:Controller,val properties: mutable.Map[S
           None
         } else None
       },
+      new SHTMLRule() {
+        override def apply(s: ParsingState, n: HTMLNode, attrs: List[(String, String)]): Option[SHTMLNode] = {
+          if (n.label == "article") {
+            val mp = URIToModule(f)
+            Some(new SHTMLTheory(mp, n))
+          } else None
+        }
+      },
+      SHTMLParsingRule("usemodule", (str, n, _) => {
+        val mp = Try(Path.parseM(str)).toOption.getOrElse {
+          val uri = f.resolve(str)
+          val mp = URIToModule(uri)
+          controller.getO(mp) match {
+            case Some(_) => mp
+            case None =>
+              importOne(uri)
+              mp
+          }
+        }
+        controller.getO(mp) match {
+          case Some(th: Theory) => addToDict(th)
+          case _ =>
+            println("Missing: " + mp)
+            print("")
+        }
+        SHTMLUseModule(mp, n)
+      }),
+      SHTMLParsingRule("importmodule", (str, n, _) => {
+        val mp = if (str.count(_ == '?') == 2) { // temporary hack
+          Path.parseM(str.replaceFirst("\\?","/"))
+        } else Try(Path.parseM(str)).toOption.getOrElse {
+          val uri = f.resolve(str)
+          val mp = URIToModule(uri)
+          controller.getO(mp) match {
+            case Some(_) => mp
+            case None =>
+              importOne(uri)
+              mp
+          }
+        }
+        controller.getO(mp) match {
+          case Some(th: Theory) => addToDict(th)
+          case _ =>
+            println("Missing: " + mp)
+            print("")
+        }
+        n.plain.attributes.remove((HTMLParser.ns_shtml, "importmodule"))
+        n.plain.attributes((HTMLParser.ns_shtml,"import")) = mp.toString
+        SHTMLImportModule(mp, n)
+      }),
       SHTMLParsingRule("definition", (_, n, _) => SHTMLDefinition(n), -30),
       SHTMLParsingRule("definiendum", (s, n, _) => {
-        Try(Path.parseS(s)).toOption match {
+        Try(Path.parseS(s)).toOption.orElse(dictionary.get(s)) match {
           case Some(p) =>
             SHTMLDefiniendum(p, n)
           case _ =>
@@ -91,7 +175,7 @@ class JupyterBookArchive(val controller:Controller,val properties: mutable.Map[S
         s match {
           case "OMID" | "complex" =>
             val heads = n.plain.attributes((HTMLParser.ns_shtml, "head"))
-            Try(Path.parseS(heads)).toOption match {
+            Try(Path.parseS(heads)).toOption.orElse(dictionary.get(s)) match {
               case Some(p) =>
                 SHTMLOMS(n)
               case _ =>
@@ -109,16 +193,36 @@ class JupyterBookArchive(val controller:Controller,val properties: mutable.Map[S
         }
       }),
     )
-    index.flatMap(_.files).foreach { f =>
-      try {
-        htmap.getOrElseUpdate(f.toString, {
-          val content = downloadAsString(f.toString)
-          val html = HTMLParser(content)(new ParsingState(controller, rules))
-          doHeadBody(html, f)
-        })
-      } catch {
-        case _:java.io.IOException | _ : info.kwarc.mmt.stex.STeXError =>
-      }
+    try {
+      htmap.getOrElseUpdate(f.toString, {
+        val content = downloadAsString(f.toString.replace(".md",".html"))
+        val html = HTMLParser(content)(new SemanticState(server,rules,eh,DPath(f)) {
+          override def add(se: StructuralElement): Unit = {
+            super.add(se)
+            se match {
+              case d : Document =>
+                val top = d.path.^^
+                elements.getOrElseUpdate(top, {
+                  val nd = new Document(top,level = ArchiveLevel)
+                  controller.add(nd)
+                  nd
+                })
+                d.path.name.prefixes.foreach {p =>
+                  elements.getOrElseUpdate(top / p, {
+                    val nd = new Document(top / p,level = FolderLevel)
+                    controller.add(nd)
+                    nd
+                  })
+                }
+              case _ =>
+            }
+            elements(se.path) = se
+          }
+        })//(new ParsingState(controller, rules))
+        doHeadBody(html, f)
+      })
+    } catch {
+      case _: java.io.IOException | _: info.kwarc.mmt.stex.STeXError =>
     }
   }
 

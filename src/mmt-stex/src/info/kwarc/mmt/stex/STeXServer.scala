@@ -61,10 +61,10 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
               case Some("jupyterbook") =>
                 val store = new JupyterBookArchive(controller, map)
                 controller.backend.addStore(store)
-                val (t,_) = Time.measure {
+                //val (t,_) = Time.measure {
                   store.importAll
-                }
-                println("Takes: " + t)
+                //}
+                //println("Takes: " + t)
               case _ =>
             }
           case _ =>
