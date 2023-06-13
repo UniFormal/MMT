@@ -7,14 +7,14 @@ import archives._
 import java.util.ResourceBundle.Control
 import info.kwarc.mmt.api.frontend.Controller
 
-class StatisticsExporter extends Exporter {
+class StatisticsExporter extends Exporter { // TODO adapt to rdf
   def key = "statistics"
 
   override def outExt = "json"
 
   def rs = controller.depstore match {
     case rl:ClassicRelStore => Some(rl)
-    case rl: RelStore if rl.classic.isDefined => rl.classic
+    //case rl: RelStore if rl.classic.isDefined => rl.classic
     case _ => None
   }
 

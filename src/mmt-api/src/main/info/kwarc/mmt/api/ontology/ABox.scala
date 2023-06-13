@@ -76,54 +76,12 @@ trait RelStoreLike {
 
   def readArchive(a: Archive, in: FilePath, controller:Controller, kd: String): Unit
 }
-class RelStore(protected val report : frontend.Report) extends RelStoreLike {
-  val classic = if (RelStore.use_rel) Some(new ClassicRelStore(report)) else None
-  val rdf = if (RelStore.use_rdf) Some(new RDFStore(report)) else None
-
+class RelStore(report : frontend.Report) extends RDFStore(report) {
   override def readArchive(a: Archive, in: FilePath, controller: Controller, kd: String): Unit = {
-    classic.foreach(_.readArchive(a,in,controller,kd))
-    rdf.foreach(_.readArchive(a,in,controller, kd))
+    readArchive(a,in,controller, kd)
   }
-
-  def +=(d: RelationalElement): Unit = {
-    classic.foreach(_ += d)
-    rdf.foreach(_ += d)
-  }
-  def clear: Unit = {
-    classic.foreach(_.clear)
-    rdf.foreach(_.clear)
-  }
-  def theoryClosure(p: MPath): List[MPath] = {
-    rdf.map(_.theoryClosure(p)).getOrElse(classic.map(_.theoryClosure(p)).getOrElse(Nil))
-  }
-
-  def getType(p: Path): Option[Unary] = rdf.map(_.getType(p)).getOrElse(classic.flatMap(_.getType(p)))
-
-  def getInds: Iterator[Individual] = {
-    rdf.map(_.getInds).getOrElse(classic.map(_.getInds).getOrElse(Nil.iterator))
-  }
-
-  def getInds(tp: Unary): Iterator[Path] = {
-    rdf.map(_.getInds(tp)).getOrElse(classic.map(_.getInds(tp)).getOrElse(Nil.iterator))
-  }
-
-  def getDeps: Iterator[Relation] = {
-    rdf.map(_.getDeps).getOrElse(classic.map(_.getDeps).getOrElse(Nil.iterator))
-  }
-
-  override def hasDep(from: Path, to: Path, bin: Binary): Boolean =
-    rdf.map(_.hasDep(from,to,bin)).getOrElse(classic.exists(_.hasDep(from, to, bin)))
-
-  def hasType(p: Path, tp: Unary): Boolean =
-    rdf.map(_.hasType(p,tp)).getOrElse(classic.exists(_.hasType(p,tp)))
-  override def query(start: Path, q: RelationExp)(implicit add: Path => Unit): Unit = {
-    rdf match {
-      case Some(r) => r.query(start,q)
-      case _ => classic.foreach(_.query(start,q))
-    }
-  }
-
 }
+
 class ClassicRelStore(protected val report : frontend.Report) extends RelStoreLike with RelStoreStatistics {
    private val individuals = new HashMapToSet[Unary, Path]
    private val types = new HashMap[Path,Unary]

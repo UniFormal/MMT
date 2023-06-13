@@ -569,6 +569,12 @@ object RDFStore {
   val fileFormat =  ("brf",RDFFormat.BINARY) // ("rdf",RDFFormat.RDFXML) //
 }
 
+trait SubGraph {
+  def add(s: ULOStatement): Unit
+  def close: Unit
+  def write(f: File): Unit
+
+}
 class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
   import RDFStore._
   import org.eclipse.rdf4j.repository.sail.SailRepository
@@ -583,6 +589,30 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
   }
   protected def add(s : ULOStatement,graph:URI = memory)(conn:SailRepositoryConnection) = s.triples.foreach{
     case (s,p,o) => conn.add(s,p,o,graph)
+  }
+  def clear(uri:URI) = {
+    val conn = repo.getConnection
+    conn.clear(uri)
+    conn.close()
+  }
+
+  def newGraph(uri:URI): SubGraph = new ISubGraph(repo.getConnection,uri)
+  class ISubGraph(conn: SailRepositoryConnection,uri:URI) extends SubGraph {
+    import scala.jdk.CollectionConverters._
+    def add(s : ULOStatement) = RDFStore.this.add(s,uri)(conn)
+    def getAll = conn.getStatements(null,null,null,true,uri).asScala.toSet
+    conn.clear(uri)
+    def close = conn.close()
+    def write(f: File) = {
+      f.up.mkdirs()
+      val out = new FileOutputStream(f)
+      val writer = Rio.createWriter(RDFStore.fileFormat._2, out)
+      try {
+        writer.startRDF()
+        getAll.foreach(writer.handleStatement)
+        writer.endRDF()
+      } finally { out.close() }
+    }
   }
 
   override def readArchive(a: Archive, in: FilePath, controller: Controller, kd: String): Unit = {
