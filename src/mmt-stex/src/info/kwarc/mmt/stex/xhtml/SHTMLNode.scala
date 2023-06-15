@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMFOREIGN, OM
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
 import info.kwarc.mmt.odk.OpenMath.OMForeign
-import info.kwarc.mmt.stex.Extensions.{BlindSectionStep, ImportStep, LateBinding, SectionStep, SlideStep, StatementStep}
+import info.kwarc.mmt.stex.Extensions.{BlindSectionStep, ImportStep, LateBinding, SHTMLContentManagement, SectionStep, SlideStep, StatementStep}
 import info.kwarc.mmt.stex.rules.StringLiterals
 import info.kwarc.mmt.stex.{SHTML, SHTMLHoas}
 
@@ -1049,7 +1049,7 @@ case class SHTMLRenaming(path:GlobalName,orig:HTMLNode) extends SHTMLNode(orig,S
     findAncestor { case s: SHTMLMMTStructure => s }.foreach { structure =>
       val orig = structure.getAss(path)
       if (macroname != "") {
-        state.server.addMacroName(macroname, orig)
+        SHTMLContentManagement.addMacroName(macroname, orig)
       }
       to match {
         case Some(name) =>

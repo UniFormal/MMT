@@ -147,7 +147,7 @@ abstract class RelationalElement {
 case class Individual(path : Path, tp : Unary) extends RelationalElement {
    def toNode = <individual path={path.toPath} predicate={tp.toString}/>
    def toPath = tp.toString + " " + path.toPath.replace(" ","%20")
-   def toULO = tp.toULO(Implicits.pathToIri(path))
+   def toULO = tp.toULO(RDFImplicits.pathToIri(path))
 }
 
 /**
@@ -156,7 +156,7 @@ case class Individual(path : Path, tp : Unary) extends RelationalElement {
  */
 case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalElement {
    val path = subj
-   def toULO = dep.toULO(Implicits.pathToIri(subj),Implicits.pathToIri(obj))
+   def toULO = dep.toULO(RDFImplicits.pathToIri(subj),RDFImplicits.pathToIri(obj))
    def toNode = <relation subject={subj.toPath} predicate={dep.toString} object={obj.toPath}/>
    override def toString = subj.toString + " " + dep.toString + " " + obj.toString
    def toPath = dep.toString + " " + subj.toPath.replace(" ","%20") + " " + obj.toPath.replace(" ","%20")

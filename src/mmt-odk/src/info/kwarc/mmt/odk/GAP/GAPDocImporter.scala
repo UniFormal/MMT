@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.informal._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
@@ -51,7 +52,7 @@ class GAPDocImporter extends Importer {
     }
   }
 
-  def importDocument(bt : BuildTask, index : Document => Unit) : BuildResult = {
+  def importDocument(bt : BuildTask, index : Document => Unit,rel:ULOStatement => Unit) : BuildResult = {
     try {
       errCount = 0
       succCount = 0

@@ -4,8 +4,9 @@ import info.kwarc.mmt.api._
 import archives._
 import documents._
 import frontend._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.stex.{OMDoc}
+import info.kwarc.mmt.stex.OMDoc
 import informal._
 import modules._
 import notations._
@@ -76,7 +77,7 @@ class OEISImporter extends Importer {
     OMDoc.parseSourceRef(n, dpath)
   }
 
-  def importDocument(bt: BuildTask, cont: Document => Unit): BuildResult = {
+  def importDocument(bt: BuildTask, cont: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     try {
       val src = scala.io.Source.fromFile(bt.inFile.toString)
       val text = try src.mkString finally src.close()

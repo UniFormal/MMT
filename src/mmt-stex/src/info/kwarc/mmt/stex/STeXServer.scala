@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONObject, JSONString, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{Definienda, ExampleRelational, ExportExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
+import info.kwarc.mmt.stex.Extensions.{Definienda, ExampleRelational, ExportExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, STeXRelationals, SymdocRelational}
 import info.kwarc.mmt.stex.lsp.{MathHubServer, RemoteLSP, STeXLSPServer, SearchResultServer}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, JupyterBookArchive, VirtualArchive, VollKi}
@@ -24,7 +24,7 @@ case class ErrorReturn(s : String) extends Throwable {
 }
 
 
-class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML with ExportExtension {
+class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with OMDocHTML with ExportExtension {
   def ctrl = controller
   def getArchives = controller.backend.getStores.collect {
     case a : Archive if a.properties.get("format").contains("stex") => a

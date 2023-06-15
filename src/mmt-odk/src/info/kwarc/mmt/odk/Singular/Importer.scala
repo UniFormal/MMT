@@ -3,9 +3,10 @@ package info.kwarc.mmt.odk.Singular
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
-import info.kwarc.mmt.api.documents.{Document, FileLevel,MRef}
+import info.kwarc.mmt.api.documents.{Document, FileLevel, MRef}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf.Arrow
@@ -22,7 +23,7 @@ class SingularImporter extends Importer {
   // private var all : List[ParsedObject] = Nil
   // private var allmethods : List[ParsedMethod] = Nil
 
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+  def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val d = bf.inFile.name
     val topdoc = new Document(bf.narrationDPath,FileLevel)
     var ths : List[MPath] = Nil

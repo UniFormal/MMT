@@ -60,7 +60,8 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
   }
 
   def parsingstate(eh: STeXLSPErrorHandler) = {
-    new SemanticState(server.stexserver,server.stexserver.importRules,eh,dpath)
+    //val path = archive.flatMap(a => relfile.map(_.toFilePath.foldLeft(a.narrationBase)((a,b) => a / b))).getOrElse(URI(uri))
+    new SemanticState(server.stexserver,server.stexserver.importRules,eh,dpath,_ => ()) // TODO add subgraph
   }
 
   var html:Option[HTMLNode] = None

@@ -134,9 +134,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
         controller.getO(dp) match {
           case Some(d : Document) =>
             JSONObject(("archive",JSONString(a.id)),("filepath",JSONString(fp.replace(".tex",".xhtml").replace(".omdoc",".xhtml"))),
-              ("children",doSectionChildren(d)),("ids",JSONArray(d.metadata.getValues(SHTML.meta_srefid) collect {
-                case StringLiterals(id) => JSONString(id)
-              }:_*))
+              ("children",doSectionChildren(d)),("ids",JSONArray(SHTMLContentManagement.getSref(d).map(JSONString):_*))
             )
           case _ => JSONObject()
         }
@@ -156,19 +154,15 @@ trait SHTMLDocumentServer { this : STeXServer =>
     (controller.backend.resolveLogical(d.uri),controller.getO(d)) match {
       case (Some((a,ls)),Some(d:Document)) =>
         JSONObject(("archive", JSONString(a.id)), ("filepath", JSONString(ls.mkString("/").replace(".tex", ".xhtml").replace(".omdoc", ".xhtml"))),
-          ("children", doSectionChildren(d)),("ids", JSONArray(d.metadata.getValues(SHTML.meta_srefid) collect {
-            case StringLiterals(id) => JSONString(id)
-          }: _*))
+          ("children", doSectionChildren(d)),("ids", JSONArray(SHTMLContentManagement.getSref(d).map(JSONString):_*))
         )
       case _ => JSONObject()
     }
   }
 
   private def doSections(d: Document): JSON = JSONObject(
-    ("title", JSONString(getTitle(d).map(_.toString().replace("&amp;amp;","&amp;")).getOrElse(""))),
-    ("ids", JSONArray(d.metadata.getValues(SHTML.meta_srefid) collect {
-      case StringLiterals(id) => JSONString(id)
-    }: _*)),
+    ("title", JSONString(SHTMLContentManagement.getTitle(d).map(_.toString().replace("&amp;amp;","&amp;")).getOrElse(""))),
+    ("ids", JSONArray(SHTMLContentManagement.getSref(d).map(JSONString):_*)),
     ("id",JSONString(d.path.last)),
     ("children", doSectionChildren(d))
   )
@@ -458,7 +452,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   def getFragmentDefault(c : Constant)(implicit dp:DocParams) : String = {
-    this.getSymdocs(c.path,dp.language.getOrElse("en")) match { // TODO language
+    SHTMLContentManagement.getSymdocs(c.path,dp.language.getOrElse("en"))(controller) match { // TODO language
       case a :: _ => a.toString()
       case _ =>
         val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
@@ -896,7 +890,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
               node.plain.attributes.remove((HTMLParser.ns_shtml, "visible"))
               node.plain.classes = List("inputref")
               node.plain.attributes((node.namespace, "data-inputref-url")) = "/:" + pathPrefix + "/document?archive=" + a.id + "&filepath=" + path + "&bindings=" + bindings.toNum(controller)
-              this.getTitle(d).foreach(n => node.add(n))
+              SHTMLContentManagement.getTitle(d).foreach(n => node.add(n))
             case _ =>
           }
           bindings.merge(dp)(controller) //LateBinding.get(dp)(controller))
@@ -942,97 +936,6 @@ trait SHTMLDocumentServer { this : STeXServer =>
     toremoves.foreach(_.delete)
     node
   }
-
-  lazy val presentationRulesOld : List[PartialFunction[HTMLNode,Unit]] = List(/*
-      {case spf : HTMLProofFrame =>
-        spf.children.collectFirst {case t:HTMLSProoftitle => t} match {
-          case Some(ttl) =>
-            spf.children.collectFirst {case t : HTMLSProofbody => t} match {
-              case Some(bd) =>
-                ttl.attributes((ttl.namespace,"data-collapse-title")) = "true"
-                bd.attributes((bd.namespace,"data-collapse-body")) = "true"
-                spf.attributes((spf.namespace,"data-collapsible")) = if (spf.expanded) "true" else "false"
-            }
-          case _ =>
-        }
-      },
-      {case iref : HTMLInputref =>
-        val dp = Path.parseD(iref.resource + ".omdoc",NamespaceMap.empty)
-        controller.getO(dp) match {
-          case Some(d:Document) =>
-            controller.backend.resolveLogical(d.path.uri) match {
-              case Some((a,ls)) =>
-                val path = ls.init.mkString("/") + "/" + ls.last.dropRight(5) + "xhtml"
-                val ipref = <div class="inputref" data-inputref-url={"/:" + server.pathPrefix + "/document?archive=" + a.id + "&filepath=" + path}>
-                  {d.metadata.get(STeX.meta_doctitle).headOption.map(_.value match {
-                    case OMFOREIGN(node) => node
-                    case _ => ""
-                  }).getOrElse("")}
-                </div>
-                iref.parent.foreach(_.addAfter(
-                  if (iref.ancestors.exists(_.isInstanceOf[HTMLFrame])) {
-                    <div class="inputref-container">
-                      {ipref}
-                    </div>
-                  } else ipref
-                  ,iref))
-              case _ =>
-            }
-          case _ =>
-        }
-      },
-      {case thm: HTMLTheory =>
-        sidebar(thm, <b style="font-size: larger">Theory: {thm.name.toString}</b> :: Nil)
-      },
-      {case s: HTMLSymbol =>
-        controller.getO(s.path) match {
-          case Some(c : Constant) =>
-            sidebar(s,{<span style="display:inline">Constant {makeButton(
-              "/:" + server.pathPrefix + "/fragment?" + c.path + "&language=" + getLanguage(s),
-              "/:" + server.pathPrefix + "/declaration?" + c.path + "&language=" + getLanguage(s)
-              ,scala.xml.Text(c.name.toString)
-            )}<code>(\{s.macroname})</code></span>} :: Nil)
-          case _ =>
-        }
-      },
-      {
-        case t : HTMLTopLevelTerm if t.orig.isInstanceOf[HTMLDefiniendum] =>
-          overlay(t, ""/*/:" + server.pathPrefix + "/declheader?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString*/,
-            "/:" + server.pathPrefix + "/declaration?" + t.orig.asInstanceOf[HTMLDefiniendum].head.toString  + "&language=" + getLanguage(t))
-      },
-      {
-        case t : HTMLDefiniendum =>
-          overlay(t, ""/*"/:" + server.pathPrefix + "/declheader?" + t.head.toString*/,
-            "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
-      },
-      {case t: HasHead if t.isVisible && !t.isInstanceOf[HTMLDefiniendum] =>
-        if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
-          // TODO
-        } else {
-          overlay(t, "/:" + server.pathPrefix + "/fragment?" + t.head.toString + "&language=" + getLanguage(t),
-            "/:" + server.pathPrefix + "/declaration?" + t.head.toString  + "&language=" + getLanguage(t))
-        }
-      },
-      {case t : HTMLTopLevelTerm if !t.orig.isInstanceOf[HTMLDefiniendum] =>
-        t.orig match {
-          case h : HasHead if t.isVisible =>
-            if (t.resource.startsWith("var://") || t.resource.startsWith("varseq://")) {
-              // TODO
-            } else {
-              overlay(t, "/:" + server.pathPrefix + "/fragment?" + h.head.toString + "&language=" + getLanguage(t),
-                "/:" + server.pathPrefix + "/declaration?" + h.head.toString  + "&language=" + getLanguage(t))
-            }
-          case _ =>
-        }
-        /*t.constant.foreach {c =>
-          DocumentExtension.sidebar(t,{<span style="display:inline">Term {DocumentExtension.makeButton(
-            "/:" + server.stexserver.pathPrefix + "/fragment?" + c.path + "&language=" + DocumentExtension.getLanguage(t),
-            "/:" + server.stexserver.pathPrefix + "/declaration?" + c.path + "&language=" + DocumentExtension.getLanguage(t)
-            ,server.stexserver.xhtmlPresenter.asXML(c.df.get,Some(c.path $ DefComponent)),false
-          )}</span>} :: Nil)
-        }*/
-      } */
-  )
 }
 
 sealed trait BindingStep {
@@ -1190,16 +1093,16 @@ object LateBinding {
 
   def get(dp : DPath)(implicit controller:Controller) = {
     controller.getO(dp) match {
-      case Some(d: Document) =>
-        d.metadata.getValues(LateBinding.sym) match {
-          case List(tm: Term) =>
-            LateBinding.fromTerm(tm).getOrElse(new LateBinding)
-          case _ =>
-            new LateBinding
-        }
+      case Some(d: Document) => getFromDoc(d)
       case _ =>
         new LateBinding
     }
+  }
+  def getFromDoc(d:Document) = d.metadata.getValues(LateBinding.sym) match {
+    case List(tm: Term) =>
+      LateBinding.fromTerm(tm).getOrElse(new LateBinding)
+    case _ =>
+      new LateBinding
   }
   def parse(s : String) : LateBinding = {
     val b = new LateBinding

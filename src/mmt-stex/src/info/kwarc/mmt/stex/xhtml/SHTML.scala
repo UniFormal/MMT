@@ -5,11 +5,12 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMMOD, OMS, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.ontology.{RDFImplicits, ULO, ULOStatement}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude, RuleConstant, RuleConstantInterpreter, Structure}
 import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, ParametricRule, Path, Rule, RuleSet, StructuralElement}
-import info.kwarc.mmt.stex.Extensions.LateBinding
-import info.kwarc.mmt.stex.{SCtx, SHTML, SHTMLHoas, STeXServer, STerm}
+import info.kwarc.mmt.stex.Extensions.{LateBinding, SHTMLContentManagement, STeXRelationals}
+import info.kwarc.mmt.stex.{IsSeq, SCtx, SHTML, SHTMLHoas, STeXServer, STerm}
 import info.kwarc.mmt.stex.rules.{BinRRule, BindingRule, ConjRule, ModelsOf, PreEqualRule, PreRule, Reorder, RulerRule, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
@@ -92,6 +93,7 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
   val server : STeXServer
   var in_term : Boolean = false
   val bindings = new LateBinding
+  val rel:ULOStatement => Unit
 
   def closeDoc : Unit
 
@@ -108,7 +110,7 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
   def endAdd[T <: StructuralElement](ce: ContainerElement[T]) : Unit
 
   def getRuler(tm:Term)(implicit self:SHTMLClass) : Option[HasMetaData] = {
-    server.getRuler(tm,self.getRuleContext ++ self.getVariableContext)
+    SHTMLContentManagement.getRuler(tm,self.getRuleContext ++ self.getVariableContext)(server.ctrl)
   }
   def update(se: StructuralElement)
   def error(s:String): Unit
@@ -233,12 +235,15 @@ trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike with HasLanguage wi
     if (language.isEmpty) language = "en"
     //if (language != "") {
     val lang = Theory(path, LocalName(language), None)
-    state.server.addLanguage(language, lang)
+    SHTMLContentManagement.addLanguage(language, lang)
     doSourceRef(lang)
     language_theory = Some(lang)
     state.add(lang)
+    state.rel(ULO.has_language(RDFImplicits.pathToIri(lang.path),language))
+    //STeXRelationals.has_language(lang.path,language)
     doc.foreach{d =>
       state.add(MRef(d.path,lang.path))
+      state.rel(ULO.has_language_module(RDFImplicits.pathToIri(d.path),RDFImplicits.pathToIri(lang.path)))
     }
   }
   def close: Unit = {
@@ -502,10 +507,10 @@ trait SHTMLOSymbol extends SymbolLike {
       }.flatten
       val c = Constant(OMMOD(path.module), path.name, Nil, tp, df, rl)
       hoas.foreach(_.apply(c))
-      if (macroname.nonEmpty) state.server.addMacroName(macroname,c)
-      if (args.nonEmpty) state.server.addArity(args,c)
-      if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, c)
-      if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, c)
+      if (macroname.nonEmpty) SHTMLContentManagement.addMacroName(macroname,c)
+      if (args.nonEmpty) SHTMLContentManagement.addArity(args,c)
+      if (assoctype.nonEmpty) SHTMLContentManagement.addAssoctype(assoctype, c)
+      if (reorderargs.nonEmpty) SHTMLContentManagement.addReorder(reorderargs, c)
       doSourceRef(c)
       state.add(c)
       state.check(c)
@@ -532,7 +537,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
     sstate.foreach { state =>
       val tp = getType match {
         case Some(OMV(x)) => getVariableContext.findLast(_.name == x) match {
-          case Some(vd) if vd.metadata.get(SHTML.flatseq.sym).contains(OMS(SHTML.flatseq.sym)) => Some(OMV(x))
+          case Some(vd) if IsSeq(vd) => Some(OMV(x))
           case _ => Some(SHTML.flatseq.tp(OMV(x)))
         }
         case Some(o) => Some(SHTML.flatseq.tp(o))
@@ -554,22 +559,22 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
             val cname = newname(t, name)
             val c = Constant(t.toTerm, cname, Nil, tp, df, Some(("variable" :: rl.toList).mkString(" ")) )
             hoas.foreach(_.apply(c))
-            if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
-            if (args.nonEmpty) state.server.addArity(args, c)
-            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, c)
-            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, c)
-            vd.metadata.update(SHTML.headterm, c.toTerm)
+            if (macroname.nonEmpty) SHTMLContentManagement.addMacroName(macroname, c)
+            if (args.nonEmpty) SHTMLContentManagement.addArity(args, c)
+            if (assoctype.nonEmpty) SHTMLContentManagement.addAssoctype(assoctype, c)
+            if (reorderargs.nonEmpty) SHTMLContentManagement.addReorder(reorderargs, c)
+            SHTMLContentManagement.setHead(vd,c.toTerm)
             doSourceRef(c)
             state.add(c)
             //state.check(c)
           case None =>
             hoas.foreach(_.apply(vd))
-            if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
-            if (args.nonEmpty) state.server.addArity(args, vd)
-            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, vd)
-            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
+            if (macroname.nonEmpty) SHTMLContentManagement.addMacroName(macroname, vd)
+            if (args.nonEmpty) SHTMLContentManagement.addArity(args, vd)
+            if (assoctype.nonEmpty) SHTMLContentManagement.addAssoctype(assoctype, vd)
+            if (reorderargs.nonEmpty) SHTMLContentManagement.addReorder(reorderargs, vd)
         }
-        vd.metadata.update(SHTML.flatseq.sym, OMS(SHTML.flatseq.sym))
+        IsSeq.set(vd)
         doSourceRef(vd)
         if (bind) state.markAsBound(vd)
         gr.variables ++= vd
@@ -599,20 +604,20 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
             val cname = newname(t, name)
             val c = Constant(t.toTerm, cname, Nil, tp, df, Some(("variable" :: rl.toList).mkString(" ")))
             hoas.foreach(_.apply(c))
-            if (macroname.nonEmpty) state.server.addMacroName(macroname, c)
-            if (args.nonEmpty) state.server.addArity(args, c)
-            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, c)
-            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, c)
-            vd.metadata.update(SHTML.headterm, c.toTerm)
+            if (macroname.nonEmpty) SHTMLContentManagement.addMacroName(macroname, c)
+            if (args.nonEmpty) SHTMLContentManagement.addArity(args, c)
+            if (assoctype.nonEmpty) SHTMLContentManagement.addAssoctype(assoctype, c)
+            if (reorderargs.nonEmpty) SHTMLContentManagement.addReorder(reorderargs, c)
+            SHTMLContentManagement.setHead(vd,c.toTerm)
             doSourceRef(c)
             state.add(c)
             //state.check(c)
           case None =>
             hoas.foreach(_.apply(vd))
-            if (macroname.nonEmpty) state.server.addMacroName(macroname, vd)
-            if (args.nonEmpty) state.server.addArity(args, vd)
-            if (assoctype.nonEmpty) state.server.addAssoctype(assoctype, vd)
-            if (reorderargs.nonEmpty) state.server.addReorder(reorderargs, vd)
+            if (macroname.nonEmpty) SHTMLContentManagement.addMacroName(macroname, vd)
+            if (args.nonEmpty) SHTMLContentManagement.addArity(args, vd)
+            if (assoctype.nonEmpty) SHTMLContentManagement.addAssoctype(assoctype, vd)
+            if (reorderargs.nonEmpty) SHTMLContentManagement.addReorder(reorderargs, vd)
         }
         doSourceRef(vd)
         if (bind) state.markAsBound(vd)
@@ -649,7 +654,7 @@ trait IsTermWithArgs extends IsTerm {
     case (_,(c@('a'|'B'),ls)) => ls match {
       case List(t@OMV(v)) =>
         getVariableContext.find(_.name == v) match {
-          case Some(vd) if vd.metadata.get(SHTML.flatseq.sym).nonEmpty =>
+          case Some(vd) if IsSeq(vd) =>
             (c, t)
           case _ =>
             (c, SHTML.flatseq(ls))
@@ -715,7 +720,7 @@ trait SHTMLOOMB extends IsTermWithArgs {
     }
     doSourceRef(ret)
     if (!headsymbol.contains(head)) {
-      headsymbol.foreach{h => ret.metadata.update(SHTML.headterm,h) }
+      headsymbol.foreach{h => SHTMLContentManagement.setHead(ret,h) }
     }
     Some(ret)
   }
@@ -730,7 +735,7 @@ trait SHTMLOOMA extends IsTermWithArgs {
     }
     doSourceRef(ret)
     if (!headsymbol.contains(head)) {
-      headsymbol.foreach { h => ret.metadata.update(SHTML.headterm, h) }
+      headsymbol.foreach { h => SHTMLContentManagement.setHead(ret,h) }
     }
     Some(ret)
   }
@@ -740,7 +745,7 @@ trait SHTMLOMIDorOMV extends IsTerm {
     val ret = head
     doSourceRef(ret)
     if (!headsymbol.contains(head)) {
-      headsymbol.foreach { h => ret.metadata.update(SHTML.headterm, h) }
+      headsymbol.foreach { h => SHTMLContentManagement.setHead(ret,h) }
     }
     Some(head)
   }
@@ -800,9 +805,9 @@ trait SHTMLOMathStructure extends SHTMLObject with ModuleLike {
         // TODO
       } else {
         val c = Constant(t.toTerm, constantname, Nil, Some(OMS(ModelsOf.tp)), Some(ModelsOf(th.path)), None)
-        state.server.addMacroName(macroname,c)
-        nt.metadata.update(ModelsOf.tp, c.toTerm)
-        c.metadata.update(ModelsOf.sym, th.toTerm)
+        SHTMLContentManagement.addMacroName(macroname,c)
+        SHTMLContentManagement.setStructureSymbol(nt,c.path)
+        SHTMLContentManagement.setStructureModule(c,th.path)
         //c.setOrigin(GeneratedFrom(nt.path,this))
         // TODO elaborations
         doSourceRef(c)

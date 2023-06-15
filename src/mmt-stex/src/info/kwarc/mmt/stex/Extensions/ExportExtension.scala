@@ -104,7 +104,7 @@ trait ExportExtension { self : STeXServer =>
                 node.plain.attributes((node.namespace, "data-inputref-url")) = prefix + "document?archive=" + a.id + "&filepath=" + path + "&bindings=" + bindings.toNum(controller)
                 bindings.merge(dp)(controller)
               }
-              getTitle(d).foreach(n => node.add(n))
+              SHTMLContentManagement.getTitle(d).foreach(n => node.add(n))
             case _ =>
           }
         case _ =>

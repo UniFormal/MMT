@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
 import info.kwarc.mmt.api.modules.AbstractTheory
 import info.kwarc.mmt.api.objects.OMPMOD
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
@@ -188,7 +189,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
   //override val inDim = Dim("xhtml")
   override val inDim = info.kwarc.mmt.api.archives.source
 
-  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+  override def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     log("postprocessing " + bt.inFile)
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val inFile = bt.archive / RedirectableDimension("xhtml") / bt.inPath.setExtension("xhtml")
@@ -196,7 +197,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
       bt.errorCont(SourceError(bt.inFile.toString,SourceRef.anonymous(""),"xhtml file " + inFile.toString + " does not exist"))
       BuildFailure(Nil,Nil)
     }
-    val state = new SemanticState(stexserver, stexserver.importRules, bt.errorCont, dpath)
+    val state = new SemanticState(stexserver, stexserver.importRules, bt.errorCont, dpath,rel)
     controller.library.synchronized{HTMLParser(inFile)(state)}
     index(state.doc)
     log("Finished: " + inFile)
@@ -258,10 +259,10 @@ class STeXToOMDoc extends Importer with XHTMLParser {
   override val inDim = info.kwarc.mmt.api.archives.source
   val inExts = List("tex")
   override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
-  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+  override def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / RedirectableDimension("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath,rel)
     outFile.up.mkdirs()
     val (errored,_,_) = buildFileActually(bt.archive,bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
@@ -425,7 +426,7 @@ class FullsTeX extends Importer with XHTMLParser {
   val key = "fullstex"
   override val inDim = info.kwarc.mmt.api.archives.source
   val inExts = List("tex")
-  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+  override def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val ilog = (str : String) => {
       log(str)
       bt.errorCont match {
@@ -442,7 +443,7 @@ class FullsTeX extends Importer with XHTMLParser {
     import PdfLatex._
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath,rel)
     outFile.up.mkdirs()
     try {
       ilog("Building pdflatex " +  bt.inPath + " (first run)")

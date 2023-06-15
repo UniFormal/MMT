@@ -18,7 +18,7 @@ import org.eclipse.rdf4j.sparqlbuilder.rdf.RdfPredicate
 import java.io.FileOutputStream
 
 
-object Implicits {
+object RDFImplicits {
   import java.net.{URLDecoder, URLEncoder}
   val path_namespace = "mmt://path#"
   implicit def pathToIri(p: Path): IRI = iri(
@@ -54,7 +54,7 @@ object Implicits {
 
   implicit def URIToIRI(uri:URI): IRI = iri(uri.toString)
 }
-import Implicits._
+import RDFImplicits._
 
 trait ULOStatement {
   def triples : Seq[(Resource,IRI,Value)]
@@ -111,8 +111,10 @@ class ObjectProperty(name : String, binary:Option[Binary] = None) extends ULOSub
 class DatatypeProperty(name : String, binary:Option[Binary] = None) extends ULOSubject(name) with ULOPredicate {
   `type`(OWL.DATATYPEPROPERTY)
   def apply(s: IRI, o: Any) = SimpleStatement(s, this.toIri, o match {
-    case p: Path => p
+    case p: Path => RDFImplicits.pathToIri(p)
     case str : String => Values.literal(str)
+    case d:Long => Values.literal(d)
+    case d:Int => Values.literal(d)
     case _ => iri(o.toString)
   })
   def toBinary = binary.getOrElse(CustomBinary(name, "", ""))
@@ -557,6 +559,13 @@ object ULO {
 
     override def hashCode(): Int = _domain.hashCode() + _codomain.hashCode()
   }
+
+  // sTeX Relations
+
+  val has_notation_for = new ObjectProperty("has-notation-for")
+  val has_language = new DatatypeProperty("has-language")
+  val has_language_module = new ObjectProperty("has-language-module")
+
 }
 
 object RDFStore {
@@ -590,7 +599,7 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
   protected def add(s : ULOStatement,graph:URI = memory)(conn:SailRepositoryConnection) = s.triples.foreach{
     case (s,p,o) => conn.add(s,p,o,graph)
   }
-  def clear(uri:URI) = {
+  def clearGraph(uri:URI) = {
     val conn = repo.getConnection
     conn.clear(uri)
     conn.close()
@@ -826,7 +835,7 @@ trait RDFRelStoreLike extends RelStoreLike { this : RDFStore =>
     import scala.jdk.CollectionConverters._
     repo.getConnection.prepareTupleQuery(query.getQueryString).evaluate().forEach { res =>
       val vl = res.getBinding("qv").getValue
-      if (Implicits.isPath(vl))
+      if (RDFImplicits.isPath(vl))
         add(iriToPath(vl.asInstanceOf[IRI]))
     }
   }

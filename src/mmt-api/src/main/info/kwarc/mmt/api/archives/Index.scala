@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import documents._
 import frontend._
 import Level.Level
-import info.kwarc.mmt.api.ontology.{RDFStore, SubGraph, ULO}
+import info.kwarc.mmt.api.ontology.{RDFStore, RelationalElement, SubGraph, ULO, ULOStatement}
 import modules._
 import parser._
 import notations._
@@ -167,16 +167,17 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
     * @param bt information about the input document and error reporting
     * @param index a continuation function to be called on every generated document
     */
-  def importDocument(bt: BuildTask, index: Document => Unit): BuildResult
+  def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult
 
   def buildFile(bf: BuildTask): BuildResult = {
     val sourcefile = (bf.archive / source).relativize(bf.inFile).toString.split('/').foldLeft(bf.archive.narrationBase)((p, s) => p / s)
     val graph = controller.depstore.newGraph(sourcefile)
-    import info.kwarc.mmt.api.ontology.Implicits._
+    import info.kwarc.mmt.api.ontology.RDFImplicits._
     graph.add(ULO.file(sourcefile))
     graph.add(ULO.contains(RDFStore.archive(bf.archive.id), sourcefile))
+    graph.add(ULO.last_checked_at(sourcefile,System.nanoTime()))
 
-    val ret = importDocument(bf, doc => indexDocument(bf.archive, doc,graph))
+    val ret = importDocument(bf, doc => indexDocument(bf.archive, doc,graph), rel => graph.add(rel))
     val relFile = (bf.archive / relational / bf.inPath).setExtension(RDFStore.fileFormat._1)
     log("[  -> relational]     " + relFile.getPath)
     graph.write(relFile)
@@ -185,13 +186,14 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
   }
 
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
-    import info.kwarc.mmt.api.ontology.Implicits._
+    import info.kwarc.mmt.api.ontology.RDFImplicits._
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
     val graph = controller.depstore.newGraph(doc.path.uri)
     graph.add(ULO.folder(doc.path.uri))
     graph.add(ULO.contains(RDFStore.archive(bd.archive.id),doc.path.uri))
+    graph.add(ULO.last_checked_at(doc.path.uri, System.nanoTime()))
     writeToRel(doc,graph)
     val relFile = (bd.archive / relational / inPathFile).setExtension(RDFStore.fileFormat._1)
     log("[  -> relational]     " + relFile.getPath)
@@ -217,21 +219,21 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
         val cPath = Archive.MMTPathToContentPath(mp)
         val cFile = Compress.name(a / content / cPath)
         delete(cFile)
-        controller.depstore.clear(cPath.foldLeft(a.narrationBase)((p, s) => p / s))
+        controller.depstore.clearGraph(cPath.foldLeft(a.narrationBase)((p, s) => p / s))
         delete((a / relational / cPath).setExtension(RDFStore.fileFormat._1))
       }
     } catch {
       case e: Exception =>
         report(LocalError("error, could not clean content of " + narrFile).setCausedBy(e))
     }
-    controller.depstore.clear(narrPath.foldLeft(a.narrationBase)((p, s) => p / s))
+    controller.depstore.clearGraph(narrPath.foldLeft(a.narrationBase)((p, s) => p / s))
     delete((a / relational / narrPath).setExtension(RDFStore.fileFormat._1))
     super.cleanFile(a, curr)
   }
 
   override def cleanDir(a: Archive, curr: Current): Unit = {
     val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
-    controller.depstore.clear(inPathFile.foldLeft(a.narrationBase)((p, s) => p / s))
+    controller.depstore.clearGraph(inPathFile.foldLeft(a.narrationBase)((p, s) => p / s))
     delete((a / relational / inPathFile).setExtension(RDFStore.fileFormat._1))
   }
 
@@ -279,7 +281,7 @@ class OMDocImporter extends Importer {
 
   def inExts = List("omdoc")
 
-  def importDocument(bf: BuildTask, seCont: Document => Unit) = {
+  def importDocument(bf: BuildTask, seCont: Document => Unit,rel:ULOStatement => Unit) = {
     val ps = ParsingStream.fromFile(bf.inFile, Some(bf.narrationDPath), Some(bf.archive.namespaceMap))
     val doc = controller.read(ps, interpret = false)(bf.errorCont)
     seCont(doc)

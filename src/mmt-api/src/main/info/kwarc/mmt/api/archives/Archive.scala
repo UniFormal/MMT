@@ -31,7 +31,7 @@ abstract class ROArchive extends Storage with Logger {
 trait ArchiveLike extends ROArchive {
   val narrationBase : URI
   lazy val id = properties("id")
-  lazy val ns = properties.get("ns").map(s => Path.parse(
+  lazy val ns = properties.get("ns").orElse(properties.get("source-base")).map(s => Path.parse(
     s, //if (s.last == '/') s.dropRight(1) else s,
     NamespaceMap.empty))
 }

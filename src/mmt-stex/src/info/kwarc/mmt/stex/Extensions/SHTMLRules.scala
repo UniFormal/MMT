@@ -174,7 +174,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
               state match {
                 case state : SemanticState =>
                   val id = s.hashCode.toHexString
-                  state.doc.metadata.update(SHTML.meta_srefid,StringLiterals(id))
+                  SHTMLContentManagement.addSref(state.doc,id)
                 case _ =>
               }
             case _ =>

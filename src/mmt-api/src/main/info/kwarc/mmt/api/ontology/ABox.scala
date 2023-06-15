@@ -77,9 +77,9 @@ trait RelStoreLike {
   def readArchive(a: Archive, in: FilePath, controller:Controller, kd: String): Unit
 }
 class RelStore(report : frontend.Report) extends RDFStore(report) {
-  override def readArchive(a: Archive, in: FilePath, controller: Controller, kd: String): Unit = {
+  /*override def readArchive(a: Archive, in: FilePath, controller: Controller, kd: String): Unit = {
     readArchive(a,in,controller, kd)
-  }
+  }*/
 }
 
 class ClassicRelStore(protected val report : frontend.Report) extends RelStoreLike with RelStoreStatistics {

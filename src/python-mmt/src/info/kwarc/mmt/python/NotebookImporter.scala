@@ -5,8 +5,8 @@ import archives._
 import documents._
 import utils._
 import parser._
-
 import MyList._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 
 /** imports notebooks written with the MMT kernel by extracting the "omdoc" field inserted by the [[Finalize]] command in the [[REPLServer]] */
 class NotebookImporter extends Importer {
@@ -30,7 +30,7 @@ class NotebookImporter extends Importer {
     }
   }
   
-  def importDocument(bt: BuildTask, index: Document => Unit) = {
+  def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit) = {
      val s = File.read(bt.inFile)
      val json = JSON.parse(s)
      val docS = extractOMDoc(json).getOrElse {
