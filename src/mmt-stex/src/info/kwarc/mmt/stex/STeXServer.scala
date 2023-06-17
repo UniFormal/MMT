@@ -34,6 +34,8 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
     case al:ArchiveLike if al.id == id => al
   }
 
+  private val do_jupyter = false
+
   override def start(args: List[String]): Unit = {
     super.start(args)
     controller.extman.addExtension(NotationExtractor)
@@ -45,31 +47,33 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
     addExtension(FragmentExtension)
     addExtension(BrowserExtension)*/
 
-    val index = RusTeX.mh.up / "meta" / "inf" / "courses.json"
-    if (index.exists()) Try(JSON.parse(File.read(index))).toOption match {
-      case Some(o:JSONObject) =>
-        o.foreach {
-          case (JSONString(id),jo:JSONObject) =>
-            val map = mutable.HashMap.empty[String, String]
-            map("id") = id
-            jo.foreach {
-              case (JSONString(key),JSONString(value)) =>
-                map(key) = value
-              case _ =>
-            }
-            map.get("type") match {
-              case Some("jupyterbook") =>
-                val store = new JupyterBookArchive(controller, map)
-                controller.backend.addStore(store)
-                //val (t,_) = Time.measure {
+    if (do_jupyter) {
+      val index = RusTeX.mh.up / "meta" / "inf" / "courses.json"
+      if (index.exists()) Try(JSON.parse(File.read(index))).toOption match {
+        case Some(o: JSONObject) =>
+          o.foreach {
+            case (JSONString(id), jo: JSONObject) =>
+              val map = mutable.HashMap.empty[String, String]
+              map("id") = id
+              jo.foreach {
+                case (JSONString(key), JSONString(value)) =>
+                  map(key) = value
+                case _ =>
+              }
+              map.get("type") match {
+                case Some("jupyterbook") =>
+                  val store = new JupyterBookArchive(controller, map)
+                  controller.backend.addStore(store)
+                  //val (t,_) = Time.measure {
                   store.importAll
                 //}
                 //println("Takes: " + t)
-              case _ =>
-            }
-          case _ =>
-        }
-      case _ =>
+                case _ =>
+              }
+            case _ =>
+          }
+        case _ =>
+      }
     }
 
 

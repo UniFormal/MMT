@@ -3,7 +3,10 @@ package info.kwarc.mmt.stex.xhtml
 import info.kwarc.mmt.api.documents.{DRef, Document, SectionLevel}
 import info.kwarc.mmt.api.{DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.metadata.HasMetaData
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.objects.Obj.getConstants
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMFOREIGN, OML, OMMOD, OMS, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.ontology.{RDFImplicits, ULO}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
 import info.kwarc.mmt.odk.OpenMath.OMForeign
@@ -166,7 +169,11 @@ case class SHTMLDocument(path : DPath, orig:HTMLNode) extends SHTMLNode(orig) wi
     case Some(s@("en"|"de"|"ar"|"bg"|"ru"|"fi"|"ro"|"tr"|"fr")) /* TODO */ => language = s
     case _ =>
   }
-  open
+
+  override def onOpen: Unit = {
+    super.onOpen
+    open
+  }
 
   override def onAdd: Unit = {
     super.onAdd
@@ -208,7 +215,10 @@ class SHTMLTheory(val mp : MPath,orig:HTMLNode) extends SHTMLNode(orig,Some("the
   removed ::= "language"
   removed ::= "problem"
 
-  open
+  override def onOpen: Unit = {
+    super.onOpen
+    open
+  }
 
   override def onAdd: Unit = {
     super.onAdd
@@ -284,6 +294,11 @@ class SHTMLSymbol(val path:GlobalName, orig:HTMLNode) extends SHTMLNode(orig,Som
     ret
   }
 
+  override def onOpen: Unit = {
+    super.onOpen
+    open
+  }
+
   override def onAdd: Unit = {
     super.onAdd
     this.close
@@ -297,6 +312,11 @@ class SHTMLVardef(val name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some
   this.plain.attributes.get((HTMLParser.ns_shtml, "bind")) match {
     case Some(_) => bind = true
     case _ =>
+  }
+
+  override def onOpen: Unit = {
+    super.onOpen
+    open
   }
 
   override def copy: HTMLNode = {
@@ -337,6 +357,11 @@ case class SHTMLBind(name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some(
 
 class SHTMLVarseq(val name:LocalName, orig:HTMLNode) extends SHTMLNode(orig,Some("varseq"))
   with SHTMLSymbolLike with SHTMLOVarDecl {
+
+  override def onOpen: Unit = {
+    super.onOpen
+    open
+  }
 
   override def copy: HTMLNode = {
     val ret = new SHTMLVardef(name,orig.copy)
@@ -670,6 +695,11 @@ case class TopLevelTerm(orig:HTMLNode) extends SHTMLNode(orig) with SHTMLOTopLev
   override def copy: HTMLNode = TopLevelTerm(orig)
   set_in_term
 
+  override def onOpen: Unit = {
+    super.onOpen
+    open
+  }
+
   override def onAdd: Unit = {
     reset_in_term
     super.onAdd
@@ -690,6 +720,16 @@ case class SHTMLOMA(orig:HTMLNode) extends SHTMLNode(orig,Some("term"))
 case class SHTMLOMS(orig:HTMLNode) extends SHTMLNode(orig,Some("term"))
   with SHTMLOMIDorOMV with HTMLIsTerm {
   override def copy: HTMLNode = SHTMLOMS(orig.copy)
+
+  override def onAdd: Unit = sstate.foreach {state =>
+    findAncestor {
+      case a if a.docelem.isDefined || a.contentelem.isDefined => a
+    }.foreach { a =>
+      val e = a.docelem.getOrElse(a.contentelem.get)
+      val omss = getConstants(getTerm)
+      omss.foreach(s => state.rel(ULO.crossrefs(RDFImplicits.pathToIri(e), RDFImplicits.pathToIri(s))))
+    }
+  }
 }
 
 case class SHTMLOMStr(orig:HTMLNode) extends SHTMLNode(orig,Some("omstr"))
@@ -874,6 +914,16 @@ abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(or
     newst
   }
 
+  def newname(t: Theory, n: LocalName): LocalName = {
+    if (t.isDeclared(n)) {
+      newname(t, LocalName.parse(n.toString + "\'"))
+    } else n
+  }
+
+  lazy val constantpath = sstate.flatMap{ state => findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
+    lt.path ? newname(lt,if (id == "") LocalName("statement") else LocalName.parse(id))
+  }}
+
   override def onAdd: Unit = {
     if (id.isEmpty) {
       id = this.hashCode().toHexString
@@ -910,18 +960,29 @@ case class SHTMLParagraph(orig:HTMLNode) extends HTMLStatement("paragraph",orig)
     copyII(SHTMLParagraph(orig))
   }
 
+  override def onOpen: Unit = {
+    super.onOpen
+    if (styles.contains("symdoc")) {
+      constantpath.foreach(p => contentelem = Some(p))
+    }
+  }
+
+
   override def onAdd: Unit = {
     super.onAdd
     if (styles.contains("symdoc")) {
       sstate.foreach{s =>
-        val lang = findAncestor{ case hl : HasLanguage => hl.language}.getOrElse("en")
-        val node = if (inline) {
-          val cp = this.plaincopy
-          cp._label = "div"
-          cp.classes ::= "rustex-paragraph"
-          cp.node
-        } else this.plain.node
-        s.addSymdoc(fors,id,node,lang)
+        //val lang = findAncestor{ case hl : HasLanguage => hl.language}.getOrElse("en")
+        constantpath.foreach{c =>
+          val node = if (inline) {
+            val cp = this.plaincopy
+            cp._label = "div"
+            cp.classes ::= "rustex-paragraph"
+            cp.node
+          } else this.plain.node
+          SHTMLContentManagement.addSymdoc(c,fors,node,state.controller,s.rel)
+        }
+        //s.addSymdoc(fors,id,node,lang)
         s match {
           case s:SemanticState =>
             s.Search.addDefi(this)
@@ -936,11 +997,17 @@ case class SHTMLExample(orig:HTMLNode) extends HTMLStatement("example",orig) {
     copyII(SHTMLExample(orig))
   }
 
+  override def onOpen: Unit = {
+    super.onOpen
+    constantpath.foreach(p => contentelem = Some(p))
+  }
+
   override def onAdd: Unit = {
     super.onAdd
-    sstate.foreach(_.addExample(fors, id, this.plain.node.head))
+    //sstate.foreach(_.addExample(fors, id, this.plain.node.head))
     sstate match {
       case Some(s: SemanticState) =>
+        constantpath.foreach(c => SHTMLContentManagement.addExample(c,fors,this.plaincopy.node,s.controller,s.rel))
         s.Search.addExample(this)
       case _ =>
     }
@@ -951,17 +1018,25 @@ case class SHTMLDefinition(orig:HTMLNode) extends HTMLStatement("definition",ori
     copyII(SHTMLDefinition(orig))
   }
 
+  override def onOpen: Unit = {
+    super.onOpen
+    constantpath.foreach(p => contentelem = Some(p))
+  }
+
   override def onAdd: Unit = {
     super.onAdd
     sstate.foreach { s =>
-      val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
-      val node = if (inline) {
-        val cp = this.plaincopy
-        cp._label = "div"
-        cp.classes ::= "rustex-paragraph"
-        cp.node
-      } else this.plain.node
-      s.addSymdoc(fors, id, node, lang)
+      //val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
+      constantpath.foreach { c =>
+        val node = if (inline) {
+          val cp = this.plaincopy
+          cp._label = "div"
+          cp.classes ::= "rustex-paragraph"
+          cp.node
+        } else this.plain.node
+        SHTMLContentManagement.addDefinition(c, fors, node, state.controller, s.rel)
+      }
+      //s.addSymdoc(fors, id, node, lang)
       sstate match {
         case Some(s: SemanticState) =>
           s.Search.addDefi(this)
@@ -975,17 +1050,27 @@ case class SHTMLAssertion(orig:HTMLNode) extends HTMLStatement("assertion",orig)
     copyII(SHTMLAssertion(orig))
   }
 
+  override def onOpen: Unit = {
+    super.onOpen
+    if (styles.contains("symdoc")) {
+      constantpath.foreach(p => contentelem = Some(p))
+    }
+  }
+
   override def onAdd: Unit = {
     super.onAdd
     sstate.foreach { s =>
-      val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
-      val node = if (inline) {
-        val cp = this.plaincopy
-        cp._label = "div"
-        cp.classes ::= "rustex-paragraph"
-        cp.node
-      } else this.plain.node
-      s.addSymdoc(fors, id, node, lang)
+      //val lang = findAncestor { case hl: HasLanguage => hl.language }.getOrElse("en")
+      constantpath.foreach { c =>
+        val node = if (inline) {
+          val cp = this.plaincopy
+          cp._label = "div"
+          cp.classes ::= "rustex-paragraph"
+          cp.node
+        } else this.plain.node
+        SHTMLContentManagement.addStatement(c, fors, node, state.controller, s.rel)
+      }
+      //s.addSymdoc(fors, id, node, lang)
       sstate match {
         case Some(s: SemanticState) =>
           s.Search.addAssertion(this)
@@ -1027,7 +1112,7 @@ with SHTMLMorphism {
 
   override def onOpen: Unit = {
     super.onOpen
-    open()
+    open
   }
 
   override def onAdd: Unit = {

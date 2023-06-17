@@ -124,7 +124,10 @@ abstract class NonTraversingImporter extends BuildTarget with GeneralImporter {
       case None => throw LocalError("document path must start with narration base")
     }
     indexDocument(a, doc,graph)
-    ???
+    val relFile = (a / relational / docPath).setExtension(RDFStore.fileFormat._1)
+    log("[  -> relational]     " + relFile.getPath)
+    graph.write(relFile)
+    graph.close
   }
 
   def importDocument(a: Archive, dpath: DPath): Unit = {

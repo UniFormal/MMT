@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMMO
 import info.kwarc.mmt.api.ontology.{RDFImplicits, ULO, ULOStatement}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude, RuleConstant, RuleConstantInterpreter, Structure}
-import info.kwarc.mmt.api.{ComplexStep, ContainerElement, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, ParametricRule, Path, Rule, RuleSet, StructuralElement}
+import info.kwarc.mmt.api.{ComplexStep, ContainerElement, ContentPath, DPath, ElaborationOf, GeneratedFrom, GetError, GlobalName, LocalName, MPath, ParametricRule, Path, Rule, RuleSet, StructuralElement}
 import info.kwarc.mmt.stex.Extensions.{LateBinding, SHTMLContentManagement, STeXRelationals}
 import info.kwarc.mmt.stex.{IsSeq, SCtx, SHTML, SHTMLHoas, STeXServer, STerm}
 import info.kwarc.mmt.stex.rules.{BinRRule, BindingRule, ConjRule, ModelsOf, PreEqualRule, PreRule, Reorder, RulerRule, StringLiterals}
@@ -18,6 +18,9 @@ import scala.collection.mutable
 
 trait SHTMLObject {
   type SHTMLClass <: SHTMLObject
+
+  var docelem:Option[DPath] = None
+  var contentelem:Option[ContentPath] = None
 
   implicit val self : SHTMLClass = this.asInstanceOf[SHTMLClass]
   def sstate : Option[SHTMLState[SHTMLClass]]
@@ -178,8 +181,7 @@ trait SHTMLState[SHTMLClass <: SHTMLObject] {
   def addNotation(path: GlobalName, id:String,opprec:Int,argprecs:List[Int],component:SHTMLONotationComponent,op:Option[SHTMLOOpNotationComponent])(implicit context : SHTMLClass) : Unit
 
   def addVarNotation(name:LocalName, id: String, opprec: Int,argprecs:List[Int], component: SHTMLONotationComponent, op: Option[SHTMLOOpNotationComponent])(implicit context: SHTMLClass): Unit
-  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node,language:String)(implicit context : SHTMLClass) : Unit
-  def addExample(fors : List[GlobalName],id:String,html:scala.xml.Node)(implicit context : SHTMLClass) : Unit
+
   def markAsUnknown(v: OMV): OMV = {
     v.metadata.update(ParseResult.unknown, OMS(ParseResult.unknown))
     v
@@ -217,16 +219,18 @@ trait ModuleLike extends SHTMLObject with HasRuleContext {
 }
 trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike with HasLanguage with ModuleLike {
   val path:DPath
-  var doc : Option[Document] = None
   def mp = path ? LocalName(language)
+  var doc: Option[Document] = None
 
   sstate.foreach { s =>
     if (path == s.doc.path) {
       doc = Some(s.doc)
+      docelem = Some(s.doc.path)
       s.add(s.doc)
     } else {
       val d = new Document(path)
       doc = Some(d)
+      docelem = Some(d.path)
       s.add(d)
     }
   }
@@ -238,12 +242,15 @@ trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike with HasLanguage wi
     SHTMLContentManagement.addLanguage(language, lang)
     doSourceRef(lang)
     language_theory = Some(lang)
+    contentelem = Some(lang.path)
     state.add(lang)
     state.rel(ULO.has_language(RDFImplicits.pathToIri(lang.path),language))
     //STeXRelationals.has_language(lang.path,language)
-    doc.foreach{d =>
-      state.add(MRef(d.path,lang.path))
-      state.rel(ULO.has_language_module(RDFImplicits.pathToIri(d.path),RDFImplicits.pathToIri(lang.path)))
+    docelem.foreach{d =>
+      state.add(MRef(d,lang.path))
+      state.rel(ULO.document(RDFImplicits.pathToIri(d)))
+      state.rel(ULO.theory(RDFImplicits.pathToIri(lang.path)))
+      state.rel(ULO.has_language_module(RDFImplicits.pathToIri(d),RDFImplicits.pathToIri(lang.path)))
     }
   }
   def close: Unit = {
@@ -300,17 +307,12 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
           //incl.setOrigin(GeneratedFrom(lang.path,this))
           state.add(incl)
           state.endAdd(incl)
+          state.rel(ULO.includes(RDFImplicits.pathToIri(lang.path),RDFImplicits.pathToIri(mp)))
         }
-        /*if (language != "") {
-          plang.foreach { t =>
-            val th = Theory(t.parent / t.name, LocalName(mp.name), metatheory) // TODO parameters
-            doSourceRef(th)
-            val nt = new NestedModule(t.toTerm, LocalName(mp.name), th)
-            doSourceRef(th)
-            state.add(nt)
-            language_theory = Some(th)
-          }
-        }*/
+        contentelem = Some(th.path)
+        state.rel(ULO.theory(RDFImplicits.pathToIri(th.path)))
+        metatheory.foreach(p => state.rel(ULO.has_meta_theory(RDFImplicits.pathToIri(mp), RDFImplicits.pathToIri(p))))
+        state.rel(ULO.contains(RDFImplicits.pathToIri(t.path),RDFImplicits.pathToIri(mp)))
         return ()
       case _ =>
     }
@@ -324,27 +326,13 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
         //incl.setOrigin(GeneratedFrom(lang.path,this))
         state.add(incl)
         state.endAdd(incl)
+        state.rel(ULO.includes(RDFImplicits.pathToIri(lang.path),RDFImplicits.pathToIri(mp)))
       }
-      /*if (language.isEmpty) language = "en"
-      //if (language != "") {
-      val lang = plang match {
-        case Some(t) =>
-          Theory(t.parent / t.name, LocalName(mp.name), metatheory)
-        case _ => Theory(mp.parent / mp.name, LocalName(language), metatheory)
-      }
-      state.server.addLanguage(language,lang)
-      doSourceRef(lang)
-      language_theory = Some(lang)
-      state.add(lang)
-      val incl = PlainInclude(mp, lang.path)
-      //incl.setOrigin(GeneratedFrom(lang.path,this))
-      state.add(incl)
-      state.endAdd(incl)
-      state.check(incl)
-      _context = _context ++ Context(lang.path)
 
-       */
-      //}
+      contentelem = Some(th.path)
+      state.rel(ULO.theory(RDFImplicits.pathToIri(th.path)))
+      metatheory.foreach(p => state.rel(ULO.has_meta_theory(RDFImplicits.pathToIri(mp), RDFImplicits.pathToIri(p))))
+      state.rel(ULO.contains(RDFImplicits.pathToIri(state.doc.path), RDFImplicits.pathToIri(mp)))
     } else if (language == signature) {
       val sig = Theory(mp.parent, mp.name, metatheory) // TODO parameters
       doSourceRef(sig)
@@ -355,47 +343,20 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
         //incl.setOrigin(GeneratedFrom(lang.path,this))
         state.add(incl)
         state.endAdd(incl)
+        state.rel(ULO.includes(RDFImplicits.pathToIri(lang.path), RDFImplicits.pathToIri(mp)))
       }
-      /*val lang = plang match {
-        case Some(t) =>
-          Theory(t.parent / t.name, LocalName(mp.name), metatheory)
-        case _ => Theory(mp.parent / mp.name, LocalName(language), metatheory)
-      }
-      state.server.addLanguage(language,lang)
-      doSourceRef(lang)
-      language_theory = Some(lang)
-      state.add(lang)
-      val incl = PlainInclude(sig.path, lang.path)
-      //incl.setOrigin(GeneratedFrom(lang.path, this))
-      state.add(incl)
-      state.endAdd(incl)
-      state.check(incl)
-      _context = _context ++ Context(lang.path)
-       */
+      contentelem = Some(sig.path)
+      state.rel(ULO.theory(RDFImplicits.pathToIri(sig.path)))
+      metatheory.foreach(p => state.rel(ULO.has_meta_theory(RDFImplicits.pathToIri(mp), RDFImplicits.pathToIri(p))))
+      state.rel(ULO.contains(RDFImplicits.pathToIri(state.doc.path), RDFImplicits.pathToIri(mp)))
     } else {
       plang.foreach { lang =>
         val incl = PlainInclude(mp, lang.path)
         state.add(incl)
         state.endAdd(incl)
         state.check(incl)
+        state.rel(ULO.includes(RDFImplicits.pathToIri(lang.path), RDFImplicits.pathToIri(mp)))
       }
-      /*val lang = plang match {
-        case Some(t) =>
-          Theory(t.parent / t.name, LocalName(mp.name), metatheory)
-        case _ => Theory(mp.parent / mp.name, LocalName(language), metatheory)
-      }
-      state.server.addLanguage(language, lang)
-      doSourceRef(lang)
-      language_theory = Some(lang)
-      state.add(lang)
-      val incl = PlainInclude(mp, lang.path)
-      //incl.setOrigin(GeneratedFrom(lang.path, this))
-      state.add(incl)
-      state.endAdd(incl)
-      state.check(incl)
-      _context = _context ++ Context(lang.path)
-
-       */
     }
     (signature_theory.toList ::: language_theory.toList).foreach { t =>
       state.add(MRef(state.doc.path,t.path))
@@ -423,6 +384,7 @@ trait SHTMLOImportModule extends SHTMLObject {
           doSourceRef(pl)
           state.add(pl)
           state.endAdd(pl)
+          state.rel(ULO.includes(RDFImplicits.pathToIri(th.path), RDFImplicits.pathToIri(mp)))
           //state.check(pl)
         }
       }
@@ -439,7 +401,8 @@ trait SHTMLOUseModule extends SHTMLObject {
         doSourceRef(pl)
         state.add(pl)
         state.endAdd(pl)
-        state.check(pl)
+        //state.check(pl)
+        state.rel(ULO.includes(RDFImplicits.pathToIri(th.path), RDFImplicits.pathToIri(mp)))
       }
     }
   }
@@ -493,6 +456,10 @@ trait SymbolLike extends HasTypes with HasDefiniens with HasMacroName with HasRo
 }
 trait SHTMLOSymbol extends SymbolLike {
   val path : GlobalName
+  def open = {
+    sstate.foreach {state => state.rel(ULO.constant(RDFImplicits.pathToIri(path)))}
+    contentelem = Some(path)
+  }
   def close: Unit = {
     sstate.foreach { state =>
       val itp = getType.map(state.applyTopLevelTerm(_))
@@ -514,24 +481,20 @@ trait SHTMLOSymbol extends SymbolLike {
       doSourceRef(c)
       state.add(c)
       state.check(c)
-      /*if (reorderargs.nonEmpty) addRule(c, "reorder", Reorder, List(StringLiterals(reorderargs)))
-      assoctype match {
-        case "" =>
-        case "pre" =>
-          addRule(c, "pre", PreRule, List(c.toTerm))
-        case "conj" =>
-          addRule(c, "conj", ConjRule, List(c.toTerm))
-        case "bin"|"binr" =>
-          addRule(c, "binr", BinRRule, List(c.toTerm))
-        case _ =>
-          print("TODO")
-      } */
     }
   }
 }
 trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
   val name : LocalName
   var bind = false
+
+  private val path = findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } map { t =>
+    t.path ? newname(t, name)
+  }
+  def open = path.foreach { path =>
+    sstate.foreach { state => state.rel(ULO.variable(RDFImplicits.pathToIri(path))) }
+    contentelem = Some(path)
+  }
 
   def closeSeq = {
     sstate.foreach { state =>
@@ -556,7 +519,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         val vd = VarDecl(name, None, tp, df, None)
         findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
           case Some(t) =>
-            val cname = newname(t, name)
+            val cname = path.get.name
             val c = Constant(t.toTerm, cname, Nil, tp, df, Some(("variable" :: rl.toList).mkString(" ")) )
             hoas.foreach(_.apply(c))
             if (macroname.nonEmpty) SHTMLContentManagement.addMacroName(macroname, c)
@@ -601,7 +564,7 @@ trait SHTMLOVarDecl extends SymbolLike with HasMacroName {
         val vd = VarDecl(name,None,tp,df,None)
         findAncestor { case o: ModuleLike if o.language_theory.isDefined => o.language_theory.get } match {
           case Some(t) =>
-            val cname = newname(t, name)
+            val cname = path.get.name
             val c = Constant(t.toTerm, cname, Nil, tp, df, Some(("variable" :: rl.toList).mkString(" ")))
             hoas.foreach(_.apply(c))
             if (macroname.nonEmpty) SHTMLContentManagement.addMacroName(macroname, c)
@@ -683,15 +646,30 @@ trait SHTMLOArg extends SHTMLObject {
   }
 }
 trait SHTMLOTopLevelTerm extends SHTMLObject {
+
+  def open = contentelem = sstate.flatMap { state =>
+      findAncestor { case m: ModuleLike if m.language_theory.isDefined => m }.map { mod =>
+        mod.language_theory.get.path ? state.termname
+      }
+    }
+
   def close = {
     sstate.flatMap { state =>
+      contentelem.foreach { c =>
+        findAncestor {
+          case a if a.docelem.isDefined || a.contentelem.isDefined => a
+        }.foreach { a =>
+          val e = a.docelem.getOrElse(a.contentelem.get)
+          state.rel(ULO.contains(RDFImplicits.pathToIri(e), RDFImplicits.pathToIri(c)))
+        }
+      }
       findAncestor{case m : ModuleLike if m.language_theory.isDefined => m}.flatMap {mod =>
         getTerm match {
           case OMS(_)|OMV(_) => None
           case SHTMLHoas.OmaSpine(_,_,args) if args.forall(a => a.isInstanceOf[OMV] && state.isUnknown(a.asInstanceOf[OMV])) => None
           case o =>
             val df = state.applyTopLevelTerm(o)
-            val c = Constant(OMMOD(mod.language_theory.get.path), state.termname, Nil, None, Some(df), Some("mmt_term"))
+            val c = Constant(OMMOD(mod.language_theory.get.path), contentelem.get.name, Nil, None, Some(df), Some("mmt_term"))
             doSourceRef(c)
             state.add(c)
             state.check(c)
@@ -796,6 +774,7 @@ trait SHTMLOMathStructure extends SHTMLObject with ModuleLike {
     findAncestor { case th: ModuleLike if th.signature_theory.isDefined => th.signature_theory.get }.foreach { t =>
       parent = Some(t.path)
       val th = Theory(mp.parent, modulename, None)
+      contentelem = Some(th.path)
       val nt = new NestedModule(t.toTerm, modulename.tail, th)
       module = Some(nt)
       doSourceRef(th)
@@ -822,6 +801,9 @@ trait SHTMLOMathStructure extends SHTMLObject with ModuleLike {
         state.add(incl)
         state.endAdd(incl)
       }
+      state.rel(ULO.contains(RDFImplicits.pathToIri(t.path), RDFImplicits.pathToIri(th.path)))
+      state.rel(ULO.mathstructure(RDFImplicits.pathToIri(th.path)))
+      const.foreach(c => state.rel(ULO.mathstructure_of(RDFImplicits.pathToIri(c.path), RDFImplicits.pathToIri(th.path))))
     }
   }
 
@@ -875,7 +857,7 @@ trait SHTMLMorphism extends SHTMLObject with SHTMLGroupLike {
   val path: GlobalName
   var structure : Option[Structure] = None
 
-  def open(): Unit = sstate.foreach { state =>
+  def open: Unit = sstate.foreach { state =>
     findAncestor { case t: ModuleLike => t }.foreach { t =>
       t.signature_theory.foreach { th =>
         val struct = Structure(th.toTerm, path.name, OMMOD(domain), path.name match {

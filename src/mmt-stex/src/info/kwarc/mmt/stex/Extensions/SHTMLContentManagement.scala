@@ -7,12 +7,13 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.{HasMetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{Context, OMA, OMFOREIGN, OMID, OMMOD, OMS, OMV, Term, VarDecl}
-import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, CustomUnary, DatatypeProperty, ObjectProperty, RelationalElement, RelationalExtractor, ULO, Unary}
+import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, CustomUnary, DatatypeProperty, ObjectProperty, RDFImplicits, RelationalElement, RelationalExtractor, ULO, ULOStatement, Unary}
 import info.kwarc.mmt.api.opaque.{OpaqueChecker, OpaqueElement, OpaqueElementInterpreter, OpaqueXML}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.stex.{SHTML, STeXServer}
 import info.kwarc.mmt.stex.rules.{IntLiterals, ModelsOf, RulerRule, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, HTMLText}
+import org.eclipse.rdf4j.sparqlbuilder.core.SparqlBuilder
 
 import scala.xml.{Node, NodeSeq}
 
@@ -27,6 +28,8 @@ object Symbols {
   val meta_notation = mmtmeta_path ? "notation"
   val meta_symdoc = mmtmeta_path ? "symboldoc"
   val meta_example = mmtmeta_path ? "example"
+  val meta_definition = mmtmeta_path ? "definition"
+  val meta_statement = mmtmeta_path ? "statement"
   val assoctype_sym = mmtmeta_path ? "assoctype"
 
 }
@@ -220,29 +223,76 @@ object SHTMLContentManagement {
   }
 
 
-  def addSymdoc(parent: Theory, fors: List[GlobalName], node: Node, language: String) = {
-    parent.metadata.add(MetaDatum(meta_symdoc, OMA(OMS(meta_symdoc), StringLiterals(language) :: OMFOREIGN(node) :: fors.map(OMS(_)))))
+  def addSymdoc(path:GlobalName,fors:List[GlobalName],node:Node,controller:Controller,rel:ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module),path.name,Nil,None,Some(OMA(OMS(meta_symdoc),OMFOREIGN(node) :: fors.map(OMS(_)))),Some("symdoc"))
+    controller.add(c)
+    rel(ULO.para(RDFImplicits.pathToIri(c.path)))
+    fors.foreach{f =>
+      rel(ULO.docref(RDFImplicits.pathToIri(f),RDFImplicits.pathToIri(c.path)))
+    }
+    //parent.metadata.add(MetaDatum(meta_symdoc, OMA(OMS(meta_symdoc), StringLiterals(language) :: OMFOREIGN(node) :: fors.map(OMS(_)))))
   }
 
   def getSymdocs(sym: ContentPath, language: String)(implicit controller:Controller): List[Node] = {
-    var ret: List[Path] = Nil
-    controller.depstore.query(sym, -SymdocRelational.documents)(s => ret ::= s)
-    val us = ret.flatMap { p =>
-      controller.getO(p) match {
-        case Some(t) => t.metadata.getValues(meta_symdoc).flatMap {
-          case OMA(OMS(`meta_symdoc`), StringLiterals(lang) :: OMFOREIGN(node) :: ls) if ls.contains(OMID(sym)) => Some((lang, node))
-          case _ => None
-        }
-      }
+    import info.kwarc.mmt.api.ontology.SPARQL._
+    controller.depstore.query(
+      SELECT("x") WHERE (T(sym,ULO.docref,V("x")) UNION T(V("x"),ULO.defines,sym))
+    ).getPaths.flatMap(controller.getO).collect {
+      case c : Constant if c.df.isDefined => c.df.get
+    }.collect {
+      case OMA(OMS(_),OMFOREIGN(node) :: _) => node
     }
-    val langs = us.filter(_._1 == language)
-    val defaults = us.filter(p => p._1 == "en" && !langs.contains(p))
-    val rest = us.filterNot(p => langs.contains(p) || defaults.contains(p))
-    (langs ::: defaults ::: rest).map(_._2)
   }
 
-  def addExample(parent: Theory, fors: List[GlobalName], node: Node) = {
-    parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))
+  def addExample(path:GlobalName,fors:List[GlobalName],node:Node,controller:Controller,rel:ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))), Some("example"))
+    controller.add(c)
+    rel(ULO.example(RDFImplicits.pathToIri(c.path)))
+    fors.foreach { f =>
+      rel(ULO.example_for(RDFImplicits.pathToIri(c.path),RDFImplicits.pathToIri(f)))
+    }
+    // parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))
+  }
+
+  def getExamples(sym: ContentPath, language: String)(implicit controller: Controller): List[Node] = {
+    import info.kwarc.mmt.api.ontology.SPARQL._
+    controller.depstore.query(
+      SELECT("x") WHERE T(V("x"), ULO.example_for, sym)
+    ).getPaths.flatMap(controller.getO).collect {
+      case c: Constant if c.df.isDefined => c.df.get
+    }.collect {
+      case OMA(OMS(_), OMFOREIGN(node) :: _) => node
+    }
+  }
+
+  def addDefinition(path: GlobalName, fors: List[GlobalName], node: Node, controller: Controller, rel: ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_definition), OMFOREIGN(node) :: fors.map(OMS(_)))), Some("definition"))
+    controller.add(c)
+    rel(ULO.definition(RDFImplicits.pathToIri(c.path)))
+    fors.foreach { f =>
+      rel(ULO.defines(RDFImplicits.pathToIri(c.path), RDFImplicits.pathToIri(f)))
+      rel(ULO.docref(RDFImplicits.pathToIri(f), RDFImplicits.pathToIri(c.path)))
+    }
+  }
+
+  def getDefinition(sym: ContentPath, language: String)(implicit controller: Controller): List[Node] = {
+    import info.kwarc.mmt.api.ontology.SPARQL._
+    controller.depstore.query(
+      SELECT("x") WHERE T(V("x"), ULO.defines, sym)
+    ).getPaths.flatMap(controller.getO).collect {
+      case c: Constant if c.df.isDefined => c.df.get
+    }.collect {
+      case OMA(OMS(_), OMFOREIGN(node) :: _) => node
+    }
+  }
+
+  def addStatement(path: GlobalName, fors: List[GlobalName], node: Node, controller: Controller, rel: ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_statement), OMFOREIGN(node) :: fors.map(OMS(_)))), Some("statement"))
+    controller.add(c)
+    rel(ULO.statement(RDFImplicits.pathToIri(c.path)))
+    fors.foreach { f =>
+      rel(ULO.docref(RDFImplicits.pathToIri(f), RDFImplicits.pathToIri(c.path)))
+    }
   }
 
   def getRuler(tm: Term, ctx: Context)(implicit controller:Controller) = {

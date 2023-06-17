@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 import org.eclipse.rdf4j.model.util.{RDFCollections, Values}
 import org.eclipse.rdf4j.model.util.Values.{bnode, iri}
 import org.eclipse.rdf4j.model.vocabulary.{DC, OWL, RDF, RDFS, XSD}
+import org.eclipse.rdf4j.query.TupleQueryResult
 import org.eclipse.rdf4j.repository.RepositoryResult
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection
 import org.eclipse.rdf4j.rio.Rio
@@ -15,6 +16,7 @@ import org.eclipse.rdf4j.sparqlbuilder.core.SparqlBuilder
 import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries
 import org.eclipse.rdf4j.sparqlbuilder.graphpattern.GraphPatterns
 import org.eclipse.rdf4j.sparqlbuilder.rdf.RdfPredicate
+
 import java.io.FileOutputStream
 
 
@@ -565,7 +567,11 @@ object ULO {
   val has_notation_for = new ObjectProperty("has-notation-for")
   val has_language = new DatatypeProperty("has-language")
   val has_language_module = new ObjectProperty("has-language-module")
-
+  val variable = new ULOClass("variable")
+    .subclassOf(declaration)
+  val mathstructure = new ULOClass("mathstructure")
+    .subclassOf(theory)
+  val mathstructure_of = new ObjectProperty("mathstructure_of")
 }
 
 object RDFStore {
@@ -582,6 +588,8 @@ trait SubGraph {
   def add(s: ULOStatement): Unit
   def close: Unit
   def write(f: File): Unit
+
+  def getAll: Set[ULOStatement]
 
 }
 class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
@@ -609,7 +617,10 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
   class ISubGraph(conn: SailRepositoryConnection,uri:URI) extends SubGraph {
     import scala.jdk.CollectionConverters._
     def add(s : ULOStatement) = RDFStore.this.add(s,uri)(conn)
-    def getAll = conn.getStatements(null,null,null,true,uri).asScala.toSet
+    def getAllI = conn.getStatements(null,null,null,true,uri).asScala.toSet
+    def getAll = getAllI.map{s =>
+      SimpleStatement(s.getSubject,s.getPredicate,s.getObject)
+    }
     conn.clear(uri)
     def close = conn.close()
     def write(f: File) = {
@@ -618,7 +629,7 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
       val writer = Rio.createWriter(RDFStore.fileFormat._2, out)
       try {
         writer.startRDF()
-        getAll.foreach(writer.handleStatement)
+        getAllI.foreach(writer.handleStatement)
         writer.endRDF()
       } finally { out.close() }
     }
@@ -682,8 +693,9 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
   // Querying
 
   // Wrapper for query results
-  case class QueryResult(it: RepositoryResult[org.eclipse.rdf4j.model.Statement]) {
+  case class QueryResult(rdf4j: TupleQueryResult) {
     import scala.jdk.CollectionConverters._
+    /*
     def toIterator = it.asScala
     def foreach(f: org.eclipse.rdf4j.model.Statement => Unit) = toIterator.foreach(f)
     def toRelational: List[RelationalElement] = toIterator.toList.map { statement =>
@@ -709,16 +721,23 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
           )
       }
     }
-
+     */
+    def getPaths = {
+      val name = rdf4j.getBindingNames.get(0)
+      rdf4j.asScala.map(_.getValue(name)).toList collect {
+        case iri: IRI if isPath(iri) => iriToPath(iri)
+      }
+    }
   }
 
-  private def get(subject: Option[Path] = None, predicate: Option[ULOTrait] = None, obj: Option[Path] = None, inferred: Boolean = true, context: Option[Path] = None)
-  = QueryResult(repo.getConnection.getStatements(
-      subject.map(pathToIri).orNull,
-      predicate.map(_.toIri).orNull,
-      obj.map(pathToIri).orNull,
-      inferred, context.map(pathToIri).toList: _*)
-  )
+
+
+  def query(q: QUERY) = {
+    val conn = repo.getConnection
+    val res = conn.prepareTupleQuery(q.queryString).evaluate()
+    //conn.close()
+   QueryResult(res)
+  }
 
   start
 }
@@ -888,4 +907,37 @@ class RelToRDF extends Extension {
       }
     }
   }
+}
+sealed trait QUERY {
+  private case class QUNION(q1: QUERY, q2: QUERY) extends QUERY {
+    def queryString: String = s"{ ${q1.queryString} } UNION { ${q2.queryString} }"
+  }
+  def UNION(q: QUERY): QUERY = QUNION(this,q)
+
+  def queryString: String
+}
+object SPARQL {
+  sealed trait Object {
+    def toObjString : String
+  }
+  sealed trait Subject extends this.Object
+
+  private case class PathO(p:Path) extends Subject {
+    override def toObjString: String = "<" + pathToIri(p).toString + ">"
+  }
+  case class V(s:String) extends Subject {
+    def toObjString = s"?$s"
+  }
+  implicit def pathtosubject(p:Path): Subject = PathO(p)
+  private case class SelectWhere(`var`:String,where:QUERY) extends QUERY {
+    def queryString: String = s"SELECT ?${`var`} WHERE { ${where.queryString} }"
+  }
+  case class SELECT(`var` : String) {
+    def WHERE(q : QUERY): QUERY = SelectWhere(`var`,q)
+  }
+  import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries._
+  case class T(subject: Subject,predicate: ULOPredicate,`object`:this.Object) extends QUERY {
+    def queryString: String = s"${subject.toObjString} <${predicate.toIri.toString}> ${`object`.toObjString} ."
+  }
+
 }

@@ -144,25 +144,6 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
       }
     )
   }
-  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node,language:String)(implicit context: SHTMLNode): Unit = {
-    context.findAncestor {
-      case t: ModuleLike =>
-        val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({
-          return ()
-        }))
-        SHTMLContentManagement.addSymdoc(th,fors,html,language)
-    }
-  }
-
-  def addExample(fors: List[GlobalName], id: String, html: scala.xml.Node)(implicit context: SHTMLNode): Unit = {
-    context.findAncestor {
-      case t: ModuleLike =>
-        val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({
-          return ()
-        }))
-        SHTMLContentManagement.addExample(th, fors, html)
-    }
-  }
 
   def addTitle(ttl: SHTMLNode) : Unit = {
     val n = if (ttl.plain.attributes.contains((HTMLParser.ns_shtml,"visible"))) {
