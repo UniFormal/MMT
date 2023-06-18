@@ -238,7 +238,13 @@ object SHTMLContentManagement {
     controller.depstore.query(
       SELECT("x") WHERE (T(sym,ULO.docref,V("x")) UNION T(V("x"),ULO.defines,sym))
     ).getPaths.flatMap(controller.getO).collect {
-      case c : Constant if c.df.isDefined => c.df.get
+      case c : Constant if c.df.isDefined =>
+       /*val deps = controller.depstore.query(
+          SELECT("y") WHERE
+              T(c.path,(ULO.crossrefs | ULO.declares)+,V("y"))
+        )
+        deps.getPaths.foreach(println)*/
+        c.df.get
     }.collect {
       case OMA(OMS(_),OMFOREIGN(node) :: _) => node
     }

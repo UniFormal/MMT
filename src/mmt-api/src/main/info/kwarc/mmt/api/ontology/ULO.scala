@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api.archives.{Archive, relational}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
-import info.kwarc.mmt.api.utils.{File, FilePath, URI}
+import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.{ComplexStep, DPath, GlobalName, MPath, NamespaceMap, Path, frontend}
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 import org.eclipse.rdf4j.model.util.{RDFCollections, Values}
@@ -724,19 +724,53 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
      */
     def getPaths = {
       val name = rdf4j.getBindingNames.get(0)
-      rdf4j.asScala.map(_.getValue(name)).toList collect {
+      val ret = rdf4j.asScala.map(_.getValue(name)).toList collect {
         case iri: IRI if isPath(iri) => iriToPath(iri)
       }
+      rdf4j.close()
+      ret
+    }
+    def getJson = {
+      def stringify(v : Value) = JSONString(if (v.isIRI) {
+        val iri = v.asInstanceOf[IRI]
+        if (isPath(iri)) iriToPath(iri).toString
+        else iri.stringValue()
+      } else v.stringValue())
+      val vars = JSONArray(rdf4j.getBindingNames.asScala.toList.map(JSONString) :_*)
+      val bindings = JSONArray(rdf4j.asScala.toList.map{ bs =>
+        JSONObject(bs.asScala.toList.map{b =>
+          val value = b.getValue
+          val tp : List[(String,JSON)] = if (value.isIRI) List(("type",JSONString("uri")),("value",stringify(value)))
+            else if (value.isBNode) List(("type",JSONString("bnode")),("value",JSONString(value.stringValue())))
+            else if (value.isLiteral) {
+              val lit = value.asInstanceOf[org.eclipse.rdf4j.model.Literal]
+              if (lit.getLanguage.isEmpty) List(("type",JSONString("literal")),("value",JSONString(value.stringValue())))
+              else List(("type",JSONString("literal")),("xml:lang",JSONString(lit.getLanguage.get())))
+            }
+          else { // triple
+            val tr = value.asInstanceOf[org.eclipse.rdf4j.model.Triple]
+            List(("type",JSONString("triple")),("value",JSONObject(
+              ("subject",stringify(tr.getSubject)),
+              ("predicate",JSONString(tr.getPredicate.stringValue())),
+              ("object",stringify(tr.getObject))
+            )))
+          }
+          (b.getName, JSONObject(tp:_*))
+        } :_*)
+      } :_*)
+      rdf4j.close()
+      JSONObject(("head",JSONObject(("vars",vars))),("results",JSONObject(("bindings",bindings))))
     }
   }
-
-
 
   def query(q: QUERY) = {
     val conn = repo.getConnection
     val res = conn.prepareTupleQuery(q.queryString).evaluate()
-    //conn.close()
    QueryResult(res)
+  }
+  def query(str : String) = {
+    val conn = repo.getConnection
+    QueryResult(conn.prepareTupleQuery(str).evaluate())
   }
 
   start
@@ -922,6 +956,22 @@ object SPARQL {
   }
   sealed trait Subject extends this.Object
 
+  private case class Trans(p:Predicate) extends Predicate {
+    def predString: String = p.predString + "+"
+  }
+  private case class PredUnion(p1:Predicate,p2:Predicate) extends Predicate {
+    def predString: String = "(" + p1.predString + "|" + p2.predString + ")"
+  }
+  sealed trait Predicate {
+    def predString : String
+    def + : Predicate = Trans(this)
+    def |(that:Predicate) : Predicate = PredUnion(this,that)
+  }
+  private case class UloPred(u:ULOPredicate) extends Predicate {
+    override def predString: String = "<" + u.toIri.toString + ">"
+  }
+  implicit def asPred(u:ULOPredicate): Predicate = UloPred(u)
+
   private case class PathO(p:Path) extends Subject {
     override def toObjString: String = "<" + pathToIri(p).toString + ">"
   }
@@ -929,15 +979,15 @@ object SPARQL {
     def toObjString = s"?$s"
   }
   implicit def pathtosubject(p:Path): Subject = PathO(p)
-  private case class SelectWhere(`var`:String,where:QUERY) extends QUERY {
-    def queryString: String = s"SELECT ?${`var`} WHERE { ${where.queryString} }"
+  private case class SelectWhere(vars:List[String],where:QUERY) extends QUERY {
+    def queryString: String = s"SELECT ${vars.map("?" + _).mkString(" ")} WHERE { ${where.queryString} }"
   }
-  case class SELECT(`var` : String) {
-    def WHERE(q : QUERY): QUERY = SelectWhere(`var`,q)
+  case class SELECT(`var` : String*) {
+    def WHERE(q : QUERY): QUERY = SelectWhere(`var`.toList,q)
   }
   import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries._
-  case class T(subject: Subject,predicate: ULOPredicate,`object`:this.Object) extends QUERY {
-    def queryString: String = s"${subject.toObjString} <${predicate.toIri.toString}> ${`object`.toObjString} ."
+  case class T(subject: Subject,predicate: this.Predicate,`object`:this.Object) extends QUERY {
+    def queryString: String = s"${subject.toObjString} ${predicate.predString} ${`object`.toObjString} ."
   }
 
 }

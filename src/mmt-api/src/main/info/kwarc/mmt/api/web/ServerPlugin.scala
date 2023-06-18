@@ -207,6 +207,10 @@ class QueryServer extends ServerExtension("query") {
   }
   def apply(request: ServerRequest): ServerResponse = {
     request.pathForExtension match {
+      case List("sparql") =>
+        ServerResponse.JsonResponse(
+          controller.depstore.query(request.body.asString).getJson
+        )
       case List("text") =>
         // find the parameters in the body
         val queryparams = request.body.asJSON match {
