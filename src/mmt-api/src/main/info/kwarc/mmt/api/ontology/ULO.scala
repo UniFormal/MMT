@@ -567,6 +567,7 @@ object ULO {
   val has_notation_for = new ObjectProperty("has-notation-for")
   val has_language = new DatatypeProperty("has-language")
   val has_language_module = new ObjectProperty("has-language-module")
+  val is_language_module = new ULOClass("language-module")
   val variable = new ULOClass("variable")
     .subclassOf(declaration)
   val mathstructure = new ULOClass("mathstructure")
@@ -959,8 +960,12 @@ object SPARQL {
   private case class Trans(p:Predicate) extends Predicate {
     def predString: String = p.predString + "+"
   }
-  private case class PredUnion(p1:Predicate,p2:Predicate) extends Predicate {
-    def predString: String = "(" + p1.predString + "|" + p2.predString + ")"
+  private case class PredUnion(p:Predicate*) extends Predicate {
+    def predString: String = p.map(_.predString).mkString("(","|",")")
+    override def |(that:Predicate) : Predicate = that match {
+      case PredUnion(q@_*) => PredUnion(p ++ q :_*)
+      case _ => PredUnion(p :+ that :_*)
+    }
   }
   sealed trait Predicate {
     def predString : String

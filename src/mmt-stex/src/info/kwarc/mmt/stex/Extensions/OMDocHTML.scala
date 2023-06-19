@@ -68,7 +68,7 @@ trait OMDocHTML { this : STeXServer =>
         implicit val state = new OMDocState(lang.getOrElse("en"))
         val ret = path match {
           case d:DPath =>
-            documentTop(d).toString()
+            documentTop(d).toString().replace("&amp;amp;","&amp;").replace("&amp;#","&#").trim
           case mp:MPath => moduleTop(mp).toString()
           case gn:GlobalName => declTop(gn).toString()
           case _ => "<div>Invalid: " + path.toString + "</div>"
@@ -308,6 +308,9 @@ trait OMDocHTML { this : STeXServer =>
         doStructure(c)
       case c : Constant if c.rl.exists(_.contains("mmt_term")) =>
         doTerm(c)
+      case c: Constant if c.rl.exists(r =>
+        r.contains("symdoc") || r.contains("example") || r.contains("definition") || r.contains("statement")
+      ) => <span></span>
       case c : Constant => doSymbol(c)
       case rc:RuleConstant =>
         rc.tp match {

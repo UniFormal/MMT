@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.modules.AbstractTheory
 import info.kwarc.mmt.api.objects.OMPMOD
 import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.symbols.Structure
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
@@ -207,8 +208,10 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     }
     val used = state.doc.getDeclarations.flatMap {
       case m : MRef => controller.getO(m.target).toList.flatMap{
-        case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))
-        case _ => Nil
+        case t : AbstractTheory => t.getPrimitiveDeclarations.collect({case s:Structure => s.from match {
+          case OMPMOD(p,_) => LogicalDependency(p)
+        }})
+      case _ => Nil
       }
       case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
       case _ => Nil
@@ -273,8 +276,11 @@ class STeXToOMDoc extends Importer with XHTMLParser {
         LogicalDependency(mr.target)
     }
     val used = state.doc.getDeclarations.flatMap {
-      case m : MRef => controller.getO(m.target).toList.flatMap{
-        case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))
+      case m : MRef => controller.getO(m.target).toList.flatMap {
+        case t: AbstractTheory => t.getPrimitiveDeclarations.collect({ case s: Structure => s.from match {
+          case OMPMOD(p, _) => LogicalDependency(p)
+        }
+        })
         case _ => Nil
       }
       case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
@@ -480,8 +486,11 @@ class FullsTeX extends Importer with XHTMLParser {
           LogicalDependency(mr.target)
       } ::: (bt.archive / Dim("export","lucene") / bt.inPath).stripExtension.descendants.map(PhysicalDependency)
       val used = state.doc.getDeclarations.flatMap {
-        case m : MRef => controller.getO(m.target).toList.flatMap{
-          case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))
+        case m : MRef => controller.getO(m.target).toList.flatMap {
+          case t: AbstractTheory => t.getPrimitiveDeclarations.collect({ case s: Structure => s.from match {
+            case OMPMOD(p, _) => LogicalDependency(p)
+          }
+          })
           case _ => Nil
         }
         case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))

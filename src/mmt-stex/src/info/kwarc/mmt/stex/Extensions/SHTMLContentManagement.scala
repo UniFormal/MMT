@@ -184,6 +184,7 @@ object SHTMLContentManagement {
   def getNotationsC(c: Constant)(implicit controller:Controller): List[STeXNotation] = {
     var ret: List[Path] = Nil
     controller.depstore.query(c.path, -NotationExtractor.notation)(s => ret ::= s)
+    ret = ret.distinct
     val path = c.path
     ret.flatMap {
       controller.getO(_) match {
@@ -196,7 +197,7 @@ object SHTMLContentManagement {
         }
         case _ => Nil
       }
-    }
+    }.distinct
   }
 
   private def toHTML(node: Node)(implicit controller:Controller): HTMLNode = {
@@ -220,7 +221,7 @@ object SHTMLContentManagement {
     case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp))) =>
       Some(STeXNotation(p.toString, None, id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
     case _ => None
-  }
+  }.distinct
 
 
   def addSymdoc(path:GlobalName,fors:List[GlobalName],node:Node,controller:Controller,rel:ULOStatement => Unit) = {

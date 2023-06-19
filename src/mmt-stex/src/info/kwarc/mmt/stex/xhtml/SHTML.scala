@@ -247,10 +247,14 @@ trait SHTMLODocument extends SHTMLObject with SHTMLGroupLike with HasLanguage wi
     state.rel(ULO.has_language(RDFImplicits.pathToIri(lang.path),language))
     //STeXRelationals.has_language(lang.path,language)
     docelem.foreach{d =>
+      if (d.last.endsWith(s".$language.omdoc")) {
+        val od = d.^ / (d.last.dropRight(s".$language.omdoc".length) + ".omdoc")
+        state.rel(ULO.has_language_module(RDFImplicits.pathToIri(od),RDFImplicits.pathToIri(lang.path)))
+      }
       state.add(MRef(d,lang.path))
       state.rel(ULO.document(RDFImplicits.pathToIri(d)))
       state.rel(ULO.theory(RDFImplicits.pathToIri(lang.path)))
-      state.rel(ULO.has_language_module(RDFImplicits.pathToIri(d),RDFImplicits.pathToIri(lang.path)))
+      state.rel(ULO.is_language_module(RDFImplicits.pathToIri(lang.path)))
     }
   }
   def close: Unit = {
