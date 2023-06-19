@@ -1,14 +1,14 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{Archive, ArchiveLike, RedirectableDimension}
+import info.kwarc.mmt.api.archives.{Archive, ArchiveLike, RedirectableDimension, source}
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.time.Time
-import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONObject, JSONString, MMTSystem, XMLEscaping}
+import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{Definienda, ExampleRelational, ExportExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
+import info.kwarc.mmt.stex.Extensions.{Definienda, ExampleRelational, ExportExtension, FrontendExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
 import info.kwarc.mmt.stex.lsp.{MathHubServer, RemoteLSP, STeXLSPServer, SearchResultServer}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, JupyterBookArchive, VirtualArchive, VollKi}
@@ -24,7 +24,7 @@ case class ErrorReturn(s : String) extends Throwable {
 }
 
 
-class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML with ExportExtension {
+class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML with ExportExtension with FrontendExtension {
   def ctrl = controller
   def getArchives = controller.backend.getStores.collect {
     case a : Archive if a.properties.get("format").contains("stex") => a
@@ -102,6 +102,20 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
         documentRequest(request)
       case Some("omdoc" | "omdocfrag" | "omdocuri") =>
         omdocRequest(request)
+      case Some("docidx") =>
+        ServerResponse.JsonResponse(JSONArray(getFrontendElements :_*))
+      case Some("thumbnail") =>
+        val fp = request.query.split("/").init.mkString("/")
+        controller.backend.getArchive(fp) match {
+          case Some(a) =>
+            val f = a / source / (request.query.split("/").last + ".png")
+            if (f.exists()) {
+              ServerResponse.FileResponse(f)
+            }
+            else ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+          case _ =>
+            ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+        }
       case Some(":sTeX") if request.query == "" =>
         browserRequest(request)
       case Some("browser") =>
