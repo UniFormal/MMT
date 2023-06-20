@@ -75,10 +75,12 @@ abstract class Declaration extends ContentElement {
    /** a recursively translated copy of this declaration with a URI
     *  @param newHome the home theory of the result
     *  @param prefix the prefix used to form the name of the new declaration
+    *  @param except a name that is already covered by prefix and should be dropped from the beginning of names when prefixing
     */
-   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): ThisType
+   def translate(newHome: Term, prefix: LocalName, except: LocalName, translator: Translator, context : Context): ThisType
    /** a recursively translated copy of this declaration */
-   def translate(translator: Translator, context : Context): ThisType = translate(home, LocalName.empty, translator, context)
+   def translate(translator: Translator, newHome: Term = home, context : Context = Context.empty): ThisType =
+     translate(newHome, LocalName.empty, LocalName.empty, translator, context)
    /** a new declaration with the same path obtained by replacing fields in 'this' with corresponding fields of 'that'
     *  Unfortunately, this must take any declaration and throw an error if 'not (that : ThisType)'
     */
@@ -105,8 +107,8 @@ class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Dec
    type ThisType = NestedModule
    val feature = mod.feature
    def module = mod
-   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): NestedModule = {
-     val modT = mod.translate(utils.mmt.mmtbase, LocalName(newHome.toMPath/prefix)/name, translator,context)
+   def translate(newHome: Term, prefix: LocalName, except: LocalName, translator: Translator, context : Context): NestedModule = {
+     val modT = mod.translate(utils.mmt.mmtbase, LocalName(newHome.toMPath/prefix).appendExcept(except,name), translator,context)
      new NestedModule(newHome, prefix/name, modT)
    }
    //TODO this is where patterns (seen as defined theories) can be mapped to larger theories

@@ -535,7 +535,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                // dfAssig has the right definiens, but we need to change its home and name to fit the original request
                val h = dfAssig.name.head
                val prefix = if (h.isInstanceOf[ComplexStep] && aname.head == h) aname.init else aname
-               dfAssig.translate(l.toTerm,prefix,IdentityTranslator,Context.empty)
+               dfAssig.translate(l.toTerm,prefix,LocalName(dom),IdentityTranslator,Context.empty)
            }
            case None =>
              // check if name lives in a theory theo included into from or directly in from; if the former, use an
@@ -597,7 +597,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case OMPMOD(p, oldArgs) => OMPMOD(p, oldArgs ::: args)
         case _ => throw ImplementationError("cannot instantiate declaration of complex theory")
       }
-    val dT = decl.translate(newHome, LocalName.empty, ApplySubs(subs), params)
+    val dT = decl.translate(ApplySubs(subs), newHome, params)
     dT.setOrigin(CreatedForLookup)
     dT
   }

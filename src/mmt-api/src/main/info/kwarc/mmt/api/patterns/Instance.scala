@@ -82,7 +82,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
        }
        val subs = (params zip args) map {case (vd,a) => Sub(vd.name, a)}
        val tl = ApplySubs(subs) compose TraversingTranslator(Renamer.prefix(pattern.modulePath, dd.path))
-       val dT = dN.translate(dd.home, dd.name, tl, Context.empty)
+       val dT = dN.translate(dd.home, dd.name, LocalName.empty, tl, Context.empty)
        Some(dT)
      }
    }
