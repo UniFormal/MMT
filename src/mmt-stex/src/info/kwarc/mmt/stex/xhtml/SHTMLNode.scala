@@ -1002,6 +1002,13 @@ case class SHTMLExample(orig:HTMLNode) extends HTMLStatement("example",orig) {
     constantpath.foreach(p => contentelem = Some(p))
   }
 
+
+  override lazy val constantpath = sstate.flatMap { state =>
+    findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
+      lt.path ? newname(lt, if (id == "") LocalName("example") else LocalName.parse(id))
+    }
+  }
+
   override def onAdd: Unit = {
     super.onAdd
     //sstate.foreach(_.addExample(fors, id, this.plain.node.head))
