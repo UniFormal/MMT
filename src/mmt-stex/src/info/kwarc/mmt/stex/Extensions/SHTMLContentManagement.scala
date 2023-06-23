@@ -302,6 +302,13 @@ object SHTMLContentManagement {
     }
   }
 
+  def addProblem(path: GlobalName, node: Node, controller: Controller, rel: ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_example), OMFOREIGN(node) :: Nil)), Some("problem"))
+    controller.add(c)
+    rel(ULO.problem(RDFImplicits.pathToIri(c.path)))
+    // parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))
+  }
+
   def getRuler(tm: Term, ctx: Context)(implicit controller:Controller) = {
     val rules = try {
       RuleSet.collectRules(controller, ctx).get(classOf[RulerRule]).toList

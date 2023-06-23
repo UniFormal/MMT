@@ -309,7 +309,7 @@ trait OMDocHTML { this : STeXServer =>
       case c : Constant if c.rl.exists(_.contains("mmt_term")) =>
         doTerm(c)
       case c: Constant if c.rl.exists(r =>
-        r.contains("symdoc") || r.contains("example") || r.contains("definition") || r.contains("statement")
+        r.contains("symdoc") || r.contains("example") || r.contains("definition") || r.contains("statement") || r.contains("problem")
       ) => <span></span>
       case c : Constant => doSymbol(c)
       case rc:RuleConstant =>

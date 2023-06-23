@@ -6,13 +6,14 @@ import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Obj.getConstants
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMFOREIGN, OML, OMMOD, OMS, OMV, Term, VarDecl}
-import info.kwarc.mmt.api.ontology.{RDFImplicits, ULO}
+import info.kwarc.mmt.api.ontology.{DatatypeProperty, RDFImplicits, ULO, ULOStatement}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
 import info.kwarc.mmt.odk.OpenMath.OMForeign
 import info.kwarc.mmt.stex.Extensions.{BlindSectionStep, ImportStep, LateBinding, SHTMLContentManagement, SectionStep, SlideStep, StatementStep}
 import info.kwarc.mmt.stex.rules.StringLiterals
 import info.kwarc.mmt.stex.{SHTML, SHTMLHoas}
+import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 
 import scala.util.Try
 
@@ -991,6 +992,73 @@ case class SHTMLParagraph(orig:HTMLNode) extends HTMLStatement("paragraph",orig)
       }
     }
   }
+}
+
+trait VollKIAnnotation extends SHTMLNode {
+  val prefix: String
+  val ulo : DatatypeProperty
+
+  removed ::= prefix + "dimension"
+  lazy val dimension = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, prefix + "dimension"), "")
+  removed ::= prefix + "symbol"
+  lazy val symbol = this.plain.attributes.get((HTMLParser.ns_shtml, prefix + "symbol")).map(Path.parseS(_))
+
+  override def onAdd: Unit = {
+    super.onAdd
+    symbol.foreach { sym =>
+      sstate.foreach { state =>
+        findAncestor {
+          case e: SHTMLStatement if e.contentelem.isDefined => e
+          case p: SHTMLProblem if p.contentelem.isDefined => p
+        }.foreach { s =>
+          state.rel(new ULOStatement {
+            lazy val node = org.eclipse.rdf4j.model.util.Values.bnode()
+
+            override def triples: Seq[(Resource, IRI, Value)] = Seq(
+              (RDFImplicits.pathToIri(s.contentelem.get), ulo.toIri, node),
+              (node, ULO.cognitiveDimension.toIri, org.eclipse.rdf4j.model.util.Values.literal(dimension)),
+              (node, ULO.crossrefs.toIri, RDFImplicits.pathToIri(sym))
+            )
+          })
+        }
+      }
+    }
+  }
+}
+case class SHTMLPrecondition(orig:HTMLNode) extends SHTMLNode(orig,Some("preconditionsymbol")) with VollKIAnnotation {
+  val prefix = "precondition"
+  val ulo = ULO.precondition
+  override def copy: HTMLNode = SHTMLPrecondition(orig.copy)
+}
+case class SHTMLObjective(orig:HTMLNode) extends SHTMLNode(orig,Some("objectivesymbol")) with VollKIAnnotation {
+  val prefix = "objective"
+  val ulo = ULO.objective
+  override def copy: HTMLNode = SHTMLObjective(orig.copy)
+}
+
+class SHTMLProblem(mpI:MPath,orig:HTMLNode) extends SHTMLTheory(mpI,orig) {
+  override def copy = new SHTMLProblem(mpI,orig.copy)
+
+  lazy val constantpath = sstate.flatMap { state =>
+    findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
+      lt.path ? mp.name
+    }
+  }
+  override def onOpen: Unit = {
+    super.onOpen
+    constantpath.foreach(p => contentelem = Some(p))
+  }
+
+  override def onAdd: Unit = {
+    super.onAdd
+    //sstate.foreach(_.addExample(fors, id, this.plain.node.head))
+    sstate match {
+      case Some(s: SemanticState) =>
+        constantpath.foreach(c => SHTMLContentManagement.addProblem(c, this.plaincopy.node, s.controller, s.rel))
+      case _ =>
+    }
+  }
+
 }
 case class SHTMLExample(orig:HTMLNode) extends HTMLStatement("example",orig) {
   override def copy: HTMLNode = {

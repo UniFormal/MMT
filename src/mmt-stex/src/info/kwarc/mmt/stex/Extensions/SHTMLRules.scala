@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, ParseError, Path, StructuralElement}
 import info.kwarc.mmt.stex.{SHTML, STeXServer}
 import info.kwarc.mmt.stex.rules.{MathStructureFeature, StringLiterals}
-import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLBlindSection, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLIfInputref, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMStr, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLPremise, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, SemanticState, TopLevelTerm}
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLBlindSection, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLIfInputref, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMStr, SHTMLOMV, SHTMLObjective, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLPrecondition, SHTMLPremise, SHTMLProblem, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, SemanticState, TopLevelTerm}
 
 trait OMDocSHTMLRules { this : STeXServer =>
 
@@ -52,7 +52,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
     }),
     SHTMLParsingRule("problem", (str, n, _) => {
       val mp = Path.parseM(str)
-      new SHTMLTheory(mp, n)
+      new SHTMLProblem(mp, n)
     }),
     SHTMLParsingRule("feature-morphism", (str, n, _) => {
       val gn = Path.parseS(str)
@@ -143,6 +143,8 @@ trait OMDocSHTMLRules { this : STeXServer =>
           ???
       }
     }),
+    SHTMLParsingRule("preconditionsymbol", (_, n, _) => SHTMLPrecondition(n)),
+    SHTMLParsingRule("objectivesymbol", (_, n, _) => SHTMLObjective(n)),
     SHTMLParsingRule("OMBIND", (s, n, _) => SHTMLOMB(n)),
     SHTMLParsingRule("OMA", (s, n, _) => SHTMLOMA(n)),
     SHTMLParsingRule("OMID", (s, n, _) => SHTMLOMS(n)),

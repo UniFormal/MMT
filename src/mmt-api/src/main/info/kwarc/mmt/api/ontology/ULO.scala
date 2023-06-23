@@ -573,6 +573,10 @@ object ULO {
   val mathstructure = new ULOClass("mathstructure")
     .subclassOf(theory)
   val mathstructure_of = new ObjectProperty("mathstructure_of")
+  val problem = new ULOClass("problem")
+  val cognitiveDimension = new DatatypeProperty("cognitive-dimension")
+  val precondition = new DatatypeProperty("precondition")
+  val objective = new DatatypeProperty("objective")
 }
 
 object RDFStore {
