@@ -879,6 +879,7 @@ case class SHTMLInputref(target:String,orig : HTMLNode) extends SHTMLNode(orig,S
       val doc = state.doc
       val rtarget = Path.parseD((if (target.endsWith(".tex")) target.dropRight(4) else target) + ".omdoc",NamespaceMap.empty)
       val dref = DRef(doc.path, rtarget)
+      state.rel(ULO.contains(RDFImplicits.pathToIri(doc.path),RDFImplicits.pathToIri(rtarget)))
       dref.setOrigin(GeneratedDRef)
       doSourceRef(dref)
       state.add(dref)
