@@ -768,7 +768,7 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
     }
   }
 
-  def query(q: QUERY) = {
+  def query(q: SparqlQuery) = {
     val conn = repo.getConnection
     val res = conn.prepareTupleQuery(q.queryString).evaluate()
    QueryResult(res)
@@ -947,11 +947,11 @@ class RelToRDF extends Extension {
     }
   }
 }
-sealed trait QUERY {
-  private case class QUNION(q1: QUERY, q2: QUERY) extends QUERY {
+sealed trait SparqlQuery {
+  private case class QUNION(q1: SparqlQuery, q2: SparqlQuery) extends SparqlQuery {
     def queryString: String = s"{ ${q1.queryString} } UNION { ${q2.queryString} }"
   }
-  def UNION(q: QUERY): QUERY = QUNION(this,q)
+  def UNION(q: SparqlQuery): SparqlQuery = QUNION(this,q)
 
   def queryString: String
 }
@@ -988,14 +988,14 @@ object SPARQL {
     def toObjString = s"?$s"
   }
   implicit def pathtosubject(p:Path): Subject = PathO(p)
-  private case class SelectWhere(vars:List[String],where:QUERY) extends QUERY {
+  private case class SelectWhere(vars:List[String],where:SparqlQuery) extends SparqlQuery {
     def queryString: String = s"SELECT ${vars.map("?" + _).mkString(" ")} WHERE { ${where.queryString} }"
   }
   case class SELECT(`var` : String*) {
-    def WHERE(q : QUERY): QUERY = SelectWhere(`var`.toList,q)
+    def WHERE(q : SparqlQuery): SparqlQuery = SelectWhere(`var`.toList,q)
   }
   import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries._
-  case class T(subject: Subject,predicate: this.Predicate,`object`:this.Object) extends QUERY {
+  case class T(subject: Subject,predicate: this.Predicate,`object`:this.Object) extends SparqlQuery {
     def queryString: String = s"${subject.toObjString} ${predicate.predString} ${`object`.toObjString} ."
   }
 
