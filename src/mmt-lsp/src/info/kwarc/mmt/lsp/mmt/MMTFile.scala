@@ -189,7 +189,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
       t match {
         case o@OMV(_) =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
             val a = Annotations.addReg(o, nreg, SymbolKind.Property, o.name.toString)
             a.setSemanticHighlightingClass(Colors.termvariable)
             a.setHover({
@@ -199,7 +199,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           o
         case o: OMLITTrait =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
             val a = Annotations.addReg(o, nreg)
             a.setSemanticHighlightingClass(Colors.termomlit)
             a.setHover({
@@ -209,7 +209,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           o
         case o: OML =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
             val a = Annotations.addReg(o, nreg, SymbolKind.Boolean, headString(o))
             a.setSemanticHighlightingClass(Colors.termoml)
             a.setHover({
