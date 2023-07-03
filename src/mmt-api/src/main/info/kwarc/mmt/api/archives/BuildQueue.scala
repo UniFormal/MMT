@@ -14,6 +14,12 @@ import scala.collection.mutable
 
 /** input and current state of tasks in the build queue */
 class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val task: BuildTask) {
+  override def equals(obj: Any): Boolean = obj match {
+    case qt: QueuedTask => qt.target == target && qt.task.archive == task.archive && qt.task.inFile == task.inFile
+    case _ => false
+  }
+  override def hashCode(): Int = (target,task.archive,task.inFile).hashCode()
+
   /** task should be queued at end */
   // TODO make this part of constructor to avoid having a var?
   var lowPriority : Boolean = true

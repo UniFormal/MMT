@@ -404,6 +404,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     val depsToTarget = mutable.HashMap.empty[Dependency, QueuedTask]
 
     qts.foreach {qt =>
+      qt.server_done = false
       qt.willProvide.foreach{d =>
         depsToTarget(d) = qt
       }
