@@ -376,6 +376,11 @@ class MultipleErrorHandler(val handlers: List[ErrorHandler]) extends OpenCloseHa
       case _ =>
     }
   }
+
+  override def reset: Unit = {
+    super.reset
+    handlers.foreach(_.reset)
+  }
 }
 object MultipleErrorHandler {
   /** creates a MultipleErrorHandler and adds error reporting if not also present */
