@@ -66,14 +66,15 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
 
   var html:Option[HTMLNode] = None
 
-  def buildFull() = Future { synchronized {
+  def buildFull() = { synchronized {
     client.resetErrors(uri)
     server.withProgress(uri + "-fullstex","Building " + uri.split('/').last, "full") { update =>
       val target = server.controller.extman.getOrAddExtension(classOf[FullsTeX],"fullstex")
       (target,archive,relfile) match {
         case (Some(t),Some(a),Some(f)) =>
           client.log("Building [" + a.id + "] " + f)
-          val eh = STeXLSPErrorHandler(e => client.documentErrors(this,false, e), update)
+          val eh = STeXLSPErrorHandler(e => client.documentErrors(thisdoc, false, e), update)
+          //val eh = STeXLSPErrorHandler(e => client.documentErrors(this,false, e), update)
           try {
             eh.open
             t.build(a, BuildChanged(), f.toFilePath, Some(eh))

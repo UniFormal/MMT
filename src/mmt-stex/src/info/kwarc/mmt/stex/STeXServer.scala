@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{Definienda, ExampleRelational, ExportExtension, FrontendExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, STeXRelationals, SymdocRelational}
+import info.kwarc.mmt.stex.Extensions.{Definienda, ExportExtension, FrontendExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, STeXRelationals}
 import info.kwarc.mmt.stex.lsp.{MathHubServer, RemoteLSP, STeXLSPServer, SearchResultServer}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, JupyterBookArchive, VirtualArchive, VollKi}
@@ -39,9 +39,9 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
   override def start(args: List[String]): Unit = {
     super.start(args)
     controller.extman.addExtension(NotationExtractor)
-    controller.extman.addExtension(SymdocRelational)
-    controller.extman.addExtension(ExampleRelational)
-    controller.extman.addExtension(Definienda)
+    //controller.extman.addExtension(SymdocRelational)
+    //controller.extman.addExtension(ExampleRelational)
+    //controller.extman.addExtension(Definienda)
     controller.extman.addExtension(new MathStructureFeature)
     /*addExtension(DocumentExtension)
     addExtension(FragmentExtension)

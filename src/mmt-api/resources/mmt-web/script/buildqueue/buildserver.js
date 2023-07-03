@@ -4,6 +4,7 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
         { queue: []
         , blocked: []
         , finished: []
+        , errored: []
       };
       $scope.refreshCount = 0;
       $scope.refreshRate = 1;
@@ -21,6 +22,7 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
       $scope.archives =
         { list: []
         , current: ""
+        , git:""
         };
       $scope.getArchives = function() {
         $http.get('/:buildserver/archives').success(function(data) {
@@ -60,15 +62,22 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
       $scope.fileName ='';
       $scope.make = function() {
         var t = $scope.targets.current;
-        if ($scope.buildLevel == "-") t = "-" + t
+        /*if ($scope.buildLevel == "-") t = "-" + t
         else t = t + $scope.buildLevel;
-        $scope.buildLevel = "5";
+        $scope.buildLevel = "5";*/
         var ca = $scope.archives.current;
         for (var i = 0; i < $scope.archives.list.length; i++) {
           var a = $scope.archives.list[i];
           if (a != '' && (ca == a || ca == '')) {
           action.exec(action.build(a, t, encodeURIComponent($scope.fileName)), function(data) {
           })}}};
+      $scope.pull = function() {
+          var ca = $scope.archives.git;
+          if (ca != '') {
+              action.exec("gitupdate " + ca, function (data) {
+              });
+          }
+      };
       var stop;
       $scope.repeat = function() {
          stop = $interval($scope.list, $scope.refreshRate * 1000)

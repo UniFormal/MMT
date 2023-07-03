@@ -173,14 +173,16 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
   def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult
 
   def buildFile(bf: BuildTask): BuildResult = {
-    val sourcefile = (bf.archive / source).relativize(bf.inFile).toString.split('/').foldLeft(bf.archive.narrationBase)((p, s) => p / s)
+    val sourcefile = bf.archive.root.relativize(bf.inFile).toString.split('/').foldLeft(bf.archive.narrationBase)((p, s) => p / s)
     val graph = controller.depstore.newGraph(sourcefile)
     import info.kwarc.mmt.api.ontology.RDFImplicits._
     graph.add(ULO.file(sourcefile))
     graph.add(ULO.contains(RDFStore.archive(bf.archive.id), sourcefile))
     graph.add(ULO.last_checked_at(sourcefile,System.nanoTime()))
-
-    val ret = importDocument(bf, doc => indexDocument(bf.archive, doc,graph), rel => graph.add(rel))
+    val ret = importDocument(bf, doc => {
+      graph.add(ULO.contains(sourcefile,doc.path))
+      indexDocument(bf.archive, doc,graph)
+    }, rel => graph.add(rel))
     val relFile = (bf.archive / relational / bf.inPath).setExtension(RDFStore.fileFormat._1)
     log("[  -> relational]     " + relFile.getPath)
     graph.write(relFile)

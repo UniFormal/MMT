@@ -28,6 +28,8 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
     ret
   }
 
+  var server_done = false
+
   var allowblocking : Boolean = true
 
   /** task should be queued at beginning */
@@ -51,10 +53,25 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
   /** update policy */
   var updatePolicy : Build = BuildAll
 
+  private def getErrorStrings(ec:ErrorHandler): List[(String,String)] = ec match {
+    case ec:ErrorContainer => ec.getErrors.map(e => (e.level.toString + " " + e.getClass.getName.split('.').last + ": " + e.shortMsg ,e.extraMessage))
+    case meh:MultipleErrorHandler => meh.handlers.foreach {h =>
+        val r = getErrorStrings(h)
+        if (r.nonEmpty) return r
+      }
+      Nil
+    case _ => Nil
+  }
+
+  def errorStrings = getErrorStrings(task.errorCont)
+
   def toJString: String = {
-    val str = task.inPath.toString
-    "[" + task.archive.id + "] " + str + " (" + target.key + ")" +
+    toJStringSimple +
       missingDeps.map(_.toJString).mkString(" [", ", ", "]")
+  }
+  def toJStringSimple: String = {
+    val str = task.inPath.toString
+    "[" + task.archive.id + "] " + str + " (" + target.key + ")"
   }
 
   def toJson: JSONString = JSONString(toJString)
@@ -81,8 +98,8 @@ sealed abstract class BuildResult {
   /** used for the web interface of the [[BuildQueue]] */
   def toJsonPart: List[(String, JSON)] =
     List(("needed", JSONArray()),
-      ("used", JSONArray(used.map(_.toJson): _*)),
-      ("provided", JSONArray(provided.map(_.toJson): _*)))
+      ("used", JSONArray(Nil/*used.map(_.toJson)*/: _*)),
+      ("provided", JSONArray(Nil/*provided.map(_.toJson)*/: _*)))
 }
 
 object BuildResult {
@@ -109,6 +126,7 @@ case class BuildEmpty(str: String) extends BuildResult {
 /** successful build */
 case class BuildSuccess(used: List[Dependency], provided: List[ResourceDependency]) extends BuildResult {
   def toJson: JSON = JSONObject(("result", JSONString("success")) :: toJsonPart: _*)
+  def +(that: BuildSuccess): BuildSuccess = BuildSuccess(this.used ::: that.used, this.provided ::: that.provided)
 }
 
 /** recoverable failure: build should be retried after building a missing dependency */

@@ -901,6 +901,10 @@ abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(or
   ).toList
   removed ::= "id"
   id = this.plain.attributes.getOrElse((HTMLParser.ns_shtml, "id"), "")
+  if (id.isEmpty) {
+    id = this.hashCode().toHexString
+    this.plain.attributes((HTMLParser.ns_shtml, "id")) = id
+  }
 
   removed ::= "inline"
   val inline = this.plain.attributes.getOrElse((HTMLParser.ns_shtml,"inline"),"true").contains("true")
@@ -927,10 +931,6 @@ abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(or
   }}
 
   override def onAdd: Unit = {
-    if (id.isEmpty) {
-      id = this.hashCode().toHexString
-      this.plain.attributes((HTMLParser.ns_shtml,"id")) = id
-    }
     sstate.foreach { state =>
       if (!inline) state.bindings.add(StatementStep)
     }
@@ -1040,9 +1040,16 @@ case class SHTMLObjective(orig:HTMLNode) extends SHTMLNode(orig,Some("objectives
 class SHTMLProblem(mpI:MPath,orig:HTMLNode) extends SHTMLTheory(mpI,orig) {
   override def copy = new SHTMLProblem(mpI,orig.copy)
 
+  def newname(t: Theory, n: LocalName): LocalName = {
+    if (t.isDeclared(n)) {
+      newname(t, LocalName.parse(n.toString + "\'"))
+    } else n
+  }
+
   lazy val constantpath = sstate.flatMap { state =>
     findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
-      lt.path ? mp.name
+      lt.path ? newname(lt,mp.name)
+
     }
   }
   override def onOpen: Unit = {

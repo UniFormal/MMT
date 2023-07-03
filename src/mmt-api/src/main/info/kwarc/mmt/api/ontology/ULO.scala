@@ -951,7 +951,11 @@ sealed trait SparqlQuery {
   private case class QUNION(q1: SparqlQuery, q2: SparqlQuery) extends SparqlQuery {
     def queryString: String = s"{ ${q1.queryString} } UNION { ${q2.queryString} }"
   }
+  private case class QAND(q1: SparqlQuery, q2: SparqlQuery) extends SparqlQuery {
+    def queryString: String = s"${q1.queryString} ${q2.queryString}"
+  }
   def UNION(q: SparqlQuery): SparqlQuery = QUNION(this,q)
+  def AND(q: SparqlQuery): SparqlQuery = QAND(this,q)
 
   def queryString: String
 }
@@ -997,6 +1001,9 @@ object SPARQL {
   import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries._
   case class T(subject: Subject,predicate: this.Predicate,`object`:this.Object) extends SparqlQuery {
     def queryString: String = s"${subject.toObjString} ${predicate.predString} ${`object`.toObjString} ."
+  }
+  case class HASTYPE(subject: Subject,`object`:this.Object) extends SparqlQuery {
+    override def queryString: String = s"${subject.toObjString} <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ${`object`.toObjString} ."
   }
 
 }

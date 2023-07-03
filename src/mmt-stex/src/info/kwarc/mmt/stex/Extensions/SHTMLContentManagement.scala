@@ -487,7 +487,7 @@ object NotationExtractor extends RelationalExtractor {
     case _ =>
   }
 }
-
+/*
 object SymdocRelational extends RelationalExtractor {
   val documents = CustomBinary("documents","documents","has documentation")
   override val allBinary: List[Binary] = List(
@@ -537,7 +537,7 @@ object ExampleRelational extends RelationalExtractor {
     case _ =>
   }
 }
-
+*/
 object Definienda extends OpaqueElementInterpreter with OpaqueChecker {
   case class Def(override val parent:DPath,id : String,fors:List[GlobalName]) extends OpaqueXML(parent,"definiendum",
     <df id={id} fors={fors.map(_.toString).mkString(", ")}/>,Nil)

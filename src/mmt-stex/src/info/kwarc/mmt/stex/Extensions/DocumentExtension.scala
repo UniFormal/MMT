@@ -182,6 +182,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   private def doDefinienda(d: Document): List[JSON] = {
+    // TODO replace by query
     d.getDeclarationsElaborated.flatMap {
       case d: Document => doDefinienda(d)
       case dr: DRef => controller.getO(dr.target) match {

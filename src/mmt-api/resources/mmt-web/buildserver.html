@@ -8,73 +8,190 @@
     <script src="/script/mmt/mmt-js-api.js"></script>
     <script src="/script/buildqueue/buildserver.js"></script>
     <link rel="stylesheet" href="/css/bootstrap3/css/bootstrap.min.css"/>
+    <style>
+        input, select {
+            background-color: black;
+        }
+        button {
+            background-color: darkslategray;
+        }
+        hr {
+            margin-bottom: 5px;
+            margin-top: 5px;
+        }
+        .text-success {
+            color: limegreen;
+        }
+        .text-warning {
+            color: orange;
+        }
+        .text-danger {
+            color: red;
+        }
+        .error-text {
+            font-size:x-small;
+            background-color: black;
+            color: red;
+            /* width: min-content; */
+            max-height: 100px;
+            /* max-width: 95%; */
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+        .my-separator {
+            display:inline-block;
+            width:5px;
+            border-right: 1px solid;
+            height: 26px;
+            margin-right: 5px;
+            vertical-align: bottom;
+        }
+        .my-header {
+            position: sticky;top:0;background-color: #505050
+        }
+        .my-body {
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+        .container-fluid {
+            padding-right: 0;
+            padding-left: 0;
+        }
+        .my-scroll-list {
+            /*max-height: 500px;
+            overflow-y: scroll;
+            overflow-x: hidden;*/
+        }
+        a {color:dodgerblue}
+    </style>
     <title>MMT Build Queue</title>
 </head>
-<body>
+<body style="background-color: #2a2a2a;color: aliceblue">
 <div class="container-fluid" ng-controller="QueueViewer">
-    <p id="top"><b>MMT Build Queue</b> (via <a href="errorview.html">Error Viewer</a>)
-        (<a href="https://github.com/UniFormal/MMT/issues/new?title=buildqueue">report issues here</a>)
-        (<a href="https://uniformal.github.io/doc/archives/buildqueue">get help</a>)
-    </p>
-    <p>refresh rate (secs):
-        <input type="number" min="1" max="1000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
-    </p>
-    <p>
-    queue length {{queue.count}}
-    </p>
-    <p>
-        <button ng-click="clear()">clear queue</button>
+    <div class="my-header">
+        <h2 style="margin-top: 0;margin-bottom: 3px">MMT Build Server</h2>
+        <div>
+            <b>Refresh Rate:</b>
+            <input type="number" min="1" max="4096" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
+            <a href="#queue"><b>Queued:</b></a> {{queue.count}}
+            <a href="#blocked"><b>Blocked:</b></a> {{queue.blocked.length}}
+            <a href="#finished"><b>Finished:</b></a> {{queue.finished.length}}
+            <a href="#errored"><b>Errored:</b></a> {{queue.errored.length}}
+            <div class="my-separator"></div>
+            Clear <button ng-click="clear()">Queue</button>
+            <button ng-click="clearfinished()"><span>Finished</span></button>
+            <hr/>
+            <div style="width:10px"></div>
+            <button ng-click="make()" style="margin-right: 10px">Build</button>
+            Archive
+            <select ng-model="archives.current" ng-options="option for option in archives.list"></select>
+            in path
+            <input type="text" ng-model="fileName">
+            with target
+            <select ng-model="targets.current" ng-options="tar for tar in targets.list"></select>
+            <hr/>
+            <button ng-click="pull()" style="margin-right: 10px">Git Pull</button>
+            <select ng-model="archives.git" ng-options="option for option in archives.list"></select>
+            <hr/>
+
+        </div>
+    </div>
+    <!--<p>
         <button ng-click="list()">get current state</button>
-        <button ng-click="clearfinished()"><span>Clear finished</span></button>
-    </p>
-    <p>
-        <select ng-model="targets.current" ng-options="tar for tar in targets.list"></select>
-        <select ng-model="buildLevel">
-            <option value="5">build on change</option>
-            <option value="4">build on fatal error</option>
-            <option value="3">build on error</option>
-            <option value="2">build on warning</option>
-            <option value="1">build on info</option>
-            <option value="0">force build</option>
-            <option value="">force dependencies</option>
-            <option value="-">clean </option>
-        </select>
-        <select ng-model="archives.current" ng-options="option for option in archives.list"></select>
-        <button ng-click="make()">make</button>
-        <input type="text" ng-model="fileName">
-    </p>
-    queue (go to <a href="#blocked">blocked</a>) (go to <a href="#finished">finished</a>)
-    <ul>
-        <li ng-repeat="e in queue.queue" ng-class="e.indexOf('running') > -1 ? 'text-warning' : ''">{{e}}</li>
-    </ul>
-    <span id="blocked">blocked</span> (go to <a href="#top">top</a>) (go to <a href="#finished">finished</a>)
-    <ul>
-        <li ng-repeat="e in queue.blocked">{{e}}</li>
-    </ul>
-    <span id="finished">finished</span> (go to <a href="#top">top</a>) (go to <a href="#blocked">blocked</a>)
-    <ul>
-        <li ng-repeat="e in queue.finished" ng-class="colorOf(e.result.result)">
-            {{e.dependency}} {{e.result.result}}
-            <div ng-if="e.result.result == 'failure'">
-                <button ng-click="redo(e.taskid)">rebuild</button>
-            </div>
-            <span ng-show="e.result.needed.length > 0">missing</span>
-            <ul>
-                <li ng-repeat="n in e.result.needed">
-                    {{n}}
+    </p>-->
+    <div class="my-body">
+        <!--<p>
+            <select ng-model="buildLevel">
+                <option value="5">build on change</option>
+                <option value="4">build on fatal error</option>
+                <option value="3">build on error</option>
+                <option value="2">build on warning</option>
+                <option value="1">build on info</option>
+                <option value="0">force build</option>
+                <option value="">force dependencies</option>
+                <option value="-">clean </option>
+            </select>
+        </p>-->
+        <div>
+            <b id="queue">Queue</b> <!--(go to <a href="#blocked">blocked</a>) (go to <a href="#finished">finished</a>)-->
+            <ul class="my-scroll-list">
+                <li ng-repeat="e in queue.queue" ng-class="e.indexOf('running') > -1 ? 'text-warning' : ''">{{e}}</li>
             </ul>
-            <span ng-show="e.result.used.length > 0">used</span>
-            <ul>
-                <li ng-repeat="n in e.result.used">
-                    {{n}}
+        </div>
+        <div>
+            <b id="blocked">Blocked</b> <!--(go to <a href="#top">top</a>) (go to <a href="#finished">finished</a>)-->
+            <ul class="my-scroll-list">
+                <li ng-repeat="e in queue.blocked">{{e}}</li>
             </ul>
-            <span ng-show="e.result.provided.length > 0">provided</span>
-            <ul>
-                <li ng-repeat="n in e.result.provided">
-                    {{n}}
+        </div>
+        <div>
+            <b id="finished">Finished</b> <!--(go to <a href="#top">top</a>) (go to <a href="#blocked">blocked</a>)-->
+            <ul class="my-scroll-list">
+                <li ng-repeat="e in queue.finished" ng-class="colorOf(e.result.result)">
+                    {{e.dependency}} {{e.result.result}}
+                    <div ng-if="e.result.result == 'failure'">
+                        <button ng-click="redo(e.taskid)">rebuild</button>
+                    </div>
+                    <span ng-show="e.result.needed.length > 0">missing</span>
+                    <ul>
+                        <li ng-repeat="n in e.result.needed">
+                            {{n}}
+                    </ul>
+                    <!--<span ng-show="e.result.used.length > 0">used</span>
+                    <ul>
+                        <li ng-repeat="n in e.result.used">
+                            {{n}}
+                    </ul>
+                    <span ng-show="e.result.provided.length > 0">provided</span>
+                    <ul>
+                        <li ng-repeat="n in e.result.provided">
+                            {{n}}
+                    </ul>
+                    <div ng-if="e.result.result == 'failure'">
+                        <span ng-show="e.errorls.length > 0">errors</span>
+                        <ul>
+                            <li ng-repeat="n in e.errorls">
+                                <pre class="error-text">{{n}}</pre>
+                        </ul>
+                    </div>-->
+                </li>
             </ul>
-        </li>
-    </ul>
+        </div>
+        <div>
+            <b id="errored">Errored</b> <!--(go to <a href="#top">top</a>) (go to <a href="#blocked">blocked</a>)-->
+            <ul>
+                <li ng-repeat="e in queue.errored" ng-class="colorOf(e.result.result)">
+                    {{e.dependency}} {{e.result.result}}
+                    <div ng-if="e.result.result == 'failure'">
+                        <button ng-click="redo(e.taskid)">rebuild</button>
+                    </div>
+                    <span ng-show="e.result.needed.length > 0">missing</span>
+                    <ul>
+                        <li ng-repeat="n in e.result.needed">
+                            {{n}}
+                    </ul>
+                    <!--<span ng-show="e.result.used.length > 0">used</span>
+                    <ul>
+                        <li ng-repeat="n in e.result.used">
+                            {{n}}
+                    </ul>
+                    <span ng-show="e.result.provided.length > 0">provided</span>
+                    <ul>
+                        <li ng-repeat="n in e.result.provided">
+                            {{n}}
+                    </ul>-->
+                    <div ng-if="e.result.result == 'failure'">
+                        <!--<span ng-show="e.errorls.length > 0">errors</span>-->
+                        <ul>
+                            <li ng-repeat="n in e.errorls">
+                                <!--<b>{{n.short}}</b>-->
+                                <pre class="error-text">{{n.short}}&#10;{{n.long}}</pre>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
 </body>
 </html>

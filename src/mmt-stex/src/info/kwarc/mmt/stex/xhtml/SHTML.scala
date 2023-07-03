@@ -316,7 +316,7 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
         contentelem = Some(th.path)
         state.rel(ULO.theory(RDFImplicits.pathToIri(th.path)))
         metatheory.foreach(p => state.rel(ULO.has_meta_theory(RDFImplicits.pathToIri(mp), RDFImplicits.pathToIri(p))))
-        state.rel(ULO.contains(RDFImplicits.pathToIri(t.path),RDFImplicits.pathToIri(mp)))
+        //state.rel(ULO.contains(RDFImplicits.pathToIri(t.path),RDFImplicits.pathToIri(mp)))
         return ()
       case _ =>
     }
@@ -336,7 +336,7 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
       contentelem = Some(th.path)
       state.rel(ULO.theory(RDFImplicits.pathToIri(th.path)))
       metatheory.foreach(p => state.rel(ULO.has_meta_theory(RDFImplicits.pathToIri(mp), RDFImplicits.pathToIri(p))))
-      state.rel(ULO.contains(RDFImplicits.pathToIri(state.doc.path), RDFImplicits.pathToIri(mp)))
+      //state.rel(ULO.contains(RDFImplicits.pathToIri(state.doc.path), RDFImplicits.pathToIri(mp)))
     } else if (language == signature) {
       val sig = Theory(mp.parent, mp.name, metatheory) // TODO parameters
       doSourceRef(sig)
@@ -352,7 +352,7 @@ trait SHTMLOTheory extends HasLanguage with ModuleLike {
       contentelem = Some(sig.path)
       state.rel(ULO.theory(RDFImplicits.pathToIri(sig.path)))
       metatheory.foreach(p => state.rel(ULO.has_meta_theory(RDFImplicits.pathToIri(mp), RDFImplicits.pathToIri(p))))
-      state.rel(ULO.contains(RDFImplicits.pathToIri(state.doc.path), RDFImplicits.pathToIri(mp)))
+      //state.rel(ULO.contains(RDFImplicits.pathToIri(state.doc.path), RDFImplicits.pathToIri(mp)))
     } else {
       plang.foreach { lang =>
         val incl = PlainInclude(mp, lang.path)
@@ -664,7 +664,7 @@ trait SHTMLOTopLevelTerm extends SHTMLObject {
           case a if a.docelem.isDefined || a.contentelem.isDefined => a
         }.foreach { a =>
           val e = a.docelem.getOrElse(a.contentelem.get)
-          state.rel(ULO.contains(RDFImplicits.pathToIri(e), RDFImplicits.pathToIri(c)))
+          state.rel(ULO.declares(RDFImplicits.pathToIri(e), RDFImplicits.pathToIri(c)))
         }
       }
       findAncestor{case m : ModuleLike if m.language_theory.isDefined => m}.flatMap {mod =>
@@ -805,7 +805,7 @@ trait SHTMLOMathStructure extends SHTMLObject with ModuleLike {
         state.add(incl)
         state.endAdd(incl)
       }
-      state.rel(ULO.contains(RDFImplicits.pathToIri(t.path), RDFImplicits.pathToIri(th.path)))
+      //state.rel(ULO.contains(RDFImplicits.pathToIri(t.path), RDFImplicits.pathToIri(th.path)))
       state.rel(ULO.mathstructure(RDFImplicits.pathToIri(th.path)))
       const.foreach(c => state.rel(ULO.mathstructure_of(RDFImplicits.pathToIri(c.path), RDFImplicits.pathToIri(th.path))))
     }
