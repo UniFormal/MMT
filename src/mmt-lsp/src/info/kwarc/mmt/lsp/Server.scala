@@ -32,6 +32,7 @@ import java.io.{PrintStream, PrintWriter, StringWriter}
 import java.nio.charset.StandardCharsets
 import javax.websocket.{CloseReason, Session}
 import javax.websocket.server.ServerEndpointConfig
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
@@ -145,24 +146,37 @@ class ClientWrapper[+A <: LSPClient](val client : A,server:LSPServer[A]) {
   def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
   def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
   def resetErrors(uri:String) = this.synchronized {
-    diags = Nil
-    all_errors = Nil
+    diags.get(uri).foreach(_.clear)
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(uri))
     params.setDiagnostics(Nil.asJava)
     client.publishDiagnostics(params)
   }
-  var diags : List[(Diagnostic,Option[UnitError])] = Nil
-  var all_errors : List[info.kwarc.mmt.api.Error] = Nil
+  class DiagList {
+    private var ls:List[(Diagnostic,Option[UnitError])] = Nil
+    private var all_errors : List[info.kwarc.mmt.api.Error] = Nil
+    def clear = {ls = Nil; all_errors = Nil}
+    def all = all_errors
+    def add(e: info.kwarc.mmt.api.Error) = all_errors ::= e
+    def add(d: Diagnostic, e: Option[UnitError]) = ls ::= (d,e)
+    def get(i:Int) = ls(ls.length - (1 + i))._2.get
+    def getIndex = ls.length
+    def find(p: (Diagnostic,Option[UnitError]) => Boolean): Option[(Diagnostic,Option[UnitError])] = ls.find{ps => p(ps._1,ps._2)}
+    def getDiags = ls.map(_._1)
+  }
+  val diags = mutable.HashMap.empty[String,DiagList]
+  //var diags : List[(Diagnostic,Option[UnitError])] = Nil
+  //var all_errors : List[info.kwarc.mmt.api.Error] = Nil
 
   def republishErrors(uri:String) = {
     val params = new PublishDiagnosticsParams()
     params.setUri(uri)
-    params.setDiagnostics(diags.map(_._1).asJava)
+    params.setDiagnostics(diags.getOrElseUpdate(uri,new DiagList).getDiags.asJava)
     client.publishDiagnostics(params)
   }
 
   def documentErrors(doc : LSPDocument[LSPClient,LSPServer[LSPClient]],useRegion:Boolean,errors : info.kwarc.mmt.api.Error*) = this.synchronized {if (errors.nonEmpty) {
+    val elist = diags.getOrElseUpdate(doc.uri,new DiagList)
     val controller = server.controller
     val params = new PublishDiagnosticsParams()
     params.setUri(normalizeUri(doc.uri))
@@ -175,7 +189,7 @@ class ClientWrapper[+A <: LSPClient](val client : A,server:LSPServer[A]) {
         val end = sr.region.end.offset + 1
         (doc._doctext.toLC(start),doc._doctext.toLC(end))
       }
-      d.setRange(new lsp4j.Range(new Position(sl, sc), new Position(el, ec)))
+      d.setRange(new lsp4j.Range(new Position(if (sl == -1) 0 else sl, sc), new Position(if (el == -1) 0 else el, ec)))
       d.setMessage(msg)
       d.setSeverity(lvl match {
         case Level.Info => DiagnosticSeverity.Information
@@ -185,19 +199,19 @@ class ClientWrapper[+A <: LSPClient](val client : A,server:LSPServer[A]) {
       })
       d
     }
-    errors.foreach{e => if (!all_errors.contains(e)) {
-      all_errors ::= e
+    errors.foreach{e => if (!elist.all.contains(e)) {
+      elist add e
       e match {
         case ge:GetError =>
-          diags::= (get(SourceRef.anonymous(""),Level.Warning,ge.shortMsg),None)
+          elist.add(get(SourceRef.anonymous(""),Level.Warning,ge.shortMsg),None)
         case SourceError(_,ref,_,ems,_) =>
-          diags ::= (get(ref,e.level,e.shortMsg + ems.mkString("\n","\n","")),None)
+          elist.add(get(ref,e.level,e.shortMsg + ems.mkString("\n","\n","")),None)
         case ie: InvalidElement =>
           val ref = SourceRef.get(ie.elem).getOrElse(SourceRef.anonymous(""))
-          diags ::= (get(ref,Level.Warning,ie.shortMsg + "\n" + ie.extraMessage),None)
+          elist.add(get(ref,Level.Warning,ie.shortMsg + "\n" + ie.extraMessage),None)
         case io : InvalidObject =>
           val ref = io.sourceRef.getOrElse(SourceRef.anonymous(""))
-          diags ::= (get(ref, Level.Warning, io.shortMsg + "\n" + io.extraMessage), None)
+          elist.add(get(ref, Level.Warning, io.shortMsg + "\n" + io.extraMessage), None)
         case iu:InvalidUnit =>
           val ref = iu.unit.component.map {
             c =>
@@ -207,25 +221,25 @@ class ClientWrapper[+A <: LSPClient](val client : A,server:LSPServer[A]) {
           }.getOrElse(SourceRef.anonymous(""))
           (server.htmlserver, iu.unit.component) match {
             case (Some(s), Some(comp)) =>
-              diags.find(_._2.exists(_.cp == comp)) match {
+              elist.find((_,a) => a.exists(_.cp == comp)) match {
                 case Some((_,Some(p))) => p.histories ::= iu.history.narrowDownError
                 case _ =>
                   val dcc = new DiagnosticCodeDescription()
-                  dcc.setHref((controller.server.get.baseURI / (":" + s.pathPrefix) / ("lsperror?" + diags.length.toString)).toString)
+                  dcc.setHref((controller.server.get.baseURI / (":" + s.pathPrefix) / ("lsperror?uri=" + doc.uri + "&idx=" + elist.getIndex)).toString)
                   val d = get(ref, Level.Warning, iu.shortMsg)
                   d.setCode("Invalid Unit")
                   d.setCodeDescription(dcc)
-                  diags ::= (d, Some(new UnitError(comp, iu.history.narrowDownError)))
+                  elist.add(d, Some(new UnitError(comp, iu.history.narrowDownError)))
               }
             case _ =>
-              diags ::= (get(ref,Level.Warning,iu.shortMsg + "\n" + iu.history.narrowDownError.present(server.presenter)), None)
+              elist.add(get(ref,Level.Warning,iu.shortMsg + "\n" + iu.history.narrowDownError.present(server.presenter)), None)
           }
         case _ =>
-          diags ::= (get(SourceRef.anonymous(""), e.level, e.shortMsg), None)
+          elist.add(get(SourceRef.anonymous(""), e.level, e.shortMsg), None)
       }
     }}
 
-    params.setDiagnostics(diags.map(_._1).asJava)
+    params.setDiagnostics(elist.getDiags.asJava)
     client.publishDiagnostics(params)
   }}
 }

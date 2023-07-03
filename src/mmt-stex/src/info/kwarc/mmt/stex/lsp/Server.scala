@@ -678,8 +678,14 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?None")
          ServerResponse(html, "text/html")
        case Some("geterror") =>
-         val ue = client.diags(client.diags.length - (1 + request.query.toInt))._2.get
-         val ret = self.presenter.doHistories(ue.cp,ue.histories.reverse :_*)
+         val uri = request.parsedQuery("uri").get
+         val idx = request.parsedQuery("idx").get.toInt
+         val ret = client.diags.get(uri) match {
+           case Some(ls) =>
+             val ue = ls.get(idx)
+             self.presenter.doHistories(ue.cp,ue.histories.reverse :_*)
+           case _ => "Error not found"
+         } // (client.diags.length - (1 + request.query.toInt))._2.get
          ServerResponse("<body>" + ret + "</body>","text/html")
        case Some("documentTop") =>
          request.query match {
