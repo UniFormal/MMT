@@ -69,7 +69,7 @@ object TranslatorUtils {
    * @return A translation function on declarations making the substitution
    */
   def hiddenRefTranslator(d: symbols.Declaration with HasType with HasDefiniens with HasNotation) = {
-    d.translate(OMSReplacer(gn => resolveHiddenReferences(gn)).toTranslator(), Context.empty).asInstanceOf[Declaration with HasType with HasDefiniens with HasNotation]
+    d.translate(OMSReplacer(gn => resolveHiddenReferences(gn)).toTranslator()).asInstanceOf[Declaration with HasType with HasDefiniens with HasNotation]
   }
   def translateArguments(arguments: Arguments)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = { arguments._children map translate_Term }
   val hiddenArt = TranslationController.getTheoryPath("hidden")

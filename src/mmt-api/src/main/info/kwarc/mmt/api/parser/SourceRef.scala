@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 
+
+
 /** region in a source block
  * @param start inclusive start position
  * @param end inclusive end position
@@ -18,6 +20,37 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   def contains(that: SourceRegion) = start <= that.start && that.end <= end
   /* whether that is a point in this */
   def contains(that: SourcePosition) = start <= that && that <= end
+
+  /**
+    * Subtracts child regions from the current region.
+    *
+    * @param children must fulfill `children.forall(this.contains)` and must be ascendingly ordered by the ordering
+    *                 on [[SourcePosition]]
+    * @return An ascendingly ordered list of remaining fragments of the current region (i.e., `this`).
+    */
+  def subtractChildRegions(children: List[SourceRegion]): List[SourceRegion] = children match {
+    case range :: xs =>
+      if (range.start <= this.start) {
+        if (range.end < this.end) {
+          SourceRegion(range.end + 1, this.end).subtractChildRegions(xs)
+        } else {
+          // parent got fully subsumed by range
+          Nil
+        }
+      } else {
+        if (range.start <= this.end) {
+          SourceRegion(this.start, range.start - 1) :: (if (range.end < this.end) {
+            SourceRegion(range.end + 1, this.end).subtractChildRegions(xs)
+          } else {
+            Nil
+          })
+        } else {
+          // by ordering pre-condition on children, nothing to do anymore
+          List(this)
+        }
+      }
+    case Nil => List(this)
+  }
 }
 
 /** helper object */
@@ -50,7 +83,7 @@ object SourceRegion {
   * All coordinates are zero-based.
   *
   */
-case class SourcePosition(offset: Int, line: Int, column: Int) {
+case class SourcePosition(offset: Int, line: Int, column: Int) extends Ordered[SourcePosition] {
   /** inverse of SourcePosition.parse */
   override def toString = s"$offset.$line.$column"
   def twoDimString = s"$line.$column"
@@ -79,11 +112,16 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   def nl = SourcePosition(offset + 1, line + 1, 0)
   /** the SourceRegion of lenght 1 at this SourcePosition */
   def toRegion = SourceRegion(this, this)
-  def <=(that: SourcePosition) =
-     if (offset != -1 && that.offset != -1)
-        offset <= that.offset
-     else
-        line <= that.line && column <= that.column
+
+  override def compare(that: SourcePosition): Int = {
+    import scala.math.Ordered.orderingToOrdered
+
+    if (offset != -1 && that.offset != -1) {
+      offset - that.offset
+    } else {
+      (line, that.line) compare (column, that.column)
+    }
+  }
 }
 
 /** helper object */

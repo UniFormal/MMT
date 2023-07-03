@@ -31,12 +31,12 @@ class Structure(val home: Term, val name: LocalName, val tpC: TermContainer, val
 
   def getInnerContext: Context = codomainAsContext
 
-  def translate(newHome: Term, prefix: LocalName, translator: Translator, context: Context): Structure = {
+  def translate(newHome: Term, prefix: LocalName, except: LocalName, translator: Translator, context: Context): Structure = {
     def tl(m: Term) = translator.applyModule(context, m)
 
-    val res = new Structure(newHome, prefix / name, tpC map tl, dfC map tl, isImplicit, isTotal)
+    val res = new Structure(newHome, prefix.appendExcept(except, name), tpC map tl, dfC map tl, isImplicit, isTotal)
     getDeclarations foreach { d =>
-      res.add(d.translate(res.toTerm, LocalName.empty, translator, context))
+      res.add(d.translate(res.toTerm, LocalName.empty, LocalName.empty, translator, context))
     }
     res
   }

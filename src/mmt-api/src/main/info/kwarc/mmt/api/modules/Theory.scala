@@ -171,7 +171,7 @@ class Theory(doc: DPath, name: LocalName, private var mt: Option[MPath], val par
      val ndf = dfC map {df => translator.applyModule(icont, df)}
      val res = new Theory(newNS, newName, mt, npar, ndf)
      getDeclarations foreach {d =>
-       res.add(d.translate(res.toTerm, LocalName.empty, translator,icont))
+       res.add(d.translate(translator, res.toTerm, icont))
      }
      res
    }

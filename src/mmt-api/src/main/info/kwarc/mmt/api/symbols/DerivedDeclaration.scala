@@ -72,13 +72,13 @@ class DerivedDeclaration(val home: Term, val name: LocalName, val feature: Strin
   @deprecated("MMT_TODO: redundant: every DerivedDeclaration is module-like now", since="forever")
   val module = this // left over from old definition via NestedModule
 
-  override def translate(newHome: Term, prefix: LocalName, tl: Translator, con : Context) = {
+  override def translate(newHome: Term, prefix: LocalName, except: LocalName, tl: Translator, con : Context) = {
      val tpT = translateTp(tl, con)
      val dfT = translateDf(tl,con)
-     val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy(), dfT)
+     val res = new DerivedDeclaration(newHome, prefix.appendExcept(except,name), feature, tpT, notC.copy(), dfT)
      val icont = con ++ getInnerContext
      getDeclarations.foreach {d =>
-       val dTranslated = d.translate(res.toTerm, LocalName.empty, tl, icont)
+       val dTranslated = d.translate(tl, res.toTerm, icont)
        if (this.feature == patterns.Instance.feature) d match {
          case c: Constant if (c.rl == Some("mainDecl")) => res.add(Constant(c.home, c.name, c.alias, c.tp, c.df, None, this.notC))
        } else
@@ -561,7 +561,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
             val rest = name.drop(dd.name.steps.length)
             body.getO(rest) map {
               case d: Declaration =>
-                val dT = d.translate(parent.toTerm, dd.name, translator,Context.empty)
+                val dT = d.translate(parent.toTerm, dd.name, LocalName.empty, translator,Context.empty)
                 val dTM = dd.getO(rest) match {
                   case None => dT
                   case Some(a) => dT merge a
@@ -715,7 +715,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
           Nil // case can probably be eliminated
         case d if body.getDerivedDeclarations(feature).exists(i => d.getOrigin == ElaborationOf(i.path)) => Nil
         case d =>
-          val ret = d.translate(parent.toTerm, prefix, translator,Context.empty)
+          val ret = d.translate(parent.toTerm, prefix, LocalName.empty, translator, Context.empty)
           List(ret)//d.translate(parent.toTerm, prefix, translator))
       }
       def domain: List[LocalName] = decls.map(_.name)

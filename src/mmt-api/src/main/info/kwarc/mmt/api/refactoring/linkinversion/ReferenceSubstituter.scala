@@ -67,13 +67,10 @@ object ReferenceSubstituter {
 		}*/
 	}
 
-	def substituteDeclaration(decl: Declaration, substitutions: Map[ContentPath,
-		ContentPath]): Declaration = {
-
+	def substituteDeclaration(decl: Declaration, substitutions: Map[ContentPath, ContentPath]): Declaration = {
 		val renamer = Renamer(name => substitutions.get(name).map(_
 			.asInstanceOf[GlobalName]))
 		val translator = TraversingTranslator(renamer)
-
-		decl.translate(translator, Context())
+		decl.translate(translator)
 	}
 }

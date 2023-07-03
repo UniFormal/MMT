@@ -336,7 +336,7 @@ abstract class Intersecter extends Extension {
     val renamer = Renamer(name => renamings.get(name))
     val translator = TraversingTranslator(renamer)
 
-    val renamed = dec.translate(th.toTerm, LocalName.empty, translator, Context())
+    val renamed = dec.translate(translator, th.toTerm)
     try th.add(renamed) catch {
       case _ : AddError => /* ignore */
     }

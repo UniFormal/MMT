@@ -99,12 +99,12 @@ abstract class StructureTransformer[ET <: ExpressionTransformer] extends Extensi
 
   // called for every Constant, factored out for easy overriding
   def applyConstant(in: Module,out: Module,c: Constant,ae: ET): Unit = {
-    val cT = c.translate(out.toTerm,LocalName.empty,ae,Context.empty)
+    val cT = c.translate(ae, out.toTerm)
     registerDeclaration(c,cT)
   }
   // called for every Structure, factored out for easy overriding
   def applyStructure(in: Module,out: Module, s: Structure,ae: ET): Unit = {
-    val sT = s.translate(out.toTerm,LocalName.empty,ae,Context.empty)
+    val sT = s.translate(ae, out.toTerm)
     registerDeclaration(s,sT)
   }
 }
@@ -160,7 +160,7 @@ class PolymorphifyStructure(val from: MPath, term: GlobalName, val to: MPath, tp
       super.applyConstant(in,out,c,ae)
       ae.madePoly ::= c.path
     } else {
-      val cT = c.translate(out.toTerm,LocalName.empty,IdentityTranslator,Context.empty)
+      val cT = c.translate(IdentityTranslator, out.toTerm)
       registerDeclaration(c,cT)
     }
   }

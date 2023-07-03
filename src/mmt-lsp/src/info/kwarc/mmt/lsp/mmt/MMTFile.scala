@@ -189,7 +189,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
       t match {
         case o@OMV(_) =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
             val a = Annotations.addReg(o, nreg, SymbolKind.Property, o.name.toString)
             a.setSemanticHighlightingClass(Colors.termvariable)
             a.setHover({
@@ -199,7 +199,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           o
         case o: OMLITTrait =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
             val a = Annotations.addReg(o, nreg)
             a.setSemanticHighlightingClass(Colors.termomlit)
             a.setHover({
@@ -209,7 +209,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           o
         case o: OML =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
             val a = Annotations.addReg(o, nreg, SymbolKind.Boolean, headString(o))
             a.setSemanticHighlightingClass(Colors.termoml)
             a.setHover({
@@ -221,17 +221,34 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           lazy val pragma = pragmatics.map(_.mostPragmatic(tm)).getOrElse(tm)
 
           forSource(tm) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-            val a = Annotations.addReg(tm, nreg, SymbolKind.Function, tm.head.map(_.name.toString).orNull, true)
-            a.setHover({
+            // Create annotations corresponding to the subregions of the head term not governed by
+            // any subterms.
+            // Example: consider the constant `proof:  prop ⟶ type❘ # ⊦ 1 prec❙` and the case where `tm` is equal to
+            // `⊦ a ≐ b`, then we will create annotations that correspond to the subregions `⊦ `, ` `, and ` `,
+            // i.e., taking the region of `tm` and subtracting the subregions governed by `a`, `≐`, and `b`.
+            //
+            // This is useful because with the go-to-definition feature implemented below users will be able to click
+            // on on `≐` and go to the definition of that equality instead of being taken to (or also seeing) the
+            // definition of `⊦`.
+            val annotations: List[DocAnnotation] = {
+              val fullRegion = reg
+
+              val subRegions = pragma.subobjects.map(_._2).flatMap(SourceRef.get)
+              val headRegions = fullRegion.subtractChildRegions(subRegions.map(_.region))
+
+              headRegions
+                .map(reg => reg.copy(end = reg.end + 1)) // LSP regions have exclusive ends
+                .map(Annotations.addReg(tm, _, null, tm.head.map(_.name.toString).orNull, false))
+            }
+            annotations.foreach(_.setHover({
               headString(pragma)
-            })
+            }))
 
             val headFromMeta = pragma.head.exists(p => {
               state.meta.exists(mt => controller.library.hasImplicit(p.module, mt))
             })
             if (headFromMeta) {
-              a.setSemanticHighlightingClass(Colors.termconstantmeta)
+              annotations.foreach(_.setSemanticHighlightingClass(Colors.termconstantmeta))
             }
 
             // "GO TO DEFINITION" functionality
@@ -241,11 +258,11 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
               server.resolveSourceFilepath(src) foreach(originFile => {
                 val originRegion = src.region
 
-                a.addDefinitionLC(
+                annotations.foreach(_.addDefinitionLC(
                   originFile.toURI.getPath,
                   (originRegion.start.line, originRegion.start.column),
                   (originRegion.end.line, originRegion.end.column)
-                )
+                ))
               })
             })
           }
