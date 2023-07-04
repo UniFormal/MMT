@@ -69,9 +69,12 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     })
 
     params.getWorkspaceFolders.asScala
-      .map(_.getUri)
-      .map(URI(_))
-      .map(Utils.vscodeURIToFile)
+      .flatMap(workspaceFolder => LSPServer.VSCodeToFile(workspaceFolder.getUri) match {
+        case Some(f) => Some(f)
+        case None =>
+          client.log(s"Could not parse `${workspaceFolder.getUri} as a file path on your operating system.")
+          None
+      })
       .foreach(workspacePath => {
         client.log(s"Registering `$workspacePath` as mathpath archive.")
         controller.addArchive(workspacePath)
@@ -90,12 +93,6 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
           client.log(s"Found archives: ${controller.backend.getArchives.map(_.id).mkString(", ")}.")
         }
       })
-  }
-
-  private object fg extends ReportHandler("lsp-frontend") {
-    override def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
-      // TODO client.client.
-    }
   }
 
   override val triggerChar: Char = 'j'

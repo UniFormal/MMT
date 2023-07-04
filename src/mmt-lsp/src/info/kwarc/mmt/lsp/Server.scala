@@ -17,6 +17,8 @@ import java.util.logging.Logger
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.presentation.Presenter
+import info.kwarc.mmt.api.utils.{File, FileURI, URI}
+import info.kwarc.mmt.api.utils.File.read
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.web.ServerExtension
 import org.eclipse.jetty.server.{Server, ServerConnector}
@@ -422,12 +424,19 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
 
 object LSPServer {
   def URItoVSCode(s : String) : String = URLEncoder.encode(s.replace("+","%2B"),"UTF-8")
-  def VSCodeToURI(s : String) : String = {
+  def VSCodeToURI(s: String): String = {
     val dec = URLDecoder.decode(s,"UTF-8")
-    if (dec.startsWith("file:///") && dec(9) == ':') {
+    if (dec.startsWith("file:///")) {
       dec.take(8) + dec(8).toUpper + dec.drop(9)
-    } else dec
-  }//s.replace("%3A",":")
+    } else {
+      dec
+    }
+  }
+
+  def VSCodeToFile(s: String): Option[File] = URI(VSCodeToURI(s)) match {
+    case FileURI(f) => Some(f)
+    case _ => None
+  }
 }
 
 class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B]](val server : B,lsp:LSP[A,B,C])
