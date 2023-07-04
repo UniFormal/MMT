@@ -595,14 +595,13 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      val wsc = new WorkspaceServerCapabilities(wfo)
      result.getCapabilities.setWorkspace(wsc)
      result.getCapabilities.setWorkspaceSymbolProvider(true)
-     if (params.getWorkspaceFolders != null) params.getWorkspaceFolders.asScala.foreach {f =>
-       val file = File({
-         val str = f.getUri.drop(7)
-         if (str.length > 2 && str(2) == ':') {
-           str.take(2).toUpperCase + str.drop(2)
-         } else str
-       })
-       if (file.exists()) workspacefolders ::= file else None
+     if (params.getWorkspaceFolders != null) {
+       params.getWorkspaceFolders.asScala
+         .map(_.getUri)
+         .map(URI(_))
+         .map(info.kwarc.mmt.lsp.Utils.vscodeURIToFile).foreach {
+           case f if f.exists() => workspacefolders ::= f
+         }
      }
    }
 

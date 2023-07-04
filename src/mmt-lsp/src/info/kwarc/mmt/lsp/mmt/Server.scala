@@ -1,25 +1,37 @@
 package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.{Controller, ReportHandler}
 import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.ontology.DependsOn
 import info.kwarc.mmt.api.ontology.RelationExp.AnyDep
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, URI}
-import info.kwarc.mmt.api._
 import info.kwarc.mmt.lsp._
 import org.eclipse.lsp4j._
-import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
+import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 
+import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-trait MMTClient extends LSPClient
+sealed class ShellLogMessage(
+                            val ind: Integer,
+                            val caller: String,
+                            val group: String,
+                            val msgParts: java.util.List[String]
+                          )
+trait MMTClient extends LSPClient {
+  @JsonRequest def shellLog(msg: ShellLogMessage): CompletableFuture[Unit]
+}
+
 class MMTLSPWebsocket extends LSPWebsocket(classOf[MMTClient],classOf[MMTLSPServer])
 
-class BuildMessage(val uri: String)
+sealed class BuildMessage(val uri: String)
+
+sealed class HandleLineMessage(val line: String)
 
 class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTClient], classOf[MMTLSPServer], classOf[MMTLSPWebsocket])("mmt",port,webport) {
   override def newServer(style: RunStyle): MMTLSPServer = new MMTLSPServer(style)
@@ -50,15 +62,40 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     refOptions.setWorkDoneProgress(true)
     result.getCapabilities.setReferencesProvider(refOptions)
 
-    params.getWorkspaceFolders.asScala.map(_.getUri).foreach(uri => {
-      val workspacePath = URI(uri.replace("c%3A", "C:")).path.mkString(java.io.File.separator)
-      // todo: controller.addArchive(File(workspacePath)) no longer needed?
-
-      client.log(s"Registering `$workspacePath` as mathpath archive.")
-      controller.handleLine("mathpath archive " + workspacePath)
-      controller.handleLine("lmh root " + workspacePath)
-      client.log(s"Found archives: ${controller.backend.getArchives.map(_.id).mkString(", ")}.")
+    controller.report.addHandler(new ReportHandler("vscode-mmt-extension") {
+      override def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
+        client.client.shellLog(new ShellLogMessage(ind, caller, group, msgParts.asJava))
+      }
     })
+
+    params.getWorkspaceFolders.asScala
+      .map(_.getUri)
+      .map(URI(_))
+      .map(Utils.vscodeURIToFile)
+      .foreach(workspacePath => {
+        client.log(s"Registering `$workspacePath` as mathpath archive.")
+        controller.addArchive(workspacePath)
+        // todo: We shouldn't set lmh root via CLI (e.g., because workspacePath may contain
+        //       spaces. We should manually invoke the underlying action (as was done for
+        //       adding the archives in the line above).
+        controller.handleLine("lmh root " + workspacePath)
+
+        if (controller.backend.getArchives.isEmpty) {
+          client.logError(
+            "No archives could be found. Likely no MMT content will work! " +
+              "(1) Did you open VSCode in the root folder of your archives? " +
+              "(2) Does the path reported above look correct? If nothing else helps, rename your folder hierarchy such that it doesn't contain any spaces or special characters."
+          )
+        } else {
+          client.log(s"Found archives: ${controller.backend.getArchives.map(_.id).mkString(", ")}.")
+        }
+      })
+  }
+
+  private object fg extends ReportHandler("lsp-frontend") {
+    override def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
+      // TODO client.client.
+    }
   }
 
   override val triggerChar: Char = 'j'
@@ -257,6 +294,11 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
       client.log(s"Build finished of `${doc.uri}`!")
       ((), s"Build of $docShortname finished")
     })
+  }
+
+  @JsonNotification("mmt/shell/handleline")
+  def handleLine(msg: HandleLineMessage): Unit = {
+    controller.handleLine(msg.line)
   }
 }
 
