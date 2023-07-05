@@ -607,11 +607,10 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      result.getCapabilities.setWorkspace(wsc)
      result.getCapabilities.setWorkspaceSymbolProvider(true)
      if (params.getWorkspaceFolders != null) {
-       params.getWorkspaceFolders.asScala
-         .flatMap(workspaceFolder => LSPServer.VSCodeToFile(workspaceFolder.getUri))
-         .foreach {
-           case f if f.exists() => workspacefolders ::= f
-         }
+       params.getWorkspaceFolders.asScala.foreach {w =>
+         val file = LSPServer.VSCodeToFile(w.getUri)
+         if (file.exists(_.exists())) workspacefolders ::= file.get
+       }
      }
    }
 
