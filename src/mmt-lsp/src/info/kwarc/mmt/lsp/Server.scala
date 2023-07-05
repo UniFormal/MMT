@@ -426,7 +426,9 @@ object LSPServer {
   def URItoVSCode(s : String) : String = URLEncoder.encode(s.replace("+","%2B"),"UTF-8")
   def VSCodeToURI(s: String): String = {
     val dec = URLDecoder.decode(s,"UTF-8")
-    if (dec.startsWith("file:///") && dec(9) == ':') {
+    // on Windows, VSCode transmits paths like `C:\Users\mmt\dir` as `file:///c:/Users/mmt/dir
+    // (note the change in case for the drive letter)
+    if (dec.startsWith("file:///") && dec.length >= 10 && dec(9) == ':') {
       dec.take(8) + dec(8).toUpper + dec.drop(9)
     } else {
       dec
