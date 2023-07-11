@@ -109,16 +109,21 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
       case Some("docidx") =>
         ServerResponse.JsonResponse(JSONArray(getFrontendElements :_*))
       case Some("thumbnail") =>
-        val fp = request.query.split("/").init.mkString("/")
-        controller.backend.getArchive(fp) match {
+        val a = request.parsedQuery("archive").getOrElse{
+          return ServerResponse("Archive not found in query", "text/plain")
+        }
+        val fp = request.parsedQuery("filepath").getOrElse {
+          return ServerResponse("filepath not found in query", "text/plain")
+        }
+        controller.backend.getArchive(a) match {
           case Some(a) =>
-            val f = a / source / (request.query.split("/").last + ".png")
+            val f = fp.split('/').foldLeft(a / source)((f,s) => f / s)
             if (f.exists()) {
               ServerResponse.FileResponse(f)
             }
-            else ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+            else ServerResponse("Image file " + request.query + " not found", "text/plain")
           case _ =>
-            ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+            ServerResponse("Image file " + request.query + " not found", "text/plain")
         }
       case Some(":sTeX") if request.query == "" =>
         browserRequest(request)

@@ -1037,21 +1037,15 @@ case class SHTMLObjective(orig:HTMLNode) extends SHTMLNode(orig,Some("objectives
   override def copy: HTMLNode = SHTMLObjective(orig.copy)
 }
 
-class SHTMLProblem(mpI:MPath,orig:HTMLNode) extends SHTMLTheory(mpI,orig) {
+class SHTMLProblem(mpI:MPath,orig:HTMLNode) extends HTMLStatement("problem",orig) {
   override def copy = new SHTMLProblem(mpI,orig.copy)
 
-  def newname(t: Theory, n: LocalName): LocalName = {
-    if (t.isDeclared(n)) {
-      newname(t, LocalName.parse(n.toString + "\'"))
-    } else n
-  }
-
-  lazy val constantpath = sstate.flatMap { state =>
+  override lazy val constantpath = sstate.flatMap { state =>
     findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
-      lt.path ? newname(lt,mp.name)
-
+      lt.path ? newname(lt, if (id == "") LocalName("problem") else LocalName.parse(id))
     }
   }
+
   override def onOpen: Unit = {
     super.onOpen
     constantpath.foreach(p => contentelem = Some(p))
@@ -1066,8 +1060,8 @@ class SHTMLProblem(mpI:MPath,orig:HTMLNode) extends SHTMLTheory(mpI,orig) {
       case _ =>
     }
   }
-
 }
+
 case class SHTMLExample(orig:HTMLNode) extends HTMLStatement("example",orig) {
   override def copy: HTMLNode = {
     copyII(SHTMLExample(orig))
@@ -1429,6 +1423,16 @@ case class SHTMLMCC(orig:HTMLNode) extends SHTMLNode(orig,Some("mcc")){
 case class SHTMLMCSol(orig:HTMLNode) extends SHTMLNode(orig,Some("mcc-solution")){
   def copy=SHTMLMCSol(orig.copy)
 }
+case class SHTMLSCB(orig:HTMLNode) extends SHTMLNode(orig,Some("single-choice-block")){
+  def copy=SHTMLSCB(orig.copy)
+}
+case class SHTMLSCC(orig:HTMLNode) extends SHTMLNode(orig,Some("scc")){
+  def copy=SHTMLSCC(orig.copy)
+}
+case class SHTMLSCSol(orig:HTMLNode) extends SHTMLNode(orig,Some("scc-solution")){
+  def copy=SHTMLSCSol(orig.copy)
+}
+
 case class SHTMLSolution(orig: HTMLNode) extends SHTMLNode(orig,Some("solution")){
   def copy=SHTMLSolution(orig.copy)
 }

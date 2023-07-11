@@ -673,6 +673,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
         plain.attributes((this.namespace, "data-problem")) = "true"
       }
     }
+
     case class MCB(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = MCB(orig.copy)
 
@@ -698,6 +699,33 @@ trait SHTMLDocumentServer { this : STeXServer =>
         plain.attributes((this.namespace, "data-problem-mc-solution")) = "true"
       }
     }
+
+    case class SCB(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = SCB(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-scb")) = "true"
+      }
+    }
+    case class SC(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = SC(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-sc")) =
+          plain.attributes((HTMLParser.ns_shtml, "scc"))
+      }
+    }
+    case class SCSolution(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = SCSolution(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-problem-sc-solution")) = "true"
+      }
+    }
+
     case class Solution(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = Solution(orig.copy)
 
@@ -756,11 +784,17 @@ trait SHTMLDocumentServer { this : STeXServer =>
     simple("problemgnote", n => ProblemGNote(n))
     simple("problempoints", n => ProblemPoints(n))
     simple("problemminutes", n => ProblemMinutes(n))
+
     simple("multiple-choice-block",n => MCB(n))
     simple("mcc",n => MC(n))
     simple("mcc-solution",n => MCSolution(n))
+    simple("single-choice-block", n => SCB(n))
+    simple("scc", n => SC(n))
+    simple("scc-solution", n => SCSolution(n))
+
+    simple("fillinsol", n => FillInSol(n))
+
     simple("problem",n => Problem(n))
-    simple("fillinsol",n => FillInSol(n))
     simple("proof",n => Hidable(n))
     simple("subproof", n => Hidable(n))
     simple("prooftitle",n => ProofTitle(n))
