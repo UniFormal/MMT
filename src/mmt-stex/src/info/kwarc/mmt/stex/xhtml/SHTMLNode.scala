@@ -1040,8 +1040,8 @@ case class SHTMLObjective(orig:HTMLNode) extends SHTMLNode(orig,Some("objectives
   override def copy: HTMLNode = SHTMLObjective(orig.copy)
 }
 
-class SHTMLProblem(mpI:MPath,orig:HTMLNode) extends HTMLStatement("problem",orig) {
-  override def copy = new SHTMLProblem(mpI,orig.copy)
+class SHTMLProblem(orig:HTMLNode) extends HTMLStatement("problem",orig) {
+  override def copy = new SHTMLProblem(orig.copy)
 
   override lazy val constantpath = sstate.flatMap { state =>
     findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>

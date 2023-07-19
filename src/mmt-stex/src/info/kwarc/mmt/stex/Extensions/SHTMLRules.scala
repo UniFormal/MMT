@@ -30,11 +30,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("scc-solution", (_, n, _) => SHTMLSCSol(n)),
     SHTMLParsingRule("fillinsol", (_, n, _) => SHTMLFillInSol(n)),
     SHTMLParsingRule("solution", (_, n, _) => SHTMLSolution(n)),
-    SHTMLParsingRule("problem", (str, n, _) => {
-      val mp = Path.parseM(str)
-      new SHTMLProblem(mp, n)
-    }),
-
+    SHTMLParsingRule("problem", (_, n, _) => new SHTMLProblem(n)),
     SHTMLParsingRule("proof",(_,n,_) => SHTMLProof(n)),
     SHTMLParsingRule("prooftitle", (_, n, _) => SHTMLProofTitle(n)),
     SHTMLParsingRule("proofbody", (_, n, _) => SHTMLProofBody(n)),
