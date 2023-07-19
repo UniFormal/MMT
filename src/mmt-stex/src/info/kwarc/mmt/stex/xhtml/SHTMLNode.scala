@@ -920,14 +920,17 @@ abstract class HTMLStatement(val kind:String,orig:HTMLNode) extends SHTMLNode(or
     newst
   }
 
-  def newname(t: Theory, n: LocalName): LocalName = {
-    if (t.isDeclared(n)) {
-      newname(t, LocalName.parse(n.toString + "\'"))
-    } else n
+  def newname(t: Theory, n: String): LocalName = {
+    var start = t.path.parent.toString
+    if (start.endsWith(".omdoc")) start = start.dropRight(6)
+    val nname = if (n.startsWith(start)) n.drop(start.length + 1) else n
+    if (t.isDeclared(LocalName.parse(nname))) {
+      newname(t, nname + "\'")
+    } else LocalName.parse(nname)
   }
 
   lazy val constantpath = sstate.flatMap{ state => findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
-    lt.path ? newname(lt,if (id == "") LocalName("statement") else LocalName.parse(id))
+    lt.path ? newname(lt,if (id == "") "statement" else id)
   }}
 
   override def onAdd: Unit = {
@@ -1042,7 +1045,7 @@ class SHTMLProblem(mpI:MPath,orig:HTMLNode) extends HTMLStatement("problem",orig
 
   override lazy val constantpath = sstate.flatMap { state =>
     findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
-      lt.path ? newname(lt, if (id == "") LocalName("problem") else LocalName.parse(id))
+      lt.path ? newname(lt, if (id == "") "problem" else id)
     }
   }
 
@@ -1075,7 +1078,7 @@ case class SHTMLExample(orig:HTMLNode) extends HTMLStatement("example",orig) {
 
   override lazy val constantpath = sstate.flatMap { state =>
     findAncestor { case hl: ModuleLike if hl.language_theory.isDefined => hl.language_theory.get }.map { lt =>
-      lt.path ? newname(lt, if (id == "") LocalName("example") else LocalName.parse(id))
+      lt.path ? newname(lt, if (id == "") "example" else id)
     }
   }
 

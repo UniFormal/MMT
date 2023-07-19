@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.{DPath, DefComponent, GlobalName, MPath, NamespaceMap,
 import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.documents.{DRef, Document}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects.{OMA, OMID, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.objects.{OMA, OMFOREIGN, OMID, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.opaque.OpaqueXML
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Constant
@@ -81,6 +81,14 @@ trait SHTMLDocumentServer { this : STeXServer =>
         html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
         html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
         ServerResponse(html, "text/html")
+      case Some("lo") =>
+        var html = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
+        html = html.replace("CONTENT_URL_PLACEHOLDER", "/:" + this.pathPrefix + "/loraw?" + request.query)
+        html = html.replace("BASE_URL_PLACEHOLDER", "")
+        html = html.replace("NO_FRILLS_PLACEHOLDER", "TRUE")
+        html = html.replace("SHOW_FILE_BROWSER_PLACEHOLDER", "false")
+        html = html.replace("CONTENT_CSS_PLACEHOLDER", "/:" + this.pathPrefix + "/css?")
+        ServerResponse(html, "text/html")
       case Some("document") =>
         val ret = doDocument
         val bd = ret.get("div")()("rustex-body").head
@@ -93,6 +101,8 @@ trait SHTMLDocumentServer { this : STeXServer =>
         ServerResponse(doFragment.toString.trim.replace("&amp;","&"), "text/html")
       case Some("declaration") =>
         doDeclaration
+      case Some("loraw") =>
+        doLo
       case Some("css") =>
         ServerResponse(css(request.query),"text/css")
       case Some("variable") =>
@@ -360,6 +370,28 @@ trait SHTMLDocumentServer { this : STeXServer =>
       } else if (hasAttribute(e,"definiendum")) {
         e.plain.classes ::= "definiendum" // TODO
       }
+    }
+  }
+
+  def doLo(implicit dp:DocParams): ServerResponse = {
+    dp.path match {
+      case None => throw ErrorResponse("Missing path")
+      case Some(path) =>
+        controller.getO(path) match {
+          case Some(c: Constant) =>
+            c.df match {
+              case Some(OMA(OMS(_),OMFOREIGN(node) :: _)) =>
+                val (_, body) = this.emptydoc
+                val ret = present(node.toString)(dp.bindings)
+                body.add(ret)
+                ServerResponse("<body>" + body.toString.trim.replace("&amp;", "&") + "</body>", "text/html")
+              case _ => ServerResponse("Not a learning object", "txt")
+            }
+          case Some(d) =>
+            ServerResponse("Not yet implemented: " + d.getClass.toString, "txt")
+          case _ =>
+            ServerResponse("Declaration not found", "txt")
+        }
     }
   }
 

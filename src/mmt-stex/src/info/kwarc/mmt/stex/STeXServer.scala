@@ -102,7 +102,8 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
-      case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css" | "sections" | "definienda") =>
+      case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" |
+                "variable" | "css" | "sections" | "definienda" | "lo" | "loraw") =>
         documentRequest(request)
       case Some("omdoc" | "omdocfrag" | "omdocuri") =>
         omdocRequest(request)
