@@ -10,6 +10,7 @@ This is the server component of the [FrameIT project](https://uframeit.org), pri
 ## REST API
 
 We use UTF-8-encoded JSON payloads for both HTTP request and response bodies.
+All non-empty requests must employ `Content-Type: application/json`.
 All endpoints indicate success by a 2xx response status code and failure by any other status code.
 
 **Playground.**
