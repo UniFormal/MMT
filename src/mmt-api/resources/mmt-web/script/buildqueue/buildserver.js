@@ -33,7 +33,7 @@ angular.module('buildQueueApp', []).controller('QueueViewer',
       $scope.getArchives();
       $scope.targets =
         { list: []
-        , current: "sms"
+        , current: "fullstex"
         };
       $scope.getTargets = function() {
         $http.get('/:buildserver/targets').success(function(data) {
