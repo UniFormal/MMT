@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.utils.mmt
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SEquationSystemFact, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
-import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SRecArg, SString, STerm}
+import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SFunction, SFunctionType, SInteger, SOMA, SOMS, SRawOMDoc, SRecArg, SString, STerm}
 import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -92,6 +92,8 @@ private[communication] object Codecs {
         classOf[SString] -> "OMSTR",
         classOf[SInteger] -> "OMI",
         classOf[SRecArg] -> "RECARG",
+        classOf[SFunction] -> "FUN",
+        classOf[SFunctionType] -> "FUNTYPE",
         classOf[SRawOMDoc] -> "RAW"
       ))
     }

@@ -2,9 +2,9 @@ package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{PosOrIntLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.api.GlobalName
-import info.kwarc.mmt.api.objects.{OMA, OML, OMS, Term}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OML, OMS, Term, VarDecl}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.lf.{ApplySpine, Arrow, FunTerm, FunType, Lambda}
 import info.kwarc.mmt.odk.LFX.{Product, Tuple}
 import io.circe.Json
 import io.circe.generic.extras.ConfiguredJsonCodec
@@ -44,6 +44,12 @@ object SOMDoc {
   @ConfiguredJsonCodec
   case class SRecArg(name: String, value: STerm) extends STerm
 
+  @ConfiguredJsonCodec
+  case class SFunction(params: List[(String, STerm)], body: STerm) extends STerm
+
+  @ConfiguredJsonCodec
+  case class SFunctionType(params: List[STerm], ret: STerm) extends STerm
+
   /**
     * OMDoc terms that could not be represented with other SOMDoc case classes.
     *
@@ -82,6 +88,12 @@ object SOMDoc {
 
       // for everything not from LFX, only support LF function application
       case ApplySpine(fun, args) => SOMA(encode(fun), args.map(encode))
+      case FunTerm(params, body) =>
+        // TODO: this might swallow named parameters
+        SFunction(params.map(_._2).map(encode), encode(body))
+      case FunType(params, ret) =>
+        // TODO: this might swallow named parameters
+        SFunctionType(params.map(_._2).map(encode), encode(ret))
 
       case PosOrIntLiterals(value) =>
         if (value.isValidInt) {
@@ -112,6 +124,10 @@ object SOMDoc {
       case SInteger(value) => PosOrIntLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
+
+      // no cases for SFunction and SFunctionType since so far the game engine
+      // never sends functions to the MMT side
+
       case SRawOMDoc(rawXml) => ???
     }
   }
