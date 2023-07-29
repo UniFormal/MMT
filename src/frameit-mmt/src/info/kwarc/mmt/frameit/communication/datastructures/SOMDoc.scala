@@ -1,7 +1,7 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{PosOrIntLiterals, RealLiterals, StringLiterals}
-import info.kwarc.mmt.api.GlobalName
+import info.kwarc.mmt.api.{GlobalName, ParseError}
 import info.kwarc.mmt.api.objects.{OMA, OML, OMS, OMV, Term}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
@@ -69,9 +69,10 @@ object SOMDoc {
   @ConfiguredJsonCodec
   case class SRecArg(name: String, value: STerm) extends STerm
 
+  @ConfiguredJsonCodec
   case class SVariable(name: String) extends STerm
 
-  @ConfiguredJsonCodec
+  // see Codecs.SOMDocCodecs for the custom JSON codec
   case class SFunction(params: List[(String, STerm)], body: STerm) extends STerm
 
   @ConfiguredJsonCodec
@@ -154,9 +155,11 @@ object SOMDoc {
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
 
-      // no cases for SFunction, SFunctionType, and SVariable
-      // since so far the game engine never sends functions or binders
-      // to the MMT side
+      // The following cases so far would never be transmitted from the game engine
+      // to MMT, thus we don't handle them.
+      case SFunction(_, _) | SFunctionType(_, _) | SVariable(_) |
+            SRecArg(_, _) =>
+        throw ParseError("Received SOMDoc construct from game engine that we had chosen not to handle (decode) so far.")
 
       case SRawOMDoc(rawXml) => ???
     }

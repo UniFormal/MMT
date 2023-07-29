@@ -112,6 +112,19 @@ private[communication] object Codecs {
     implicit val termEncoder: Encoder[Term] = (tm: Term) => {
       stermEncoder(OMDocBridge.encode(tm))
     }
+
+    implicit val functionEncoder: Encoder[SFunction] = (f: SFunction) => {
+      Json.obj(
+        ("kind", Json.fromString(somdocConfig.transformConstructorNames(classOf[SFunction].getSimpleName))),
+        ("params", Json.arr(f.params.map {
+          case (argname, argtp) => Json.obj(
+            ("name", Json.fromString(argname)),
+            ("tp", stermEncoder(argtp))
+          )
+        } : _*)),
+        ("body", stermEncoder(f.body))
+      )
+    }
   }
 
   object DataStructureCodecs {
