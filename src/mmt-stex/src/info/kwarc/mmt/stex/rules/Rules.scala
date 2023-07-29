@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.{ElaborationOf, GlobalName, LocalName, ParametricRule,
 import info.kwarc.mmt.api.objects.OMS
 import info.kwarc.mmt.api.symbols.{Constant, Structure}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, Simplifiability, Simplify, StandardInt, StandardNat, StandardString}
-import info.kwarc.mmt.stex.Extensions.Symbols
+import info.kwarc.mmt.stex.Extensions.{SHTMLContentManagement, Symbols}
 import info.kwarc.mmt.stex.xhtml.{SHTMLNode, SHTMLObject, SHTMLState, SemanticState}
 import info.kwarc.mmt.stex.{IsSeq, SCtx, SHTML, SHTMLHoas, SOMBArg, STerm}
 
@@ -151,27 +151,17 @@ object StructureRuler extends RulerRule {
                 case Some(s: Structure) =>
                   s.getMostSpecific(c.name.drop(1)) match {
                     case Some((c: Constant, _)) =>
-                      c.metadata.getValues(SHTML.headterm) match {
-                        case List(OMS(np)) =>
-                          /*controller.getO(np).foreach{o =>
-                            o.metadata.getAll.foreach(c.metadata.add(_))
-                          }
-                          c.metadata.update(SHTML.headterm,OMS(np))
-                          Some(c)*/
+                      SHTMLContentManagement.getHead(c) match {
+                        case Some(OMS(np)) =>
                           controller.getO(np)
                         case _ => Some(c)
                       }
                     case None =>
                       s.getDeclarations.find(_.name.endsWith(c.name.drop(1))) match {
                         case Some(c: Constant) =>
-                          c.metadata.getValues(SHTML.headterm) match {
-                            case List(OMS(np)) =>
-                              /*controller.getO(np).foreach { o =>
-                                o.metadata.getAll.foreach(c.metadata.add(_))
-                              }
-                              c.metadata.update(SHTML.headterm, OMS(np))
-                              Some(c)*/
-                            controller.getO(np)
+                          SHTMLContentManagement.getHead(c) match {
+                            case Some(OMS(np)) =>
+                              controller.getO(np)
                             case _ => Some(c)
                           }
                         case _ => Some(c)
@@ -412,7 +402,7 @@ object ReorderRule extends HTMLTermRule {
       val nargs = ints.map(i => args(i - 1))
       val ret = SHTMLHoas.OmaSpine(h, f, nargs)
       orig.metadata.getAll.foreach(ret.metadata.add(_))
-      state.server.addReorder(ints.map(_.toString).mkString(","), ret)
+      SHTMLContentManagement.addReorder(ints.map(_.toString).mkString(","), ret)
       Some(ret)
     } else None
   }
@@ -423,7 +413,7 @@ object ReorderRule extends HTMLTermRule {
       val nargs = ints.map(i => args(i - 1))
       val ret = h.HOMB(f, nargs)
       orig.metadata.getAll.foreach(ret.metadata.add(_))
-      state.server.addReorder(ints.map(_.toString).mkString(","), ret)
+      SHTMLContentManagement.addReorder(ints.map(_.toString).mkString(","), ret)
       Some(ret)
     } else None
   }
@@ -437,7 +427,7 @@ object ReorderRule extends HTMLTermRule {
           }
           ruleOpt.flatMap(applyOMA(tm, _,h, f, args)) */
         case Some(o) =>
-          state.server.getReorder(o) match {
+          SHTMLContentManagement.getReorder(o) match {
             case Some(ls) =>
               applyOMA(tm,ls,h,f,args)
             case _ => None
@@ -454,7 +444,7 @@ object ReorderRule extends HTMLTermRule {
           ruleOpt.flatMap(applyOMB(tm, _,h, f, args))
        */
         case Some(o) =>
-          state.server.getReorder(o) match {
+          SHTMLContentManagement.getReorder(o) match {
             case Some(ls) =>
               applyOMB(tm, ls, h, f, args)
             case _ => None
@@ -565,7 +555,7 @@ object AssocRule extends HTMLTermRule {
             case _ => None
           } */
         case Some(obj) =>
-          state.server.getAssoctype(obj) match {
+          SHTMLContentManagement.getAssoctype(obj) match {
             case Some("binr" | "bin") =>
               val ret = doBinr(h, f, args)
               ret.copyFrom(tm)
@@ -598,7 +588,7 @@ object AssocRule extends HTMLTermRule {
             case _ => None
           } */
         case Some(obj) =>
-          state.server.getAssoctype(obj) match {
+          SHTMLContentManagement.getAssoctype(obj) match {
             case Some("binr" | "bin") =>
               ???
             case Some("pre") =>
@@ -613,25 +603,8 @@ object AssocRule extends HTMLTermRule {
       }
     case OMA(f, args) =>
       state.getRuler(f) match {
-        /*
-        case Some(c: Constant) =>
-          RuleSet.collectRules(state.server.ctrl, self.getRuleContext).getOrdered(classOf[AssocRule]).collectFirst {
-            case a if a.path == c.path => a
-          } match {
-            case Some(PreRule.PreRule(_)) =>
-              ???
-            case Some(BinRRule.BinRRule(_)) =>
-              val ret = doBinr(None, f, args)
-              ret.copyFrom(tm)
-              Some(ret)
-            case Some(ConjRule.ConjRule(_)) =>
-              val ret = doConj(None, f, args)
-              ret.copyFrom(tm)
-              Some(ret)
-            case _ => None
-          } */
         case Some(obj) =>
-          state.server.getAssoctype(obj) match {
+          SHTMLContentManagement.getAssoctype(obj) match {
             case Some("binr" | "bin") =>
               val ret = doBinr(None, f, args)
               ret.copyFrom(tm)

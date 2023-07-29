@@ -4,6 +4,7 @@ import errors._
 import info.kwarc.mmt.api._
 import archives._
 import documents._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import parser._
 import utils._
 
@@ -61,7 +62,7 @@ class SpecwareImporter extends Importer {
     swdir = File(p)
   }
 
-  def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+  def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val swC = new SwCommand(bt.archive, bt.inFile)
     log(swC.command.mkString(" "))
     swC.outFile.delete

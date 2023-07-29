@@ -4,10 +4,14 @@ import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api.{MultipleErrorHandler, _}
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.AbstractTheory
 import info.kwarc.mmt.api.objects.OMPMOD
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULO, ULOStatement}
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.symbols.Structure
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
+import info.kwarc.mmt.api.utils.time.{Duration, Time}
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SearchOnlyState, SemanticState}
@@ -167,11 +171,67 @@ trait XHTMLParser extends BuildTarget {
 
 }
 
+object STeXBuildTarget {
+  def estimateStexXhtml(bt:BuildTask)(controller:Controller) =
+    BuildSuccess(Nil, List(PhysicalDependency(
+      bt.archive / RedirectableDimension("xhtml") / bt.inPath.setExtension("xhtml")
+    )))
+
+  private def usecontroller(bt:BuildTask)(controller: Controller) = {
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc", NamespaceMap.empty)
+
+    var results : List[ResourceDependency] = List(DocumentDependency(dpath))
+    val used = controller.getO(dpath).toList.flatMap(_.getDeclarations).flatMap {
+      case m: MRef =>
+        results ::= LogicalDependency(m.target)
+        controller.getO(m.target).toList.flatMap {
+          case t: AbstractTheory => t.meta.toList.map(LogicalDependency) ::: t.getPrimitiveDeclarations.collect({ case s: Structure => s.from match {
+            case OMPMOD(p, _) => LogicalDependency(p)
+          }
+          })
+          case _ => Nil
+        }
+      case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
+      case _ => Nil
+    }.filterNot(results.contains)
+    BuildSuccess(used, results)
+  }
+  private def userelational(bt:BuildTask)(controller: Controller) = {
+    val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc", NamespaceMap.empty)
+    import info.kwarc.mmt.api.ontology.SPARQL._
+    import info.kwarc.mmt.api.ontology.RDFImplicits._
+    val used = controller.depstore.query(SELECT("x") WHERE (
+      T(dpath, ULO.specifies, V("y")) AND T(V("y"), ULO.includes | ULO.has_structure_from | ULO.has_meta_theory, V("x"))
+      )).getPaths.collect {
+      case mp: MPath => LogicalDependency(mp)
+    }
+    val results = DocumentDependency(dpath) :: controller.depstore.query(SELECT("x") WHERE T(dpath, ULO.specifies, V("x"))).getPaths.collect {
+      case mp: MPath => LogicalDependency(mp)
+    }
+    BuildSuccess(used, results)
+  }
+  def estimateXhtmlOmdoc(bt:BuildTask)(controller: Controller) = {
+    userelational(bt)(controller)
+  }
+  def estimateLucene(bt:BuildTask)(controller:Controller) = {
+    val dir = (bt.archive / Dim("export", "lucene") / bt.inPath).stripExtension
+    val prov = if (dir.exists() && dir.isDirectory)
+      dir.descendants.map(PhysicalDependency) else Nil
+    BuildSuccess(Nil, prov)
+  }
+  def estimatePdf(bt:BuildTask)(controller:Controller) = {
+    BuildSuccess(Nil, List(PhysicalDependency(bt.archive / Dim("export", "pdf") / bt.inPath.setExtension("pdf"))))
+  }
+}
+
 class LaTeXToHTML extends TraversingBuildTarget with XHTMLParser {
   val key = "stex-xhtml"
   val outDim = Dim("xhtml")
   val inDim = info.kwarc.mmt.api.archives.source
   def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
+
+  override def estimateResult(bf: BuildTask): BuildSuccess =
+    STeXBuildTarget.estimateStexXhtml(bf)(controller)
 
   override def buildFile(bf: BuildTask): BuildResult = {
     val state = new HTMLParser.ParsingState(controller,stexserver.importRules)
@@ -188,7 +248,9 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
   //override val inDim = Dim("xhtml")
   override val inDim = info.kwarc.mmt.api.archives.source
 
-  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+  override def estimateResult(bf: BuildTask): BuildSuccess =
+    STeXBuildTarget.estimateXhtmlOmdoc(bf)(controller)
+  override def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     log("postprocessing " + bt.inFile)
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val inFile = bt.archive / RedirectableDimension("xhtml") / bt.inPath.setExtension("xhtml")
@@ -196,7 +258,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
       bt.errorCont(SourceError(bt.inFile.toString,SourceRef.anonymous(""),"xhtml file " + inFile.toString + " does not exist"))
       BuildFailure(Nil,Nil)
     }
-    val state = new SemanticState(stexserver, stexserver.importRules, bt.errorCont, dpath)
+    val state = new SemanticState(stexserver, stexserver.importRules, bt.errorCont, dpath,rel)
     controller.library.synchronized{HTMLParser(inFile)(state)}
     index(state.doc)
     log("Finished: " + inFile)
@@ -206,8 +268,10 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     }
     val used = state.doc.getDeclarations.flatMap {
       case m : MRef => controller.getO(m.target).toList.flatMap{
-        case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))
-        case _ => Nil
+        case t : AbstractTheory => t.getPrimitiveDeclarations.collect({case s:Structure => s.from match {
+          case OMPMOD(p,_) => LogicalDependency(p)
+        }})
+      case _ => Nil
       }
       case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
       case _ => Nil
@@ -232,6 +296,10 @@ class HTMLToLucene extends TraversingBuildTarget with XHTMLParser {
     *
     * @param bf information about input/output file etc
     */
+
+  override def estimateResult(bt: BuildTask): BuildSuccess =
+    STeXBuildTarget.estimateLucene(bt)(controller)
+
   override def buildFile(bt: BuildTask): BuildResult = {
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val inFile = bt.archive / RedirectableDimension("xhtml") / bt.inPath.setExtension("xhtml")
@@ -257,11 +325,15 @@ class STeXToOMDoc extends Importer with XHTMLParser {
   val key = "stex-omdoc"
   override val inDim = info.kwarc.mmt.api.archives.source
   val inExts = List("tex")
+
+  override def estimateResult(bf: BuildTask): BuildSuccess = {
+    STeXBuildTarget.estimateStexXhtml(bf)(controller) + STeXBuildTarget.estimateXhtmlOmdoc(bf)(controller)
+  }
   override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
-  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+  override def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / RedirectableDimension("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath,rel)
     outFile.up.mkdirs()
     val (errored,_,_) = buildFileActually(bt.archive,bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
@@ -272,8 +344,11 @@ class STeXToOMDoc extends Importer with XHTMLParser {
         LogicalDependency(mr.target)
     }
     val used = state.doc.getDeclarations.flatMap {
-      case m : MRef => controller.getO(m.target).toList.flatMap{
-        case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))
+      case m : MRef => controller.getO(m.target).toList.flatMap {
+        case t: AbstractTheory => t.getPrimitiveDeclarations.collect({ case s: Structure => s.from match {
+          case OMPMOD(p, _) => LogicalDependency(p)
+        }
+        })
         case _ => Nil
       }
       case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))
@@ -355,6 +430,8 @@ class PdfLatex extends TraversingBuildTarget {
   val inDim = Dim("source")
   override def includeFile(name: String): Boolean = name.endsWith(".tex")
 
+  override def estimateResult(bf: BuildTask): BuildSuccess =
+    STeXBuildTarget.estimatePdf(bf)(controller)
   override def buildFile(bf: BuildTask): BuildResult = {
     log("Building pdflatex " + bf.inPath)
     PdfLatex.pdflatex(bf.inFile) match {
@@ -379,6 +456,9 @@ class PdfBibLatex extends TraversingBuildTarget {
   override val outDim: ArchiveDimension = Dim("export", "pdf")
   val inDim = Dim("source")
   override def includeFile(name: String): Boolean = name.endsWith(".tex")
+
+  override def estimateResult(bf: BuildTask): BuildSuccess =
+    STeXBuildTarget.estimatePdf(bf)(controller)
 
   override def buildFile(bf: BuildTask): BuildResult = {
     log("Building pdflatex " +  bf.inPath + " (first run)")
@@ -425,7 +505,16 @@ class FullsTeX extends Importer with XHTMLParser {
   val key = "fullstex"
   override val inDim = info.kwarc.mmt.api.archives.source
   val inExts = List("tex")
-  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+
+  override def estimateResult(bf: BuildTask): BuildSuccess = {
+    import STeXBuildTarget._
+    estimateStexXhtml(bf)(controller) +
+      estimateXhtmlOmdoc(bf)(controller) +
+      estimatePdf(bf)(controller) +
+      estimateLucene(bf)(controller)
+  }
+
+  override def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val ilog = (str : String) => {
       log(str)
       bt.errorCont match {
@@ -442,7 +531,7 @@ class FullsTeX extends Importer with XHTMLParser {
     import PdfLatex._
     val dpath = Path.parseD(bt.narrationDPath.toString.split('.').init.mkString(".") + ".omdoc",NamespaceMap.empty)
     val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
-    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath)
+    val state = new SemanticState(stexserver,stexserver.importRules,bt.errorCont,dpath,rel)
     outFile.up.mkdirs()
     try {
       ilog("Building pdflatex " +  bt.inPath + " (first run)")
@@ -479,8 +568,11 @@ class FullsTeX extends Importer with XHTMLParser {
           LogicalDependency(mr.target)
       } ::: (bt.archive / Dim("export","lucene") / bt.inPath).stripExtension.descendants.map(PhysicalDependency)
       val used = state.doc.getDeclarations.flatMap {
-        case m : MRef => controller.getO(m.target).toList.flatMap{
-          case t : AbstractTheory => t.getAllIncludes.map(m => LogicalDependency(m.from)) ::: t.getNamedStructures.map(s => LogicalDependency(s.from match {case OMPMOD(p,_) => p}))
+        case m : MRef => controller.getO(m.target).toList.flatMap {
+          case t: AbstractTheory => t.getPrimitiveDeclarations.collect({ case s: Structure => s.from match {
+            case OMPMOD(p, _) => LogicalDependency(p)
+          }
+          })
           case _ => Nil
         }
         case d: DRef if d.getOrigin == GeneratedDRef => List(DocumentDependency(d.target))

@@ -149,6 +149,7 @@ object HTMLParser {
           in.plain.attributes.remove(t._1)
           namespaces(t._1._2) = t._2
         }
+        if (in != n) {in.onOpen}
         in
       } else {
         val p = _parent.getOrElse(_top.get)

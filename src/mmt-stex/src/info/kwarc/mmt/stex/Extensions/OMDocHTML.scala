@@ -68,7 +68,7 @@ trait OMDocHTML { this : STeXServer =>
         implicit val state = new OMDocState(lang.getOrElse("en"))
         val ret = path match {
           case d:DPath =>
-            documentTop(d).toString()
+            documentTop(d).toString().replace("&amp;amp;","&amp;").replace("&amp;#","&#").trim
           case mp:MPath => moduleTop(mp).toString()
           case gn:GlobalName => declTop(gn).toString()
           case _ => "<div>Invalid: " + path.toString + "</div>"
@@ -124,7 +124,7 @@ trait OMDocHTML { this : STeXServer =>
   }
 
   private def documentTop(doc:Document)(implicit state: OMDocState): NodeSeq = {
-    val title = getTitle(doc) match {
+    val title = SHTMLContentManagement.getTitle(doc) match {
       case Some(node) => node
       case None => <span>Document {doc.path}</span>
     }
@@ -150,7 +150,7 @@ trait OMDocHTML { this : STeXServer =>
   }
 
   private def documentSection(doc: Document)(implicit state: OMDocState): NodeSeq = {
-    val title = getTitle(doc) match {
+    val title = SHTMLContentManagement.getTitle(doc) match {
       case Some(node) => node
       case None => <span>Document
         {doc.path}
@@ -181,7 +181,7 @@ trait OMDocHTML { this : STeXServer =>
         documentSection(d)
       case m: MRef =>
         controller.getO(m.target) match {
-          case Some(t:Theory) if getLanguage(t).isDefined =>
+          case Some(t:Theory) if SHTMLContentManagement.getLanguage(t).isDefined =>
             <span></span>
           case Some(t : Theory) =>
             moduleInner(t)
@@ -223,7 +223,7 @@ trait OMDocHTML { this : STeXServer =>
   private def moduleInner(t: Theory)(implicit state: OMDocState): NodeSeq = {
     val lastname = t.name.steps.last.toString
     if (lastname.startsWith("EXTSTRUCT_") && lastname.endsWith("-module")) return doConservative(t)
-    if (getLanguage(t).isDefined) return {doModuleBody(t,Some(t.path))}
+    if (SHTMLContentManagement.getLanguage(t).isDefined) return {doModuleBody(t,Some(t.path))}
     collapsible() { doLink(t.path) {
         <b>Module {t.name.toString}</b>
     }}{<div>
@@ -248,7 +248,7 @@ trait OMDocHTML { this : STeXServer =>
     }}</div>
     <div>{theory.getPrimitiveDeclarations.flatMap {
       case Include(id) if !id.total => Nil
-      case nm:NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
+      case nm:NestedModule if SHTMLContentManagement.getStructureSymbol(nm).nonEmpty => Nil
       case nm:NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
       case o => declInner(o)
     }}</div>
@@ -304,10 +304,13 @@ trait OMDocHTML { this : STeXServer =>
 
   private def declInner(d:Declaration)(implicit state: OMDocState): NodeSeq = {
     d match {
-      case c : Constant if c.metadata.getValues(ModelsOf.sym).nonEmpty =>
+      case c : Constant if SHTMLContentManagement.getStructureModule(c).nonEmpty =>
         doStructure(c)
       case c : Constant if c.rl.exists(_.contains("mmt_term")) =>
         doTerm(c)
+      case c: Constant if c.rl.exists(r =>
+        r.contains("symdoc") || r.contains("example") || r.contains("definition") || r.contains("statement") || r.contains("problem")
+      ) => <span></span>
       case c : Constant => doSymbol(c)
       case rc:RuleConstant =>
         rc.tp match {
@@ -350,7 +353,7 @@ trait OMDocHTML { this : STeXServer =>
               </a>
             </td>
           </tr></table>
-        (c.tp,c.df,getNotationsC(c)) match {
+        (c.tp,c.df,SHTMLContentManagement.getNotationsC(c)(controller)) match {
           case (None,None,Nil) => fakeCollapsible(true){header}
           case _ => collapsible(false, true) {header}{symbolTable(c)}
         }
@@ -358,10 +361,7 @@ trait OMDocHTML { this : STeXServer =>
   }
 
   private def doStructure(c: Constant)(implicit state: OMDocState): NodeSeq = {
-    val mod = c.metadata.getValues(ModelsOf.sym).headOption.flatMap {
-      case OMMOD(mp) => controller.getO(mp)
-      case _ => None
-    }
+    val mod = SHTMLContentManagement.getStructureModule(c).flatMap(controller.getO)
     def head = <b>Structure {symbolsyntax(c)}</b>
     mod match {
       case Some(th:Theory) => collapsible(expanded=false,small=true) { head }{doStructureBody(th)(state.resetincludes)}
@@ -375,11 +375,8 @@ trait OMDocHTML { this : STeXServer =>
     } match {
       case List(mp) =>
         controller.getO(mp) match {
-          case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty =>
-            t.metadata.getValues(ModelsOf.tp).head match {
-              case OMS(p) => Some(p)
-              case _ => None
-            }
+          case Some(t: Theory) if SHTMLContentManagement.getStructureSymbol(t).nonEmpty =>
+            SHTMLContentManagement.getStructureSymbol(t)
           case _ => None
         }
       case _ => None
@@ -391,7 +388,7 @@ trait OMDocHTML { this : STeXServer =>
         }{<div>{th.getPrimitiveDeclarations.flatMap {
           case Include(id) if !id.total => Nil
           case s:Structure => doCopymoduleInStructure(s)
-          case nm: NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
+          case nm: NestedModule if SHTMLContentManagement.getStructureSymbol(nm).nonEmpty => Nil
           case nm: NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
           case o => fieldInner(o)
         }}</div>}
@@ -406,27 +403,23 @@ trait OMDocHTML { this : STeXServer =>
       case _ => None
     }
     def head = dom match {
-      case Some(t : Theory) if s.isTotal && s.isImplicit && t.metadata.getValues(ModelsOf.tp).nonEmpty =>
-        t.metadata.getValues(ModelsOf.tp).head match {
-          case OMS(p) =>
-            <span style="display:inline">Realizes {doLink(p){<span>{p.name.toString}</span>}}</span>
-          case _ => <span style="display:inline">Unknown Realization</span>
-        }
+      case Some(t : Theory) if s.isTotal && s.isImplicit && SHTMLContentManagement.getStructureSymbol(t).nonEmpty =>
+        val p = SHTMLContentManagement.getStructureSymbol(t).get
+        <span style="display:inline">Realizes {doLink(p) {<span>{p.name.toString}</span>}}</span>
       case _ =>
         <span>TODO</span>
     }
     def doBody : NodeSeq = {
       s.getDeclarationsElaborated.flatMap {
-        case ec : Constant if ec.metadata.getValues(SHTML.headterm).nonEmpty =>
-          ec.metadata.getValues(SHTML.headterm).head match {
+        case ec : Constant if SHTMLContentManagement.getHead(ec).nonEmpty =>
+          SHTMLContentManagement.getHead(ec).get match {
             case OMS(p) => controller.getO(p) match {
-              case Some(c : Constant) =>
+              case Some(c: Constant) =>
                 doField(ec)
               case _ =>
                 <span>TODO</span>
             }
-            case _ =>
-              <span>TODO</span>
+            case _ => <span>TODO</span>
           }
       }
     }
@@ -444,14 +437,11 @@ trait OMDocHTML { this : STeXServer =>
     <div>{th.getPrimitiveDeclarations.collect {
       case i@Include(mp) if i.getOrigin == Original && !mp.total => mp.from
     }.map{mp => controller.getO(mp) match {
-      case Some(t: Theory) if t.metadata.getValues(ModelsOf.tp).nonEmpty && !state.doneincludes.contains(t.path) =>
-        t.metadata.getValues(ModelsOf.tp).head match {
-          case OMS(p) =>
-            collapsible(true, true) {<span style="display:inline;">Inherited from {
-              doLink(p){<span>{p.name.toString}</span>}
-            }</span>} { doStructureBody(t)}
-          case _ => <span style="display:inline;"><b>Extends </b>{doLink(mp){<span>{mp.name.toString}</span>}}</span>
-        }
+      case Some(t: Theory) if SHTMLContentManagement.getStructureSymbol(t).nonEmpty && !state.doneincludes.contains(t.path) =>
+        val p = SHTMLContentManagement.getStructureSymbol(t).get
+        collapsible(true, true) {
+          <span style="display:inline;">Inherited from {doLink(p) {<span>{p.name.toString}</span>}}</span>
+        }{doStructureBody(t)}
       case Some(t: Theory) if !state.doneincludes.contains(t.path) && t.name.last.toString.startsWith("EXTSTRUCT") =>
         collapsible(true, true) {
           <span style="display:inline;">Inherited from Conservative Extension {doLink(mp) {<span>{mp.toString}</span>}}</span>
@@ -462,7 +452,7 @@ trait OMDocHTML { this : STeXServer =>
       <div>
         {th.getPrimitiveDeclarations.flatMap {
         case Include(id) if !id.total => Nil
-        case nm: NestedModule if nm.metadata.getValues(ModelsOf.tp).nonEmpty => Nil
+        case nm: NestedModule if SHTMLContentManagement.getStructureSymbol(nm).nonEmpty => Nil
         case nm: NestedModule => moduleInner(nm.module.asInstanceOf[Theory])
         case o => fieldInner(o)
       }}
@@ -471,7 +461,7 @@ trait OMDocHTML { this : STeXServer =>
 
   private def fieldInner(d: Declaration)(implicit state: OMDocState): NodeSeq = {
     d match {
-      case c: Constant if c.metadata.getValues(ModelsOf.sym).nonEmpty =>
+      case c: Constant if SHTMLContentManagement.getStructureModule(c).nonEmpty =>
         doStructure(c) // shoudn't happen
       case c: Constant if c.rl.exists(_.contains("mmt_term")) =>
         doTerm(c)  // shoudn't happen
@@ -531,7 +521,7 @@ trait OMDocHTML { this : STeXServer =>
               </td>
             </tr>
           </table>
-        (c.tp, c.df, getNotationsC(c)) match {
+        (c.tp, c.df, SHTMLContentManagement.getNotationsC(c)(controller)) match {
           case (None, None, Nil) => fakeCollapsible(true) { header }
           case _ => collapsible(false, true) { header } { symbolTable(c) }
         }
@@ -562,7 +552,7 @@ trait OMDocHTML { this : STeXServer =>
           </math></span>
         case _ => <span> (No type given)</span>
       }}</span>
-    (c.df, getNotationsC(c)) match {
+    (c.df, SHTMLContentManagement.getNotationsC(c)(controller)) match {
       case (None, Nil) => fakeCollapsible(true) {header}
       case _ => collapsible(false, true) {header} {symbolTable(c,dotype = false)}
     }
@@ -588,7 +578,7 @@ trait OMDocHTML { this : STeXServer =>
   }
 
   private def doTextSymbol(c:Constant)(implicit state: OMDocState): NodeSeq = {
-    val notations = getNotationsC(c)
+    val notations = SHTMLContentManagement.getNotationsC(c)(controller)
     lazy val header = <span style="display:inline;">Text Symbol {symbolsyntax(c)}: {
       notations match {
         case Nil => <span>(Notation missing)</span>
@@ -617,12 +607,12 @@ trait OMDocHTML { this : STeXServer =>
           <td class="omdoc-symbol-td">{xhtmlPresenter.asXML(tp, Some(c.path $ TypeComponent))}</td>
         </tr>
       case _ =>
-    }}{getNotationsC(c) match {
+    }}{SHTMLContentManagement.getNotationsC(c)(controller) match {
       case Nil =>
       case List(a) if !donotations =>
       case nls =>
         val ls = if (donotations) nls else nls.tail
-        val arity = getArity(c).getOrElse("")
+        val arity = SHTMLContentManagement.getArity(c).getOrElse("")
         <tr>
           <td class="omdoc-symbol-td">Notations</td> <td class="omdoc-symbol-td">
           <table class="omdoc-notation-table">
@@ -663,7 +653,7 @@ trait OMDocHTML { this : STeXServer =>
 
   def symbolsyntax(c:Constant)(implicit state: OMDocState) = <span>
     <pre style="display:inline;font-size:smaller;">{doLink(c.path)(<span>{c.name}</span>)}</pre>
-    {(getMacroName(c), getArity(c)) match {
+    {(SHTMLContentManagement.getMacroName(c), SHTMLContentManagement.getArity(c)) match {
       case (Some(mn), None | Some("")) =>
         <span> (<pre style="display:inline;font-size:smaller;">\{mn}</pre>)</span>
       case (Some(mn), Some(args)) =>
@@ -680,7 +670,7 @@ trait OMDocHTML { this : STeXServer =>
 
   def fieldsyntax(c: Constant)(implicit state: OMDocState) = <span>
     <pre style="display:inline;font-size:smaller;">{doLink(c.path)(<span>{c.name}</span>)}</pre>
-    {(getMacroName(c), getArity(c)) match {
+    {(SHTMLContentManagement.getMacroName(c), SHTMLContentManagement.getArity(c)) match {
       case (Some(mn), None | Some("")) =>
         <span>(<pre style="display:inline;font-size:smaller;">\this{s"{$mn}"}</pre>)</span>
       case (Some(mn), Some(args)) =>

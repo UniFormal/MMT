@@ -4,6 +4,7 @@ import syntax._
 import info.kwarc.mmt.api._
 import documents._
 import archives._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"
@@ -27,7 +28,7 @@ class PVSImporter extends Importer {
 
    //private var startAt = "/home/raupi/lmh/localmh/MathHub/PVS/NASA/source/vect_analysis/pvsxml/cont_real_vect2.xml"
    // private var startAt = "/home/raupi/lmh/localmh/MathHub/PVS/Prelude/src/pvsxml/K_props.xml"
-   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+   def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
       //   if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
       log("Reading " + bf.inFile)
       val e = try {

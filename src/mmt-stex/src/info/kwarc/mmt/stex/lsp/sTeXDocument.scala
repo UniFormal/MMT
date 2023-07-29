@@ -60,19 +60,21 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
   }
 
   def parsingstate(eh: STeXLSPErrorHandler) = {
-    new SemanticState(server.stexserver,server.stexserver.importRules,eh,dpath)
+    //val path = archive.flatMap(a => relfile.map(_.toFilePath.foldLeft(a.narrationBase)((a,b) => a / b))).getOrElse(URI(uri))
+    new SemanticState(server.stexserver,server.stexserver.importRules,eh,dpath,_ => ()) // TODO add subgraph
   }
 
   var html:Option[HTMLNode] = None
 
-  def buildFull() = Future { synchronized {
+  def buildFull() = { synchronized {
     client.resetErrors(uri)
     server.withProgress(uri + "-fullstex","Building " + uri.split('/').last, "full") { update =>
       val target = server.controller.extman.getOrAddExtension(classOf[FullsTeX],"fullstex")
       (target,archive,relfile) match {
         case (Some(t),Some(a),Some(f)) =>
           client.log("Building [" + a.id + "] " + f)
-          val eh = STeXLSPErrorHandler(e => client.documentErrors(this,false, e), update)
+          val eh = STeXLSPErrorHandler(e => client.documentErrors(thisdoc, false, e), update)
+          //val eh = STeXLSPErrorHandler(e => client.documentErrors(this,false, e), update)
           try {
             eh.open
             t.build(a, BuildChanged(), f.toFilePath, Some(eh))

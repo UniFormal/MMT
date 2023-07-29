@@ -182,9 +182,10 @@ object SHTMLHoas {
 }
 
 object IsSeq{
-    def apply(tm: Term) = tm match {
+    def set(o:Obj) = o.metadata.update(SHTML.flatseq.sym, OMS(SHTML.flatseq.sym))
+    def apply(o:Obj) = o match {
       case SHTML.flatseq(_) => true
-      case OMV(_) if tm.metadata.get(SHTML.flatseq.sym).nonEmpty => true
+      case OMV(_) | _:VarDecl if o.metadata.get(SHTML.flatseq.sym).nonEmpty => true
       case _ => false
     }
 

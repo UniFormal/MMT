@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{Definienda, ExampleRelational, ExportExtension, FrontendExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, SymdocRelational}
+import info.kwarc.mmt.stex.Extensions.{Definienda, ExportExtension, FrontendExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, STeXRelationals}
 import info.kwarc.mmt.stex.lsp.{MathHubServer, RemoteLSP, STeXLSPServer, SearchResultServer}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, JupyterBookArchive, VirtualArchive, VollKi}
@@ -24,7 +24,7 @@ case class ErrorReturn(s : String) extends Throwable {
 }
 
 
-class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with SHTMLContentManagement with OMDocHTML with ExportExtension with FrontendExtension {
+class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with OMDocHTML with ExportExtension with FrontendExtension {
   def ctrl = controller
   def getArchives = controller.backend.getStores.collect {
     case a : Archive if a.properties.get("format").contains("stex") => a
@@ -34,42 +34,46 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
     case al:ArchiveLike if al.id == id => al
   }
 
+  private val do_jupyter = false
+
   override def start(args: List[String]): Unit = {
     super.start(args)
     controller.extman.addExtension(NotationExtractor)
-    controller.extman.addExtension(SymdocRelational)
-    controller.extman.addExtension(ExampleRelational)
-    controller.extman.addExtension(Definienda)
+    //controller.extman.addExtension(SymdocRelational)
+    //controller.extman.addExtension(ExampleRelational)
+    //controller.extman.addExtension(Definienda)
     controller.extman.addExtension(new MathStructureFeature)
     /*addExtension(DocumentExtension)
     addExtension(FragmentExtension)
     addExtension(BrowserExtension)*/
 
-    val index = RusTeX.mh.up / "meta" / "inf" / "courses.json"
-    if (index.exists()) Try(JSON.parse(File.read(index))).toOption match {
-      case Some(o:JSONObject) =>
-        o.foreach {
-          case (JSONString(id),jo:JSONObject) =>
-            val map = mutable.HashMap.empty[String, String]
-            map("id") = id
-            jo.foreach {
-              case (JSONString(key),JSONString(value)) =>
-                map(key) = value
-              case _ =>
-            }
-            map.get("type") match {
-              case Some("jupyterbook") =>
-                val store = new JupyterBookArchive(controller, map)
-                controller.backend.addStore(store)
-                //val (t,_) = Time.measure {
+    if (do_jupyter) {
+      val index = RusTeX.mh.up / "meta" / "inf" / "courses.json"
+      if (index.exists()) Try(JSON.parse(File.read(index))).toOption match {
+        case Some(o: JSONObject) =>
+          o.foreach {
+            case (JSONString(id), jo: JSONObject) =>
+              val map = mutable.HashMap.empty[String, String]
+              map("id") = id
+              jo.foreach {
+                case (JSONString(key), JSONString(value)) =>
+                  map(key) = value
+                case _ =>
+              }
+              map.get("type") match {
+                case Some("jupyterbook") =>
+                  val store = new JupyterBookArchive(controller, map)
+                  controller.backend.addStore(store)
+                  //val (t,_) = Time.measure {
                   store.importAll
                 //}
                 //println("Takes: " + t)
-              case _ =>
-            }
-          case _ =>
-        }
-      case _ =>
+                case _ =>
+              }
+            case _ =>
+          }
+        case _ =>
+      }
     }
 
 
@@ -98,23 +102,29 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
 
   override def apply(request: ServerRequest): ServerResponse = try {
     request.path.lastOption match {
-      case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" | "variable" | "css" | "sections" | "definienda") =>
+      case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "symbol" | "declaration" |
+                "variable" | "css" | "sections" | "definienda" | "lo" | "loraw") =>
         documentRequest(request)
       case Some("omdoc" | "omdocfrag" | "omdocuri") =>
         omdocRequest(request)
       case Some("docidx") =>
         ServerResponse.JsonResponse(JSONArray(getFrontendElements :_*))
       case Some("thumbnail") =>
-        val fp = request.query.split("/").init.mkString("/")
-        controller.backend.getArchive(fp) match {
+        val a = request.parsedQuery("archive").getOrElse{
+          return ServerResponse("Archive not found in query", "text/plain")
+        }
+        val fp = request.parsedQuery("filepath").getOrElse {
+          return ServerResponse("filepath not found in query", "text/plain")
+        }
+        controller.backend.getArchive(a) match {
           case Some(a) =>
-            val f = a / source / (request.query.split("/").last + ".png")
+            val f = fp.split('/').foldLeft(a / source)((f,s) => f / s)
             if (f.exists()) {
               ServerResponse.FileResponse(f)
             }
-            else ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+            else ServerResponse("Image file " + request.query + " not found", "text/plain")
           case _ =>
-            ServerResponse("Image file " + request.query + ".png not found", "text/plain")
+            ServerResponse("Image file " + request.query + " not found", "text/plain")
         }
       case Some(":sTeX") if request.query == "" =>
         browserRequest(request)

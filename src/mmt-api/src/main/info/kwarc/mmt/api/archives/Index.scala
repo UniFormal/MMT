@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import documents._
 import frontend._
 import Level.Level
+import info.kwarc.mmt.api.ontology.{RDFStore, RelationalElement, SubGraph, ULO, ULOStatement}
 import modules._
 import parser._
 import notations._
@@ -20,7 +21,7 @@ trait GeneralImporter extends Extension {
     * doc.path must be of the form a.narrationBase / sourcePath  
     * The produced narration file will be in the location given by sourcePath.
     */
-  private[archives] def indexDocument(a: Archive, doc: Document): Unit = {
+  private[archives] def indexDocument(a: Archive, doc: Document,graph:SubGraph): Unit = {
     ImporterAnnotator.update(doc, key)
     // write narration file
     val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
@@ -37,19 +38,20 @@ trait GeneralImporter extends Extension {
     val node = doc.toNode
     xml.writeFile(node, narrFile)
     // write relational file
-    writeToRel(doc, a / relational / docPath)
+
+    writeToRel(doc,graph)
     doc.getModulesResolved(controller.globalLookup) foreach { mod =>
-      if (!mod.isGenerated) indexModule(a, mod)
+      if (!mod.isGenerated) indexModule(a, mod,graph)
     }
   }
 
   /** index a module */
-  private def indexModule(a: Archive, mod: Module): Unit = {
+  private def indexModule(a: Archive, mod: Module,source:SubGraph): Unit = {
     ImporterAnnotator.update(mod, key)
     // write content file
     writeToContent(a, mod)
     // write relational file
-    writeToRel(mod, a / relational / Archive.MMTPathToContentPath(mod.path))
+    writeToRel(mod,source)
     // write notations file, nice idea but does not eliminate all retrievals yet during presentation
     // writeToNot(mod, a / notational / Archive.MMTPathToContentPath(mod.path))
   }
@@ -66,16 +68,15 @@ trait GeneralImporter extends Extension {
   }
 
   /** extract the relational information about a knowledge item and write it to a file */
-  protected def writeToRel(se: StructuralElement, file: File): Unit = {
-    val relFile = file.setExtension("rel")
-    log("[  -> relational]     " + relFile.getPath)
-    val relFileHandle = File.Writer(relFile)
+  protected def writeToRel(se: StructuralElement,graph:SubGraph): Unit = {
+    controller.relman.extract(se) {r => graph.add(r.toULO) }
+    /*val relFileHandle = File.Writer(relFile)
     controller.relman.extract(se) {
       r =>
         relFileHandle.write(r.toPath + "\n")
         controller.depstore += r
     }
-    relFileHandle.close
+    relFileHandle.close*/
   }
 
   /** extract the notations of a knowledge item and write them to a file */
@@ -112,7 +113,21 @@ abstract class NonTraversingImporter extends BuildTarget with GeneralImporter {
    * The produced narration file will be in the location a.root/narration/sourcePath.
    */
   def importDocument(a: Archive, doc: Document): Unit = {
-    indexDocument(a, doc)
+    val graph = controller.depstore.newGraph(doc.path.uri)
+    val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
+      case Some(suffix) =>
+        val names = suffix.steps collect {
+          case SimpleStep(s) => s
+          case _ => throw LocalError("document path contains complex step")
+        }
+        if (names.isEmpty) FilePath("") else FilePath(names)
+      case None => throw LocalError("document path must start with narration base")
+    }
+    indexDocument(a, doc,graph)
+    val relFile = (a / relational / docPath).setExtension(RDFStore.fileFormat._1)
+    log("[  -> relational]     " + relFile.getPath)
+    graph.write(relFile)
+    graph.close
   }
 
   def importDocument(a: Archive, dpath: DPath): Unit = {
@@ -155,17 +170,40 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
     * @param bt information about the input document and error reporting
     * @param index a continuation function to be called on every generated document
     */
-  def importDocument(bt: BuildTask, index: Document => Unit): BuildResult
+  def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult
 
   def buildFile(bf: BuildTask): BuildResult = {
-    importDocument(bf, doc => indexDocument(bf.archive, doc))
+    val sourcefile = bf.archive.root.relativize(bf.inFile).toString.split('/').foldLeft(bf.archive.narrationBase)((p, s) => p / s)
+    val graph = controller.depstore.newGraph(sourcefile)
+    import info.kwarc.mmt.api.ontology.RDFImplicits._
+    graph.add(ULO.file(sourcefile))
+    graph.add(ULO.contains(RDFStore.archive(bf.archive.id), sourcefile))
+    graph.add(ULO.last_checked_at(sourcefile,System.nanoTime()))
+    val ret = importDocument(bf, doc => {
+      graph.add(ULO.contains(sourcefile,doc.path))
+      indexDocument(bf.archive, doc,graph)
+    }, rel => graph.add(rel))
+    val relFile = (bf.archive / relational / bf.inPath).setExtension(RDFStore.fileFormat._1)
+    log("[  -> relational]     " + relFile.getPath)
+    graph.write(relFile)
+    graph.close
+    ret
   }
 
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
+    import info.kwarc.mmt.api.ontology.RDFImplicits._
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
-    writeToRel(doc, bd.archive / relational / inPathFile)
+    val graph = controller.depstore.newGraph(doc.path.uri)
+    graph.add(ULO.folder(doc.path.uri))
+    graph.add(ULO.contains(RDFStore.archive(bd.archive.id),doc.path.uri))
+    graph.add(ULO.last_checked_at(doc.path.uri, System.nanoTime()))
+    writeToRel(doc,graph)
+    val relFile = (bd.archive / relational / inPathFile).setExtension(RDFStore.fileFormat._1)
+    log("[  -> relational]     " + relFile.getPath)
+    graph.write(relFile)
+    graph.close
     BuildResult.empty
   }
 
@@ -186,19 +224,22 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
         val cPath = Archive.MMTPathToContentPath(mp)
         val cFile = Compress.name(a / content / cPath)
         delete(cFile)
-        delete((a / relational / cPath).setExtension("rel"))
+        controller.depstore.clearGraph(cPath.foldLeft(a.narrationBase)((p, s) => p / s))
+        delete((a / relational / cPath).setExtension(RDFStore.fileFormat._1))
       }
     } catch {
       case e: Exception =>
         report(LocalError("error, could not clean content of " + narrFile).setCausedBy(e))
     }
-    delete((a / relational / narrPath).setExtension("rel"))
+    controller.depstore.clearGraph(narrPath.foldLeft(a.narrationBase)((p, s) => p / s))
+    delete((a / relational / narrPath).setExtension(RDFStore.fileFormat._1))
     super.cleanFile(a, curr)
   }
 
   override def cleanDir(a: Archive, curr: Current): Unit = {
     val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
-    delete((a / relational / inPathFile).setExtension("rel"))
+    controller.depstore.clearGraph(inPathFile.foldLeft(a.narrationBase)((p, s) => p / s))
+    delete((a / relational / inPathFile).setExtension(RDFStore.fileFormat._1))
   }
 
 
@@ -245,7 +286,7 @@ class OMDocImporter extends Importer {
 
   def inExts = List("omdoc")
 
-  def importDocument(bf: BuildTask, seCont: Document => Unit) = {
+  def importDocument(bf: BuildTask, seCont: Document => Unit,rel:ULOStatement => Unit) = {
     val ps = ParsingStream.fromFile(bf.inFile, Some(bf.narrationDPath), Some(bf.archive.namespaceMap))
     val doc = controller.read(ps, interpret = false)(bf.errorCont)
     seCont(doc)
