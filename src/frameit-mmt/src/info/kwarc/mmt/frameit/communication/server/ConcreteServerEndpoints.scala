@@ -59,10 +59,12 @@ object ConcreteServerEndpoints extends ServerEndpoints {
       endpoint.transformOutput(_.map(_.withCharset(StandardCharsets.UTF_8)))
     }
 
-    Bootstrap
+    Bootstrap[IO]
       .serve[Application.Json](asUTF8(getJSONEndpointsForState(state)))
       .serve[Text.Plain](asUTF8(getPlaintextEndpointsForState(state)))
-      .compile
+    //  .compile
+    // todo: see https://github.com/finagle/finch/issues/1630
+    ???
   }
 
   // ENDPOINTS (all private functions)

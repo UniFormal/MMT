@@ -76,7 +76,9 @@ trait ServerEndpoints extends Endpoint.Module[IO] {
   protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO]
 
   def getServiceForState(state: ServerState): Service[Request, Response] = {
-    Endpoint.toService(filters(getCompiledOverallEndpoint(state)))
+    // Endpoint.toService(filters(getCompiledOverallEndpoint(state)))
+    // TODO: see https://github.com/finagle/finch/issues/1630
+    ???
   }
 
   private def filters = Function.chain(Seq(exceptionLogging, logging))
@@ -165,7 +167,7 @@ private[server] object ServerErrorHandler {
   }
 
   implicit val encodeException: Encoder[Exception] = Encoder.instance({
-    case e: io.finch.Errors => encodeErrorList(e.errors.toList)
+    case e: io.finch.Errors => encodeErrorList(e.errors.toNonEmptyList.toList)
     case e: io.finch.Error =>
       e.getCause match {
         case e: io.circe.Errors => encodeErrorList(e.errors.toList)
