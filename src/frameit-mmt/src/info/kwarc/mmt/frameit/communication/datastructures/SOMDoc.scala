@@ -72,7 +72,8 @@ object SOMDoc {
   @ConfiguredJsonCodec
   case class SVariable(name: String) extends STerm
 
-  // see Codecs.SOMDocCodecs for the custom JSON codec
+  // no @ConfiguredJsonCodec here!
+  // see Codecs.SOMDocCodecs for the custom JSON codec (an implicit val variable)
   case class SFunction(params: List[(String, STerm)], body: STerm) extends STerm
 
   @ConfiguredJsonCodec

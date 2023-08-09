@@ -1,5 +1,8 @@
 package info.kwarc.mmt.frameit.communication.server
 
+import cats.effect.std.CountDownLatch
+import cats.effect.{ExitCode, IO, IOApp}
+
 import java.net.InetSocketAddress
 import com.twitter.finagle.Http
 import com.twitter.server.TwitterServer
@@ -10,60 +13,29 @@ import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.{SituationSpace, SituationTheory, StandardContentValidator}
+import io.finch.EndpointModule
 
-object Server extends TwitterServer {
-  override def failfastOnFlagsNotParsed: Boolean = true
+object Server extends IOApp /*with TwitterServer with EndpointModule[IO]*/ {
+  /*override val failfastOnFlagsNotParsed: Boolean = true
 
   private val debug = flag("debug", false, "Server in debug mode?")
   private val bindAddress = flag("bind", new InetSocketAddress(8080), "Bind address")
   private val archiveRoot = flag("archive-root", "", "Path to archive root (preferably without spaces), e.g. to a clone of <https://github.com/UFrameIT/archives>")
+*/
 
-  def main(): Unit = {
+  def archiveRoot(): String = "C:/Users/nroux/Desktop/kwarc/mmt-archives"
+
+  def bindAddress(): String = ":8085"
+
+  def debug(): Boolean = true
+  override def run(args: List[String]): IO[ExitCode] = {
     if (debug()) {
       println("Server started in debugging mode.")
     }
 
     val state = initServerState(File(archiveRoot()))
-    val restService = ConcreteServerEndpoints.getServiceForState(state)
-    val server = Http.serve(bindAddress(), restService)
-    onExit {
-      server.close()
-    }
 
-    // Hack to run a dummy request to warm-up all MMT API caches and the JVM
-    //
-    // This reduces the time for a subsequent (user-initiated) request of /scroll/listall
-    // by up to 9 seconds.
-    //
-    // todo: warm-up blocks requests, see also https://finagle.github.io/finch/best-practices.html#do-not-block-an-endpoint.
-
-    // no warm-up currently
-    /*new Thread {
-      // remember to not throw exceptions in run(), but to print stack traces and [[System.exit]]
-      // otherwise, the exceptions could get swallowed in this thread and never touch the surface
-      override def run(): Unit = {
-        // perform one listAllRequests as warm-up
-        val listAllRequest = Input.get("/scroll/listall").request
-
-        restService.apply(listAllRequest)
-          .onFailure(throwable => {
-            throwable.printStackTrace()
-            System.exit(1)
-          })
-          .onSuccess(response => {
-            if (response.status.code == 200) {
-              println("Warm up completed.")
-            } else {
-              new Exception(s"Warm-up request failed with code ${response.status.code}. Response was: ${response}")
-                .printStackTrace()
-
-              System.exit(1)
-            }
-          })
-      }
-    }.run() */
-
-    Await.ready(server)
+    ConcreteServerEndpoints.createServer(state, bindAddress()).useForever.as(ExitCode.Success)
   }
 
   def initServerState(archiveRoot: File): ServerState = {
@@ -98,3 +70,38 @@ object Server extends TwitterServer {
     }
   }
 }
+
+/*
+// Hack to run a dummy request to warm-up all MMT API caches and the JVM
+      //
+      // This reduces the time for a subsequent (user-initiated) request of /scroll/listall
+      // by up to 9 seconds.
+      //
+      // todo: warm-up blocks requests, see also https://finagle.github.io/finch/best-practices.html#do-not-block-an-endpoint.
+
+      // no warm-up currently
+      /*new Thread {
+        // remember to not throw exceptions in run(), but to print stack traces and [[System.exit]]
+        // otherwise, the exceptions could get swallowed in this thread and never touch the surface
+        override def run(): Unit = {
+          // perform one listAllRequests as warm-up
+          val listAllRequest = Input.get("/scroll/listall").request
+
+          restService.apply(listAllRequest)
+            .onFailure(throwable => {
+              throwable.printStackTrace()
+              System.exit(1)
+            })
+            .onSuccess(response => {
+              if (response.status.code == 200) {
+                println("Warm up completed.")
+              } else {
+                new Exception(s"Warm-up request failed with code ${response.status.code}. Response was: ${response}")
+                  .printStackTrace()
+
+                System.exit(1)
+              }
+            })
+        }
+      }.run()
+ */ */

@@ -1,7 +1,10 @@
 package info.kwarc.mmt.frameit.communication.server
 
 // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
+import cats.effect
 import cats.effect.IO
+import com.twitter.finagle.{ListeningServer, Service}
+import com.twitter.finagle.http.{Request, Response}
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
@@ -54,7 +57,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     */
   private def getPlaintextEndpointsForState(state: ServerState) = printSituationTheory(state)
 
-  override protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO] = {
+  override def createServer(state: ServerState, address: String): effect.Resource[IO, ListeningServer] = {
     def asUTF8[T](endpoint: Endpoint[IO, T]): Endpoint[IO, T] = {
       endpoint.transformOutput(_.map(_.withCharset(StandardCharsets.UTF_8)))
     }
@@ -62,9 +65,8 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Bootstrap[IO]
       .serve[Application.Json](asUTF8(getJSONEndpointsForState(state)))
       .serve[Text.Plain](asUTF8(getPlaintextEndpointsForState(state)))
-    //  .compile
-    // todo: see https://github.com/finagle/finch/issues/1630
-    ???
+      .middleware(filters)
+      .listen(address)
   }
 
   // ENDPOINTS (all private functions)

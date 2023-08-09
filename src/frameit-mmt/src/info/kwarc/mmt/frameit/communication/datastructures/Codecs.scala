@@ -93,7 +93,7 @@ private[communication] object Codecs {
         classOf[SInteger] -> "OMI",
         classOf[SRecArg] -> "RECARG",
         classOf[SVariable] -> "VAR",
-        classOf[SFunction] -> "FUN",
+        // no mapping for SFunction because of custom codec below
         classOf[SFunctionType] -> "FUNTYPE",
         classOf[SRawOMDoc] -> "RAW"
       ))
@@ -115,7 +115,7 @@ private[communication] object Codecs {
 
     implicit val functionEncoder: Encoder[SFunction] = (f: SFunction) => {
       Json.obj(
-        ("kind", Json.fromString(somdocConfig.transformConstructorNames(classOf[SFunction].getSimpleName))),
+        ("kind", Json.fromString("FUN")),
         ("params", Json.arr(f.params.map {
           case (argname, argtp) => Json.obj(
             ("name", Json.fromString(argname)),
