@@ -73,9 +73,14 @@ trait ServerEndpoints extends Endpoint.Module[IO] {
   import ServerErrorHandler._
   // ^^^^^^^ END
 
-  protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO]
+  //protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO]
+  protected def getCompiledOverallEndpoint(state: LobbyState): Endpoint.Compiled[IO]
 
-  def getServiceForState(state: ServerState): Service[Request, Response] = {
+  //def getServiceForState(state: ServerState): Service[Request, Response] = {
+  //  Endpoint.toService(filters(getCompiledOverallEndpoint(state)))
+  //}
+
+  def getServiceForState(state: LobbyState): Service[Request, Response] = {
     Endpoint.toService(filters(getCompiledOverallEndpoint(state)))
   }
 

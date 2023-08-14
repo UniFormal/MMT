@@ -24,11 +24,13 @@ object Server extends TwitterServer {
     }
 
     val state = initServerState(File(archiveRoot()))
+
     val restService = ConcreteServerEndpoints.getServiceForState(state)
     val server = Http.serve(bindAddress(), restService)
     onExit {
       server.close()
     }
+
 
     // Hack to run a dummy request to warm-up all MMT API caches and the JVM
     //
@@ -63,10 +65,21 @@ object Server extends TwitterServer {
       }
     }.run() */
 
+
     Await.ready(server)
+
   }
 
-  def initServerState(archiveRoot: File): ServerState = {
+
+
+  def initServerState(archiveRoot: File): LobbyState = {
+
+    val state = new ServerState(archiveRoot, debug())
+    val lstate = state.initLobbyState_a()
+
+    lstate
+
+    /* to ServerState/LobbyState
     implicit val ctrl: Controller = new Controller()
     ctrl.report.addHandler(ConsoleHandler)
     ctrl.handleLine(s"log+ ${ServerState.logPrefix}")
@@ -96,5 +109,8 @@ object Server extends TwitterServer {
         errors.foreach(System.err.println)
         throw InvalidElement(state.situationSpace, "Initial situation space does not typecheck, see stderr output for errors.")
     }
+
+     */
   }
+
 }

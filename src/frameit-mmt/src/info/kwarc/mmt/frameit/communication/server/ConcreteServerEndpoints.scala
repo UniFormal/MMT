@@ -39,7 +39,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     * Since JSON is the default encoding in the frameit-mmt project, almost all endpoints should be aggregated by
     * this function. Only some debugging endpoints might go to [[getPlaintextEndpointsForState()]].
     */
-  private def getJSONEndpointsForState(state: ServerState) =
+  private def getJSONEndpointsForState(state: LobbyState) =
       addFact(state) :+: bulkaddFacts(state) :+: listFacts(state) :+: listAllScrolls(state) :+: listScrolls(state) :+:
       applyScroll(state) :+: dynamicScroll(state) :+:
       // meta/debug endpoints:
@@ -52,9 +52,9 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     * Since JSON is the default encoding in the frameit-mmt project, only some debugging endpoints should be
     * aggregated here.
     */
-  private def getPlaintextEndpointsForState(state: ServerState) = printSituationTheory(state)
+  private def getPlaintextEndpointsForState(state: LobbyState) = printSituationTheory(state)
 
-  override protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO] = {
+  override protected def getCompiledOverallEndpoint(state: LobbyState): Endpoint.Compiled[IO] = {
     def asUTF8[T](endpoint: Endpoint[IO, T]): Endpoint[IO, T] = {
       endpoint.transformOutput(_.map(_.withCharset(StandardCharsets.UTF_8)))
     }
@@ -76,29 +76,30 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Ok(()) // unreachable anyway, but needed for typechecking
   }
 
-  private def checkSituationSpace(state: ServerState): Endpoint[IO, List[api.Error]] = get(path("debug") :: path("space") :: path("check")) {
+  // ServerState to LobbyState
+  private def checkSituationSpace(state: LobbyState): Endpoint[IO, List[api.Error]] = get(path("debug") :: path("space") :: path("check")) {
     Ok(state.check())
   }
 
-  private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("space") :: path("print")) {
+  private def printSituationTheory(state: LobbyState): Endpoint[IO, String] = get(path("debug") :: path("space") :: path("print")) {
     Ok(state.presenter.asString(state.situationSpace))
   }
   // ---------------------------------------
 
   // REAL ENDPOINTS FOR USE BY GAME ENGINE
   // --------------------------------------- (up to the end of the file)
-  private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
+  private def buildArchiveLight(state: LobbyState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls")
     Ok(())
   }
 
-  private def buildArchive(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build")) {
+  private def buildArchive(state: LobbyState): Endpoint[IO, Unit] = post(path("archive") :: path("build")) {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc")
 
     Ok(())
   }
 
-  private def reloadArchive(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("reload")) {
+  private def reloadArchive(state: LobbyState): Endpoint[IO, Unit] = post(path("archive") :: path("reload")) {
     state.ctrl.backend.getArchive(FrameWorld.archiveID).map(frameWorldArchive => {
       val root = frameWorldArchive.root
 
@@ -109,7 +110,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     }).getOrElse(NotFound(new Exception("MMT backend did not know FrameWorld archive by ID, but upon server start it did apparently (otherwise we would have aborted there). Something is inconsistent.")))
   }
 
-  private def addFact_(state: ServerState, fact: SFact): Either[FactValidationException, FactReference] = {
+  private def addFact_(state: LobbyState, fact: SFact): Either[FactValidationException, FactReference] = {
     val factConstant = fact.toFinalConstant(state.nextFactPath())
 
     def makeException(errors: List[api.Error]): FactValidationException = {
@@ -141,21 +142,21 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     }
   }
 
-  private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) { (fact: SFact) => {
+  private def addFact(state: LobbyState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) { (fact: SFact) => {
     addFact_(state, fact) match {
       case Left(exception) => NotAcceptable(exception)
       case Right(factRef) => Ok(factRef)
     }
   }}
 
-  private def bulkaddFacts(state: ServerState): Endpoint[IO, List[(Option[FactReference], String)]] = post(path("fact") :: path("bulkadd") :: jsonBody[List[SFact]]) { (facts: List[SFact]) => {
+  private def bulkaddFacts(state: LobbyState): Endpoint[IO, List[(Option[FactReference], String)]] = post(path("fact") :: path("bulkadd") :: jsonBody[List[SFact]]) { (facts: List[SFact]) => {
     Ok(facts.map(addFact_(state, _)).map {
       case Left(exception) => (None, exception.toString)
       case Right(factRef) => (Some(factRef), "")
     })
   }}
 
-  private def listFacts(state: ServerState): Endpoint[IO, List[SFact]] = get(path("fact") :: path("list")) {
+  private def listFacts(state: LobbyState): Endpoint[IO, List[SFact]] = get(path("fact") :: path("list")) {
     Ok(
       Fact
         .findAllIn(state.situationTheory, recurseOnInclusions = true)(state.ctrl)
@@ -163,19 +164,19 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     )
   }
 
-  private def listAllScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("listall")) {
+  private def listAllScrolls(state: LobbyState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("listall")) {
     Ok(Scroll.findAll()(state.ctrl).map(_.renderSimple()(state.ctrl)))
   }
 
-  private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
+  private def listScrolls(state: LobbyState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
     Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.renderSimple()(state.ctrl)))
   }
 
-  private def applyScroll(state: ServerState): Endpoint[IO, SScrollApplicationResult] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+  private def applyScroll(state: LobbyState): Endpoint[IO, SScrollApplicationResult] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
     Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
       case Some(scroll) =>
         implicit val ctrl: Controller = state.ctrl
-        implicit val _state: ServerState = state
+        implicit val _state: LobbyState = state
 
         val (scrollView, scrollViewPaths, errors) = prepScrollApplication(scrollApp)
 
@@ -239,7 +240,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
         NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
     }}
 
-  private def prepScrollApplication(scrollApp: SScrollApplication)(implicit state: ServerState): (View, List[Path], List[SCheckingError]) = {
+  private def prepScrollApplication(scrollApp: SScrollApplication)(implicit state: LobbyState): (View, List[Path], List[SCheckingError]) = {
     // the scroll view and all paths (for later deletion from [[Controller]])
     val (scrollView, scrollViewPaths) = {
       val scrollViewName = state.nextScrollViewName()
@@ -259,7 +260,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     (scrollView, scrollViewPaths, errors)
   }
 
-  private def getCompletions(scrollApp: SScrollApplication)(implicit state: ServerState): List[SScrollAssignments] = {
+  private def getCompletions(scrollApp: SScrollApplication)(implicit state: LobbyState): List[SScrollAssignments] = {
     val canonicalCompletion = ViewCompletion.closeGaps(
       scrollApp.assignments.toMMTList,
       state.situationTheory.meta
@@ -272,11 +273,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     }
   }
 
-  private def dynamicScroll(state: ServerState): Endpoint[IO, SDynamicScrollInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+  private def dynamicScroll(state: LobbyState): Endpoint[IO, SDynamicScrollInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
     Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
       case Some(scroll) =>
         implicit val ctrl: Controller = state.ctrl
-        implicit val _state: ServerState = state
+        implicit val _state: LobbyState = state
 
         val (_, scrollViewPaths, errors) = prepScrollApplication(scrollApp)
         val completions = getCompletions(scrollApp)
