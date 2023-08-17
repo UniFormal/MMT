@@ -183,13 +183,14 @@ lazy val src = (project in file(".")).
     // add the test folder to the test sources
     // but don't actually run any of them
     Test / scalaSource := baseDirectory.value / "test",
-    test := {}
-  ),
-  libraryDependencySchemes ++= Seq(
-    // see https://github.com/circe/circe-iteratee/issues/261
-    "io.circe" %% "circe-jawn" % VersionScheme.Always,
-    // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
-    "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
+    test := {},
+
+    libraryDependencySchemes ++= Seq(
+      // see https://github.com/circe/circe-iteratee/issues/261
+      "io.circe" %% "circe-jawn" % VersionScheme.Always,
+      // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
+      "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
+    )
   )
 
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
@@ -213,13 +214,14 @@ lazy val mmt = (project in file("mmt")).
     },
     Compile / mainClass := Some(mmtMainClass),
     run / connectInput := true,
-    assembly / mainClass := Some(mmtMainClass)
-  ),
-  libraryDependencySchemes ++= Seq(
-    // see https://github.com/circe/circe-iteratee/issues/261
-    "io.circe" %% "circe-jawn" % VersionScheme.Always,
-    // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
-    "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
+    assembly / mainClass := Some(mmtMainClass),
+
+    libraryDependencySchemes ++= Seq(
+      // see https://github.com/circe/circe-iteratee/issues/261
+      "io.circe" %% "circe-jawn" % VersionScheme.Always,
+      // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
+      "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
+    )
   )
 
 
