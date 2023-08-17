@@ -143,7 +143,14 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 
   install := {},
   deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
-  testSetup := utils.value.testSetup
+  testSetup := utils.value.testSetup,
+
+  libraryDependencySchemes ++= Seq(
+    // see https://github.com/circe/circe-iteratee/issues/261
+    "io.circe" %% "circe-jawn" % VersionScheme.Always,
+    // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
+    "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
+  )
 )
 
 // =================================
