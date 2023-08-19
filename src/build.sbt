@@ -143,14 +143,7 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 
   install := {},
   deploy := Utils.deployPackage("main/" + nameStr + ".jar").value,
-  testSetup := utils.value.testSetup,
-
-  libraryDependencySchemes ++= Seq(
-    // see https://github.com/circe/circe-iteratee/issues/261
-    "io.circe" %% "circe-jawn" % VersionScheme.Always,
-    // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
-    "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
-  )
+  testSetup := utils.value.testSetup
 )
 
 // =================================
@@ -185,6 +178,10 @@ lazy val src = (project in file(".")).
     Test / scalaSource := baseDirectory.value / "test",
     test := {},
 
+    // This silences a dependency semver version conflict from the frameit project.
+    // It is necessary to have this silencing mechanism both in the frameit project
+    // and here in the super project (I guess because the version conflict somehow
+    // bubbles up?)
     libraryDependencySchemes ++= Seq(
       // see https://github.com/circe/circe-iteratee/issues/261
       "io.circe" %% "circe-jawn" % VersionScheme.Always,
@@ -214,14 +211,7 @@ lazy val mmt = (project in file("mmt")).
     },
     Compile / mainClass := Some(mmtMainClass),
     run / connectInput := true,
-    assembly / mainClass := Some(mmtMainClass),
-
-    libraryDependencySchemes ++= Seq(
-      // see https://github.com/circe/circe-iteratee/issues/261
-      "io.circe" %% "circe-jawn" % VersionScheme.Always,
-      // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
-      "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
-    )
+    assembly / mainClass := Some(mmtMainClass)
   )
 
 
@@ -464,6 +454,9 @@ lazy val frameit = (project in file("frameit-mmt"))
       //  https://github.com/circe/circe-generic-extras/issues/279)
     ),
 
+    // This silences a dependency semver version conflict.
+    // It is necessary to have this silencing mechanism both here and in the super project src
+    // (I guess because the version conflict somehow bubbles up?)
     libraryDependencySchemes ++= Seq(
       // see https://github.com/circe/circe-iteratee/issues/261
       "io.circe" %% "circe-jawn" % VersionScheme.Always,
@@ -485,7 +478,6 @@ lazy val frameit = (project in file("frameit-mmt"))
     Compile / mainClass  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
     assembly / mainClass := Some("info.kwarc.mmt.frameit.communication.server.Server")
   )
-	
 
 // plugin for mathscheme-related functionality. Obsolete
 lazy val mathscheme = (project in file("mmt-mathscheme")).
