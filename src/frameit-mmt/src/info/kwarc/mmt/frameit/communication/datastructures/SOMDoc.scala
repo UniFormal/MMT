@@ -1,15 +1,23 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{PosOrIntLiterals, RealLiterals, StringLiterals}
-import info.kwarc.mmt.api.GlobalName
-import info.kwarc.mmt.api.objects.{OMA, OML, OMS, Term}
+import info.kwarc.mmt.api.{GlobalName, ParseError}
+import info.kwarc.mmt.api.objects.{OMA, OML, OMS, OMV, Term}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
 import info.kwarc.mmt.odk.LFX.{Product, Tuple}
 import io.circe.Json
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.syntax.EncoderOps
 
+/**
+  * Simplified OMDoc - a subset of OMDoc to represent formal knowledge just enough for FrameIT clients and use cases.
+  *
+  * [[STerm]] is the base class of all SOMDoc terms. Using [[Codecs]] and the [[io.circe]] JSON library (and its
+  * Scala macros), any such term can be converted to and from JSON.
+  * The class hierarchy of [[STerm]] and the JSON codecs are built such that the JSON representation is almost a
+  * subset of the [[https://omjson.kwarc.info/ OpenMath-JSON standard]].
+  */
 object SOMDoc {
 
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
@@ -18,11 +26,28 @@ object SOMDoc {
   import Codecs.SOMDocCodecs.config._
   // ^^^^^^^ END: DO NOT REMOVE
 
-  // IMPORTANT: do not naively rename parameter names of the following case classes!
-  //            That would change the derived JSON encoders and decoders, too!
   //
-  //            Instead rename and add io.circe's annotation to re-rename back to how the JSON should be.
 
+  /**
+    * Base class of every simplified OMDoc-represented term.
+    *
+    * The class hierarchy in conjunction with [[Codecs]] and the [[io.circe]] JSON library is intended to yield
+    * a JSON representation that is almost a subset to the [[https://omjson.kwarc.info/ OpenMath-JSON standard]].
+    * An important deviation is for the case of binders: we only support LF functions, function types, and lambdas;
+    * no other binder.
+    *
+    * == IMPORTANT NOTICE WHEN ADDING OR MODIFYING STerm or any of its subclasses ==
+    *
+    * Every field name of every [[STerm]] (sub)class carries meaning and gets used when io.circe
+    * (via Scala macro magic) derives corresponding JSON encoders and decoders, i.e., determines the JSON
+    * representation.
+    * Do not naively rename any field names!
+    * If you must, instead rename and add io.circe's annotation to re-rename back to how the JSON should be.
+    *
+    * The name of STerm and its subclasses on the other hand do not carry meaning. You can simply rename them.
+    *
+    * When you add a new subclass of [[STerm]], be sure to add a corresponding case in [[Codecs.SOMDocCodecs]].
+    */
   @ConfiguredJsonCodec
   sealed trait STerm
 
@@ -43,6 +68,16 @@ object SOMDoc {
 
   @ConfiguredJsonCodec
   case class SRecArg(name: String, value: STerm) extends STerm
+
+  @ConfiguredJsonCodec
+  case class SVariable(name: String) extends STerm
+
+  // no @ConfiguredJsonCodec here!
+  // see Codecs.SOMDocCodecs for the custom JSON codec (an implicit val variable)
+  case class SFunction(params: List[(String, STerm)], body: STerm) extends STerm
+
+  @ConfiguredJsonCodec
+  case class SFunctionType(params: List[STerm], ret: STerm) extends STerm
 
   /**
     * OMDoc terms that could not be represented with other SOMDoc case classes.
@@ -82,6 +117,12 @@ object SOMDoc {
 
       // for everything not from LFX, only support LF function application
       case ApplySpine(fun, args) => SOMA(encode(fun), args.map(encode))
+      case FunTerm(params, body) if params.nonEmpty =>
+        // TODO: this might swallow named parameters
+        SFunction(params.map { case (name, tp) => (name.toString, encode(tp)) }, encode(body))
+      case FunType(params, ret) if params.nonEmpty =>
+        // TODO: this might swallow named parameters
+        SFunctionType(params.map(_._2).map(encode), encode(ret))
 
       case PosOrIntLiterals(value) =>
         if (value.isValidInt) {
@@ -95,6 +136,8 @@ object SOMDoc {
 
       case OML(name, _, Some(value), _, _) =>
         SRecArg(name.toString, encode(value))
+
+      case OMV(x) => SVariable(x.toString)
 
       case _ =>
         System.err.println(s"encountered term for which there is no SimpleOMDoc analogon: `$tm``")
@@ -112,6 +155,13 @@ object SOMDoc {
       case SInteger(value) => PosOrIntLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
+
+      // The following cases so far would never be transmitted from the game engine
+      // to MMT, thus we don't handle them.
+      case SFunction(_, _) | SFunctionType(_, _) | SVariable(_) |
+            SRecArg(_, _) =>
+        throw ParseError("Received SOMDoc construct from game engine that we had chosen not to handle (decode) so far.")
+
       case SRawOMDoc(rawXml) => ???
     }
   }

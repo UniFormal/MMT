@@ -3,10 +3,10 @@ package info.kwarc.mmt.aldor
 import info.kwarc.mmt.api._
 import utils._
 import documents._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import modules._
 import symbols._
 import objects._
-
 import info.kwarc.mmt.lf._
 
 object Aldor {
@@ -31,7 +31,7 @@ class AldorImporter extends archives.Importer {
   // This means we must never translate two different libraries at the same time.
   private var contentBase: DPath = null
   
-  def importDocument(bt: archives.BuildTask, index: Document => Unit) = {
+  def importDocument(bt: archives.BuildTask, index: Document => Unit,rel:ULOStatement => Unit) = {
     if (nameMap.nonEmpty) firstPass = false
     val sexp = SExpression.parse(File.read(bt.inFile), false)
     val declsS = sexp.asList(0).asList

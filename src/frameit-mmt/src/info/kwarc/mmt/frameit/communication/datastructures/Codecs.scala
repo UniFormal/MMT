@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.utils.mmt
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SEquationSystemFact, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
-import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SRecArg, SString, STerm}
+import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SFunction, SFunctionType, SInteger, SOMA, SOMS, SRawOMDoc, SRecArg, SString, STerm, SVariable}
 import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -92,6 +92,9 @@ private[communication] object Codecs {
         classOf[SString] -> "OMSTR",
         classOf[SInteger] -> "OMI",
         classOf[SRecArg] -> "RECARG",
+        classOf[SVariable] -> "VAR",
+        // no mapping for SFunction because of custom codec below
+        classOf[SFunctionType] -> "FUNTYPE",
         classOf[SRawOMDoc] -> "RAW"
       ))
     }
@@ -108,6 +111,19 @@ private[communication] object Codecs {
 
     implicit val termEncoder: Encoder[Term] = (tm: Term) => {
       stermEncoder(OMDocBridge.encode(tm))
+    }
+
+    implicit val functionEncoder: Encoder[SFunction] = (f: SFunction) => {
+      Json.obj(
+        ("kind", Json.fromString("FUN")),
+        ("params", Json.arr(f.params.map {
+          case (argname, argtp) => Json.obj(
+            ("name", Json.fromString(argname)),
+            ("tp", stermEncoder(argtp))
+          )
+        } : _*)),
+        ("body", stermEncoder(f.body))
+      )
     }
   }
 

@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import documents.{Document, MRef}
 import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.ontology.{Includes, Transitive}
+import info.kwarc.mmt.api.ontology.{Includes, RelationalElement, Transitive, ULOStatement}
 import symbols.{Declaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.Main.makeParser
 import info.kwarc.mmt.mizar.syntax._
@@ -65,7 +65,7 @@ class MizarXMLImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
   def inExts = List("esx")
 
-  def processDependency(dependencyAid: String, bf: archives.BuildTask, index: documents.Document => Unit): Unit = {
+  def processDependency(dependencyAid: String, bf: archives.BuildTask, index: documents.Document => Unit,rel:ULOStatement => Unit): Unit = {
     def getBf (aid: String): archives.BuildTask = {
       val oldAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
       val ext = bf.inFile.getExtension map ("."+_) getOrElse ""
@@ -80,12 +80,12 @@ class MizarXMLImporter extends archives.Importer {
       )
       val currentData = getArticleData
       resetArticleData
-      importDocument(getBf(dependencyAid), index)
+      importDocument(getBf(dependencyAid), index,rel)
       addBuildArticles (currentTheoryPath)
       setArticleData(currentData)
     }
   }
-  def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
+  def importDocument(bf: archives.BuildTask, index: documents.Document => Unit,rel:ULOStatement => Unit): archives.BuildResult = {
     articleData.currentAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
     outputBase = bf.narrationDPath.^!
     TranslationController.controller = controller
@@ -99,7 +99,7 @@ class MizarXMLImporter extends archives.Importer {
       globalParsingTime += parsingTime
 
       articleData.resetCurrenTranslatingTimeBegin
-      val doc = translate(text_Proper, bf, processDependency(_, bf, index))
+      val doc = translate(text_Proper, bf, processDependency(_, bf, index,rel))
       articleData.addCurrentToGlobalTranslatingTime
 
       index(doc)

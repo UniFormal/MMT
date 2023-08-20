@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Importer, Redirectab
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.Logger
 import info.kwarc.mmt.api.objects.{OMS, Term}
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf.Apply
@@ -68,7 +69,7 @@ class GAPJSONImporter extends Importer {
   private var all : List[ParsedObject] = Nil
   private var allmethods : List[ParsedMethod] = Nil
 
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+  def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val d = bf.inFile.name
     val e = try {
       log("reading...")

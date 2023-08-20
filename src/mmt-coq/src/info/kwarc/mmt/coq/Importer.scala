@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMID, OML, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.{File, URI, xml}
 import info.kwarc.mmt.coq.coqxml.{CoqEntry, CoqXml, SupXML, TranslationState}
@@ -14,7 +15,7 @@ import info.kwarc.mmt.lf.ApplySpine
 
 import scala.collection.mutable
 import scala.util.Try
-import scala.xml.{Node}
+import scala.xml.Node
 import scala.xml.parsing.XhtmlParser
 
 
@@ -30,7 +31,7 @@ class Importer extends archives.Importer {
 
   // private val parseXML = syntax.makeParser
 
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+  def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     log("Reading " + bf.inFile)
     val es = try {
       val parser = new Parser(bf.inFile)

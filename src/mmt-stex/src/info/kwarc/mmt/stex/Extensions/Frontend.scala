@@ -15,12 +15,17 @@ trait FrontendExtension { this : STeXServer =>
         } else Nil
     }).flatten
   }
-  private def parseJson(s:String,a:Archive) : List[JSONObject] = {
+
+  private def parseJson(s:String,a:Archive) : List[JSONObject] = try {
     JSON.parse(s) match {
       case arr : JSONArray => toList(arr).collect{case jo:JSONObject => doObj(jo,a)}
       case o : JSONObject => List(doObj(o,a))
       case _ => Nil
     }
+  } catch {
+    case e : Exception =>
+      log(e.getMessage)
+      Nil
   }
   private def doObj(j:JSONObject,a:Archive) : JSONObject = {
     JSONObject((JSONString("archive"),JSONString(a.id)) :: (j.map.map {

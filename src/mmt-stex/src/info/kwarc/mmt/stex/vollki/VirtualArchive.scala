@@ -196,7 +196,7 @@ class JupyterBookArchive(val controller:Controller,val properties: mutable.Map[S
     try {
       htmap.getOrElseUpdate(f.toString, {
         val content = downloadAsString(f.toString.replace(".md",".html"))
-        val html = HTMLParser(content)(new SemanticState(server,rules,eh,DPath(f)) {
+        val html = HTMLParser(content)(new SemanticState(server,rules,eh,DPath(f),_ => ()) { // TODO add relational
           override def add(se: StructuralElement): Unit = {
             super.add(se)
             se match {

@@ -1,16 +1,17 @@
 package info.kwarc.mmt.buildserver
 
-//import better.files
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.archives.{Archive, Build, BuildDependency, BuildFailure, BuildManager, BuildQueue, BuildResult, BuildSuccess, BuildTarget, Dependency, Dim, DocumentDependency, LogicalDependency, MissingDependency, PhysicalDependency, QueuedTask, RedirectableDimension, ResourceDependency, TraversingBuildTarget, narration, source}
+import info.kwarc.mmt.api.archives.{Archive, Build, BuildDependency, BuildFailure, BuildManager, BuildQueue, BuildResult, BuildSuccess, BuildTarget, BuildTask, Dependency, Dim, DocumentDependency, LogicalDependency, MissingDependency, PhysicalDependency, QueuedTask, RedirectableDimension, ResourceDependency, TraversingBuildTarget, narration, source}
 import info.kwarc.mmt.api.frontend.actions.{ActionCompanion, ActionState, ResponsiveAction}
 import info.kwarc.mmt.api.frontend.{Extension, ExtensionConf, NotFound}
-import info.kwarc.mmt.api.utils
+import info.kwarc.mmt.api.{ErrorContainer, utils}
 import info.kwarc.mmt.api.utils.JSON.JSONError
 import info.kwarc.mmt.api.utils.JSONObject.toList
 import info.kwarc.mmt.api.utils.{File, Git, JSON, JSONArray, JSONBoolean, JSONInt, JSONNull, JSONObject, JSONString, MMTSystem, MyList}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.FullsTeX
+
+import scala.util.Try
 //import io.methvin.better.files.RecursiveFileMonitor
 
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -30,11 +31,10 @@ object MMTBuildConfig extends BuildServerConfig {
 
 }
 
-
 class BuildServer extends ServerExtension("buildserver") with BuildManager {
   override def logPrefix: String = "buildserver"
   def configs = controller.extman.get(classOf[BuildServerConfig])
-  //protected lazy val git: Git = utils.OS.git
+
   object State {
     /** the queue */
     private[BuildServer] var toqueue: List[QueuedTask] = Nil
@@ -103,11 +103,14 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     case List("targets") =>
       // list all targets
       val targets = "mmt-omdoc" :: controller.getConfig.getEntries(classOf[ExtensionConf]).collect {
-        case ExtensionConf(key, cls, args) if classOf[BuildTarget].isAssignableFrom(Class.forName(cls)) => key
+        case ExtensionConf(key, cls, args) if Try(classOf[BuildTarget].isAssignableFrom(Class.forName(cls))).toOption.contains(true) => key
       }
       ServerResponse.JsonResponse(JSONArray(targets.map(JSONString): _*))
     case List("archives") =>
-      val as = controller.backend.getArchives.map(a => a.archString)
+      val as = controller.backend.getArchives.flatMap{a =>
+        val segs = a.id.split('/')
+        segs.inits.map(_.mkString("/")).toList
+      }.distinct.sorted
       ServerResponse.JsonResponse(JSONArray(as.map(JSONString): _*))
     case List("queue") =>
       ServerResponse.JsonResponse(getQueueInfo)
@@ -129,27 +132,35 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     val qSize = State.queue.size
     val iter = State.queue.iterator
     val num = 48
-    val firsts = (if (qSize > num + 12) iter.take(num) else iter).toList.map(_.toJson)
+    val firsts = (if (qSize > num + 12) iter.take(num) else iter).toList.map(e => JSONString(e.toJStringSimple))
     val hasMore = iter.hasNext
     val rest = if (hasMore) firsts :+ JSONString("and " + (qSize - num) + " more ...") else firsts
-    val q = State.running.values.collect{case Some(qt) => qt}.map(q => JSONString("running: " + q.toJString)).toList ++ rest
+    val q = State.running.values.collect{case Some(qt) => qt}.map(q => JSONString("running: " + q.toJStringSimple)).toList ++ rest
     val bs = State.blocked.map(_.toJson)
-    val fs = (State.finished ::: State.failed).map {
+    val fs = State.finished.map {
       case (d,r) =>
         JSONObject("dependency" -> d.toJson, "result" -> r.toJson,
         "taskid" -> JSONInt(d.hashCode()))
     }
+    val errs = State.failed.map{
+      case (d,r) =>
+        JSONObject("dependency" -> d.toJson, "result" -> r.toJson,
+          "taskid" -> JSONInt(d.hashCode()),"errorls" -> JSONArray(d.errorStrings.map(ss =>
+            JSONObject("short" -> JSONString(ss._1),"long" -> JSONString(ss._2))):_*))
+    }
     JSONObject("count" -> JSONInt(qSize),
       "queue" -> JSONArray(q: _*),
       "blocked" -> JSONArray(bs: _*),
-      "finished" -> JSONArray(fs: _*))
+      "finished" -> JSONArray(fs: _*),
+      "errored" -> JSONArray(errs: _*)
+    )
 
   }
 
   override def addTasks(w: Build, qts: Iterable[QueuedTask]): Unit = qts.foreach {
     case q if q.task.isDir =>
-      q.forceRun
-    case q => State.addSafe(q)
+    case q =>
+      State.addSafe(q)
   }
 
   val buildserver = this
@@ -159,8 +170,8 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
     override def apply(): Unit = {
       //while(!ready) Thread.sleep(2000)
       val commits = State.synchronized {
-        State.failed = Nil
-        State.finished = Nil
+        //State.failed = Nil
+        //State.finished = Nil
         ids.flatMap { s =>
           controller.backend.getArchives.filter(_.id.startsWith(s)).map { a =>
             log("pulling " + a.id)
@@ -175,7 +186,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           commit.diffs.foreach {
             case Delete(p) =>
               log("Delete [" + a.archive.id + "] " + p)
-              FileDeps.delete(a.archive,a.archive.root / p)
+              //FileDeps.delete(a.archive,a.archive.root / p)
               None
             case c@(Change(_)|Add(_)) =>
               log("Update [" + a.archive.id + "] " + c.path)
@@ -191,12 +202,12 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           None
       }
     }
-    State.synchronized {
+    /*State.synchronized {
       for (elem <- State.failed) {
         State.toqueue ::= new QueuedTask(elem._1.originalTarget,elem._2,elem._1.task)
       }
-      State.failed = Nil
-    }
+      //State.failed = Nil
+    }*/
   }
 
   def ready : Boolean = State.synchronized {
@@ -223,7 +234,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
             if (State.toqueue.length == currlength) go = true
           }
         }
-        order
+        sortqueue
       }
     }
   }
@@ -233,6 +244,15 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
   }
 
   object FileDeps {
+    def init = {}
+    def clean(qt:QueuedTask) = {
+      qt.willProvide.foreach {
+        case PhysicalDependency(file) =>
+          file.delete()
+        case _ =>
+      }
+    }
+    /*
     val targets = mutable.HashMap.empty[Dependency,(TraversingBuildTarget,Archive,File)]
     class FileDeps(val a : Archive,val jsonfile : File) {
       val future = mutable.HashMap.empty[TraversingBuildTarget,mutable.HashSet[(TraversingBuildTarget,Archive,File)]]
@@ -369,44 +389,37 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         }
       }}
     }
-
+    */
   }
 
-  private def order = State.synchronized {
-    log("Sorting " + State.toqueue.length + " tasks")
+  private def sortqueue = State.synchronized {
+    val qts = new mutable.HashSet[QueuedTask]()
+    State.queue.dequeueAll(_ => true).foreach(qts += _)
+    State.toqueue.foreach(qts += _)
+    State.toqueue = Nil
+    log("Sorting " + qts.size + " tasks")
 
-    State.toqueue = State.queue.dequeueAll(_ => true).toList ::: State.toqueue
 
-    /*State.toqueue.foreach{ qt =>
-      FileDeps.getFutureCone(qt.task.archive,qt.task.inFile,qt.target).foreach {
-        case (bt, a, f) if State.toqueue.forall(q => q.target != bt || q.task.archive != a || q.task.inFile != f) =>
-          val task = bt.makeBuildTask(a, (a / source).relativize(f).toFilePath)
-          State.toqueue ::= new QueuedTask(bt, BuildResult.empty, task)
-        case _ =>
+    //val qts = (State.queue.dequeueAll(_ => true).toList ::: State.toqueue).toSet
+    val depsToTarget = mutable.HashMap.empty[Dependency, QueuedTask]
+
+    qts.foreach {qt =>
+      qt.server_done = false
+      qt.willProvide.foreach{d =>
+        depsToTarget(d) = qt
       }
-    }*/
-
-    var donedeps : List[Dependency] = Nil
-    var doneqts : List[QueuedTask] = Nil
-    def doQ(q : QueuedTask) : Unit = if (!doneqts.contains(q)) {
-      doneqts ::= q
-      val provides = FileDeps.getProvides(q.task.archive,q.task.inFile,q.target)
-      provides.foreach(_.foreach(donedeps ::= _))
-      provides.foreach(l => q.willProvide = l.collect{case dp:ResourceDependency => dp})
-      val deps = FileDeps.getDeps(q.task.archive,q.task.inFile,q.target)
-      q.neededDeps = deps.getOrElse(Nil)
-      provides.foreach(clean)
-      deps.foreach{_.foreach {
-        case d if !donedeps.contains(d) =>
-          FileDeps.targets.get(d).foreach(t => State.toqueue.filterNot(doneqts.contains).find{qt =>
-            qt.target == t._1 && qt.task.archive == t._2 && qt.task.inFile == t._3
-          }.foreach(doQ))
-        case _ =>
-      }}
+    }
+    def doQT(q: QueuedTask): Unit = if (!q.server_done) {
+      q.server_done = true
+      q.neededDeps.foreach { d =>
+        depsToTarget.get(d).foreach { qt =>
+          doQT(qt)
+        }
+      }
       State.queue.addOne(q)
     }
-    State.toqueue.foreach(doQ)
-    State.toqueue = Nil
+    qts.foreach(doQT)
+    log("Sorting Done")
   }
 
   def clean(toclean : List[Dependency]) = toclean.foreach {
@@ -430,7 +443,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         case NotFound(_,_) =>
       }
     case _ =>
-      println("Here!")
+      //println("Here!")
   }
   private case class BuildThread(num:Int) extends Thread {
     private def getNext(currents: List[QueuedTask]) : Option[QueuedTask] = {
@@ -492,7 +505,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
   private def doBuildResult(res : BuildResult,qt : QueuedTask,num:Int): Unit = State.synchronized {
     res match {
       case BuildSuccess(used, provided) =>
-        FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, used, provided)
+        //FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, used, provided)
         qt.neededDeps = used
         val needed = used.filter(g => State.blocked.exists(_.willProvide.contains(g)) || State.queue.exists(_.willProvide.contains(g)))
         if (needed.isEmpty || !qt.allowblocking) {
@@ -519,25 +532,25 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           log("(blocked) Missing dependencies: " + needed.mkString(", "))
           qt.missingDeps = needed
           qt.willProvide = provided
-          FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, used, provided)
+          //FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, used, provided)
           State.blocked ::= qt.target.onBlock(qt, res)
         } else {
           log("Missing dependencies and not allowed to block: " + needed.mkString(", "))
-          val oldprovides = FileDeps.getProvides(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
-          val olddeps = FileDeps.getDeps(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
-          FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, (used ::: olddeps).distinct, (provided ::: oldprovides).distinct)
+          //val oldprovides = FileDeps.getProvides(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
+          //val olddeps = FileDeps.getDeps(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
+          //FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, (used ::: olddeps).distinct, (provided ::: oldprovides).distinct)
           State.failed ::= (qt, res)
         }
       case BuildFailure(used, provided) =>
         log("Failed")
         qt.neededDeps = used
-        val oldprovides = FileDeps.getProvides(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
-        val olddeps = FileDeps.getDeps(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
+        //val oldprovides = FileDeps.getProvides(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
+        //val olddeps = FileDeps.getDeps(qt.task.archive, qt.task.inFile, qt.originalTarget).getOrElse(Nil)
 
-        FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, (used ::: olddeps).distinct, (provided ::: oldprovides).distinct)
-        val needed = (used ::: olddeps).filter(g => State.blocked.exists(_.willProvide.contains(g)) || State.queue.exists(_.willProvide.contains(g))).distinct
+        //FileDeps.update(qt.task.archive, qt.task.inFile, qt.originalTarget, (used ::: olddeps).distinct, (provided ::: oldprovides).distinct)
+        val needed = used.filter(g => State.blocked.exists(_.willProvide.contains(g)) || State.queue.exists(_.willProvide.contains(g))).distinct
         if (used.nonEmpty && needed.nonEmpty && qt.allowblocking) {
-          qt.willProvide = (provided ::: oldprovides).distinct.collect {case r : ResourceDependency => r}
+          qt.willProvide = provided.distinct.collect {case r : ResourceDependency => r}
           qt.missingDeps = needed
           log("blocked")
           State.blocked ::= qt.target.onBlock(qt,res)
@@ -545,7 +558,7 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
           State.failed ::= (qt,res)
         }
       case _ =>
-        println("Here!")
+        //println("Here!")
     }
     State.running(num) = None
   }

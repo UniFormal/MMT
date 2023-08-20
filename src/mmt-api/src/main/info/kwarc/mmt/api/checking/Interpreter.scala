@@ -5,7 +5,7 @@ import archives._
 import documents._
 import frontend._
 import modules._
-import ontology.{Declares, RelationExp}
+import ontology.{Declares, RelationExp, RelationalElement, ULOStatement}
 import parser._
 import utils._
 import objects._
@@ -47,7 +47,7 @@ abstract class Interpreter extends Importer {
   }
 
   /** creates a [[ParsingStream]] for the input file and interprets it */
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+  def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val (dPath,ps) = buildTaskToParsingStream(bf)
     apply(ps)(bf.errorCont)
     val doc = try {

@@ -31,7 +31,7 @@ abstract class ROArchive extends Storage with Logger {
 trait ArchiveLike extends ROArchive {
   val narrationBase : URI
   lazy val id = properties("id")
-  lazy val ns = properties.get("ns").map(s => Path.parse(
+  lazy val ns = properties.get("ns").orElse(properties.get("source-base")).map(s => Path.parse(
     s, //if (s.last == '/') s.dropRight(1) else s,
     NamespaceMap.empty))
 }
@@ -231,28 +231,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   }
 
   def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
-    log("Reading archive " + id)
-    if ((this / relational).exists) {
-      traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
-        log("in file " + inFile.name)
-        utils.File.ReadLineWise(inFile) { line =>
-          try {
-            val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
-            /* this made reading relational very inefficient; anyway a better way to load implicit moprhisms should be found 
-            re match {
-              case Relation(Includes, to: MPath, from: MPath) =>
-                controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
-              case Relation(HasMeta, thy: MPath, meta: MPath) =>
-                controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
-              case _ =>
-            }*/
-            controller.depstore += re
-          } catch { //TODO treat this as normal build target and report errors
-            case e : Error => log(e.getMessage)
-          }
-        }
-      }
-    }
+    controller.depstore.readArchive(this,in,controller,kd)
   }
 }
 
