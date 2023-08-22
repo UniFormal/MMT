@@ -792,12 +792,12 @@ object Socket {
       }
     }
     val controller = Run.controller
-    List("lsp"
+    /*List("lsp"
       , "lsp-stex"
       , "lsp-stex-server-methodcall"
       , "lsp-stex-socket"
       , "lsp-stex-server"
-      , "fullstex").foreach(s => controller.handleLine("log+ " + s))
+      , "fullstex").foreach(s => controller.handleLine("log+ " + s))*/
     controller.handleLine("log console")
     controller.handleLine("server on 8090")
     controller.extman.addExtension(lsp)

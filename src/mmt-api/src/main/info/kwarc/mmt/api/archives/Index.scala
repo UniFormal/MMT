@@ -173,7 +173,7 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
   def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult
 
   def buildFile(bf: BuildTask): BuildResult = {
-    val sourcefile = bf.archive.root.relativize(bf.inFile).toString.split('/').foldLeft(bf.archive.narrationBase)((p, s) => p / s)
+    val sourcefile = bf.archive.root.relativize(bf.inFile).toFilePath.foldLeft(bf.archive.narrationBase)((p, s) => p / s)
     val graph = controller.depstore.newGraph(sourcefile)
     import info.kwarc.mmt.api.ontology.RDFImplicits._
     graph.add(ULO.file(sourcefile))
