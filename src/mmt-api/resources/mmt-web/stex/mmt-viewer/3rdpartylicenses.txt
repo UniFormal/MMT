@@ -473,16 +473,6 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-@stex-react/api
-
-@stex-react/comments
-
-@stex-react/markdown
-
-@stex-react/mathjax
-
-@stex-react/react-utils
-
 @stex-react/source
 GNU AGPL
 GNU AFFERO GENERAL PUBLIC LICENSE
@@ -1147,10 +1137,6 @@ if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <http://www.gnu.org/licenses/>.
 
-
-@stex-react/stex-react-renderer
-
-@stex-react/utils
 
 axios
 MIT

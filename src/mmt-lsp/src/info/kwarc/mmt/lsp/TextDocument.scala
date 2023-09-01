@@ -12,7 +12,7 @@ import scala.collection.{immutable, mutable}
 trait TextDocumentServer[ClientType <: LSPClient,DocumentType <: LSPDocument[ClientType,LSPServer[ClientType]]] { self : LSPServer[ClientType] =>
 
   def newDocument(uri : String) : DocumentType
-  protected val documents = mutable.Map.empty[String,DocumentType]
+  val documents = mutable.Map.empty[String,DocumentType]
 
   override def didOpen(params: DidOpenTextDocumentParams): Unit = {
     val document = params.getTextDocument

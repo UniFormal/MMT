@@ -28,6 +28,7 @@ object Symbols {
   val meta_notation = mmtmeta_path ? "notation"
   val meta_symdoc = mmtmeta_path ? "symboldoc"
   val meta_example = mmtmeta_path ? "example"
+  val meta_problem = mmtmeta_path ? "example"
   val meta_definition = mmtmeta_path ? "definition"
   val meta_statement = mmtmeta_path ? "statement"
   val assoctype_sym = mmtmeta_path ? "assoctype"
@@ -303,7 +304,7 @@ object SHTMLContentManagement {
   }
 
   def addProblem(path: GlobalName, node: Node, controller: Controller, rel: ULOStatement => Unit) = {
-    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_example), OMFOREIGN(node) :: Nil)), Some("problem"))
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_problem), OMFOREIGN(node) :: Nil)), Some("problem"))
     controller.add(c)
     rel(ULO.problem(RDFImplicits.pathToIri(c.path)))
     // parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))

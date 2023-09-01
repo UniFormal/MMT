@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, JSON, JSONObject, JSONString, MMTSystem, URI}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, SandboxedWebSocket, TextDocumentServer, WithAnnotations, WithAutocomplete}
+import info.kwarc.mmt.stex.Extensions.SHTMLContentManagement
 import info.kwarc.mmt.stex.ml.Model
 import info.kwarc.mmt.stex.parsing.stex.STeXParser
 import info.kwarc.mmt.stex.{FullsTeX, RusTeX, STeXServer}
@@ -221,6 +222,20 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
          File.write(File(msg.dir),ret)
          ((), "Done")
        }
+     }
+   }
+
+   @JsonNotification("sTeX/exportProblems")
+   def exportProblems(msg: ExportMessage): Unit = {
+     msg.file = LSPServer.VSCodeToURI(msg.file)
+     val d = documents.synchronized {
+       documents.getOrElseUpdate(msg.file, newDocument(msg.file))
+     }
+     (d.archive, d.file) match {
+       case (Some(a), Some(f)) if !(a / source <= f) =>
+         client.logError(s"Document ${d.file} is not in archive ${d.archive}")
+       case _ =>
+         d.exportProblems(File(msg.dir))
      }
    }
 

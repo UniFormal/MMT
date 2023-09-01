@@ -988,10 +988,16 @@ object SPARQL {
   private case class PathO(p:Path) extends Subject {
     override def toObjString: String = "<" + pathToIri(p).toString + ">"
   }
-  case class V(s:String) extends Subject {
+  private case class IriO(i:IRI) extends Object {
+    override def toObjString: String = "<" + i.toString + ">"
+  }
+  case class V(s:String) extends Subject with Predicate {
     def toObjString = s"?$s"
+    def predString: String = s"?$s"
   }
   implicit def pathtosubject(p:Path): Subject = PathO(p)
+
+  implicit def classtoobject(p: ULOClass): Object = IriO(p.toIri)
   private case class SelectWhere(vars:List[String],where:SparqlQuery) extends SparqlQuery {
     def queryString: String = s"SELECT ${vars.map("?" + _).mkString(" ")} WHERE { ${where.queryString} }"
   }
