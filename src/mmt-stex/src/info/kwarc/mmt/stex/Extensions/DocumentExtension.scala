@@ -403,10 +403,25 @@ trait SHTMLDocumentServer { this : STeXServer =>
           case Some(c: Constant) =>
             val (_, body) = this.emptydoc
             body.add(doDeclHeader(c))
-            Try(getFragment).toOption match {
-              case Some(htm) =>
+            Try(getAllFragments).toOption match {
+              case Some(htm :: Nil) =>
                 body.add(<hr/>)
                 body.add(htm)
+              case Some(ls) =>
+                val id = ls.hashCode().toHexString;
+                body.add(<hr/>)
+                val nhtml = body.add("<ul class=\"shtml-declaration-tabs\"/>")
+                val nls = ls.zipWithIndex.map{case (node,i) =>
+                  val li = nhtml.add("<li class=\"shtml-declaration-tab\"/>")
+                  if (i == 0)
+                    li.add(s"<input type=\'radio\' name=\'tabs\' id=\'$id\' checked=\'checked\'/><label for=\'$id\'>1</label>")
+                  else {
+                    val nid = id + i.toString
+                    li.add(s"<input type=\'radio\' name=\'tabs\' id=\'$nid\'/><label for=\'$nid\'>${i+1}</label>")
+                  }
+                  val inner = li.add("<div class=\"shtml-declaration-tab-content\"/>")
+                  inner.add(node)
+                }
               case _ =>
             }
             ServerResponse("<body>" + body.toString.trim.replace("&amp;","&") + "</body>", "text/html")
@@ -461,6 +476,29 @@ trait SHTMLDocumentServer { this : STeXServer =>
     doc.get("body")()().head
   }
 
+  def getAllFragments(implicit dp:DocParams) = {
+    val path = dp.path match {
+      case Some(mp: MPath) =>
+        controller.simplifier(mp)
+        mp
+      case Some(gn: GlobalName) =>
+        controller.simplifier(gn.module)
+        gn
+      case None => throw ErrorResponse("No path given")
+    }
+    controller.getO(path) match {
+      case Some(elem) =>
+        elem match {
+          case c: Constant =>
+            getAllFragmentsDefault(c).map(f => present(f)(dp.bindings))
+          case _ =>
+            throw ErrorResponse("No symbol with path " + path + " found")
+        }
+      case _ =>
+        throw ErrorResponse("No symbol with path " + path + " found")
+    }
+  }
+
   def getFragment(implicit dp:DocParams) = {
     val path = dp.path match {
       case Some(mp: MPath) =>
@@ -481,6 +519,25 @@ trait SHTMLDocumentServer { this : STeXServer =>
         }
       case _ =>
         throw ErrorResponse("No symbol with path " + path + " found")
+    }
+  }
+
+  def getAllFragmentsDefault(c : Constant)(implicit dp:DocParams) : List[String] = {
+    SHTMLContentManagement.getSymdocs(c.path, dp.language.getOrElse("en"))(controller) match { // TODO language
+      case Nil =>
+        val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
+          case Some(sr) =>
+            controller.backend.resolveLogical(sr.container) match {
+              case Some((a, f)) =>
+                val url = "/:sTeX/browser/fulldocument" +
+                  "?archive=" + a.id + "&filepath=" + (f.init ::: f.last.replace(".tex", ".xhtml") :: Nil).mkString("/")
+                s"<a href='${url}'>${c.parent.name.toString}</a>"
+              case _ => c.parent.name.toString
+            }
+          case _ => c.parent.name.toString
+        })
+        List("<div>" + res + "</div>")
+      case a => a.map(_.toString())
     }
   }
 

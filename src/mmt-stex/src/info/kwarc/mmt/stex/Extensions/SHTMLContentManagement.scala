@@ -249,7 +249,7 @@ object SHTMLContentManagement {
         c.df.get
     }.collect {
       case OMA(OMS(_),OMFOREIGN(node) :: _) => node
-    }
+    }.distinct
   }
 
   def addExample(path:GlobalName,fors:List[GlobalName],node:Node,controller:Controller,rel:ULOStatement => Unit) = {
