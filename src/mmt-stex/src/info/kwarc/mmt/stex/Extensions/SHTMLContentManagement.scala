@@ -237,9 +237,10 @@ object SHTMLContentManagement {
 
   def getSymdocs(sym: ContentPath, language: String)(implicit controller:Controller): List[Node] = {
     import info.kwarc.mmt.api.ontology.SPARQL._
-    controller.depstore.query(
+    val paths = controller.depstore.query(
       SELECT("x") WHERE (T(sym,ULO.docref,V("x")) UNION T(V("x"),ULO.defines,sym))
-    ).getPaths.flatMap(controller.getO).collect {
+    ).getPaths
+    val constants = paths.flatMap(controller.getO).collect {
       case c : Constant if c.df.isDefined =>
        /*val deps = controller.depstore.query(
           SELECT("y") WHERE
@@ -247,7 +248,8 @@ object SHTMLContentManagement {
         )
         deps.getPaths.foreach(println)*/
         c.df.get
-    }.collect {
+    }
+    constants.collect {
       case OMA(OMS(_),OMFOREIGN(node) :: _) => node
     }.distinct
   }

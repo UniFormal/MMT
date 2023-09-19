@@ -12,7 +12,7 @@ import scala.util.Try
 
 object STeXRules {
   def allRules(dict: Dictionary) : List[TeXRule] = List(
-    ModuleRule(dict),ProblemRule(dict),UseModuleRule(dict),UseStructureRule(dict),
+    ModuleRule(dict),MMTEnvRule(dict),ProblemRule(dict),UseModuleRule(dict),UseStructureRule(dict),
     SymuseRule(dict),
     SymrefRule("symref",dict),SymrefRule("sr",dict),
     SymnameRule("symname",dict,false),SymnameRule("Symname",dict,true),
@@ -29,6 +29,7 @@ object STeXRules {
     SDefinitionRule(dict),SAssertionRule(dict),SParagraphRule(dict),
     InlineDefRule(dict),InlineAssRule(dict),
     InputrefRule(dict),
+    SetMetaRule(dict),
     MHLike("mhgraphics",List("bmp","png","jpg","jpeg","pdf","BMP","PNG","JPG","JPEG","PDF"),dict),
     MHLike("cmhgraphics",List("bmp","png","jpg","jpeg","pdf","BMP","PNG","JPG","JPEG","PDF"), dict),
     MHLike("mhtikzinput", List("tex"), dict),
@@ -110,6 +111,65 @@ case class ModuleRule(dict : Dictionary) extends STeXRule with EnvironmentRule {
       dict.closeModule
       tmm
     case _ => env
+  }
+}
+
+case class MMTEnvRule(dict : Dictionary) extends STeXRule with EnvironmentRule {
+  val envname = "mmtinterface"
+  lazy val rules : List[TeXRule] = List(MMTDefRule(dict))
+
+  override def applyStart(implicit parser: ParseState[Begin.BeginMacro]): STeXModule = {
+    import parser._
+    val opts = readOptAgument
+    val name = readArgument.asname
+    val orig = Path.parseM(readArgument.asname)
+    val meta = opts.flatMap(_.consumeStr("meta")).map{
+      case "" => None
+      case o => Some(Path.parseM(o))
+    }.getOrElse(Some(dict.defaultMeta))
+    val lang = opts.flatMap(_.consumeStr("lang")).getOrElse(dict.getLanguage)
+    val sig = opts.flatMap(_.consumeStr("sig")).getOrElse("")
+    opts.foreach(_.drop("title","deprecate","creators","contributors","id","srccite"))
+    val mp = opts.flatMap(_.consumeStr("ns")) match {
+      case Some(s) =>
+        Try(Path.parseD(s,NamespaceMap.empty)).toOption match {
+          case Some(dp) => dp ? LocalName.parse(name)
+          case _ => dict.getMPath(name)
+        }
+      case _ => dict.getMPath(name)
+    }
+    val macr = new STeXModule(parser.trigger,mp,meta,lang,sig)
+    //if (deprecation != "") macr.addError("Deprecated: Use " + deprecation + " instead",lvl=Level.Warning)
+    val r = dict.openModule(macr)
+    this.rules.foreach(rl => dict.getModule.rules(rl.name) = rl)
+    r
+  }
+
+  override def applyEnd(env: Environment)(implicit parser: ParseState[Begin.BeginMacro]): Environment = super.applyEnd(env) match {
+    case tmm: STeXModule =>
+      dict.closeModule
+      tmm
+    case _ => env
+  }
+}
+
+case class MMTDefRule(dict:Dictionary) extends SymDeclRuleLike with NotationRuleLike with MacroRule {
+  val name = "mmtdef"
+
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    val (si, o) = parseNameAndOpts(true)
+    val not = parseOptsNot(si,o)
+    val ret = new SymdeclApp(si, dict)() with NotationMacro {
+      override val notinfo: NotationInfo = not
+      override val alternatives: List[SymdeclInfo] = Nil
+      override val reftokens: List[TeXTokenLike] = Nil
+    }
+    o.foreach(_.asKeyVals.foreach { p =>
+      ret.addError("Unknown argument: " + p._1.mkString.trim)
+    })
+    addExportRule(ret)
+    addExportRule(ret.cloned)
+    ret
   }
 }
 
@@ -648,6 +708,17 @@ case class NotationRule(dict:Dictionary) extends NotationRuleLike with SymRefRul
       if (setdefault) addExportRule(NotationApp(not.copy(id = ""), dict, syms,reftks))
       ret
     }
+  }
+}
+
+case class SetMetaRule(dict:Dictionary) extends STeXRule with MacroRule {
+  val name = "setmetatheory"
+
+  override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+    val key = parser.readArgument.asname
+    val mp = dict.resolveMPath("",key)//dict.resolveMPath(None,key)
+    parser.latex.addRule(MetaTheoryRule(mp,dict))
+    new MacroApplication
   }
 }
 

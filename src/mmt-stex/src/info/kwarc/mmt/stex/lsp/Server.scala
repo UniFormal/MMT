@@ -864,14 +864,15 @@ object Main {
     }
     val mathhub_dir = File(args.head)
     var port = args(1).toInt
+    val ip = args(2)
     if (mathhub_dir.exists()) {
       controller.handleLine("mathpath archive " + mathhub_dir.toString)
       controller.handleLine("lmh root " + mathhub_dir.toString)
     }
-    controller.handleLine("server on " + port)
+    controller.handleLine(s"server on ${port} ${ip}")
     while (controller.server.isEmpty) {
       port += 1
-      controller.handleLine("server on " + port)
+      controller.handleLine("server on ${port} ${ip}")
     }
     val end = new STeXLSP
     controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)

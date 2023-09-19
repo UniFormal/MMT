@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex.xhtml
 
 import info.kwarc.mmt.api.documents.{DRef, Document, SectionLevel}
-import info.kwarc.mmt.api.{DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.api.{DPath, GeneratedDRef, GlobalName, LocalName, MPath, NamespaceMap, Path, Rule, RuleSet}
 import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Obj.getConstants
@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Include}
 import info.kwarc.mmt.odk.OpenMath.OMForeign
 import info.kwarc.mmt.stex.Extensions.{BlindSectionStep, ImportStep, LateBinding, SHTMLContentManagement, SectionStep, SlideStep, StatementStep}
-import info.kwarc.mmt.stex.rules.StringLiterals
+import info.kwarc.mmt.stex.rules.{AssertionBinderRule, StringLiterals}
 import info.kwarc.mmt.stex.{SHTML, SHTMLHoas}
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 
@@ -110,6 +110,19 @@ abstract class SHTMLNode(orig: HTMLNode,val key : Option[String] = None) extends
     ret
   }
   protected def getTermI : Option[Term] = None
+
+  protected def getRule[A <: Rule](cls:Class[A]) : Option[A] = {
+    val state = sstate.get
+    try {
+      RuleSet.collectRules(state.server.ctrl, self.getRuleContext).getAll.collectFirst {
+        case rl if rl.getClass == cls => rl.asInstanceOf[A]
+      }
+    } catch {
+      case e: info.kwarc.mmt.api.Error =>
+        state.error(e)
+        None
+    }
+  }
 
   protected def getWithRole(role: String) = {
     val state = sstate.get
@@ -465,7 +478,17 @@ trait Definitional extends SHTMLNode {
 trait Propositional extends SHTMLNode {
 
   object judgment {
-    lazy val tmhoas = getWithRole("judgment")
+    lazy val tmhoas = getRule(classOf[AssertionBinderRule.AssertionRule]) match {
+      case Some(rl) =>
+        rl.ded.map {ded =>
+          val state = self.sstate.get
+          state.getRuler(OMS(ded)) match {
+            case Some(r) => (OMS(ded),SHTMLHoas.get(r))
+            case _ => (OMS(ded),None)
+          }
+        }
+      case None => getWithRole("judgment")
+    }
     def apply(t : Term) = tmhoas match {
       case Some((tm, Some(h))) => h.HOMA(tm, List(t))
       case Some((tm, None)) => OMA(tm, List(t))
@@ -485,7 +508,15 @@ trait Propositional extends SHTMLNode {
   }
 
   object forall {
-    lazy val tmhoas = getWithRole("forall")
+    lazy val tmhoas = getRule(classOf[AssertionBinderRule.AssertionRule]) match {
+      case Some(rl) =>
+        val state = self.sstate.get
+        Some(state.getRuler(OMS(rl.forall)) match {
+          case Some(r) => (OMS(rl.forall), SHTMLHoas.get(r))
+          case _ => (OMS(rl.forall), None)
+        })
+      case None => getWithRole("forall")
+    }
 
     def apply(vd:VarDecl,bd: Term) = tmhoas match {
       case Some((tm, Some(h))) => sstate.get.applyTerm(SHTMLHoas.bound(Some(h),tm,vd,bd))
@@ -508,7 +539,15 @@ trait Propositional extends SHTMLNode {
   }
 
   object implies {
-    lazy val tmhoas = getWithRole("implication")
+    lazy val tmhoas = getRule(classOf[AssertionBinderRule.AssertionRule]) match {
+      case Some(rl) =>
+        val state = self.sstate.get
+        Some(state.getRuler(OMS(rl.imply)) match {
+          case Some(r) => (OMS(rl.imply), SHTMLHoas.get(r))
+          case _ => (OMS(rl.imply), None)
+        })
+      case None => getWithRole("implication")
+    }
 
     def apply(t1: Term,t2:Term) = tmhoas match {
       case Some((tm, Some(h))) => h.HOMA(tm, List(t1,t2))
@@ -562,12 +601,14 @@ case class SHTMLConclusion(orig:HTMLNode) extends SHTMLNode(orig,Some("conclusio
                             case o =>
                               SHTML.binder(vd, o)
                           }
+                        case Some(p) if !bd.freeVars.contains(vd.name) && implies.tmhoas.isDefined =>
+                          implies(p,doTerm(bd))
                         case _ if forall.tmhoas.isDefined =>
                           doTerm(bd) match {
                             case judgment(c) =>
                               judgment(forall(vd, c))
                             case o =>
-                              SHTML.binder(vd, o)
+                              forall(vd, o)
                           }
                         case _ =>
                           SHTML.binder(vd, doTerm(bd))

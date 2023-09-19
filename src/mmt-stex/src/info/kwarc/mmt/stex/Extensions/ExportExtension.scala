@@ -10,7 +10,7 @@ import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, SHTMLNode, SHTMLRule}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
-import java.io.{FileInputStream, FileOutputStream}
+import java.io.{FileInputStream, FileOutputStream, FileWriter}
 import scala.collection.mutable
 
 trait ExportExtension { self : STeXServer =>
@@ -46,9 +46,14 @@ trait ExportExtension { self : STeXServer =>
 
     File.write(to / "aux" / "archive.css",css(archive.id))
 
-    val aux_files = MMTSystem.getResourceList("mmt-web/stex/mmt-viewer").filter(f => File(f).getExtension.isDefined && f != "index.html")
+    val aux_files = MMTSystem.getResourceList("/mmt-web/stex/mmt-viewer").filter(f => File(f).getExtension.isDefined && f != "index.html" && f != "/index.html" && !f.contains("assets/")).map{s =>
+      if (s.startsWith("/")) s.drop(1) else s
+    }
     aux_files.foreach{f =>
-      File.write(to / "aux" / f,MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/" + f))
+      val writer = new FileOutputStream(to / "aux" / f)
+      val in = MMTSystem.getResource("mmt-web/stex/mmt-viewer/" + f)
+      writer.write(in.readAllBytes())
+      //File.write(to / "aux" / f,MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/" + f))
       index = index.replace("/stex/mmt-viewer/" + f,"aux/" + f)
     }
     index = index.replace("/stex/fonts.css",default_remote.dropRight(6) + "stex/fonts.css")

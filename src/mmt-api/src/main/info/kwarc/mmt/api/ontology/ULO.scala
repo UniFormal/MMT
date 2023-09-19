@@ -53,8 +53,19 @@ object RDFImplicits {
     .replace("%5E","^"))//URLDecoder.decode(i.getLocalName,"UTF-8"))
   implicit def asResource(e: ULOTrait): Resource = e.toIri
   def isPath(i:Value) = i.isIRI && i.asInstanceOf[IRI].getLocalName.isEmpty//.getNamespace == path_namespace
-
-  implicit def URIToIRI(uri:URI): IRI = iri(uri.toString)
+  implicit def URIToIRI(uri:URI): IRI = iri(uri.toString
+    .replace("[", "%5B")
+    .replace("]", "%5D")
+    .replace(" ", "%20")
+    .replace(">", "%3E")
+    .replace("<", "%3C")
+    .replace("|", "%7C")
+    .replace("\\", "%5C")
+    .replace("{", "%7B")
+    .replace("}", "%7D")
+    .replace("#", "%23")
+    .replace("^", "%5E")
+  )
 }
 import RDFImplicits._
 
