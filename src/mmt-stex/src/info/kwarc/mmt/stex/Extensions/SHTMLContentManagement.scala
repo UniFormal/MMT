@@ -235,11 +235,26 @@ object SHTMLContentManagement {
     //parent.metadata.add(MetaDatum(meta_symdoc, OMA(OMS(meta_symdoc), StringLiterals(language) :: OMFOREIGN(node) :: fors.map(OMS(_)))))
   }
 
-  def getSymdocs(sym: ContentPath, language: String)(implicit controller:Controller): List[Node] = {
+  def getSymdocs(sym: ContentPath, language: String,context:Option[DPath])(implicit controller:Controller): List[(GlobalName,Node)] = {
     import info.kwarc.mmt.api.ontology.SPARQL._
-    val paths = controller.depstore.query(
-      SELECT("x") WHERE (T(sym,ULO.docref,V("x")) UNION T(V("x"),ULO.defines,sym))
-    ).getPaths
+
+    val paths = context match {
+      case Some(docpath) =>
+        val first = controller.depstore.query(
+          SELECT("x") WHERE (
+            T(docpath,ULO.specifies | ULO.contains,V("x")) AND (
+              T(sym, ULO.docref, V("x")) UNION T(V("x"), ULO.defines, sym)
+            ))
+        ).getPaths
+        val second = controller.depstore.query(
+          SELECT("x") WHERE (T(sym, ULO.docref, V("x")) UNION T(V("x"), ULO.defines, sym))
+        ).getPaths
+        (first ::: second).distinct
+      case None => controller.depstore.query(
+        SELECT("x") WHERE (T(sym, ULO.docref, V("x")) UNION T(V("x"), ULO.defines, sym))
+      ).getPaths
+    }
+
     val constants = paths.flatMap(controller.getO).collect {
       case c : Constant if c.df.isDefined =>
        /*val deps = controller.depstore.query(
@@ -247,11 +262,11 @@ object SHTMLContentManagement {
               T(c.path,(ULO.crossrefs | ULO.declares)+,V("y"))
         )
         deps.getPaths.foreach(println)*/
-        c.df.get
-    }
-    constants.collect {
-      case OMA(OMS(_),OMFOREIGN(node) :: _) => node
+        (c.path,c.df.get)
     }.distinct
+    constants.collect {
+      case (p,OMA(OMS(_),OMFOREIGN(node) :: _)) => (p,node)
+    }
   }
 
   def addExample(path:GlobalName,fors:List[GlobalName],node:Node,controller:Controller,rel:ULOStatement => Unit) = {

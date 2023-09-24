@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.archives.{Archive, RedirectableDimension}
 import info.kwarc.mmt.api.documents.{DRef, Document}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{OMA, OMFOREIGN, OMID, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.ontology.ULO
 import info.kwarc.mmt.api.opaque.OpaqueXML
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.Constant
@@ -25,16 +26,37 @@ import scala.xml.parsing.XhtmlParser
 import scala.xml.{Elem, Node}
 
 trait SHTMLDocumentServer { this : STeXServer =>
+
+  def parseLanguage(s: String) = {
+    var ds = s
+    if (ds.endsWith(".omdoc")) ds = ds.dropRight(6)
+    if (ds.endsWith(".xhtml")) ds = ds.dropRight(6)
+    if (ds.endsWith(".tex")) ds = ds.dropRight(4)
+    ds.split('.').lastOption
+  }
   protected case class DocParams(q: WebQuery) {
     lazy val path = q.pairs.find(p => p._2.isEmpty && p._1.contains('?') && !p._1.endsWith("="))
       .map(p => Path.parse(p._1))
-    lazy val language = q("language")
+    lazy val language = q("language").orElse(context_filepath.flatMap(parseLanguage))
     lazy val archive = q("archive").flatMap{id => getArchive(id)}
     lazy val filepath = q("filepath")
     lazy val bindings = {
       val bnds = q("bindings").map(LateBinding.fromNum)
       log("Bindings: " + q("bindings") + " --> " + bnds.map(_.toString).getOrElse("None"))
       bnds
+    }
+    private lazy val ctx = q("contextUrl").flatMap{s =>
+      (s.indexOf("archive="),s.indexOf("filepath=")) match {
+        case (-1,_)|(_,-1) => None
+        case (i,j) => Some((s.drop(i),s.drop(j)))
+      }
+    }
+    lazy val context_archive = q("contextArchive").flatMap(getArchive)
+    lazy val context_filepath = q("contextFilepath")
+    lazy val context_doc = (context_archive,context_filepath) match {
+      case (Some(a),Some(fp)) =>
+        Some(DPath(a.narrationBase / fp.replace(".tex",".omdoc").replace(".xhtml",".omdoc")))
+      case _ => None
     }
   }
   private case class ErrorResponse(message:String) extends Throwable
@@ -404,20 +426,20 @@ trait SHTMLDocumentServer { this : STeXServer =>
             val (_, body) = this.emptydoc
             body.add(doDeclHeader(c))
             Try(getAllFragments).toOption match {
-              case Some(htm :: Nil) =>
+              case Some((htm,_) :: Nil) =>
                 body.add(<hr/>)
                 body.add(htm)
               case Some(ls) =>
                 val id = ls.hashCode().toHexString;
                 body.add(<hr/>)
                 val nhtml = body.add("<ul class=\"shtml-declaration-tabs\"/>")
-                val nls = ls.zipWithIndex.map{case (node,i) =>
+                val nls = ls.zipWithIndex.map{case ((node,label),i) =>
                   val li = nhtml.add("<li class=\"shtml-declaration-tab\"/>")
                   if (i == 0)
-                    li.add(s"<input type=\'radio\' name=\'tabs\' id=\'$id\' checked=\'checked\'/><label for=\'$id\'>1</label>")
+                    li.add(s"<input type=\'radio\' name=\'tabs\' id=\'$id\' checked=\'checked\'/><label for=\'$id\'>$label</label>")
                   else {
                     val nid = id + i.toString
-                    li.add(s"<input type=\'radio\' name=\'tabs\' id=\'$nid\'/><label for=\'$nid\'>${i+1}</label>")
+                    li.add(s"<input type=\'radio\' name=\'tabs\' id=\'$nid\'/><label for=\'$nid\'>$label</label>")
                   }
                   val inner = li.add("<div class=\"shtml-declaration-tab-content\"/>")
                   inner.add(node)
@@ -490,7 +512,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case Some(elem) =>
         elem match {
           case c: Constant =>
-            getAllFragmentsDefault(c).map(f => present(f)(dp.bindings))
+            getAllFragmentsDefault(c).map(f => (present(f._1)(dp.bindings),f._2))
           case _ =>
             throw ErrorResponse("No symbol with path " + path + " found")
         }
@@ -522,8 +544,8 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  def getAllFragmentsDefault(c : Constant)(implicit dp:DocParams) : List[String] = {
-    SHTMLContentManagement.getSymdocs(c.path, dp.language.getOrElse("en"))(controller) match { // TODO language
+  def getAllFragmentsDefault(c : Constant)(implicit dp:DocParams) : List[(String,String)] = {
+    SHTMLContentManagement.getSymdocs(c.path, dp.language.getOrElse("en"),dp.context_doc)(controller) match { // TODO language
       case Nil =>
         val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
           case Some(sr) =>
@@ -536,15 +558,32 @@ trait SHTMLDocumentServer { this : STeXServer =>
             }
           case _ => c.parent.name.toString
         })
-        List("<div>" + res + "</div>")
-      case a => a.map(_.toString())
+        List(("<div>" + res + "</div>",""))
+      case a =>
+        sort(a).zipWithIndex.map{
+          case ((gn,n),i) =>
+            val language = gn.module.name.toString
+            controller.backend.resolveLogical(gn.module.doc.uri) match {
+              case None => (n.toString(),language)
+              case Some((a,_)) =>
+                (n.toString(),s"${a.id} ($language)")
+            }
+        }
+    }
+  }
+
+  def sort(defs:List[(GlobalName,Node)])(implicit dp:DocParams): List[(GlobalName,Node)] = {
+    dp.language match {
+      case None => defs
+      case Some(lang) =>
+        val ls = defs.filter(_._1.module.name.toString == lang)
+        if (ls.isEmpty) defs else (ls ::: defs).distinct
     }
   }
 
   def getFragmentDefault(c : Constant)(implicit dp:DocParams) : String = {
-    SHTMLContentManagement.getSymdocs(c.path,dp.language.getOrElse("en"))(controller) match { // TODO language
-      case a :: _ => a.toString()
-      case _ =>
+    SHTMLContentManagement.getSymdocs(c.path,dp.language.getOrElse("en"),dp.context_doc)(controller) match { // TODO language TODO sort by relevance
+      case Nil =>
         val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
           case Some(sr) =>
             controller.backend.resolveLogical(sr.container) match {
@@ -557,6 +596,8 @@ trait SHTMLDocumentServer { this : STeXServer =>
           case _ => c.parent.name.toString
         })
         "<div>" + res + "</div>"
+      case ls =>
+        sort(ls).head._2.toString()
     }
   }
 

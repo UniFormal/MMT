@@ -872,7 +872,7 @@ object Main {
     controller.handleLine(s"server on ${port} ${ip}")
     while (controller.server.isEmpty) {
       port += 1
-      controller.handleLine("server on ${port} ${ip}")
+      controller.handleLine(s"server on ${port} ${ip}")
     }
     val end = new STeXLSP
     controller.extman.get(classOf[BuildManager]).foreach(controller.extman.removeExtension)
