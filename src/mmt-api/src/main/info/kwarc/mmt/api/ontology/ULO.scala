@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.model.vocabulary.{DC, OWL, RDF, RDFS, XSD}
 import org.eclipse.rdf4j.query.TupleQueryResult
 import org.eclipse.rdf4j.repository.RepositoryResult
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection
-import org.eclipse.rdf4j.rio.Rio
+import org.eclipse.rdf4j.rio.{RDFParseException, Rio}
 import org.eclipse.rdf4j.sparqlbuilder.core.SparqlBuilder
 import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries
 import org.eclipse.rdf4j.sparqlbuilder.graphpattern.GraphPatterns
@@ -656,7 +656,9 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
     val conn = repo.getConnection
     if ((a / relational).exists) a.traverse(relational, in, Archive.traverseIf(fileFormat._1)) { case info.kwarc.mmt.api.archives.Current(inFile, _) =>
       val iri = relpath(a, inFile)
-      conn.add(inFile.toJava, fileFormat._2, iri)
+      try{conn.add(inFile.toJava, fileFormat._2, iri)} catch {
+        case _:RDFParseException =>
+      }
     }
     conn.close()
   }
