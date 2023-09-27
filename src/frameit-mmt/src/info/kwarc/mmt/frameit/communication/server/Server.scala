@@ -28,7 +28,7 @@ object Server extends IOApp /*with TwitterServer with EndpointModule[IO]*/ {
 
   def bindAddress(): String = ":8085"
 
-  def debug(): Boolean = true
+  def debug(): Boolean = false //==true -> Bug for SampleSituationSpace: 'Element does not exist'
   override def run(args: List[String]): IO[ExitCode] = {
     if (debug()) {
       println("Server started in debugging mode.")
