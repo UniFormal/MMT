@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import utils._
 import parser._
 
@@ -19,7 +20,7 @@ abstract class ExternalImporter extends Importer {
     * @param bf the build task
     * @param seCont document continuation for indexing
     */
-  def importDocument(bf: BuildTask, seCont: documents.Document => Unit): BuildResult = {
+  def importDocument(bf: BuildTask, seCont: documents.Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     val outFile = bf.archive / RedirectableDimension(key) / bf.inPath.toFile.setExtension(outExt).toFilePath
     outFile.up.mkdirs()
     outFile.delete()

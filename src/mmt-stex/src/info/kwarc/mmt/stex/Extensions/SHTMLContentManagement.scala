@@ -1,17 +1,19 @@
 package info.kwarc.mmt.stex.Extensions
 
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, ObjectChecker}
-import info.kwarc.mmt.api.{ContentPath, DPath, GetError, GlobalName, MPath, NamespaceMap, Path, RuleSet, StructuralElement}
+import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.{ContentElement, ContentPath, DPath, GetError, GlobalName, MPath, NamespaceMap, Path, RuleSet, StructuralElement}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.{HasMetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{Context, OMA, OMFOREIGN, OMID, OMS, OMV, Term, VarDecl}
-import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMFOREIGN, OMID, OMMOD, OMS, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, CustomUnary, DatatypeProperty, ObjectProperty, RDFImplicits, RelationalElement, RelationalExtractor, ULO, ULOStatement, Unary}
 import info.kwarc.mmt.api.opaque.{OpaqueChecker, OpaqueElement, OpaqueElementInterpreter, OpaqueXML}
 import info.kwarc.mmt.api.symbols.{Constant, NestedModule}
 import info.kwarc.mmt.stex.{SHTML, STeXServer}
-import info.kwarc.mmt.stex.rules.{IntLiterals, RulerRule, StringLiterals}
+import info.kwarc.mmt.stex.rules.{IntLiterals, ModelsOf, RulerRule, StringLiterals}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, HTMLText}
+import org.eclipse.rdf4j.sparqlbuilder.core.SparqlBuilder
 
 import scala.xml.{Node, NodeSeq}
 
@@ -26,21 +28,33 @@ object Symbols {
   val meta_notation = mmtmeta_path ? "notation"
   val meta_symdoc = mmtmeta_path ? "symboldoc"
   val meta_example = mmtmeta_path ? "example"
+  val meta_definition = mmtmeta_path ? "definition"
+  val meta_statement = mmtmeta_path ? "statement"
   val assoctype_sym = mmtmeta_path ? "assoctype"
 
 }
-trait SHTMLContentManagement { this : STeXServer =>
+
+object SHTMLContentManagement {
+  def addSref(target: HasMetaData,id:String) = {
+    target.metadata.add(MetaDatum(SHTML.meta_srefid,StringLiterals(id)))
+  }
+  def getSref(target:HasMetaData): List[String] = target.metadata.getValues(SHTML.meta_srefid) collect {
+    case StringLiterals(s) => s
+  }
+
   import Symbols._
-  def addLanguage(s : String, target:HasMetaData) = {
+
+  def addLanguage(s: String, target: HasMetaData) = {
     target.metadata.update(meta_language, StringLiterals(s))
   }
-  def getLanguage(target:HasMetaData) = target.metadata.getValues(meta_language).headOption map {
+  def getLanguage(target: HasMetaData) = target.metadata.getValues(meta_language).headOption map {
     case StringLiterals(s) => s
   }
 
   def addMacroName(name: String, target: HasMetaData) = {
     target.metadata.update(macroname_sym, StringLiterals(name))
   }
+
   def getMacroName(target: HasMetaData) = target.metadata.getValues(macroname_sym).headOption map {
     case StringLiterals(s) => s
   }
@@ -48,37 +62,40 @@ trait SHTMLContentManagement { this : STeXServer =>
   def addArity(args: String, target: HasMetaData) = {
     target.metadata.update(arity_sym, StringLiterals(args))
   }
-  def getArity(target:HasMetaData) = {
+
+  def getArity(target: HasMetaData) = {
     target.metadata.getValues(arity_sym).headOption map {
       case StringLiterals(s) => s
     }
   }
 
-  def addAssoctype(atp : String,target:HasMetaData) = {
-    target.metadata.update(assoctype_sym,StringLiterals(atp))
+  def addAssoctype(atp: String, target: HasMetaData) = {
+    target.metadata.update(assoctype_sym, StringLiterals(atp))
   }
-  def getAssoctype(target:HasMetaData) = {
+
+  def getAssoctype(target: HasMetaData) = {
     target.metadata.getValues(assoctype_sym).headOption map {
       case StringLiterals(s) => s
     }
   }
+
   def addReorder(reorder: String, target: HasMetaData) = {
     target.metadata.update(reorder_sym, StringLiterals(reorder))
   }
 
-  def getReorder(target: HasMetaData) : Option[List[Int]] = {
+  def getReorder(target: HasMetaData): Option[List[Int]] = {
     target.metadata.getValues(reorder_sym).headOption map {
       case StringLiterals(s) if s.forall(c => c.isDigit || c == ',') => s.split(',').map(_.toInt).toList
       case _ => return None
     }
   }
 
-  import info.kwarc.mmt.api.documents.Document
   def addTitle(d: Document, t: Node) = {
     if (d.metadata.getValues(SHTML.title).isEmpty) {
       d.metadata.update(SHTML.title, OMFOREIGN(t))
     }
   }
+
   def getTitle(d: Document): Option[Node] = {
     d.metadata.getValues(SHTML.title).headOption match {
       case Some(OMFOREIGN(node)) => Some(node)
@@ -86,80 +103,15 @@ trait SHTMLContentManagement { this : STeXServer =>
     }
   }
 
-  def addNotation(parent:Theory,path: GlobalName, id: String, opprec: Int,argprecs:List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
-    addNotationTo(parent, path, id, opprec,argprecs, component, op)
+  def addNotation(parent: Theory, path: GlobalName, id: String, opprec: Int, argprecs: List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
+    addNotationTo(parent, path, id, opprec, argprecs, component, op)
   }
 
-  def addVarNotation(vd : VarDecl, id: String, opprec: Int,argprecs:List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
-    addNotationTo(vd,meta_notation,id,opprec,argprecs,component,op)
+  def addVarNotation(vd: VarDecl, id: String, opprec: Int, argprecs: List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
+    addNotationTo(vd, meta_notation, id, opprec, argprecs, component, op)
   }
 
-  private def addNotationTo(parent:HasMetaData,sym:GlobalName,id: String, opprec: Int,argprecs:List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
-    val init = List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(argprecs.map(IntLiterals(_))), OMFOREIGN(toNode(component)))
-    parent.metadata.add(MetaDatum(meta_notation, OMA(OMS(sym), op match {
-      case Some(op) => init ::: List(OMFOREIGN(toNode(op)))
-      case _ => init
-    })))
-  }
-  def getNotations(p : HasMetaData): List[STeXNotation] = p match {
-    case c: Constant => getNotationsC(c)
-    case vd: VarDecl if vd.metadata.getValues(SHTML.headterm).nonEmpty =>
-      vd.metadata.getValues(SHTML.headterm).head match {
-        case OMS(c) => controller.getO(c) match {
-          case Some(p) => getNotations(p)
-          case _ => getNotationOther(p)
-        }
-        case _ => getNotationOther(p)
-      }
-    case o => getNotationOther(o)
-  }
-  private def getNotationOther(o : HasMetaData) = o.metadata.getValues(meta_notation).flatMap {
-    case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
-      Some(STeXNotation(p.toString, None, id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
-    case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp))) =>
-      Some(STeXNotation(p.toString, None, id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
-    case _ => None
-  }
-  def getNotations(p: GlobalName): List[STeXNotation] = {
-    controller.getO(p) match {
-      case Some(c : Constant) => getNotationsC(c)
-      case _ => Nil
-    }
-  }
-
-  def getNotationsC(c: Constant): List[STeXNotation] = {
-    var ret: List[Path] = Nil
-    controller.depstore.query(c.path, -NotationExtractor.notation)(s => ret ::= s)
-    val path = c.path
-    ret.flatMap {
-      controller.getO(_) match {
-        case Some(t: Theory) => t.metadata.getValues(meta_notation).flatMap {
-          case OMA(OMS(`path`), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
-            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
-          case OMA(OMS(`path`), List(StringLiterals(id), IntLiterals(opprec),SHTML.flatseq(precs), OMFOREIGN(comp))) =>
-            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt,precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
-          case _ => None
-        }
-        case _ => Nil
-      }
-    }
-  }
-
-  private def toHTML(node : Node) : HTMLNode = {
-    //val ncomp = present("<mrow>" + node.toString() + "</mrow>",false)(None)
-    val ncomp = HTMLParser("<mrow>" + node.toString() + "</mrow>")(new HTMLParser.ParsingState(controller,Nil))
-    var toremoves : List[HTMLNode] = Nil
-    ncomp.iterate {
-      case n if n.plain.attributes.contains((HTMLParser.ns_shtml,"visible")) =>
-        toremoves ::= n
-      case n : HTMLText if n.text == "\u200D" =>
-        toremoves ::= n
-      case _ =>
-    }
-    toremoves.foreach(_.delete)
-    ncomp.plain.children.head
-  }
-  private def toNode(html:HTMLNode) : Node = {
+  private def toNode(html: HTMLNode): Node = {
     var toremoves: List[HTMLNode] = Nil
     html.iterate {
       case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "visible")) =>
@@ -171,53 +123,216 @@ trait SHTMLContentManagement { this : STeXServer =>
     toremoves.foreach(_.delete)
     html.plain.node
   }
-
-  def addSymdoc(parent:Theory,fors:List[GlobalName],node:Node,language:String) = {
-    parent.metadata.add(MetaDatum(meta_symdoc,OMA(OMS(meta_symdoc),StringLiterals(language) :: OMFOREIGN(node) :: fors.map(OMS(_)))))
+  private def addNotationTo(parent: HasMetaData, sym: GlobalName, id: String, opprec: Int, argprecs: List[Int], component: HTMLNode, op: Option[HTMLNode]) = {
+    val init = List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(argprecs.map(IntLiterals(_))), OMFOREIGN(toNode(component)))
+    parent.metadata.add(MetaDatum(meta_notation, OMA(OMS(sym), op match {
+      case Some(op) => init ::: List(OMFOREIGN(toNode(op)))
+      case _ => init
+    })))
   }
-  def getSymdocs(sym:ContentPath,language:String) : List[Node] = {
-    var ret : List[Path] = Nil
-    controller.depstore.query(sym,-SymdocRelational.documents)(s => ret ::= s)
-    val us = ret.flatMap{p => controller.getO(p) match {
-      case Some(t) => t.metadata.getValues(meta_symdoc).flatMap {
-        case OMA(OMS(`meta_symdoc`),StringLiterals(lang) :: OMFOREIGN(node) :: ls) if ls.contains(OMID(sym)) => Some((lang,node))
-        case _ => None
+
+  def getHead(p: HasMetaData) = { // TODO - only allow OMS?
+    p.metadata.getValues(SHTML.headterm).headOption match {
+      case Some(p:Term) => Some(p)
+      case _ => None
+    }
+  }
+  def setHead(p: HasMetaData, head: Term) = {
+    p.metadata.update(SHTML.headterm, head)
+  }
+
+  def getStructureSymbol(t : ContentElement) : Option[GlobalName] = {
+    t.metadata.getValues(ModelsOf.tp).headOption match {
+      case Some(OMS(p)) => Some(p)
+      case _ => None
+    }
+  }
+  def setStructureSymbol(t : ContentElement, p : GlobalName) = {
+    t.metadata.update(ModelsOf.tp, OMS(p))
+  }
+  def getStructureModule(c : Constant) : Option[MPath] = {
+    c.metadata.getValues(ModelsOf.sym).headOption match {
+      case Some(OMMOD(p)) => Some(p)
+      case _ => None
+    }
+  }
+  def setStructureModule(c : Constant, p : MPath) = {
+    c.metadata.update(ModelsOf.sym, OMMOD(p))
+  }
+
+
+  def getNotations(p: HasMetaData)(implicit controller:Controller): List[STeXNotation] = p match {
+    case c: Constant => getNotationsC(c)
+    case vd: VarDecl if vd.metadata.getValues(SHTML.headterm).nonEmpty =>
+      getHead(vd) match {
+        case Some(OMS(c)) => controller.getO(c) match {
+          case Some(p) => getNotations(p)
+          case _ => getNotationOther(p)
+        }
+        case _ => getNotationOther(p)
       }
-    }}
-    val langs = us.filter(_._1 == language)
-    val defaults = us.filter(p => p._1 == "en" && !langs.contains(p))
-    val rest = us.filterNot(p => langs.contains(p) || defaults.contains(p))
-    (langs ::: defaults ::: rest).map(_._2)
+    case o => getNotationOther(o)
   }
 
-  def addExample(parent: Theory, fors: List[GlobalName], node: Node) = {
-    parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))
+  def getNotations(p: GlobalName)(implicit controller:Controller): List[STeXNotation] = {
+    controller.getO(p) match {
+      case Some(c: Constant) => getNotationsC(c)
+      case _ => Nil
+    }
   }
 
-  def getRuler(tm: Term, ctx: Context) = {
+  def getNotationsC(c: Constant)(implicit controller:Controller): List[STeXNotation] = {
+    var ret: List[Path] = Nil
+    controller.depstore.query(c.path, -NotationExtractor.notation)(s => ret ::= s)
+    ret = ret.distinct
+    val path = c.path
+    ret.flatMap {
+      controller.getO(_) match {
+        case Some(t: Theory) => t.metadata.getValues(meta_notation).flatMap {
+          case OMA(OMS(`path`), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
+            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
+          case OMA(OMS(`path`), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp))) =>
+            Some(STeXNotation(c.path.toString, Some(t), id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
+          case _ => None
+        }
+        case _ => Nil
+      }
+    }.distinct
+  }
+
+  private def toHTML(node: Node)(implicit controller:Controller): HTMLNode = {
+    //val ncomp = present("<mrow>" + node.toString() + "</mrow>",false)(None)
+    val ncomp = HTMLParser("<mrow>" + node.toString() + "</mrow>")(new HTMLParser.ParsingState(controller, Nil))
+    var toremoves: List[HTMLNode] = Nil
+    ncomp.iterate {
+      case n if n.plain.attributes.contains((HTMLParser.ns_shtml, "visible")) =>
+        toremoves ::= n
+      case n: HTMLText if n.text == "\u200D" =>
+        toremoves ::= n
+      case _ =>
+    }
+    toremoves.foreach(_.delete)
+    ncomp.plain.children.head
+  }
+
+  private def getNotationOther(o: HasMetaData)(implicit controller:Controller) = o.metadata.getValues(meta_notation).flatMap {
+    case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp), OMFOREIGN(opcomp))) =>
+      Some(STeXNotation(p.toString, None, id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), Some(toHTML(opcomp))))
+    case OMA(OMS(p), List(StringLiterals(id), IntLiterals(opprec), SHTML.flatseq(precs), OMFOREIGN(comp))) =>
+      Some(STeXNotation(p.toString, None, id, opprec.toInt, precs.map(IntLiterals.unapply(_).get.toInt), toHTML(comp), None))
+    case _ => None
+  }.distinct
+
+
+  def addSymdoc(path:GlobalName,fors:List[GlobalName],node:Node,controller:Controller,rel:ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module),path.name,Nil,None,Some(OMA(OMS(meta_symdoc),OMFOREIGN(node) :: fors.map(OMS(_)))),Some("symdoc"))
+    controller.add(c)
+    rel(ULO.para(RDFImplicits.pathToIri(c.path)))
+    fors.foreach{f =>
+      rel(ULO.docref(RDFImplicits.pathToIri(f),RDFImplicits.pathToIri(c.path)))
+    }
+    //parent.metadata.add(MetaDatum(meta_symdoc, OMA(OMS(meta_symdoc), StringLiterals(language) :: OMFOREIGN(node) :: fors.map(OMS(_)))))
+  }
+
+  def getSymdocs(sym: ContentPath, language: String)(implicit controller:Controller): List[Node] = {
+    import info.kwarc.mmt.api.ontology.SPARQL._
+    controller.depstore.query(
+      SELECT("x") WHERE (T(sym,ULO.docref,V("x")) UNION T(V("x"),ULO.defines,sym))
+    ).getPaths.flatMap(controller.getO).collect {
+      case c : Constant if c.df.isDefined =>
+       /*val deps = controller.depstore.query(
+          SELECT("y") WHERE
+              T(c.path,(ULO.crossrefs | ULO.declares)+,V("y"))
+        )
+        deps.getPaths.foreach(println)*/
+        c.df.get
+    }.collect {
+      case OMA(OMS(_),OMFOREIGN(node) :: _) => node
+    }
+  }
+
+  def addExample(path:GlobalName,fors:List[GlobalName],node:Node,controller:Controller,rel:ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))), Some("example"))
+    controller.add(c)
+    rel(ULO.example(RDFImplicits.pathToIri(c.path)))
+    fors.foreach { f =>
+      rel(ULO.example_for(RDFImplicits.pathToIri(c.path),RDFImplicits.pathToIri(f)))
+    }
+    // parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))
+  }
+
+  def getExamples(sym: ContentPath, language: String)(implicit controller: Controller): List[Node] = {
+    import info.kwarc.mmt.api.ontology.SPARQL._
+    controller.depstore.query(
+      SELECT("x") WHERE T(V("x"), ULO.example_for, sym)
+    ).getPaths.flatMap(controller.getO).collect {
+      case c: Constant if c.df.isDefined => c.df.get
+    }.collect {
+      case OMA(OMS(_), OMFOREIGN(node) :: _) => node
+    }
+  }
+
+  def addDefinition(path: GlobalName, fors: List[GlobalName], node: Node, controller: Controller, rel: ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_definition), OMFOREIGN(node) :: fors.map(OMS(_)))), Some("definition"))
+    controller.add(c)
+    rel(ULO.definition(RDFImplicits.pathToIri(c.path)))
+    fors.foreach { f =>
+      rel(ULO.defines(RDFImplicits.pathToIri(c.path), RDFImplicits.pathToIri(f)))
+      rel(ULO.docref(RDFImplicits.pathToIri(f), RDFImplicits.pathToIri(c.path)))
+    }
+  }
+
+  def getDefinition(sym: ContentPath, language: String)(implicit controller: Controller): List[Node] = {
+    import info.kwarc.mmt.api.ontology.SPARQL._
+    controller.depstore.query(
+      SELECT("x") WHERE T(V("x"), ULO.defines, sym)
+    ).getPaths.flatMap(controller.getO).collect {
+      case c: Constant if c.df.isDefined => c.df.get
+    }.collect {
+      case OMA(OMS(_), OMFOREIGN(node) :: _) => node
+    }
+  }
+
+  def addStatement(path: GlobalName, fors: List[GlobalName], node: Node, controller: Controller, rel: ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_statement), OMFOREIGN(node) :: fors.map(OMS(_)))), Some("statement"))
+    controller.add(c)
+    rel(ULO.statement(RDFImplicits.pathToIri(c.path)))
+    fors.foreach { f =>
+      rel(ULO.docref(RDFImplicits.pathToIri(f), RDFImplicits.pathToIri(c.path)))
+    }
+  }
+
+  def addProblem(path: GlobalName, node: Node, controller: Controller, rel: ULOStatement => Unit) = {
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_example), OMFOREIGN(node) :: Nil)), Some("problem"))
+    controller.add(c)
+    rel(ULO.problem(RDFImplicits.pathToIri(c.path)))
+    // parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))
+  }
+
+  def getRuler(tm: Term, ctx: Context)(implicit controller:Controller) = {
     val rules = try {
-      RuleSet.collectRules(ctrl, ctx).get(classOf[RulerRule]).toList
+      RuleSet.collectRules(controller, ctx).get(classOf[RulerRule]).toList
     } catch {
       case _: GetError =>
         Nil
     }
 
     def get(tm: Term): Option[HasMetaData] = rules.collectFirst {
-      case rl if rl(ctrl, get, tm).isDefined =>
-        rl(ctrl, get, tm).get
+      case rl if rl(controller, get, tm).isDefined =>
+        rl(controller, get, tm).get
     }
 
     get(tm) match {
       case Some(c) => Some(c)
       case _ => tm match {
-        case OMS(gn) => ctrl.getO(gn) match {
+        case OMS(gn) => controller.getO(gn) match {
           case Some(c: Constant) => Some(c)
           case _ => None
         }
         case OMV(x) => ctx.findLast(_.name == x) match {
           case Some(vd) => vd.metadata.getValues(SHTML.headterm).headOption match {
             case Some(OMS(p)) => controller.getO(p) match {
-              case Some(c : Constant) => Some(c)
+              case Some(c: Constant) => Some(c)
               case _ => Some(vd)
             }
             case _ => Some(vd)
@@ -342,6 +457,15 @@ case class STeXNotation(sym:String, in: Option[Theory], id:String, opprec:Int,ar
   }
 }
 
+object STeXRelationals {
+  val notation_for = ULO.has_notation_for
+  val has_language = ULO.has_language
+  val is_documented_by = ULO.docref
+  val is_definition_for = ULO.defines
+  val is_example_for = ULO.example_for
+  val is_statement = ULO.statement
+}
+
 object NotationExtractor extends RelationalExtractor {
   val notation = CustomBinary("notation", "has notation for", "has notation in")
   override val allBinary: List[Binary] = List(
@@ -363,7 +487,7 @@ object NotationExtractor extends RelationalExtractor {
     case _ =>
   }
 }
-
+/*
 object SymdocRelational extends RelationalExtractor {
   val documents = CustomBinary("documents","documents","has documentation")
   override val allBinary: List[Binary] = List(
@@ -413,7 +537,7 @@ object ExampleRelational extends RelationalExtractor {
     case _ =>
   }
 }
-
+*/
 object Definienda extends OpaqueElementInterpreter with OpaqueChecker {
   case class Def(override val parent:DPath,id : String,fors:List[GlobalName]) extends OpaqueXML(parent,"definiendum",
     <df id={id} fors={fors.map(_.toString).mkString(", ")}/>,Nil)

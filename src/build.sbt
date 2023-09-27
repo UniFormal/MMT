@@ -229,6 +229,11 @@ lazy val api = (project in file("mmt-api")).
     Compile / scalaSource := baseDirectory.value / "src" / "main",
     Compile / unmanagedJars ++= apiJars(utils.value),
     Test / unmanagedJars ++= apiJars(utils.value),
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-repository-sail" % "4.3.3",
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-sail-memory" % "4.3.3",
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-sparqlbuilder" % "4.3.3",
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-rio-rdfxml" % "4.3.3",
+    libraryDependencies += "org.eclipse.rdf4j" % "rdf4j-rio-binary" % "4.3.3"
   )
 
 
@@ -407,34 +412,42 @@ lazy val mizar = (project in file("mmt-mizar")).
 // use of MMT in the frameit system, here for ease of deployment but not part of the main mmt target
 // reponsible: Navid
 // finch is an HTTP server library (https://github.com/finagle/finch), a FrameIT dependency
-val finchVersion = "0.32.1"
-// Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
-val circeVersion = "0.13.0"
+val finchVersion = "0.34.1"
+
 lazy val frameit = (project in file("frameit-mmt"))
   .dependsOn(api, lf, odk)
   .settings(mmtProjectsSettings("frameit-mmt"): _*)
   .settings(
     libraryDependencies ++= Seq(
       //  a server infrastructure library
-      "com.twitter" %% "twitter-server" % "20.12.0",
+      "com.twitter" %% "twitter-server" % "22.12.0",
 
       // an incarnation of an HTTP server library for the above infrastructure
-      "com.github.finagle" %% "finchx-core" % finchVersion,
+      "com.github.finagle" %% "finch-core" % finchVersion,
       // with ability to automatically encode/decode JSON payloads via the circe library below
-      "com.github.finagle" %% "finchx-circe" % finchVersion,
-      "com.github.finagle" %% "finchx-generic" % finchVersion,
+      "com.github.finagle" %% "finch-circe" % finchVersion,
+      "com.github.finagle" %% "finch-generic" % finchVersion,
 
       // and with testing abilities
-      "com.github.finagle" %% "finchx-test" % finchVersion % "test",
-      "com.github.finagle" %% "finchx-json-test" % finchVersion % "test",
+      "com.github.finagle" %% "finch-test" % finchVersion % "test",
+      "com.github.finagle" %% "finch-json-test" % finchVersion % "test",
 
       "org.scalatest" %% "scalatest" % "3.2.3" % "test",
 
-      // a JSON library
-      "io.circe" %% "circe-generic" % circeVersion,
+      // io.circe is a JSON library
+      "io.circe" %% "circe-core" % "0.14.5",
+      "io.circe" %% "circe-parser" % "0.14.5",
       // with extras to support encoding/decoding a case class hierarchy
-      "io.circe" %% "circe-generic-extras" % circeVersion,
-      "io.circe" %% "circe-parser"  % circeVersion,
+      "io.circe" %% "circe-generic-extras" % "0.14.3"
+      // (as for why the versions for circe-core and circe-generic-extras are different, see
+      //  https://github.com/circe/circe-generic-extras/issues/279)
+    ),
+
+    libraryDependencySchemes ++= Seq(
+      // see https://github.com/circe/circe-iteratee/issues/261
+      "io.circe" %% "circe-jawn" % VersionScheme.Always,
+      // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
+      "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
     ),
 
     Compile / scalacOptions ++= Seq(

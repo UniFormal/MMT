@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.frontend.{Logger, Report}
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.lf.Typed
 import info.kwarc.mmt.api.utils.JSON
 
@@ -19,7 +20,7 @@ class IMPSImporter extends Importer
 
   def inExts = List("index")
 
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
+  def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
     val targetSection : Section = impsLibrarySections.impsMathLibrary

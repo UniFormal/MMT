@@ -34,7 +34,7 @@ trait ExportExtension { self : STeXServer =>
     (to / "frags").mkdir()
     (to / "img").mkdir()
 
-    to.descendants.foreach(_.delete())
+    //to.descendants.foreach(_.delete())
     var index = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
     index = index.replace("CONTENT_URL_PLACEHOLDER", document.setExtension("doc.html").name)
     index = index.replace("BASE_URL_PLACEHOLDER", "")
@@ -104,7 +104,7 @@ trait ExportExtension { self : STeXServer =>
                 node.plain.attributes((node.namespace, "data-inputref-url")) = prefix + "document?archive=" + a.id + "&filepath=" + path + "&bindings=" + bindings.toNum(controller)
                 bindings.merge(dp)(controller)
               }
-              getTitle(d).foreach(n => node.add(n))
+              SHTMLContentManagement.getTitle(d).foreach(n => node.add(n))
             case _ =>
           }
         case _ =>

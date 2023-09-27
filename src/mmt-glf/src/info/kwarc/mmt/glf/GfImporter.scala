@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.objects.{OMID, OMS}
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.utils.{File, URI}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.lf.{FunType, LF, Typed}
 
 import scala.collection.mutable
@@ -19,7 +20,7 @@ class GfImporter extends Importer {
 
   val log_progress = Some("progress")
 
-  def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+  def importDocument(bt: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     /*
       PREPARATION
     */

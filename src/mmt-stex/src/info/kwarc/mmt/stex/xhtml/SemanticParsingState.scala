@@ -6,14 +6,16 @@ import info.kwarc.mmt.api.{AddError, ComplexStep, ContainerElement, DPath, Error
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, History, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, NotFound}
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.{HOAS, HOASNotation, NestedHOASNotation}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMAorAny, OMBIND, OMBINDC, OMFOREIGN, OMPMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.opaque.OpaqueXML.MMTIndex
 import info.kwarc.mmt.api.opaque.{OpaqueXML, TermFragmentInXML}
 import info.kwarc.mmt.api.parser.{ParseResult, SourceRef}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, RuleConstantInterpreter, Structure, TermContainer}
 import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.stex.Extensions.Definienda
+import info.kwarc.mmt.stex.Extensions.{Definienda, SHTMLContentManagement}
 import info.kwarc.mmt.stex.{SHTML, STeXError, STeXServer, STeXTraverser}
 import info.kwarc.mmt.stex.lsp.STeXLSPErrorHandler
 import info.kwarc.mmt.stex.rules.{HTMLTermRule, StringLiterals}
@@ -26,7 +28,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Try
 
-class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHandler, val dpath : DPath) extends HTMLParser.ParsingState(server.ctrl,rules) with SHTMLState[SHTMLNode] {
+class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHandler, val dpath : DPath,val rel:ULOStatement => Unit) extends HTMLParser.ParsingState(server.ctrl,rules) with SHTMLState[SHTMLNode] {
   private var docs = List(new Document(dpath))
   def closeDoc = {
     val h :: tail = docs
@@ -128,7 +130,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
     context.findAncestor {
       case t: ModuleLike =>
         val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({ return () }))
-        server.addNotation(th,path,id,opprec,argprecs,component.asInstanceOf[HTMLNode].plaincopy,op.map(_.asInstanceOf[HTMLNode].plaincopy))
+        SHTMLContentManagement.addNotation(th,path,id,opprec,argprecs,component.asInstanceOf[HTMLNode].plaincopy,op.map(_.asInstanceOf[HTMLNode].plaincopy))
     }
   }
 
@@ -138,28 +140,9 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
         case Some(OMS(p)) =>
           addNotation(p,id,opprec,argprecs,component,op)
         case _ =>
-          server.addVarNotation(vd, id, opprec, argprecs, component.asInstanceOf[HTMLNode].plaincopy, op.map(_.asInstanceOf[HTMLNode].plaincopy))
+          SHTMLContentManagement.addVarNotation(vd, id, opprec, argprecs, component.asInstanceOf[HTMLNode].plaincopy, op.map(_.asInstanceOf[HTMLNode].plaincopy))
       }
     )
-  }
-  def addSymdoc(fors : List[GlobalName],id:String,html:scala.xml.Node,language:String)(implicit context: SHTMLNode): Unit = {
-    context.findAncestor {
-      case t: ModuleLike =>
-        val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({
-          return ()
-        }))
-        server.addSymdoc(th,fors,html,language)
-    }
-  }
-
-  def addExample(fors: List[GlobalName], id: String, html: scala.xml.Node)(implicit context: SHTMLNode): Unit = {
-    context.findAncestor {
-      case t: ModuleLike =>
-        val th = t.signature_theory.getOrElse(t.language_theory.getOrElse({
-          return ()
-        }))
-        server.addExample(th, fors, html)
-    }
   }
 
   def addTitle(ttl: SHTMLNode) : Unit = {
@@ -172,7 +155,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
     if (doctitle.isEmpty) {
       doctitle = Some(n)
     }
-    server.addTitle(doc,n.plain.node.head)
+    SHTMLContentManagement.addTitle(doc,n.plain.node.head)
   }
   private var doctitle: Option[HTMLNode] = None
 
@@ -343,7 +326,7 @@ class SemanticState(val server:STeXServer, rules : List[HTMLRule], eh : ErrorHan
   }
 }
 
-class SearchOnlyState(server:STeXServer, rules : List[HTMLRule],eh : ErrorHandler, dpath : DPath) extends SemanticState(server,rules,eh,dpath) {
+class SearchOnlyState(server:STeXServer, rules : List[HTMLRule],eh : ErrorHandler, dpath : DPath) extends SemanticState(server,rules,eh,dpath,_ => ()) {
   override def add(se : StructuralElement) = {}
   override def endAdd[T <: StructuralElement](ce: ContainerElement[T]) = {}
   override def update(se: StructuralElement): Unit = {}

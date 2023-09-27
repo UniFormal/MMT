@@ -7,22 +7,26 @@ import archives._
 import java.util.ResourceBundle.Control
 import info.kwarc.mmt.api.frontend.Controller
 
-class StatisticsExporter extends Exporter {
+class StatisticsExporter extends Exporter { // TODO adapt to rdf
   def key = "statistics"
 
   override def outExt = "json"
+
+  def rs = controller.depstore match {
+    case rl:ClassicRelStore => Some(rl)
+    //case rl: RelStore if rl.classic.isDefined => rl.classic
+    case _ => None
+  }
 
   /**
     * Get the statistic for the document convert it to json and write it to the respective file in export
     * @param doc the document to make the statistics for
     * @param bf the build task
     */  
-  def exportDocument(doc: Document, bf: BuildTask): Unit = {
-    val rep = controller.report
-    val rs = controller.depstore
+  def exportDocument(doc: Document, bf: BuildTask): Unit = rs.foreach { rs =>
     log("[  -> statistics]     "+doc.path.toPath+" "+bf.outFile.toString())
     rh(rs.makeStatistics(doc.path).toJSON.toString)
-    var root = bf.archive.rootString
+    val root = bf.archive.rootString
     val filename : String = (root+"/export/statistics/description_of_statistics_keys.json")
     log(filename)
     val usageFile = File(filename)
@@ -34,9 +38,7 @@ class StatisticsExporter extends Exporter {
     * @param doc the theory to make the statistics for
     * @param bf the build task
     */
-  def exportTheory(thy: Theory, bf: BuildTask): Unit = {
-    val rep = controller.report
-    val rs = controller.depstore
+  def exportTheory(thy: Theory, bf: BuildTask): Unit = rs.foreach { rs =>
     rh(rs.makeStatistics(thy.path).toJSON.toString)
   }
   def exportView(view: View, bf: BuildTask): Unit =  {}
