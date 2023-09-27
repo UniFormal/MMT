@@ -146,7 +146,7 @@ class UnitError(val cp: CPath, h: History) {
 class ClientWrapper[+A <: LSPClient](val client : A,server:LSPServer[A]) {
   private def normalizeUri(s : String) : String = s.take(5) + s.drop(5).replace(":","%3A")
   def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
-  def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
+  def logError(s : String) = client.showMessage(new MessageParams(MessageType.Error,s))//client.logMessage(new MessageParams(MessageType.Error,s))
   def resetErrors(uri:String) = this.synchronized {
     diags.get(uri).foreach(_.clear)
     val params = new PublishDiagnosticsParams()

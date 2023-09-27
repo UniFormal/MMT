@@ -8,12 +8,14 @@
       window.BASE_URL = 'BASE_URL_PLACEHOLDER';
       // If 'SHOW_FILE_BROWSER' is set to 'TRUE', then the filebrowser is displayed and all other values are ignored.
       window.SHOW_FILE_BROWSER = 'SHOW_FILE_BROWSER_PLACEHOLDER';
+      // If USE_EMBEDDED is true, it uses the html it renders the content in 'embedding' element of this doc. 'CONTENT_URL' is ignored.
+      window.USE_EMBEDDED = 'FALSE';
       // Eg. /:sTeX/document?archive=MiKoMH/GenCS&filepath=dmath/mod/addition-function.en.xhtml
       // NOTE: CONTENT_URL must be empty if tours are to be displayed.
       window.CONTENT_URL = 'CONTENT_URL_PLACEHOLDER';
       // Eg. http://mathhub.info/smglom/sets/mod?subsupset
       window.TOUR_ID = 'TOUR_ID_PLACEHOLDER';
-      // Eg. en
+      // Eg. en or de
       window.LANGUAGE = 'LANGUAGE_PLACEHOLDER';
       // Eg. If 'NO_FRILLS' is set to 'TRUE', the sidepanel etc will not be shown
       window.NO_FRILLS = 'NO_FRILLS_PLACEHOLDER';
@@ -24,13 +26,19 @@
   <title>sTeX Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="/stex/mmt-viewer/favicon.ico" />
-<link rel="stylesheet" href="/stex/mmt-viewer/styles.e4e14622fc5599b3.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.420346012a7e8d87.css">
+<link rel="stylesheet" href="/stex/mmt-viewer/styles.17b9ee704abcc86c.css"><link rel="stylesheet" href="/stex/mmt-viewer/main.420346012a7e8d87.css">
   <link rel="stylesheet" href="CONTENT_CSS_PLACEHOLDER">
   <link rel="stylesheet" href="/stex/fonts.css">
 </head>
 
+<div style="display: none;">
+    <div id="embedding">
+        <!--Embedded Code-->
+    </div>
+</div>
+
 <body>
   <div id="root"></div>
-<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/styles.97c1288dfae7ac4e.js" type="module"></script><script src="/stex/mmt-viewer/main.1ed01a91b22a2975.js" type="module"></script></body>
+<script src="/stex/mmt-viewer/runtime.ef661e1f8606875b.js" type="module"></script><script src="/stex/mmt-viewer/styles.97c1288dfae7ac4e.js" type="module"></script><script src="/stex/mmt-viewer/main.f7e3ca12f00f4bfe.js" type="module"></script></body>
 
 </html>

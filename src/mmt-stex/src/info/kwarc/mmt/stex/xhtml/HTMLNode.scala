@@ -166,6 +166,8 @@ class HTMLPlainNode(var _state: ParsingState, var _namespace: String, var _label
 
   def copy: HTMLPlainNode = {
     val ret = new HTMLPlainNode(state, namespace, label)
+    ret.startswithWS = startswithWS
+    ret.endswithWS = endswithWS
     ret.classes = classes
     attributes.foreach(e => ret.attributes(e._1) = e._2)
     children.foreach(c => ret.add(c.copy))
@@ -174,6 +176,8 @@ class HTMLPlainNode(var _state: ParsingState, var _namespace: String, var _label
 
   override def plaincopy: HTMLPlainNode = {
     val ret = new HTMLPlainNode(state, namespace, label)
+    ret.startswithWS = startswithWS
+    ret.endswithWS = endswithWS
     ret.classes = classes
     attributes.foreach(e => ret.attributes(e._1) = e._2)
     children.foreach(c => ret.add(c.plaincopy))
@@ -250,14 +254,15 @@ class HTMLText(state: ParsingState, val text: String) extends HTMLPlainNode(stat
   override def isEmpty = toString() == "" || toString() == HTMLParser.empty.toString || toString() == "&#8205;"
 
   override def copy: HTMLText = {
-    new HTMLText(state, text)
+    val ret = new HTMLText(state, text)
+    ret.startswithWS = startswithWS
+    ret.endswithWS = endswithWS
+    ret
   }
 
   override def node: Node = scala.xml.Text(text)
 
-  override def plaincopy: HTMLText = {
-    new HTMLText(state, text)
-  }
+  override def plaincopy: HTMLText = { copy }
 }
 
 object HTMLNode {

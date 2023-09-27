@@ -176,7 +176,18 @@ lazy val src = (project in file(".")).
     // add the test folder to the test sources
     // but don't actually run any of them
     Test / scalaSource := baseDirectory.value / "test",
-    test := {}
+    test := {},
+
+    // This silences a dependency semver version conflict from the frameit project.
+    // It is necessary to have this silencing mechanism both in the frameit project
+    // and here in the super project (I guess because the version conflict somehow
+    // bubbles up?)
+    libraryDependencySchemes ++= Seq(
+      // see https://github.com/circe/circe-iteratee/issues/261
+      "io.circe" %% "circe-jawn" % VersionScheme.Always,
+      // see https://github.com/sbt/sbt/issues/7140#issuecomment-1464119328
+      "io.circe" % "circe-jawn_2.13" % VersionScheme.Always
+    )
   )
 
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
@@ -443,6 +454,9 @@ lazy val frameit = (project in file("frameit-mmt"))
       //  https://github.com/circe/circe-generic-extras/issues/279)
     ),
 
+    // This silences a dependency semver version conflict.
+    // It is necessary to have this silencing mechanism both here and in the super project src
+    // (I guess because the version conflict somehow bubbles up?)
     libraryDependencySchemes ++= Seq(
       // see https://github.com/circe/circe-iteratee/issues/261
       "io.circe" %% "circe-jawn" % VersionScheme.Always,
@@ -464,7 +478,6 @@ lazy val frameit = (project in file("frameit-mmt"))
     Compile / mainClass  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
     assembly / mainClass := Some("info.kwarc.mmt.frameit.communication.server.Server")
   )
-	
 
 // plugin for mathscheme-related functionality. Obsolete
 lazy val mathscheme = (project in file("mmt-mathscheme")).

@@ -41,7 +41,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
     controller.extman.addExtension(NotationExtractor)
     //controller.extman.addExtension(SymdocRelational)
     //controller.extman.addExtension(ExampleRelational)
-    //controller.extman.addExtension(Definienda)
+    controller.extman.addExtension(Definienda)
     controller.extman.addExtension(new MathStructureFeature)
     /*addExtension(DocumentExtension)
     addExtension(FragmentExtension)

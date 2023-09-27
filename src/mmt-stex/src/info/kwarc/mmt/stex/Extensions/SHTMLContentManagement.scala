@@ -28,6 +28,7 @@ object Symbols {
   val meta_notation = mmtmeta_path ? "notation"
   val meta_symdoc = mmtmeta_path ? "symboldoc"
   val meta_example = mmtmeta_path ? "example"
+  val meta_problem = mmtmeta_path ? "example"
   val meta_definition = mmtmeta_path ? "definition"
   val meta_statement = mmtmeta_path ? "statement"
   val assoctype_sym = mmtmeta_path ? "assoctype"
@@ -234,20 +235,37 @@ object SHTMLContentManagement {
     //parent.metadata.add(MetaDatum(meta_symdoc, OMA(OMS(meta_symdoc), StringLiterals(language) :: OMFOREIGN(node) :: fors.map(OMS(_)))))
   }
 
-  def getSymdocs(sym: ContentPath, language: String)(implicit controller:Controller): List[Node] = {
+  def getSymdocs(sym: ContentPath, language: String,context:Option[DPath])(implicit controller:Controller): List[(GlobalName,Node)] = {
     import info.kwarc.mmt.api.ontology.SPARQL._
-    controller.depstore.query(
-      SELECT("x") WHERE (T(sym,ULO.docref,V("x")) UNION T(V("x"),ULO.defines,sym))
-    ).getPaths.flatMap(controller.getO).collect {
+
+    val paths = context match {
+      case Some(docpath) =>
+        val first = controller.depstore.query(
+          SELECT("x") WHERE (
+            T(docpath,ULO.specifies | ULO.contains,V("x")) AND (
+              T(sym, ULO.docref, V("x")) UNION T(V("x"), ULO.defines, sym)
+            ))
+        ).getPaths
+        val second = controller.depstore.query(
+          SELECT("x") WHERE (T(sym, ULO.docref, V("x")) UNION T(V("x"), ULO.defines, sym))
+        ).getPaths
+        (first ::: second).distinct
+      case None => controller.depstore.query(
+        SELECT("x") WHERE (T(sym, ULO.docref, V("x")) UNION T(V("x"), ULO.defines, sym))
+      ).getPaths
+    }
+
+    val constants = paths.flatMap(controller.getO).collect {
       case c : Constant if c.df.isDefined =>
        /*val deps = controller.depstore.query(
           SELECT("y") WHERE
               T(c.path,(ULO.crossrefs | ULO.declares)+,V("y"))
         )
         deps.getPaths.foreach(println)*/
-        c.df.get
-    }.collect {
-      case OMA(OMS(_),OMFOREIGN(node) :: _) => node
+        (c.path,c.df.get)
+    }.distinct
+    constants.collect {
+      case (p,OMA(OMS(_),OMFOREIGN(node) :: _)) => (p,node)
     }
   }
 
@@ -303,7 +321,7 @@ object SHTMLContentManagement {
   }
 
   def addProblem(path: GlobalName, node: Node, controller: Controller, rel: ULOStatement => Unit) = {
-    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_example), OMFOREIGN(node) :: Nil)), Some("problem"))
+    val c = Constant(OMMOD(path.module), path.name, Nil, None, Some(OMA(OMS(meta_problem), OMFOREIGN(node) :: Nil)), Some("problem"))
     controller.add(c)
     rel(ULO.problem(RDFImplicits.pathToIri(c.path)))
     // parent.metadata.add(MetaDatum(meta_example, OMA(OMS(meta_example), OMFOREIGN(node) :: fors.map(OMS(_)))))

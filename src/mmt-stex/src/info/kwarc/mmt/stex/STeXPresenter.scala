@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
 import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GetError, GlobalName, LocalName, RuleSet, StructuralElement, presentation}
 import info.kwarc.mmt.stex
 import info.kwarc.mmt.stex.Extensions.{NotationExtractor, SHTMLContentManagement}
-import info.kwarc.mmt.stex.rules.Getfield
+import info.kwarc.mmt.stex.rules.{Getfield, ReversibleHTMLTermRule}
 
 import scala.xml.{NodeSeq, XML}
 import scala.xml.{Elem, Node}
@@ -96,6 +96,12 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
       case _ =>
         t
     }
+    rett = rett match {
+      case OMBIND(OMS(SHTML.implicit_binder.path), ctx, ReversibleHTMLTermRule(t)) =>
+        OMBIND(OMS(SHTML.implicit_binder.path), ctx, t)
+      case ReversibleHTMLTermRule(t) => t
+      case _ => t
+    }
     val (fun,ruler,headO,isvar,tis,args) = rett match {
       case Getfield(SHTML.of_type(ti,_),_) =>
         (rett,SHTMLContentManagement.getRuler(t, pc.getContext),None,false,Some(ti),Nil)
@@ -156,6 +162,11 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             val nargs = pre ::: SHTML.flatseq(undoBin(h,f,pre,args,Nil)) :: Nil
             retargs = nargs.map(STerm)
             rett = SHTMLHoas.OmaSpine(h,f,nargs)
+          case (SHTMLHoas.OmaSpine(h, f, ls), Some("bin" | "binr" | "conj"), Some("ia")) =>
+            val (pre, args) = ls.splitAt(implnum)
+            val nargs = pre ::: args.head :: SHTML.flatseq(undoBin(h, f, pre ::: args.head :: Nil, args.tail, Nil)) :: Nil
+            retargs = nargs.map(STerm)
+            rett = SHTMLHoas.OmaSpine(h, f, nargs)
           case (SHTMLHoas.OmaSpine(h, f, ls), Some("bin" | "binr" | "conj"), Some("ai")) =>
             val (pre, args) = ls.splitAt(implnum)
             val nargs = pre ::: SHTML.flatseq(undoBin(h, f, pre, args.init, List(args.last))) :: args.last :: Nil

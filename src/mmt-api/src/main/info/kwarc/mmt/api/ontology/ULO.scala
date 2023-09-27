@@ -11,7 +11,7 @@ import org.eclipse.rdf4j.model.vocabulary.{DC, OWL, RDF, RDFS, XSD}
 import org.eclipse.rdf4j.query.TupleQueryResult
 import org.eclipse.rdf4j.repository.RepositoryResult
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection
-import org.eclipse.rdf4j.rio.Rio
+import org.eclipse.rdf4j.rio.{RDFParseException, Rio}
 import org.eclipse.rdf4j.sparqlbuilder.core.SparqlBuilder
 import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries
 import org.eclipse.rdf4j.sparqlbuilder.graphpattern.GraphPatterns
@@ -53,8 +53,19 @@ object RDFImplicits {
     .replace("%5E","^"))//URLDecoder.decode(i.getLocalName,"UTF-8"))
   implicit def asResource(e: ULOTrait): Resource = e.toIri
   def isPath(i:Value) = i.isIRI && i.asInstanceOf[IRI].getLocalName.isEmpty//.getNamespace == path_namespace
-
-  implicit def URIToIRI(uri:URI): IRI = iri(uri.toString)
+  implicit def URIToIRI(uri:URI): IRI = iri(uri.toString
+    .replace("[", "%5B")
+    .replace("]", "%5D")
+    .replace(" ", "%20")
+    .replace(">", "%3E")
+    .replace("<", "%3C")
+    .replace("|", "%7C")
+    .replace("\\", "%5C")
+    .replace("{", "%7B")
+    .replace("}", "%7D")
+    .replace("#", "%23")
+    .replace("^", "%5E")
+  )
 }
 import RDFImplicits._
 
@@ -645,7 +656,9 @@ class RDFStore(protected val report : frontend.Report) extends RDFRelStoreLike {
     val conn = repo.getConnection
     if ((a / relational).exists) a.traverse(relational, in, Archive.traverseIf(fileFormat._1)) { case info.kwarc.mmt.api.archives.Current(inFile, _) =>
       val iri = relpath(a, inFile)
-      conn.add(inFile.toJava, fileFormat._2, iri)
+      try{conn.add(inFile.toJava, fileFormat._2, iri)} catch {
+        case _:RDFParseException =>
+      }
     }
     conn.close()
   }
@@ -988,10 +1001,16 @@ object SPARQL {
   private case class PathO(p:Path) extends Subject {
     override def toObjString: String = "<" + pathToIri(p).toString + ">"
   }
-  case class V(s:String) extends Subject {
+  private case class IriO(i:IRI) extends Object {
+    override def toObjString: String = "<" + i.toString + ">"
+  }
+  case class V(s:String) extends Subject with Predicate {
     def toObjString = s"?$s"
+    def predString: String = s"?$s"
   }
   implicit def pathtosubject(p:Path): Subject = PathO(p)
+
+  implicit def classtoobject(p: ULOClass): Object = IriO(p.toIri)
   private case class SelectWhere(vars:List[String],where:SparqlQuery) extends SparqlQuery {
     def queryString: String = s"SELECT ${vars.map("?" + _).mkString(" ")} WHERE { ${where.queryString} }"
   }

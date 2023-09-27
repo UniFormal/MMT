@@ -72,14 +72,14 @@ sealed case class Fact(
   private def _toSimple(implicit ctrl: Controller): SFact = {
     val simplify: Term => Term = {
       val ctx = Context(ref.uri.module) ++ additionalContext
-      val simplificationRules: RuleSet = {
+      val simplificationRules: RuleSet = Fact.ruleCache.computeIfAbsent(ctx, _ => {
         val rules = RuleSet.collectRules(ctrl, ctx)
         rules.add(new LabelVerbalizationRule()(ctrl.globalLookup))
 
         rules
-      }
+      })
 
-      val simplicationUnit = SimplificationUnit(ctx, expandVarDefs = true, expandConDefs = true, fullRecursion = true)
+      val simplicationUnit = SimplificationUnit(ctx, expandVarDefs = true, expandConDefs = true, fullRecursion = false)
 
       ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }
@@ -101,9 +101,16 @@ sealed case class Fact(
 
 object Fact {
   /**
-    * A cache to speed up [[Fact.toSimple]].
+    * A cache to speed up [[Fact.toSimple]] when one and the same fact is simplified over again.
     */
   private val sfactCache: ConcurrentHashMap[Fact, SFact] = new ConcurrentHashMap
+  /**
+    * A cache to speed up [[Fact.toSimple]] when facts are simplified in one and the same context (most likely the
+    * problem or solution theory).
+    * The cache stores [[RuleSet RuleSets]] because redundantly calling [[RuleSet.collectRules]] every time as part of
+    * [[Fact.toSimple]] is slow.
+    */
+  private val ruleCache: ConcurrentHashMap[Context, RuleSet] = new ConcurrentHashMap
 
   def fromConstant(c: Constant)(implicit ctrl: Controller): Fact = Fact(
     FactReference(c.path),
