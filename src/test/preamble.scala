@@ -106,7 +106,10 @@ object MagicTest {
       // alexander
       home / "Dokumente" / "Studium" / "MMTWorkspace"/"MMT",
       // stefan
-      home / "Documents" / "fau" / "Projekt_KI" / "archives"
+      home / "Documents" / "fau" / "Projekt_KI" / "archives",
+      // marco
+      File("D:\\") / "Users" / "marco" / "Dokuments" / "OneDrive" / "FAU" / "Informatik" / "!UFrameIT" / "FrameIT" / "MMT" / "archives",
+      //home / "Documents" / "Projects" / "FrameIT" / "MMT" / "archives",
 
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }

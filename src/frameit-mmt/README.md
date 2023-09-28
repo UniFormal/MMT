@@ -216,12 +216,106 @@ JSON (sub)formats shared by multiple endpoints above.
     SOMDoc is a JSON representation of a subset of [OMDoc](https://www.omdoc.org/). It is simpler than the [OpenMath-JSON standard](https://omjson.kwarc.info/) and *almost* implements a subset of it.
     Below is a representative list of all possible SOMDoc terms as JSON:
     
-    - `{"kind": "OMS", "uri": /* MMT  URI */}`
-    - `{"kind": "OMA", "applicant": /* SOMDoc */, "arguments": /* array of SOMDoc */}`
-    - `{"kind": "OMI", "decimal": 42}`
-    - `{"kind": "OMF", "float": 0.1234}`
-    - `{"kind": "OMSTR", "string": "string in UTF-8"}`
-    - `{"kind": "RAW", "xml": "OMDoc XML as string in UTF-8"}` (our addition to the (insert link here to omdoc json standard))
+    - <details><summary>OMS</summary>
+	
+		```javascript
+		{
+			"kind": "OMS",
+			"uri": /* MMT  URI */
+		}
+		```
+		
+	  </details>
+	  
+    - <details><summary>OMA</summary>
+	
+		```javascript
+		{
+			"kind": "OMA", 
+			"applicant": /* SOMDoc */, 
+			"arguments": Array[/* SOMDoc */]
+		}
+		```
+		
+	  </details>
+	  
+    - <details><summary>OML</summary>
+	
+		```javascript
+		{
+			"kind": "OML", 
+			"name": /* string in UTF-8 */, 
+			"tp": /* optional type as SOMDoc*/, 
+			"df": /* optional defines as SOMDOc */
+		}
+		```
+		
+	  </details>
+	  
+    - <details><summary>FUNTYPE</summary>
+	
+		```javascript
+		{
+			"kind": "FUNTYPE",
+			"params": Array[/* types as SOMDoc */], 
+			"ret": /* type as SOMDOc */
+		}
+		```
+		
+	  </details>
+	  
+    - <details><summary>FUN</summary>
+	
+		```javascript
+		{
+			"kind": "FUN",
+			"params": Array[
+					{
+						"name": /* string in UTF-8 */, 
+						"type": /* SOMDOc */
+					}
+				], 
+			"body": /* SOMDOc */
+		}
+		```
+		
+	  </details>
+	  
+    - <details><summary>OMLIT</summary>
+	
+		```javascript
+		{
+			"kind": "OMLIT<Boolean>" | "OMLIT<Int32>" | "OMLIT<Double>" | "OMLIT<String>",
+			"type": /* MMT  URI */
+			"value": /*e.g.: true|false, 1, 0.675, "test-string"*/
+		}
+		```
+		With "kind" specifying the Type of "value" 
+		
+	  </details>
+	  
+    - <details><summary>Wrapper</summary>
+	
+		```javascript
+		{
+			"Wrapper": /* SOMDOc */
+		}
+		```
+		(Needed because of a bug in Serialization)
+		
+	  </details>
+	  
+    - <details><summary>RAW</summary>
+	
+		```javascript
+		{
+			"kind": "RAW", 
+			"xml": "OMDoc XML as string in UTF-8"
+		}
+		```
+		(our addition to the (insert link here to omdoc json standard))
+		
+	  </details>
     
     In contrast to OpenMath-JSON, OMS terms simply encode the full MMT URI as a string instead of specifying its components separately. (E.g., OpenMath-JSON would provide fields `cd`, `cdbase`, and `name`.)
     Moreover, as all but the last bullet point above only represent a subset of OMDoc, we need a way to encode unrepresented terms: we do so by `{kind: "RAW", "xml": "..."}`.

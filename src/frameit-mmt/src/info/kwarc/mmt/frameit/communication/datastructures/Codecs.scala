@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.utils.mmt
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SEquationSystemFact, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
-import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SFunction, SFunctionType, SInteger, SOMA, SOMS, SRawOMDoc, SRecArg, SString, STerm, SVariable}
+import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc._
 import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -88,14 +88,21 @@ private[communication] object Codecs {
       implicit val somdocConfig: Configuration = kindedJsonConfig(Map(
         classOf[SOMA] -> "OMA",
         classOf[SOMS] -> "OMS",
-        classOf[SFloatingPoint] -> "OMF",
-        classOf[SString] -> "OMSTR",
-        classOf[SInteger] -> "OMI",
-        classOf[SRecArg] -> "RECARG",
         classOf[SVariable] -> "VAR",
-        // no mapping for SFunction because of custom codec below
+        // mapping as Wrapper for SFunction because of custom codec below
+        classOf[SFunction] -> "Wrapper",
         classOf[SFunctionType] -> "FUNTYPE",
-        classOf[SRawOMDoc] -> "RAW"
+        classOf[SRawOMDoc] -> "RAW",
+        classOf[SOML] -> "OML",
+        classOf[OMLITBool] -> "OMLIT<Boolean>",
+        classOf[OMLITByte] -> "OMLIT<Byte>",
+        classOf[OMLITShort] -> "OMLIT<Int16>",
+        classOf[OMLITInt] -> "OMLIT<Int32>",
+        classOf[OMLITLong] -> "OMLIT<Int64>",
+        classOf[OMLITFloat] -> "OMLIT<Single>",
+        classOf[OMLITDouble] -> "OMLIT<Double>",
+        classOf[OMLITChar] -> "OMLIT<Char>",
+        classOf[OMLITString] -> "OMLIT<String>",
       ))
     }
 
