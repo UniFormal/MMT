@@ -132,7 +132,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
     Future {buildWithDeps}.andThen {
       case scala.util.Success(docs) if docs.nonEmpty =>
         val title = SHTMLContentManagement.getTitle(docs.head).map {t =>
-          server.stexserver.present(t.toString)(None).toString
+          server.stexserver.present(t.toString)(None).toString.replace("&amp;","&")
         }.getOrElse("<span></span>")
         val problems = docs.flatMap {d =>
           d.getDeclarations.collectFirst{case m:MRef => m.target} match {
@@ -158,7 +158,7 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
               return
           }
         }
-        File.write(target,JSONObject(("title",JSONString(title)), "problems" -> JSONArray(problems.map(s => JSONString(s.toString)):_*)).toString)
+        File.write(target,JSONObject(("title",JSONString(title)), "problems" -> JSONArray(problems.map(s => JSONString(s.toString.replace("&amp;","&"))):_*)).toString)
       case _ => client.logError("Build failed")
     }
   }
