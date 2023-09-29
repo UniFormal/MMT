@@ -810,6 +810,11 @@ trait SHTMLDocumentServer { this : STeXServer =>
       override def onAdd: Unit = {
         super.onAdd
         plain.attributes((this.namespace, "data-problem-mcb")) = "true"
+        plain.attributes.get((HTMLParser.ns_shtml, "styles")) match {
+          case Some(s) if s.contains("inline") =>
+            plain.attributes((this.namespace, "data-problem-mcb-inline")) = "true"
+          case _ =>
+        }
       }
     }
     case class MC(orig: HTMLNode) extends SHTMLNode(orig) {
@@ -836,6 +841,11 @@ trait SHTMLDocumentServer { this : STeXServer =>
       override def onAdd: Unit = {
         super.onAdd
         plain.attributes((this.namespace, "data-problem-scb")) = "true"
+        plain.attributes.get((HTMLParser.ns_shtml,"styles")) match {
+          case Some(s) if s.contains("inline") =>
+            plain.attributes((this.namespace, "data-problem-scb-inline")) = "true"
+          case _ =>
+        }
       }
     }
     case class SC(orig: HTMLNode) extends SHTMLNode(orig) {
