@@ -294,7 +294,7 @@ object Begin extends MacroRule {
       env.header = nstate.children.reverse
       val next = try {
         parser.readTop {
-          parser.In.startsWith("\\end")
+          parser.In.startsWith("\\end{")
         }
       } catch {
         case le: LaTeXParseError if !rl.isInstanceOf[UnknownEnvironmentRule] =>
@@ -435,6 +435,22 @@ object TeXRules {
       new MacroApplication
     }
   }
+  val begingroup = new MacroRule {
+    override def name = "begingroup"
+
+    override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+      parser.latex.opengroup
+      new MacroApplication
+    }
+  }
+  val endgroup = new MacroRule {
+    override def name = "endgroup"
+
+    override def apply(implicit parser: ParseState[PlainMacro]): MacroApplication = {
+      parser.latex.closegroup
+      new MacroApplication
+    }
+  }
   val explsyntaxon = new MacroRule {
     override def name: String = "ExplSyntaxOn"
 
@@ -456,6 +472,7 @@ object TeXRules {
     VerbatimEnvRule("verbatim"),VerbatimEnvRule("lstlisting"),VerbatimEnvRule("stexcode"),
     InlineVerbRule("lstinline"),InlineVerbRule("verb"),InlineVerbRule("stexcodeinline"),
     lstdefinelanguage,url,makeatletter,makeatother,explsyntaxon,explsyntaxoff,
+    begingroup,endgroup,
     SkipCommand("newcommand","voov"),
     SkipCommand("providecommand", "voov"),
     SkipCommand("renewcommand", "voov"),
