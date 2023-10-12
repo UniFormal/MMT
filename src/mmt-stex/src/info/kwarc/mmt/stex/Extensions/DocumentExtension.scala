@@ -875,7 +875,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
     case class ProblemHint(orig: HTMLNode) extends SHTMLNode(orig) {
-      def copy = Solution(orig.copy)
+      def copy = ProblemHint(orig.copy)
 
       override def onAdd: Unit = {
         super.onAdd
@@ -883,7 +883,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
     case class ProblemNote(orig: HTMLNode) extends SHTMLNode(orig) {
-      def copy = Solution(orig.copy)
+      def copy = ProblemNote(orig.copy)
 
       override def onAdd: Unit = {
         super.onAdd
@@ -891,7 +891,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
     case class ProblemGNote(orig: HTMLNode) extends SHTMLNode(orig) {
-      def copy = Solution(orig.copy)
+      def copy = ProblemGNote(orig.copy)
 
       override def onAdd: Unit = {
         super.onAdd
@@ -899,15 +899,15 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
     case class ProblemPoints(orig: HTMLNode) extends SHTMLNode(orig) {
-      def copy = Solution(orig.copy)
+      def copy = ProblemPoints(orig.copy)
 
       override def onAdd: Unit = {
         super.onAdd
-        plain.attributes((this.namespace, "data-problem-points")) = "true"
+        plain.attributes((this.namespace, "data-problem-points")) = plain.attributes.getOrElse((HTMLParser.ns_shtml,"problempoints"),"0")
       }
     }
     case class ProblemMinutes(orig: HTMLNode) extends SHTMLNode(orig) {
-      def copy = Solution(orig.copy)
+      def copy = ProblemMinutes(orig.copy)
 
       override def onAdd: Unit = {
         super.onAdd
