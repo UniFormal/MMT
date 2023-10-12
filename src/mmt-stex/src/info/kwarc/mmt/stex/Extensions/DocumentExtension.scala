@@ -903,7 +903,11 @@ trait SHTMLDocumentServer { this : STeXServer =>
 
       override def onAdd: Unit = {
         super.onAdd
-        plain.attributes((this.namespace, "data-problem-points")) = plain.attributes.getOrElse((HTMLParser.ns_shtml,"problempoints"),"0")
+        this.findAncestor {
+          case p: Problem => p
+        }.foreach { p =>
+          p.plain.attributes((this.namespace, "data-problem-points")) = plain.attributes.getOrElse((HTMLParser.ns_shtml, "problempoints"), "0")
+        }
       }
     }
     case class ProblemMinutes(orig: HTMLNode) extends SHTMLNode(orig) {
