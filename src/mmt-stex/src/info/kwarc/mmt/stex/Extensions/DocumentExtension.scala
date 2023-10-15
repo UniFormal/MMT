@@ -120,7 +120,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case Some("documentTop") =>
         ServerResponse(doDocument.toString.trim, "text/html")
       case Some("fragment") =>
-        ServerResponse(doFragment.toString.trim.replace("&amp;","&"), "text/html")
+        ServerResponse(doFragment(false).toString.trim.replace("&amp;","&"), "text/html")
+      case Some("rawfragment") =>
+        ServerResponse(doFragment(true).toString.trim.replace("&amp;", "&"), "text/html")
       case Some("declaration") =>
         doDeclaration
       case Some("loraw") =>
@@ -485,8 +487,8 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  def doFragment(implicit dp:DocParams) = {
-    val htm = getFragment
+  def doFragment(raw:Boolean)(implicit dp:DocParams) = {
+    val htm = getFragment(raw)
     val (doc, body) = this.emptydoc
     body.plain.attributes((HTMLParser.ns_html, "style")) = "background-color:white"
     stripMargins(doc)
@@ -521,7 +523,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
   }
 
-  def getFragment(implicit dp:DocParams) = {
+  def getFragment(raw:Boolean)(implicit dp:DocParams) = {
     val path = dp.path match {
       case Some(mp: MPath) =>
         controller.simplifier(mp)
@@ -535,7 +537,13 @@ trait SHTMLDocumentServer { this : STeXServer =>
       case Some(elem) =>
         elem match {
           case c: Constant =>
-            present(getFragmentDefault(c))(dp.bindings)
+            if (raw) {
+              val r = getFragmentDefault(c)
+              val state = new ParsingState(this.controller, Nil)
+              HTMLParser(r)(state)
+            } else {
+              present(getFragmentDefault(c))(dp.bindings)
+            }
           case _ =>
             throw ErrorResponse("No symbol with path " + path + " found")
         }
