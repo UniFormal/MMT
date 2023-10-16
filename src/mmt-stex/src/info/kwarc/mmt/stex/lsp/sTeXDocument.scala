@@ -3,12 +3,17 @@ package info.kwarc.mmt.stex.lsp
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.{DPath, DefComponent, ErrorHandler, Level, OpenCloseHandler, Path, SourceError}
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged}
+import info.kwarc.mmt.api.archives.{BuildAll, BuildChanged, source}
+import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.objects.{OMA, OMFOREIGN, OMS}
+import info.kwarc.mmt.api.ontology.ULO
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.time.Time
-import info.kwarc.mmt.api.utils.{File, URI}
+import info.kwarc.mmt.api.utils.{File, JSONArray, JSONObject, JSONString, URI}
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument, LSPServer}
+import info.kwarc.mmt.stex.Extensions.{SHTMLContentManagement, Symbols}
 import info.kwarc.mmt.stex.parsing.stex.HasAnnotations
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, SemanticState}
@@ -60,19 +65,21 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
   }
 
   def parsingstate(eh: STeXLSPErrorHandler) = {
-    new SemanticState(server.stexserver,server.stexserver.importRules,eh,dpath)
+    //val path = archive.flatMap(a => relfile.map(_.toFilePath.foldLeft(a.narrationBase)((a,b) => a / b))).getOrElse(URI(uri))
+    new SemanticState(server.stexserver,server.stexserver.importRules,eh,dpath,_ => ()) // TODO add subgraph
   }
 
   var html:Option[HTMLNode] = None
 
-  def buildFull() = Future { synchronized {
+  def buildFull() = { synchronized {
     client.resetErrors(uri)
     server.withProgress(uri + "-fullstex","Building " + uri.split('/').last, "full") { update =>
       val target = server.controller.extman.getOrAddExtension(classOf[FullsTeX],"fullstex")
       (target,archive,relfile) match {
         case (Some(t),Some(a),Some(f)) =>
           client.log("Building [" + a.id + "] " + f)
-          val eh = STeXLSPErrorHandler(e => client.documentErrors(this,false, e), update)
+          val eh = STeXLSPErrorHandler(e => client.documentErrors(thisdoc, false, e), update)
+          //val eh = STeXLSPErrorHandler(e => client.documentErrors(this,false, e), update)
           try {
             eh.open
             t.build(a, BuildChanged(), f.toFilePath, Some(eh))
@@ -89,6 +96,72 @@ class sTeXDocument(uri : String,override val client:ClientWrapper[STeXClient],ov
       ((),"Done")
     }
   }}
+
+  def buildWithDeps: List[Document] = {
+    def collectInputrefs(doc:Document): List[DPath] = {
+      doc.getDeclarations.collect {
+        case d:Document => collectInputrefs(d)
+        case d : DRef if d.target.last.endsWith(".omdoc") => List(d.target)
+      }.flatten
+    }
+    this.synchronized {
+      buildFull()
+      server.controller.getO(this.dpath) match {
+        case Some(doc:Document) =>
+          import info.kwarc.mmt.api.ontology.SPARQL._
+          import info.kwarc.mmt.api.ontology.RDFImplicits._
+          doc :: collectInputrefs(doc).flatMap {d =>
+            server.controller.backend.resolveLogical(d.uri) match {
+              case None => return Nil
+              case Some((a,ls)) =>
+                val f = "file://" + ls.foldLeft(a / source)((p,s) => p / s).setExtension("tex").toString
+                val nd = server.documents.synchronized {
+                  server.documents.getOrElseUpdate(f, server.newDocument(f))
+                }
+                nd.buildWithDeps
+            }
+          }
+        case _ =>
+          client.logError("Build failed")
+          Nil
+      }
+    }
+  }
+
+  def exportProblems(target:File): Unit = {
+    Future {buildWithDeps}.andThen {
+      case scala.util.Success(docs) if docs.nonEmpty =>
+        val title = SHTMLContentManagement.getTitle(docs.head).map {t =>
+          server.stexserver.present(t.toString)(None).toString.replace("&amp;","&")
+        }.getOrElse("<span></span>")
+        val problems = docs.flatMap {d =>
+          d.getDeclarations.collectFirst{case m:MRef => m.target} match {
+            case Some(lmp) =>
+              server.controller.getO(lmp) match {
+                case Some(m:Theory) =>
+                  m.getDeclarations.collect {
+                    case c:Constant if c.rl.contains("problem") =>
+                      c.df match {
+                        case Some(OMA(OMS(Symbols.meta_problem), OMFOREIGN(node) :: Nil)) =>
+                          server.stexserver.present(node.toString)(None)
+                        case _ =>
+                          client.logError("problem " + c.path + " has no content")
+                          return
+                      }
+                  }
+                case _ =>
+                  client.logError(s"language module $lmp not found")
+                  return
+              }
+            case _ =>
+              client.logError("No language module found in " + d.path)
+              return
+          }
+        }
+        File.write(target,JSONObject(("title",JSONString(title)), "problems" -> JSONArray(problems.map(s => JSONString(s.toString.replace("&amp;","&"))):_*)).toString)
+      case _ => client.logError("Build failed")
+    }
+  }
 
   def buildHTML(): Unit = Future { this.synchronized {
     client.resetErrors(uri)

@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
+import info.kwarc.mmt.stex.Extensions.SHTMLContentManagement
 import info.kwarc.mmt.stex.xhtml.HTMLParser
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
@@ -42,8 +43,8 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
       case Some("frag") =>
         path match {
           case Some(gn : GlobalName) =>
-            getSymdocs(gn, language).headOption match {
-              case Some(ht) => ServerResponse(present(ht.toString())(None).toString.trim, "text/html")
+            SHTMLContentManagement.getSymdocs(gn, language,None)(controller).headOption match {
+              case Some((_,ht)) => ServerResponse(present(ht.toString())(None).toString.trim, "text/html")
               case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
             }
           case _ => ServerResponse("Document not found: " + path.getOrElse("(None)"), "text/plain")
@@ -61,10 +62,10 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
       case Some("deps") =>
         path match {
           case Some(p:GlobalName) =>
-            getSymdocs(p, language).headOption match {
+            SHTMLContentManagement.getSymdocs(p, language,None)(controller).headOption match {
               case None =>
                 ServerResponse.JsonResponse(JSONArray())
-              case Some(doc) =>
+              case Some((_,doc)) =>
                 val html = HTMLParser(doc.toString())(new ParsingState(controller, Nil))
                 var syms: List[GlobalName] = Nil
                 html.iterate { n =>
@@ -111,8 +112,8 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
     }
     class Deps(val symbol:GlobalName) {
       var dependencies : Set[Deps] = Set.empty
-      lazy val doc = getSymdocs(symbol,language).headOption
-      lazy val html = doc.map{d =>
+      lazy val doc = SHTMLContentManagement.getSymdocs(symbol,language,None)(controller).headOption
+      lazy val html = doc.map{case (_,d) =>
         HTMLParser(d.toString())(new ParsingState(controller, Nil))
       }
       def transitive: Set[GlobalName] = {

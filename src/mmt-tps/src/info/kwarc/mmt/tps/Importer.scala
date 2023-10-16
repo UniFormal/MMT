@@ -6,6 +6,7 @@ import documents._
 import modules._
 import utils._
 import archives._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 
 class TPSImporter extends Importer {
    val key = "tps-omdoc"
@@ -14,7 +15,7 @@ class TPSImporter extends Importer {
 
    private val parseXML = syntax.makeParser
 
-   def importDocument(bf: BuildTask, index: Document => Unit) : BuildResult = {
+   def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit) : BuildResult = {
  //     if (bf.inFile.filepath.toString < startAt) return
       val d = bf.inFile.name
       val e = try {

@@ -35,9 +35,9 @@ abstract class Constant extends Declaration with HasType with HasDefiniens with 
   type ThisType = Constant
 
   // finalizes the Constant if it is not final
-  def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): FinalConstant = {
+  def translate(newHome: Term, prefix: LocalName, except: LocalName, translator: Translator, context : Context): FinalConstant = {
      Constant(
-         newHome, prefix / name, alias.map(prefix / _),
+         newHome, prefix.appendExcept(except, name), alias.map(prefix / _),
          translateTp(translator, context),
          translateDf(translator, context),
          rl, notC

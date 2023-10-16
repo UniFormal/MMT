@@ -1,18 +1,17 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.checking.History
-import info.kwarc.mmt.api.metadata.HasMetaData
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, RenderingHandler, VarData}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
 import info.kwarc.mmt.api.{CPath, ComplexStep, ContentPath, GetError, GlobalName, LocalName, RuleSet, StructuralElement, presentation}
 import info.kwarc.mmt.stex
-import info.kwarc.mmt.stex.Extensions.NotationExtractor
-import info.kwarc.mmt.stex.rules.{Getfield}
+import info.kwarc.mmt.stex.Extensions.{NotationExtractor, SHTMLContentManagement}
+import info.kwarc.mmt.stex.rules.{Getfield, ReversibleHTMLTermRule}
 
 import scala.xml.{NodeSeq, XML}
-
 import scala.xml.{Elem, Node}
 
 trait STeXPresenter extends ObjectPresenter {
@@ -90,69 +89,52 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
     }
   }
   private def normalizeTerm(t : Term)(implicit pc: PresentationContext) = {
+    implicit val ctrl:Controller = server.ctrl
     var rett = t match {
       case SHTML.implicit_binder.spine(ctx, tm) =>
         OMBIND(OMS(SHTML.implicit_binder.path), ctx, tm)
       case _ =>
         t
     }
+    rett = rett match {
+      case OMBIND(OMS(SHTML.implicit_binder.path), ctx, ReversibleHTMLTermRule(t)) =>
+        OMBIND(OMS(SHTML.implicit_binder.path), ctx, t)
+      case ReversibleHTMLTermRule(t) => t
+      case _ => t
+    }
     val (fun,ruler,headO,isvar,tis,args) = rett match {
       case Getfield(SHTML.of_type(ti,_),_) =>
-        (rett,server.getRuler(t, pc.getContext),None,false,Some(ti),Nil)
+        (rett,SHTMLContentManagement.getRuler(t, pc.getContext),None,false,Some(ti),Nil)
       case Getfield(ti, _) =>
-        (rett, server.getRuler(t, pc.getContext), None, false, Some(ti), Nil)
+        (rett, SHTMLContentManagement.getRuler(t, pc.getContext), None, false, Some(ti), Nil)
       case SHTMLHoas.Omb(_,it@Getfield(SHTML.of_type(ti,_),_),args) =>
-        (it,server.getRuler(it, pc.getContext), None, false, Some(ti), args)
+        (it,SHTMLContentManagement.getRuler(it, pc.getContext), None, false, Some(ti), args)
       case SHTMLHoas.Omb(_, it@Getfield(ti, _), args) =>
-        (it, server.getRuler(it, pc.getContext), None, false, Some(ti), args)
+        (it, SHTMLContentManagement.getRuler(it, pc.getContext), None, false, Some(ti), args)
       case SHTMLHoas.OmaSpine(_,it@Getfield(SHTML.of_type(ti,_),_),args) =>
-        (it,server.getRuler(it, pc.getContext), None, false, Some(ti), args.map(STerm))
+        (it,SHTMLContentManagement.getRuler(it, pc.getContext), None, false, Some(ti), args.map(STerm))
       case SHTMLHoas.OmaSpine(_, it@Getfield(ti, _), args) =>
-        (it, server.getRuler(it, pc.getContext), None, false, Some(ti), args.map(STerm))
+        (it, SHTMLContentManagement.getRuler(it, pc.getContext), None, false, Some(ti), args.map(STerm))
       case SHTMLHoas.Omb(_, f@OMV(_), args) =>
-        (f,server.getRuler(f, pc.getContext), None, true, None, args)
+        (f,SHTMLContentManagement.getRuler(f, pc.getContext), None, true, None, args)
       case SHTMLHoas.Omb(_, f@OMS(p), args) =>
-        (f,server.getRuler(f, pc.getContext), controller.getO(p), false, None, args)
+        (f,SHTMLContentManagement.getRuler(f, pc.getContext), controller.getO(p), false, None, args)
       case SHTMLHoas.Omb(_, f, args) =>
-        (f,server.getRuler(f, pc.getContext), None, false, None, args)
+        (f,SHTMLContentManagement.getRuler(f, pc.getContext), None, false, None, args)
       case SHTMLHoas.OmaSpine(_, f@OMV(_), args) =>
-        (f,server.getRuler(f, pc.getContext), None, true, None, args.map(STerm))
+        (f,SHTMLContentManagement.getRuler(f, pc.getContext), None, true, None, args.map(STerm))
       case SHTMLHoas.OmaSpine(_, f@OMS(p), args) =>
-        (f,server.getRuler(f, pc.getContext), controller.getO(p), false, None, args.map(STerm))
+        (f,SHTMLContentManagement.getRuler(f, pc.getContext), controller.getO(p), false, None, args.map(STerm))
       case SHTMLHoas.OmaSpine(_, f, args) =>
-        (f,server.getRuler(f, pc.getContext), None, false, None, args.map(STerm))
+        (f,SHTMLContentManagement.getRuler(f, pc.getContext), None, false, None, args.map(STerm))
       case OMV(_) =>
-        (rett,server.getRuler(rett,pc.getContext),None,true,None,Nil)
+        (rett,SHTMLContentManagement.getRuler(rett,pc.getContext),None,true,None,Nil)
       case OMS(p) =>
-        (rett,server.getRuler(rett, pc.getContext), controller.getO(p), false, None, Nil)
+        (rett,SHTMLContentManagement.getRuler(rett, pc.getContext), controller.getO(p), false, None, Nil)
       case _ =>
-        (rett,server.getRuler(rett, pc.getContext),None,false,None,Nil)
+        (rett,SHTMLContentManagement.getRuler(rett, pc.getContext),None,false,None,Nil)
     }
-    /*val (ruler,head,isvar) = {
-      (t match {
-        case Getfield(_,_) => Some(t)
-        case SHTMLHoas.Omb(_, f, _) =>
-          Some(f)
-        case SHTMLHoas.OmaSpine(_, f, _) =>
-          Some(f)
-        case OMBIND(f, _, _) =>
-          Some(f)
-        case OMS(c) => Some(OMS(c))
-        case OMV(x) => Some(OMV(x))
-        case _ =>
-          None
-      }) match {
-        case None =>
-          (None,None,false)
-        case Some(t@OMS(p)) =>
-          (server.getRuler(t, pc.getContext),controller.getO(p),false)
-        case Some(t@OMV(p)) =>
-          (server.getRuler(t, pc.getContext), None,true)
-        case Some(t) =>
-          (server.getRuler(t, pc.getContext), None,false)
-      }
-    }*/
-    val nots = headO.toList.flatMap(server.getNotations) ::: ruler.toList.flatMap(server.getNotations)
+    val nots = headO.toList.flatMap(SHTMLContentManagement.getNotations) ::: ruler.toList.flatMap(SHTMLContentManagement.getNotations)
 
     def implicitsFromTerm(tm: Term) = tm match {
       case SHTML.implicit_binder.spine(ctx, _) => ctx.length
@@ -171,7 +153,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
 
     ruler match {
       case Some(o) =>
-        (rett,server.getAssoctype(o),server.getArity(o)) match {
+        (rett,SHTMLContentManagement.getAssoctype(o),SHTMLContentManagement.getArity(o)) match {
           case (SHTMLHoas.Omb(h,f,args),Some("pre"),_) =>
             retargs = undoPre(h,f,args)
             rett = h.HOMB(f, retargs)
@@ -180,6 +162,11 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             val nargs = pre ::: SHTML.flatseq(undoBin(h,f,pre,args,Nil)) :: Nil
             retargs = nargs.map(STerm)
             rett = SHTMLHoas.OmaSpine(h,f,nargs)
+          case (SHTMLHoas.OmaSpine(h, f, ls), Some("bin" | "binr" | "conj"), Some("ia")) =>
+            val (pre, args) = ls.splitAt(implnum)
+            val nargs = pre ::: args.head :: SHTML.flatseq(undoBin(h, f, pre ::: args.head :: Nil, args.tail, Nil)) :: Nil
+            retargs = nargs.map(STerm)
+            rett = SHTMLHoas.OmaSpine(h, f, nargs)
           case (SHTMLHoas.OmaSpine(h, f, ls), Some("bin" | "binr" | "conj"), Some("ai")) =>
             val (pre, args) = ls.splitAt(implnum)
             val nargs = pre ::: SHTML.flatseq(undoBin(h, f, pre, args.init, List(args.last))) :: args.last :: Nil
@@ -207,7 +194,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
       case _ => Nil
     }}
 
-    ruler.flatMap(server.getReorder) match {
+    ruler.flatMap(SHTMLContentManagement.getReorder) match {
       case Some(ls) if retargs.length == ls.length =>
         retargs = ls.map(i => retargs(i-1))
       case _ =>
@@ -237,7 +224,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         )
         0
         case t@OMV(p) =>
-          pc.out(server.getRuler(t,pc.getContext) match {
+          pc.out(SHTMLContentManagement.getRuler(t,pc.getContext)(server.ctrl) match {
             case Some(c : Constant) =>
               s"""<mrow shtml:term="OMV" shtml:head="${p.toString}" shtml:varcomp="${p.toString}" mmt:variable="${c.path}">
               |  <mi>${p.toString}</mi>
@@ -267,8 +254,8 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         }
         0
       case vd : VarDecl =>
-        val notations = server.getNotations(vd)
-        val arity = server.getArity(vd)
+        val notations = SHTMLContentManagement.getNotations(vd)(server.ctrl)
+        val arity = SHTMLContentManagement.getArity(vd)
         pc.out("<mrow>")
         arity match {
           case Some("") | None =>
@@ -298,7 +285,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         0
       case tm: Term =>
         val (ruler,is,notations,t,isvar,head,tis,args) = normalizeTerm(tm)
-        lazy val arity = ruler.flatMap(server.getArity).getOrElse("")
+        lazy val arity = ruler.flatMap(SHTMLContentManagement.getArity).getOrElse("")
         lazy val ntis = tis.map{t => recurseI(t)}
         lazy val nctx = pc.context ::: args.flatMap { case SCtx(ctx) => ctx case _ => Context.empty }
           .map(VarData(_, None, pc.pos))

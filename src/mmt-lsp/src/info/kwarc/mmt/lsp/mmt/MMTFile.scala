@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.notations.Pragmatics
 import info.kwarc.mmt.api.objects.{OMA, OMMOD, Traverser}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.{File, FilePath, URI}
+import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPDocument}
 import org.eclipse.lsp4j.SymbolKind
 
@@ -27,7 +27,9 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
   override def onUpdate(changes: List[Delta]): Unit = {
     if (synchronized {
       Annotations.getAll.isEmpty
-    }) parseTop
+    }) {
+      reparse(None)
+    }
     super.onUpdate(changes)
   }
 
@@ -129,8 +131,20 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
     case c: Constant =>
       forSource(c) { reg => Annotations.addReg(c, reg, SymbolKind.Constant, c.name.toString, true) }
       val hl = new HighlightList(c)
-      c.tp.foreach(annotateTerm(_, hl))
-      c.df.foreach(annotateTerm(_, hl))
+
+      c.getComponents.collect {
+        case x if x.value.isInstanceOf[TermContainer] => (x.key, x.name, x.value.asInstanceOf[TermContainer])
+      }.flatMap {
+        case (key, name, tc) if tc.get.isDefined => Some((key, name, tc, tc.get.get))
+        case _ => None
+      }.map {
+        case (key, name, tc, t) =>
+          forSource(t) { reg =>
+            Annotations.addReg(tc, reg, SymbolKind.Object, key.toString, true)
+          }
+          annotateTerm(t, hl)
+      }
+
     case nm: NestedModule =>
       forSource(nm) { reg => Annotations.addReg(nm, reg, SymbolKind.Module, nm.name.toString, true) }
       nm.module.getPrimitiveDeclarations.foreach(annotateElement)
@@ -175,8 +189,8 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
       t match {
         case o@OMV(_) =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-            val a = Annotations.addReg(o, nreg)
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
+            val a = Annotations.addReg(o, nreg, SymbolKind.Property, o.name.toString)
             a.setSemanticHighlightingClass(Colors.termvariable)
             a.setHover({
               headString(o)
@@ -185,7 +199,7 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           o
         case o: OMLITTrait =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
             val a = Annotations.addReg(o, nreg)
             a.setSemanticHighlightingClass(Colors.termomlit)
             a.setHover({
@@ -195,8 +209,8 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           o
         case o: OML =>
           forSource(o) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-            val a = Annotations.addReg(o, nreg)
+            val nreg = reg.copy(end = reg.end + 1) // LSP regions have exclusive ends
+            val a = Annotations.addReg(o, nreg, SymbolKind.Boolean, headString(o))
             a.setSemanticHighlightingClass(Colors.termoml)
             a.setHover({
               headString(o)
@@ -206,55 +220,64 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
         case tm if tm.head.isDefined =>
           lazy val pragma = pragmatics.map(_.mostPragmatic(tm)).getOrElse(tm)
 
-          def ret = tm match {
-            case OMID(_) => tm
+          forSource(tm) { reg =>
+            // Create annotations corresponding to the subregions of the head term not governed by
+            // any subterms.
+            // Example: consider the constant `proof:  prop ⟶ type❘ # ⊦ 1 prec❙` and the case where `tm` is equal to
+            // `⊦ a ≐ b`, then we will create annotations that correspond to the subregions `⊦ `, ` `, and ` `,
+            // i.e., taking the region of `tm` and subtracting the subregions governed by `a`, `≐`, and `b`.
+            //
+            // This is useful because with the go-to-definition feature implemented below users will be able to click
+            // on on `≐` and go to the definition of that equality instead of being taken to (or also seeing) the
+            // definition of `⊦`.
+            val annotations: List[DocAnnotation] = {
+              val fullRegion = reg
+
+              val subRegions = pragma.subobjects.map(_._2).flatMap(SourceRef.get)
+              val headRegions = fullRegion.subtractChildRegions(subRegions.map(_.region))
+
+              headRegions
+                .map(reg => reg.copy(end = reg.end + 1)) // LSP regions have exclusive ends
+                .map(Annotations.addReg(tm, _, null, tm.head.map(_.name.toString).orNull, false))
+            }
+            annotations.foreach(_.setHover({
+              headString(pragma)
+            }))
+
+            val headFromMeta = pragma.head.exists(p => {
+              state.meta.exists(mt => controller.library.hasImplicit(p.module, mt))
+            })
+            if (headFromMeta) {
+              annotations.foreach(_.setSemanticHighlightingClass(Colors.termconstantmeta))
+            }
+
+            // "GO TO DEFINITION" functionality
+            // ====================================
+            val headDecl = pragma.head.flatMap(controller.getO)
+            headDecl.flatMap(SourceRef.get).foreach((src: SourceRef) => {
+              server.resolveSourceFilepath(src) foreach(originFile => {
+                val originRegion = src.region
+
+                annotations.foreach(_.addDefinitionLC(
+                  originFile.toURI.getPath,
+                  (originRegion.start.line, originRegion.start.column),
+                  (originRegion.end.line, originRegion.end.column)
+                ))
+              })
+            })
+          }
+
+          Traverser(this, t)
+          tm match {
+            case OMS(_) => tm
             case OMA(_, args) =>
               args.foreach(traverse(_))
-              // TODO: archives.source
               tm
             case OMBINDC(_, ctx, bd) =>
               traverseContext(ctx)
               bd.foreach(traverse(_))
               tm
           }
-
-          state.meta.foreach { mt =>
-            controller.library.forDeclarationsInScope(OMMOD(mt)) {
-              case (_, _, d) if pragma.head.contains(d.path) =>
-                forSource(tm) { reg =>
-                  val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-                  val a = Annotations.addReg(tm, nreg)
-                  a.setSemanticHighlightingClass(Colors.termconstantmeta)
-                  a.setHover({
-                    headString(pragma)
-                  })
-
-                  SourceRef.get(d).map(src => {
-                    controller.backend.resolveLogical(src.container) match {
-                      case Some((originArchive, originFilepathParts)) =>
-                        val originFile = originArchive.root / archives.source.toString / FilePath(originFilepathParts)
-                        val originRegion = src.region
-
-                        // todo: consumer of added definitions converts offsets into line/column coordinates using
-                        //       the current document, not originFile!
-                        a.addDefinition(originFile.toURI.getPath, originRegion.start.offset, originRegion.end.offset)
-                    }
-                  })
-                }
-                return ret
-              case _ =>
-            }
-          }
-          forSource(tm) { reg =>
-            val nreg = reg.copy(end = reg.end.copy(offset = reg.end.offset + 1, column = reg.end.column + 1))
-            val a = Annotations.addReg(tm, nreg)
-            a.setHover({
-              headString(pragma)
-            })
-
-            // TODO ?
-          }
-          ret
         case _ =>
           Traverser(this, t)
       }
@@ -264,7 +287,10 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
       cont.foreach { vd =>
         forSource(vd) { reg =>
           val nreg = reg.copy(end = reg.start.copy(offset = reg.start.offset + vd.name.length, column = reg.start.column + vd.name.length))
-          val a = Annotations.addReg(vd, nreg)
+          val a = Annotations.addReg(vd, nreg, SymbolKind.Property, vd.name.toString, true)
+          // todo: add parent annotation for tp and df component
+          vd.tp.foreach(t => Traverser(this, t))
+          vd.df.foreach(t => Traverser(this, t))
           a.setSemanticHighlightingClass(Colors.termvariable)
         }
       }
@@ -281,11 +307,11 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
   /**
     * (Re)parse the whole MMT document and (re)set all LSP annotations and warnings.
     */
-  private def parseTop: Unit = {
+  def reparse(progressCont: Option[MMTTaskProgressListener]): Unit = {
     synchronized {
       errorCont.resetErrs
       val d = try {
-        server.parser.apply(errorCont, docuri, doctext, nsMap)
+        server.parser.apply(errorCont, progressCont, docuri, doctext, nsMap)
       } catch {
         case t: Throwable =>
           t.printStackTrace()
@@ -308,8 +334,10 @@ class IterativeParser(objectParser: IterativeOParser = new IterativeOParser) ext
     controller.extman.addExtension(objectParser)
   }
 
-  def apply(errorCont: ErrorHandler, dpath: DPath, docstring: String, nsmap: NamespaceMap = controller.getNamespaceMap.copy()): StructuralElement = {
+  def apply(errorCont: ErrorHandler, progressCont: Option[MMTTaskProgressListener], dpath: DPath, docstring: String, nsmap: NamespaceMap = controller.getNamespaceMap.copy()): StructuralElement = {
     val ps = ParsingStream.fromString(docstring, dpath, "mmt", Some(nsmap))
+    progressCont foreach ps.addListener
+
     implicit val spc = new StructureParserContinuations(errorCont) {
       override def onElement(se: StructuralElement): Unit = se match {
         case _: Document | _: Namespace | _: NamespaceImport | _: MRef | _: Theory =>

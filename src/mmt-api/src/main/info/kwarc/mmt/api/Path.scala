@@ -224,6 +224,13 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def dropPrefix(p: LocalName): Option[LocalName] =
       if (steps.startsWith(p.steps)) Some(this.drop(p.length))
       else None
+   // this / suffix, but exc at the start of suffix is dropped
+   def appendExcept(exc: LocalName, suffix: LocalName) = {
+     suffix.dropPrefix(exc) match {
+       case Some(rest) => this / rest
+       case None => this / suffix
+     }
+   }
    /** removes repeated complex steps, keeping the later one */
    def simplify: LocalName = {
       var complexBefore = false

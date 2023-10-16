@@ -26,7 +26,7 @@ class View(doc : DPath, name : LocalName, val fromC : TermContainer, val toC : T
      def tl(m: Term) = translator.applyModule(context, m)
      val res = new View(newNS, newName, fromC map tl, toC map tl, dfC map tl, isImplicit)
      getDeclarations foreach {d =>
-       res.add(d.translate(res.toTerm, LocalName.empty, translator,context))
+       res.add(d.translate(translator,res.toTerm,context))
      }
      res
    }

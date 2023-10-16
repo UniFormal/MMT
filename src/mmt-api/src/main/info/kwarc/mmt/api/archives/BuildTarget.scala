@@ -296,7 +296,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   private def makeBuildTask(a: Archive,inPath: FilePath,inFile: File,
                             children: Option[List[BuildTask]],eCOpt: Option[ErrorHandler]): BuildTask = {
     val ew = makeHandler(a,inPath,children.isDefined)
-    val errorCont = MultipleErrorHandler(ew :: eCOpt.toList, report)
+    val errorCont = MultipleErrorHandler(new ErrorContainer :: ew :: eCOpt.toList, report)
     val outFile = if (children.isDefined) getFolderOutFile(a,inPath) else getOutFile(a,inPath)
     new BuildTask(key,a,inFile,children,inPath,outFile,errorCont)
   }

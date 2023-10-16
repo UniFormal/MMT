@@ -83,7 +83,7 @@ object DataStructures {
     * That is, it represents the most general form of facts.
     *
     * Overall, facts sent by the game engine or parsed from existing MMT formalizations
-    * should only become [[SGeneralFact]]s if other fact types don't match (most
+    * should only become [[SGeneralFact]]s if other fact types are not suitable (most
     * importantly [[SValueEqFact]]).
     */
   sealed case class SGeneralFact(
@@ -112,8 +112,8 @@ object DataStructures {
   /**
     * Represents facts of the form
     *
-    * - ''fact: Σ x: valueTp. ⊦ lhs ≐ x'' and
-    * - ''fact: Σ x: valueTp. ⊦ lhs ≐ x❘ = ⟨value, proof⟩''.
+    *  - ''fact: Σ x: valueTp. ⊦ lhs ≐ x'' and
+    *  - ''fact: Σ x: valueTp. ⊦ lhs ≐ x❘ = ⟨value, proof⟩''.
     *
     * If no valueTp is given, it is tried to infer it from value -- if that is given.
     * If inference fails (so far only works for real literals as values) or no value is given,

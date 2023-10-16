@@ -149,6 +149,7 @@ object HTMLParser {
           in.plain.attributes.remove(t._1)
           namespaces(t._1._2) = t._2
         }
+        if (in != n) {in.onOpen}
         in
       } else {
         val p = _parent.getOrElse(_top.get)
@@ -187,9 +188,15 @@ object HTMLParser {
       _parent = Some(newn)
       _namespace = newn.namespace
     }
-    private[HTMLParser] def close(label : String) = {
+    private val autocloses = List("br","hr")
+    private[HTMLParser] def close(label : String): HTMLNode = {
       if (!_parent.exists(_.label == label)) {
-        throwError("Malformed HTML: </" + label + "> does not close any currently open node")
+        if (_parent.exists(p => autocloses.contains(p.label))) {
+          val np = _parent.get.plain._parent.get
+          _parent.get.children.foreach(np.add)
+          _parent = Some(np)
+          return close(label)
+        } else throwError("Malformed HTML: </" + label + "> does not close any currently open node")
       }
       val elem = _parent.get
       elem.onAdd
@@ -310,16 +317,21 @@ object HTMLParser {
               case c if c.isWhitespace =>
                 in.trim
               case _ =>
-                val attr = in.takeWhile(_ != '=').trim
-                in.next()
-                val bgchar = if (in.head == '\"') '\"' else if (in.head == '\'') '\'' else
-                  state.throwError("???")
-                in.next()
-                val value = in.takeWhile(_ != bgchar).trim
-                in.next()
-                if (attr == "xmlns") xmlns = value
-                else if (attr == "class") classes = value.split(' ').map(_.trim).toList
-                else attributes ::= (attr,value)
+                val attr = in.takeWhile(c => !c.isWhitespace && !List('=','>','/').contains(c)).trim
+                if (in.head == '=') {
+                  in.next()
+                  val bgchar = if (in.head == '\"') '\"' else if (in.head == '\'') '\'' else
+                    state.throwError("???")
+                  in.next()
+                  val value = in.takeWhile(_ != bgchar).trim
+                  in.next()
+                  if (attr == "xmlns") xmlns = value
+                  else if (attr == "class") classes = value.split(' ').map(_.trim).toList
+                  else attributes ::= (attr, value)
+                } else {
+                  in.trim
+                  attributes ::= (attr,"")
+                }
             }
             val n = HTMLNode(state,label,xmlns)
             n.startswithWS = startWS

@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.utils.mmt
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SEquationSystemFact, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
-import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SRecArg, SString, STerm}
+import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc._
 import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -88,11 +88,21 @@ private[communication] object Codecs {
       implicit val somdocConfig: Configuration = kindedJsonConfig(Map(
         classOf[SOMA] -> "OMA",
         classOf[SOMS] -> "OMS",
-        classOf[SFloatingPoint] -> "OMF",
-        classOf[SString] -> "OMSTR",
-        classOf[SInteger] -> "OMI",
-        classOf[SRecArg] -> "RECARG",
-        classOf[SRawOMDoc] -> "RAW"
+        classOf[SVariable] -> "VAR",
+        // mapping as Wrapper for SFunction because of custom codec below
+        classOf[SFunction] -> "Wrapper",
+        classOf[SFunctionType] -> "FUNTYPE",
+        classOf[SRawOMDoc] -> "RAW",
+        classOf[SOML] -> "OML",
+        classOf[OMLITBool] -> "OMLIT<Boolean>",
+        classOf[OMLITByte] -> "OMLIT<Byte>",
+        classOf[OMLITShort] -> "OMLIT<Int16>",
+        classOf[OMLITInt] -> "OMLIT<Int32>",
+        classOf[OMLITLong] -> "OMLIT<Int64>",
+        classOf[OMLITFloat] -> "OMLIT<Single>",
+        classOf[OMLITDouble] -> "OMLIT<Double>",
+        classOf[OMLITChar] -> "OMLIT<Char>",
+        classOf[OMLITString] -> "OMLIT<String>",
       ))
     }
 
@@ -108,6 +118,19 @@ private[communication] object Codecs {
 
     implicit val termEncoder: Encoder[Term] = (tm: Term) => {
       stermEncoder(OMDocBridge.encode(tm))
+    }
+
+    implicit val functionEncoder: Encoder[SFunction] = (f: SFunction) => {
+      Json.obj(
+        ("kind", Json.fromString("FUN")),
+        ("params", Json.arr(f.params.map {
+          case (argname, argtp) => Json.obj(
+            ("name", Json.fromString(argname)),
+            ("tp", stermEncoder(argtp))
+          )
+        } : _*)),
+        ("body", stermEncoder(f.body))
+      )
     }
   }
 

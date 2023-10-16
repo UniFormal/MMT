@@ -65,7 +65,7 @@ trait ArchiveActionHandling {self: Controller =>
     val manifest = List(
       "// a unique identifier for this archive",
       s"id: $id",
-      "// a unique URI that is used as the root of all documents in this archive",
+      "// a unique URI to be used as the root of all documents in this archive",
       s"narration-base: http://mmt.omdoc.org/documents/$id",
       "// the URI that is used as the default namespace for every file in this archive",
       s"ns: http://mmt.omdoc.org/modules/$id",

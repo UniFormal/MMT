@@ -10,7 +10,7 @@ import info.kwarc.mmt.stex.{RusTeX, STeXServer}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLParser, SHTMLNode, SHTMLRule}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 
-import java.io.{FileInputStream, FileOutputStream}
+import java.io.{FileInputStream, FileOutputStream, FileWriter}
 import scala.collection.mutable
 
 trait ExportExtension { self : STeXServer =>
@@ -34,7 +34,7 @@ trait ExportExtension { self : STeXServer =>
     (to / "frags").mkdir()
     (to / "img").mkdir()
 
-    to.descendants.foreach(_.delete())
+    //to.descendants.foreach(_.delete())
     var index = MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/index.html")
     index = index.replace("CONTENT_URL_PLACEHOLDER", document.setExtension("doc.html").name)
     index = index.replace("BASE_URL_PLACEHOLDER", "")
@@ -46,9 +46,14 @@ trait ExportExtension { self : STeXServer =>
 
     File.write(to / "aux" / "archive.css",css(archive.id))
 
-    val aux_files = MMTSystem.getResourceList("mmt-web/stex/mmt-viewer").filter(f => File(f).getExtension.isDefined && f != "index.html")
+    val aux_files = MMTSystem.getResourceList("/mmt-web/stex/mmt-viewer").filter(f => File(f).getExtension.isDefined && f != "index.html" && f != "/index.html" && !f.contains("assets/")).map{s =>
+      if (s.startsWith("/")) s.drop(1) else s
+    }
     aux_files.foreach{f =>
-      File.write(to / "aux" / f,MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/" + f))
+      val writer = new FileOutputStream(to / "aux" / f)
+      val in = MMTSystem.getResource("mmt-web/stex/mmt-viewer/" + f)
+      writer.write(in.readAllBytes())
+      //File.write(to / "aux" / f,MMTSystem.getResourceAsString("mmt-web/stex/mmt-viewer/" + f))
       index = index.replace("/stex/mmt-viewer/" + f,"aux/" + f)
     }
     index = index.replace("/stex/fonts.css",default_remote.dropRight(6) + "stex/fonts.css")
@@ -104,7 +109,7 @@ trait ExportExtension { self : STeXServer =>
                 node.plain.attributes((node.namespace, "data-inputref-url")) = prefix + "document?archive=" + a.id + "&filepath=" + path + "&bindings=" + bindings.toNum(controller)
                 bindings.merge(dp)(controller)
               }
-              getTitle(d).foreach(n => node.add(n))
+              SHTMLContentManagement.getTitle(d).foreach(n => node.add(n))
             case _ =>
           }
         case _ =>
@@ -151,7 +156,7 @@ trait ExportExtension { self : STeXServer =>
             }
             (fname, fname)
           } else {
-            val prefix = controller.backend.getArchives.collectFirst {
+            val prefix = getArchives.collectFirst {
               case a if a.ns.exists(ns => s.startsWith(ns.toString)) =>
                 a.properties.get("url-base") match {
                   case Some(p) => if (p.endsWith("/")) p else p + "/"
@@ -172,7 +177,7 @@ trait ExportExtension { self : STeXServer =>
             }
             fname
           } else {
-            val prefix = controller.backend.getArchives.collectFirst {
+            val prefix = getArchives.collectFirst {
               case a if a.ns.exists(ns => s.startsWith(ns.toString)) =>
                 a.properties.get("url-base") match {
                   case Some(p) => if (p.endsWith("/")) p else p + "/"

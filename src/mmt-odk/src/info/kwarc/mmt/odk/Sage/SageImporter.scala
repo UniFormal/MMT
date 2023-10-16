@@ -2,6 +2,7 @@ package info.kwarc.mmt.odk.Sage
 
 import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Importer, RedirectableDimension}
 import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 import info.kwarc.mmt.api.{ImplementationError, LocalName, ParseError, utils}
 import info.kwarc.mmt.api.utils._
 
@@ -172,7 +173,7 @@ class SageImporter extends Importer {
       throw new ParseError("Input not a JSONArray!")
   }
 
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+  def importDocument(bf: BuildTask, index: Document => Unit,rel:ULOStatement => Unit): BuildResult = {
     //     if (bf.inFile.filepath.toString < startAt) return
     val d = bf.inFile.name
     val e = try {

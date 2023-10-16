@@ -1,7 +1,10 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives.{Archive, relational}
+import info.kwarc.mmt.api.frontend.{Controller, Report}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.utils.time.Time
 
 import scala.collection.mutable
 import scala.collection.mutable.{HashMap, HashSet}
@@ -41,18 +44,79 @@ import scala.collection.mutable.{HashMap, HashSet}
   * Triples (subject, binary, object) are hashed three ways so that for any two components
   * the set of third components can be retrieved efficiently.
  */
-class RelStore(report : frontend.Report) extends RelStoreStatistics {
+object RelStore {
+  val use_rdf = true
+  val use_rel = true
+}
+
+trait RelStoreLike {
+  protected val report : Report
+  protected def log(msg: => String) = report("abox", msg)
+  def +=(d: RelationalElement): Unit
+  def clear: Unit
+  def theoryClosure(p: MPath): List[MPath]
+  def getInds: Iterator[Individual]
+  def getInds(tp: Unary): Iterator[Path]
+  def getDeps: Iterator[Relation]
+  def hasDep(from: Path, to: Path, bin: Binary): Boolean
+  def getType(p: Path): Option[Unary]
+
+  def hasType(p: Path, tp: Unary): Boolean
+  def query(start: Path, q: RelationExp)(implicit add: Path => Unit): Unit
+  def queryList(start: Path, q: RelationExp): List[Path] = {
+    var ps: List[Path] = Nil
+    query(start, q) { p => ps ::= p }
+    ps
+  }
+  def querySet(start: Path, q: RelationExp): Set[Path] = {
+    var ps = new mutable.HashSet[Path]()
+    query(start, q) { p => ps += p }
+    ps.toSet
+  }
+
+  def readArchive(a: Archive, in: FilePath, controller:Controller, kd: String): Unit
+}
+class RelStore(report : frontend.Report) extends RDFStore(report) {
+  /*override def readArchive(a: Archive, in: FilePath, controller: Controller, kd: String): Unit = {
+    readArchive(a,in,controller, kd)
+  }*/
+}
+
+class ClassicRelStore(protected val report : frontend.Report) extends RelStoreLike with RelStoreStatistics {
    private val individuals = new HashMapToSet[Unary, Path]
    private val types = new HashMap[Path,Unary]
    private val subjects = new HashMapToSet[(Binary,Path), Path]
    private val objects = new HashMapToSet[(Path,Binary), Path]
    private val dependencies = new HashMapToSet[(Path,Path), Binary]
 
+  override def readArchive(a: Archive, in: FilePath, controller:Controller, kd: String): Unit = {
+    log("Reading archive " + a.id)
+    if ((a / relational).exists) {
+      a.traverse(relational, in, Archive.traverseIf(kd)) { case info.kwarc.mmt.api.archives.Current(inFile, inPath) =>
+        log("in file " + inFile.name)
+        utils.File.ReadLineWise(inFile) { line =>
+          try {
+            val re = controller.relman.parse(line, NamespaceMap(DPath(a.narrationBase)))
+            /* this made reading relational very inefficient; anyway a better way to load implicit moprhisms should be found
+              re match {
+                case Relation(Includes, to: MPath, from: MPath) =>
+                  controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
+                case Relation(HasMeta, thy: MPath, meta: MPath) =>
+                  controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
+                case _ =>
+              }*/
+            this += re
+          } catch { //TODO treat this as normal build target and report errors
+            case e: Error => log(e.getMessage)
+          }
+        }
+      }
+    }
+  }
 
    override def toString = "Individuals: "+individuals.map(i => "\n - "+i.toString)+"\n Theories:"+
      individuals(ontology.IsTheory).map(i => "\n - "+i.toString)
 
-   protected def log(msg : => String) = report("abox", msg)
    /** retrieves all Individual declarations */
    def getInds : Iterator[Individual] = individuals.pairs map {case (t,p) => Individual(p,t)}
    /** retrieves all individual of a certain type */
@@ -103,16 +167,6 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
       }
    }
 
-   def queryList(start : Path, q : RelationExp) : List[Path] = {
-      var ps : List[Path] = Nil
-      query(start, q) {p => ps ::= p}
-      ps
-   }
-   def querySet(start : Path, q : RelationExp) : Set[Path] = {
-      var ps = new mutable.HashSet[Path]()
-      query(start, q) {p => ps += p}
-      ps.toSet
-   }
    /**
     * Executes a relational query from a fixed start path.
     * There is no result set; instead, a continuation is passed that can be used to build the result set;

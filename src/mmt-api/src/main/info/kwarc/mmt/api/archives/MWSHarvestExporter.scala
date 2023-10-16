@@ -59,7 +59,7 @@ abstract class MWSExporter extends Exporter {
             val url = CPath(d.path,comp)
 
             rh(xml.openTag("mws:expr", List(("url", url.toPath), ("mws:data_id", data_id))))
-            rh(ContentMathMLPresenter(t).toString)
+            rh(ContentMathMLPresenter(t, Some(d.path $ comp)).toString)
             rh(xml.closeTag("mws:expr"))
             rh("\n")
           }

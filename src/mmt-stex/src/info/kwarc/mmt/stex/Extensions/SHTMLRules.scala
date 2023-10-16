@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.{DefComponent, LocalName, NamespaceMap, ParseError, Path, StructuralElement}
 import info.kwarc.mmt.stex.{SHTML, STeXServer}
 import info.kwarc.mmt.stex.rules.{MathStructureFeature, StringLiterals}
-import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLBlindSection, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLIfInputref, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMStr, SHTMLOMV, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLPremise, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, SemanticState, TopLevelTerm}
+import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, IsTerm, SHTMLArg, SHTMLArgTypes, SHTMLArgnum, SHTMLAssertion, SHTMLAssignment, SHTMLBind, SHTMLBlindSection, SHTMLComp, SHTMLConclusion, SHTMLDefiniendum, SHTMLDefiniens, SHTMLDefinition, SHTMLDocumentTitle, SHTMLExample, SHTMLFillInSol, SHTMLFrame, SHTMLFrameNumber, SHTMLHeadTerm, SHTMLIfInputref, SHTMLImportModule, SHTMLInputref, SHTMLMCB, SHTMLMCC, SHTMLMCSol, SHTMLMMTRule, SHTMLMMTStructure, SHTMLMathStructure, SHTMLNode, SHTMLNotation, SHTMLNotationComponent, SHTMLOMA, SHTMLOMB, SHTMLOML, SHTMLOMMOD, SHTMLOMS, SHTMLOMStr, SHTMLOMV, SHTMLObjective, SHTMLOpNotationComponent, SHTMLParagraph, SHTMLParsingRule, SHTMLPrecondition, SHTMLPremise, SHTMLProblem, SHTMLProof, SHTMLProofAssumption, SHTMLProofBody, SHTMLProofConclusion, SHTMLProofEqStep, SHTMLProofMethod, SHTMLProofStep, SHTMLProofTerm, SHTMLProofTitle, SHTMLRenaming, SHTMLReturnType, SHTMLRule, SHTMLSCB, SHTMLSCC, SHTMLSCSol, SHTMLSection, SHTMLSectionLevel, SHTMLSectionTitle, SHTMLSolution, SHTMLState, SHTMLSubProof, SHTMLSymbol, SHTMLTheory, SHTMLTitle, SHTMLType, SHTMLUseModule, SHTMLVarComp, SHTMLVarNotation, SHTMLVardef, SHTMLVarseq, SHTMLVisible, SemanticState, TopLevelTerm}
 
 trait OMDocSHTMLRules { this : STeXServer =>
 
@@ -25,8 +25,12 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("multiple-choice-block", (_, n, _) => SHTMLMCB(n)),
     SHTMLParsingRule("mcc", (_, n, _) => SHTMLMCC(n)),
     SHTMLParsingRule("mcc-solution", (_, n, _) => SHTMLMCSol(n)),
+    SHTMLParsingRule("single-choice-block", (_, n, _) => SHTMLSCB(n)),
+    SHTMLParsingRule("scc", (_, n, _) => SHTMLSCC(n)),
+    SHTMLParsingRule("scc-solution", (_, n, _) => SHTMLSCSol(n)),
     SHTMLParsingRule("fillinsol", (_, n, _) => SHTMLFillInSol(n)),
     SHTMLParsingRule("solution", (_, n, _) => SHTMLSolution(n)),
+    SHTMLParsingRule("problem", (_, n, _) => new SHTMLProblem(n)),
     SHTMLParsingRule("proof",(_,n,_) => SHTMLProof(n)),
     SHTMLParsingRule("prooftitle", (_, n, _) => SHTMLProofTitle(n)),
     SHTMLParsingRule("proofbody", (_, n, _) => SHTMLProofBody(n)),
@@ -47,10 +51,6 @@ trait OMDocSHTMLRules { this : STeXServer =>
     SHTMLParsingRule("sectionlevel",(s,n,_) => SHTMLSectionLevel(s.toInt,n)),
     SHTMLParsingRule("framenumber",(_,n,_) => SHTMLFrameNumber(n)),
     SHTMLParsingRule("theory", (str, n, _) => {
-      val mp = Path.parseM(str)
-      new SHTMLTheory(mp, n)
-    }),
-    SHTMLParsingRule("problem", (str, n, _) => {
       val mp = Path.parseM(str)
       new SHTMLTheory(mp, n)
     }),
@@ -143,6 +143,8 @@ trait OMDocSHTMLRules { this : STeXServer =>
           ???
       }
     }),
+    SHTMLParsingRule("preconditionsymbol", (_, n, _) => SHTMLPrecondition(n)),
+    SHTMLParsingRule("objectivesymbol", (_, n, _) => SHTMLObjective(n)),
     SHTMLParsingRule("OMBIND", (s, n, _) => SHTMLOMB(n)),
     SHTMLParsingRule("OMA", (s, n, _) => SHTMLOMA(n)),
     SHTMLParsingRule("OMID", (s, n, _) => SHTMLOMS(n)),
@@ -174,7 +176,7 @@ trait OMDocSHTMLRules { this : STeXServer =>
               state match {
                 case state : SemanticState =>
                   val id = s.hashCode.toHexString
-                  state.doc.metadata.update(SHTML.meta_srefid,StringLiterals(id))
+                  SHTMLContentManagement.addSref(state.doc,id)
                 case _ =>
               }
             case _ =>

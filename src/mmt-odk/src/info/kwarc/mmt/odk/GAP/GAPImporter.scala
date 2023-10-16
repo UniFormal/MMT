@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import archives._
 import frontend._
 import documents._
+import info.kwarc.mmt.api.ontology.{RelationalElement, ULOStatement}
 
 class GAPImporter extends Importer {
   val key = "gap-omdoc"
@@ -20,11 +21,11 @@ class GAPImporter extends Importer {
     initOther(sysImporter)
   }
 
-  def importDocument(bt : BuildTask, index : Document => Unit) : BuildResult = {
+  def importDocument(bt : BuildTask, index : Document => Unit,rel:ULOStatement => Unit) : BuildResult = {
     try {
       val ext = bt.inFile.getExtension.get //should always be set considering inExts above
       if (sysImporter.inExts.contains(ext)) {
-        sysImporter.importDocument(bt, index)
+        sysImporter.importDocument(bt, index,rel)
       } /* else if (docImporter.inExts.contains(ext)) {
         docImporter.importDocument(bt, index)
       } else {

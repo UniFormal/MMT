@@ -707,7 +707,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         val transl = new ApplySubs(sub)
         val ret = new Theory(path.doc, path.name, t.meta, Theory.noParams, Theory.noBase)
         t.getDeclarations.map {d =>
-          val dT = d.translate(OMMOD(path), LocalName.empty, transl, context)
+          val dT = d.translate(transl, OMMOD(path), context)
           ret.add(dT)
         }
         (ret, true)

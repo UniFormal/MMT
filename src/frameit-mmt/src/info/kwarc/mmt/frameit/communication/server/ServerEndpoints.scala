@@ -1,10 +1,11 @@
 package info.kwarc.mmt.frameit.communication.server
 
-import java.io.{PrintWriter, StringWriter}
+import cats.effect
 
+import java.io.{PrintWriter, StringWriter}
 import cats.effect.IO
-import com.twitter.finagle.Service
-import com.twitter.finagle.http.{Request, Response, Status}
+import com.twitter.finagle.{ListeningServer}
+import com.twitter.finagle.http.{Response, Status}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.Constant
@@ -73,13 +74,9 @@ trait ServerEndpoints extends Endpoint.Module[IO] {
   import ServerErrorHandler._
   // ^^^^^^^ END
 
-  protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO]
+  protected def createServer(state: ServerState, address: String): effect.Resource[IO, ListeningServer]
 
-  def getServiceForState(state: ServerState): Service[Request, Response] = {
-    Endpoint.toService(filters(getCompiledOverallEndpoint(state)))
-  }
-
-  private def filters = Function.chain(Seq(exceptionLogging, logging))
+  protected def filters = Function.chain(Seq(exceptionLogging, logging))
 
   private def logging: Endpoint.Compiled[IO] => Endpoint.Compiled[IO] = compiled => {
     compiled.tapWithF { (req, res) =>
@@ -165,7 +162,7 @@ private[server] object ServerErrorHandler {
   }
 
   implicit val encodeException: Encoder[Exception] = Encoder.instance({
-    case e: io.finch.Errors => encodeErrorList(e.errors.toList)
+    case e: io.finch.Errors => encodeErrorList(e.errors.toNonEmptyList.toList)
     case e: io.finch.Error =>
       e.getCause match {
         case e: io.circe.Errors => encodeErrorList(e.errors.toList)
