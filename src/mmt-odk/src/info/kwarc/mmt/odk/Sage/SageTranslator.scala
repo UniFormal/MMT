@@ -85,6 +85,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     val parent = theories.getOrElseUpdate(f.steps.init.mkString("."),{
       val pt = Theory.empty(f.theory.parent,f.theory.name,Some(Sage.theory))
       controller add pt
+      addOpaque(f.doc, pt)
       val pdoc = getDoc(f.document)
       controller add MRef(pdoc.path,pt.path)
       pt
@@ -103,6 +104,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     theories.getOrElse(clss.n, {
       implicit val th = Theory.empty(clss.theory.parent, clss.theory.name, Some(Sage.theory))
       controller add th
+      addOpaque(clss.doc, th)
 
       val doc = getDoc(clss.document)
       controller.add(MRef(doc.path, th.path))
@@ -139,6 +141,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     // val doc = getDoc(cat.path.parent)
     implicit val th = Theory.empty(cat.theory.parent, cat.theory.name, Some(Sage.theory))
     controller.add(th)
+    addOpaque(cat.doc, th)
 
     val doc = getDoc(cat.document)
     controller.add(MRef(doc.path,th.path))
