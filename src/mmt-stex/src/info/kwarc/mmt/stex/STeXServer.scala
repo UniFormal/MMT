@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.{Definienda, ExportExtension, FrontendExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, STeXRelationals}
+import info.kwarc.mmt.stex.Extensions.{Definienda, ExportExtension, FrontendExtension, NotationExtractor, OMDocHTML, OMDocSHTMLRules, QueryExtension, SHTMLBrowser, SHTMLContentManagement, SHTMLDocumentServer, STeXRelationals}
 import info.kwarc.mmt.stex.lsp.{MathHubServer, RemoteLSP, STeXLSPServer, SearchResultServer}
 import info.kwarc.mmt.stex.rules.MathStructureFeature
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, JupyterBookArchive, VirtualArchive, VollKi}
@@ -24,7 +24,8 @@ case class ErrorReturn(s : String) extends Throwable {
 }
 
 
-class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser with OMDocHTML with ExportExtension with FrontendExtension {
+class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTMLDocumentServer with SHTMLBrowser
+  with OMDocHTML with ExportExtension with FrontendExtension with QueryExtension {
   def ctrl = controller
   def getArchives = controller.backend.getStores.collect {
     case a : Archive if a.properties.get("format").contains("stex") => a
@@ -101,6 +102,7 @@ class STeXServer extends ServerExtension("sTeX") with OMDocSHTMLRules with SHTML
   lazy val htmlpres = new MMTsTeXPresenter(texPresenter,xhtmlPresenter)
 
   override def apply(request: ServerRequest): ServerResponse = try {
+    if (request.path.startsWith(List(":sTeX","query"))) return queryRequest(request.copy(path=request.path.drop(2)))
     request.path.lastOption match {
       case Some("document" | "pdf" | "fullhtml" | "documentTop" | "fulldocument" | "fragment" | "rawfragment" | "symbol" | "declaration" |
                 "variable" | "css" | "sections" | "definienda" | "lo" | "loraw") =>

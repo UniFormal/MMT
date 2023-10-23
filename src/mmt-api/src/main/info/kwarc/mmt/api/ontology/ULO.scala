@@ -592,8 +592,8 @@ object ULO {
 
 object RDFStore {
   val memory = URI.scheme("mmt") colon "memory"
-  def archive(id:String) = iri(memory.toString + "/archive#" + id)
-  def archiveId(iri: IRI) = if (iri.getNamespace == memory.toString + "/archive") {
+  def archive(id:String) = iri(memory.toString + "archive#" + id)
+  def archiveId(iri: IRI) = if (iri.getNamespace == memory.toString + "archive") {
     Some(iri.getLocalName)
   } else None
   import org.eclipse.rdf4j.rio.RDFFormat
@@ -976,7 +976,10 @@ object SPARQL {
   sealed trait Object {
     def toObjString : String
   }
-  sealed trait Subject extends this.Object
+  sealed trait SubjectT extends this.Object
+  case class Subject(s:String) extends SubjectT {
+    def toObjString = "<" + s + ">"
+  }
 
   private case class Trans(p:Predicate) extends Predicate {
     def predString: String = p.predString + "+"
@@ -998,17 +1001,17 @@ object SPARQL {
   }
   implicit def asPred(u:ULOPredicate): Predicate = UloPred(u)
 
-  private case class PathO(p:Path) extends Subject {
+  private case class PathO(p:Path) extends SubjectT {
     override def toObjString: String = "<" + pathToIri(p).toString + ">"
   }
   private case class IriO(i:IRI) extends Object {
     override def toObjString: String = "<" + i.toString + ">"
   }
-  case class V(s:String) extends Subject with Predicate {
+  case class V(s:String) extends SubjectT with Predicate {
     def toObjString = s"?$s"
     def predString: String = s"?$s"
   }
-  implicit def pathtosubject(p:Path): Subject = PathO(p)
+  implicit def pathtosubject(p:Path): SubjectT = PathO(p)
 
   implicit def classtoobject(p: ULOClass): Object = IriO(p.toIri)
   private case class SelectWhere(vars:List[String],where:SparqlQuery) extends SparqlQuery {
@@ -1018,10 +1021,10 @@ object SPARQL {
     def WHERE(q : SparqlQuery): SparqlQuery = SelectWhere(`var`.toList,q)
   }
   import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries._
-  case class T(subject: Subject,predicate: this.Predicate,`object`:this.Object) extends SparqlQuery {
+  case class T(subject: SubjectT, predicate: this.Predicate, `object`:this.Object) extends SparqlQuery {
     def queryString: String = s"${subject.toObjString} ${predicate.predString} ${`object`.toObjString} ."
   }
-  case class HASTYPE(subject: Subject,`object`:this.Object) extends SparqlQuery {
+  case class HASTYPE(subject: SubjectT, `object`:this.Object) extends SparqlQuery {
     override def queryString: String = s"${subject.toObjString} <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ${`object`.toObjString} ."
   }
 

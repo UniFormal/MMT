@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="QueryApp">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+    <script src="/script/angularjs/angular-1.5.3/angular.min.js"></script>
+    <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+    <script type="text/javascript" src="/stex/queries.js">
+    </script>
+    <link rel="stylesheet" href="/css/bootstrap3/css/bootstrap.min.css"/>
+    <style>
+        button {
+            background-color: darkslategray;
+        }
+        .query-return {
+            font-size:x-small;
+            background-color: black;
+            color: red;
+            /* width: min-content; */
+            height: 300px;
+            /* max-width: 95%; */
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+        .my-separator {
+            display:inline-block;
+            width:5px;
+            border-right: 1px solid;
+            height: 26px;
+            margin-right: 5px;
+            vertical-align: bottom;
+        }
+        input, select, textarea {
+            background-color: black;
+        }
+    </style>
+</head>
+<body style="background-color: #2a2a2a;color: aliceblue">
+    <div class="container-fluid" ng-controller="QueryViewer">
+        <h2 style="margin-top: 5px;margin-bottom: 3px">sTeX Queries</h2>
+        <hr/>
+        <b>Queries:</b>
+        <button ng-click="query_all()">All sTeX Symbols</button>
+        <button ng-click="query_all_undefined()">All <i>undefined</i> sTeX Symbols</button>
+        <button ng-click="query_all_with_data()">All sTeX Symbols with their macro names</button>
+        <hr/>
+        <b>Custom SPARQL Query:</b><br/>(See <a href="https://hackmd.io/@X5Y0GrH0RY-KPMg2uH7o5Q/ByvrtDbFn" target="_blank">here</a> for the ontology used)
+        <textarea ng-model="queryString" style="display: block;width:100%;height:150px;" rows="10" cols="50"></textarea>
+        <button ng-click="query_custom()">Send</button>
+        <hr/>
+        <b>Result:</b>
+        <pre class="query-return" id="query_return">{{n.short}}&#10;{{n.long}}</pre>
+    </div>
+
+</body>
