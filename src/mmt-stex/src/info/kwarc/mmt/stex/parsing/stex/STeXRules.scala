@@ -865,6 +865,7 @@ abstract class InlineStatementRule extends StatementRule with MacroRule {
           ret.addError("No symbol " + s + " found")
         case _ =>
       }
+      parser.readArgument
       ret
     }
   }
