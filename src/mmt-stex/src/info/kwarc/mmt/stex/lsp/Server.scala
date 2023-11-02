@@ -245,55 +245,18 @@ class STeXLSPServer(style:RunStyle) extends LSPServer(classOf[STeXClient]) with 
      msg.file = msg.file.replace(".xhtml",".tex")
      val files = controller.backend.getArchive(msg.archive) match {
        case Some(a) if msg.file.isEmpty =>
-         //val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
          val src = a / source
-         src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore(src.relativize(f).toFilePath))//.map(src.relativize)
-         //val eh = STeXLSPErrorHandler(_ => {}, update)
-         /* files.foreach{f =>
-           update(0, "Building " + a.id + ": " + f)
-           log("Building " + a.id + ": " + f)
-           val d = documents.synchronized(documents.getOrElseUpdate(f.toURI.toString,newDocument(f.toURI.toString)))
-           d.buildFull()
-         }
-         a.readRelational(Nil,controller,"rel")
-         ((),"Done") */
+         src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore(src.relativize(f).toFilePath))
        case Some(a) if File(a / source / msg.file).isDirectory =>
-         //val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
          val src = (a / source) / msg.file
-         src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore((a/source).relativize(f).toFilePath))//.map(f => src.relativize(f))
-         //val eh = STeXLSPErrorHandler(_ => {}, update)
-         /* files.foreach { f =>
-           update(0, "Building " + a.id + ": " + f)
-           log("Building " + a.id + ": " + f)
-           val d = documents.synchronized(documents.getOrElseUpdate(f.toURI.toString, newDocument(f.toURI.toString)))
-           d.buildFull()
-         }
-         a.readRelational(Nil, controller, "rel")
-         ((), "Done") */
+         src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore((a/source).relativize(f).toFilePath))
        case Some(a) =>
-         //val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
-         //val eh = STeXLSPErrorHandler(_ => {}, update)
          List((a / source) / msg.file)
-         //val relfile = File(msg.file).toFilePath
-         /* update(0,"Building " + a.id + ": " + f)
-         log("Building " + a.id + ": " + f)
-         val d = documents.synchronized(documents.getOrElseUpdate(f.toURI.toString, newDocument(f.toURI.toString)))
-         d.buildFull()
-         ((), "Done") */
        case _ =>
          val archs = controller.backend.getArchives.filter(_.id.startsWith(msg.archive + "/"))
-         //val target = controller.extman.getOrAddExtension(classOf[FullsTeX], "fullstex").get
-         //val eh = STeXLSPErrorHandler(_ => {}, update)
          archs.flatMap {a =>
            val src = a / source
-           src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore(src.relativize(f).toFilePath))//.map(src.relativize)
-           /*files.foreach {f =>
-             update(0, "Building " + a.id + ": " + f)
-             log("Building " + a.id + ": " + f)
-             val d = documents.synchronized(documents.getOrElseUpdate(f.toURI.toString, newDocument(f.toURI.toString)))
-             d.buildFull()
-           }
-           a.readRelational(Nil, controller, "rel") */
+           src.descendants.filter(f => f.getExtension.contains("tex") && !a.ignore(src.relativize(f).toFilePath))
          }
          return ((),"Archive not found")
      }

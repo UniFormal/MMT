@@ -17,6 +17,8 @@ import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
 import info.kwarc.mmt.stex.{ErrorReturn, SHTML, STeXServer}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, SHTMLFrame, SHTMLNode, SHTMLRule, SHTMLState}
 
+import java.net.URLEncoder
+import java.nio.charset.Charset
 import scala.collection.mutable
 import scala.util.Try
 //import info.kwarc.mmt.stex.xhtml.{HTMLArg, HTMLComp, HTMLLanguageComponent, HTMLNode, HTMLParser, HasHead, NotationComponent}
@@ -637,8 +639,6 @@ trait SHTMLDocumentServer { this : STeXServer =>
       if (!inline) bindings.add(StatementStep)
       val styles = plain.attributes.getOrElse((HTMLParser.ns_shtml, "styles"), "").split(',').map(_.trim).toList.filterNot(_.isEmpty)
       plain.classes :::= ("shtml-" + s) :: styles.reverse.map(st => "shtml-" + s + "-" + st)
-      //val old = plain.attributes.getOrElse((plain.namespace, "style"), "")
-      //plain.attributes((plain.namespace, "style")) = "counter-set: shtml-statement " + bindings.statement.toString + ";" + old
     }
     case class STitle(orig: HTMLNode) extends SHTMLNode(orig) {
       override def onAdd = {
@@ -748,6 +748,21 @@ trait SHTMLDocumentServer { this : STeXServer =>
 
       def copy = SecTitle(orig.copy)
     }
+    case class ProblemTitle(orig: HTMLNode) extends SHTMLNode(orig) {
+      override def onAdd = {
+        super.onAdd
+        this.plain.attributes((this.namespace, "data-problem-title")) = "true"
+        val n = if (this.plain.parent.exists(_.plain.classes.contains("paragraph"))) {
+          this.plain.parent.get
+        } else this
+        if (n.label == "span") {
+          n.plain._label = "div"
+        }
+        if (n.isEmpty) n.plain.classes ::= "empty"
+      }
+
+      def copy = ProblemTitle(orig.copy)
+    }
     case class SectionLevel(lvl: Int, orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = SectionLevel(lvl, orig.copy)
 
@@ -805,10 +820,52 @@ trait SHTMLDocumentServer { this : STeXServer =>
     }
     case class Problem(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = Problem(orig.copy)
+      var objectives: List[(String,String)] = Nil
+      var preconditions: List[(String, String)] = Nil
 
       override def onAdd: Unit = {
         super.onAdd
         plain.attributes((this.namespace, "data-problem")) = "true"
+        plain.attributes((this.namespace,"data-problem-objectives")) = objectives.distinct.map(p => s"${p._1}:${URLEncoder.encode(p._2,Charset.defaultCharset())}").mkString(",")
+        plain.attributes((this.namespace, "data-problem-preconditions")) = preconditions.distinct.map(p => s"${p._1}:${URLEncoder.encode(p._2,Charset.defaultCharset())}").mkString(",")
+      }
+    }
+
+    case class Objective(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Objective(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        this.findAncestor {
+          case p: Problem => p
+        }.foreach { p =>
+          val sym = plain.attributes.get((HTMLParser.ns_shtml, "objectivesymbol"))
+          val dim = plain.attributes.get((HTMLParser.ns_shtml, "objectivedimension"))
+          (sym,dim) match {
+            case (Some(sym),Some(dim)) =>
+              p.objectives ::= (dim,sym)
+            case _ =>
+          }
+        }
+      }
+    }
+
+    case class Precondition(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Precondition(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        this.findAncestor {
+          case p: Problem => p
+        }.foreach { p =>
+          val sym = plain.attributes.get((HTMLParser.ns_shtml, "preconditionsymbol"))
+          val dim = plain.attributes.get((HTMLParser.ns_shtml, "preconditiondimension"))
+          (sym, dim) match {
+            case (Some(sym), Some(dim)) =>
+              p.preconditions ::= (dim, sym)
+            case _ =>
+          }
+        }
       }
     }
 
@@ -960,6 +1017,9 @@ trait SHTMLDocumentServer { this : STeXServer =>
     simple("statementtitle",n => STitle(n))
     simple("section",n => Section(n))
     simple("sectiontitle",n => SecTitle(n))
+    simple("problemtitle", n => ProblemTitle(n))
+    simple("objectivesymbol", n => Objective(n))
+    simple("preconditionsymbol", n => Precondition(n))
     simple("skipsection",n => SkipSection(n))
     simple("currentsectionlevel",node => new SHTMLNode(node) {
       override def copy = node.copy
@@ -988,7 +1048,24 @@ trait SHTMLDocumentServer { this : STeXServer =>
     simple("term",node => new SHTMLNode(node) {
       override def onAdd: Unit = {
         val lang = getLanguage(this)
+
+        val problem = this.findAncestor {
+          case p: Problem => p
+        }/*.foreach { p =>
+          val sym = plain.attributes.get((HTMLParser.ns_shtml, "objectivesymbol"))
+          val dim = plain.attributes.get((HTMLParser.ns_shtml, "objectivedimension"))
+          (sym, dim) match {
+            case (Some(sym), Some(dim)) =>
+              p.objectives ::= (dim, sym)
+            case _ =>
+          }
+        }*/
+
         overlay(this) { s =>
+          problem match {
+            case Some(p) => p.preconditions ::= ("remember",s)
+            case _ =>
+          }
           ("/:" + pathPrefix + "/fragment?" + s + "&language=" + lang,
             "/:" + pathPrefix + "/declaration?" + s + "&language=" + lang
           )
