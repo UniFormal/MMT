@@ -23,19 +23,26 @@ object Server extends IOApp /*with TwitterServer with EndpointModule[IO]*/ {
   private val archiveRoot = flag("archive-root", "", "Path to archive root (preferably without spaces), e.g. to a clone of <https://github.com/UFrameIT/archives>")
 */
 
-  def archiveRoot(): String = "C:/Users/nroux/Desktop/kwarc/mmt-archives"
+  def debug(): Boolean = _debug
+  private var _debug: Boolean = false
 
-  def bindAddress(): String = ":8085"
-
-  def debug(): Boolean = true
+  private case class Args(bindAddress: String = "", archiveRoot: String = "")
+  private def parse_args(args:List[String],ret:Args): Args = {
+    args match {
+      case Nil => ret
+      case "-debug" :: rest => _debug = true; parse_args(rest,ret)
+      case "-bind" :: addr :: rest => parse_args(rest,ret.copy(bindAddress = addr))
+      case "-archive-root" :: root :: rest => parse_args(rest,ret.copy(archiveRoot = root))
+      case _ :: rest => parse_args(rest,ret)
+    }
+  }
   override def run(args: List[String]): IO[ExitCode] = {
+    val args_ = parse_args(args,Args())
     if (debug()) {
       println("Server started in debugging mode.")
     }
-
-    val state = initServerState(File(archiveRoot()))
-
-    ConcreteServerEndpoints.createServer(state, bindAddress()).useForever.as(ExitCode.Success)
+    val state = initServerState(File(args_.archiveRoot))
+    ConcreteServerEndpoints.createServer(state, args_.bindAddress).useForever.as(ExitCode.Success)
   }
 
   def initServerState(archiveRoot: File): ServerState = {
