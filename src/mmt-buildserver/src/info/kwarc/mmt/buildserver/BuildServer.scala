@@ -83,6 +83,8 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
       apply(ServerRequest(request.method,request.headers,request.session,request.path.tail,request.query,request.body))
     case ls if ls.headOption.contains("script") || ls.headOption.contains("css") =>
       ServerResponse.ResourceResponse(ls.mkString("/"))
+    case ls if ls.headOption.contains(":action") =>
+      this.controller.server.get.handleRequest(ServerRequest(request.method,request.headers,request.session,request.path.tail,request.query,request.body))
     case List("clear") =>
       //clear()
       State.synchronized {
@@ -123,10 +125,12 @@ class BuildServer extends ServerExtension("buildserver") with BuildManager {
         }
       }
       ServerResponse.JsonResponse(JSONObject())
-    case _ =>
+    case Nil =>
       ServerResponse.apply(
         MMTSystem.getResourceAsString("/mmt-web/buildserver.html"),"text/html"
       )
+    case o =>
+      ServerResponse.JsonResponse(JSONObject("error" -> JSONString("Unknown request " + o.mkString("/"))))
   }
   private def getQueueInfo: JSON = State.synchronized {
     val qSize = State.queue.size
