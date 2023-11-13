@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.{GlobalName, Path}
 import info.kwarc.mmt.api.ontology.SPARQL.T
 import info.kwarc.mmt.api.ontology.ULO
 import info.kwarc.mmt.api.utils.{JSONArray, JSONNull, JSONObject, JSONString}
-import info.kwarc.mmt.api.web.ServerResponse.{JsonResponse, ResourceResponse}
+import info.kwarc.mmt.api.web.ServerResponse.{JsonResponse, ResourceResponse, TextResponse}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.STeXServer
 
@@ -24,6 +24,24 @@ trait QueryExtension { this : STeXServer =>
           )):_*))
       case Some("test") =>
         JsonResponse(JSONArray(test.map(p => JSONString(p.toString)): _*))
+      case Some("problems") =>
+        import info.kwarc.mmt.api.ontology.SPARQL._
+        val query = (request.parsedQuery("path").map(Path.parse),request.parsedQuery("dimension")) match {
+          case (None,_) =>
+            val query = SELECT("path","objective_symbol","cognitive_dimension") WHERE (
+              HASTYPE(V("path"), ULO.problem) AND
+                T(V("path"), ULO.objective, V("w")) AND
+                T(V("w"), ULO.crossrefs, V("objective_symbol")) AND
+                T(V("w"), ULO.cognitiveDimension, V("cognitive_dimension"))
+              )
+            return JsonResponse(controller.depstore.query(query).getJson)
+          case (Some(path),None | Some("")) =>
+            SELECT("x") WHERE (HASTYPE(V("x"), ULO.problem) AND T(V("x"), ULO.objective, V("y")) AND T(V("y"), ULO.crossrefs, path))
+          case (Some(path),Some(dimen)) =>
+            SELECT("x") WHERE (HASTYPE(V("x"), ULO.problem) AND T(V("x"), ULO.objective, V("y")) AND T(V("y"), ULO.crossrefs, path) AND T(V("y"), ULO.cognitiveDimension, dimen))
+        }
+        val res = controller.depstore.query(query).getPaths.map(_.toString)
+        JsonResponse(JSONArray(res.map(JSONString): _*))
       case _ =>
         ResourceResponse("stex/queries.html")
     }

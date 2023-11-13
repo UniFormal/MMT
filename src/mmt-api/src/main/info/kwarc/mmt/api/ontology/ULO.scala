@@ -976,6 +976,10 @@ object SPARQL {
   sealed trait Object {
     def toObjString : String
   }
+  private case class StringO(s:String) extends Object {
+    def toObjString = "\"" + s + "\""
+  }
+
   sealed trait SubjectT extends this.Object
   case class Subject(s:String) extends SubjectT {
     def toObjString = "<" + s + ">"
@@ -1014,6 +1018,7 @@ object SPARQL {
   implicit def pathtosubject(p:Path): SubjectT = PathO(p)
 
   implicit def classtoobject(p: ULOClass): Object = IriO(p.toIri)
+  implicit def stringtoobject(s:String): Object = StringO(s)
   private case class SelectWhere(vars:List[String],where:SparqlQuery) extends SparqlQuery {
     def queryString: String = s"SELECT ${vars.map("?" + _).mkString(" ")} WHERE { ${where.queryString} }"
   }

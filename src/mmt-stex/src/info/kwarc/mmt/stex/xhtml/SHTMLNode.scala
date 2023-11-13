@@ -1053,8 +1053,8 @@ trait VollKIAnnotation extends SHTMLNode {
     symbol.foreach { sym =>
       sstate.foreach { state =>
         findAncestor {
-          case e: SHTMLStatement if e.contentelem.isDefined => e
           case p: SHTMLProblem if p.contentelem.isDefined => p
+          case e: SHTMLStatement if e.contentelem.isDefined => e
         }.foreach { s =>
           state.rel(new ULOStatement {
             lazy val node = org.eclipse.rdf4j.model.util.Values.bnode()
