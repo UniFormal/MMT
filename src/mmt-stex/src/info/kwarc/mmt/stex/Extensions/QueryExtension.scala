@@ -1,6 +1,7 @@
 package info.kwarc.mmt.stex.Extensions
 
-import info.kwarc.mmt.api.{GlobalName, Path}
+import info.kwarc.mmt.api.documents.{DRef, Document}
+import info.kwarc.mmt.api.{DPath, GlobalName, Path}
 import info.kwarc.mmt.api.ontology.SPARQL.T
 import info.kwarc.mmt.api.ontology.ULO
 import info.kwarc.mmt.api.utils.{JSONArray, JSONNull, JSONObject, JSONString}
@@ -26,8 +27,17 @@ trait QueryExtension { this : STeXServer =>
         JsonResponse(JSONArray(test.map(p => JSONString(p.toString)): _*))
       case Some("problems") =>
         import info.kwarc.mmt.api.ontology.SPARQL._
-        val query = (request.parsedQuery("path").map(Path.parse),request.parsedQuery("dimension")) match {
-          case (None,_) =>
+        val query = (request.parsedQuery("archive"),request.parsedQuery("path").map(Path.parse),request.parsedQuery("dimension")) match {
+          case (Some(_),_,_) =>
+            implicit val dp = DocParams(request.parsedQuery)
+            val defis = getDefis
+            val res = defis.map{path =>
+              val query = SELECT("x") WHERE (HASTYPE(V("x"), ULO.problem) AND T(V("x"), ULO.objective, V("y")) AND T(V("y"), ULO.crossrefs, path))
+              val res = controller.depstore.query(query).getPaths.map(p => JSONString(p.toString))
+              JSONObject(("path",JSONString(path.toString)),("problems",JSONArray(res:_*)))
+            }
+            return JsonResponse(JSONArray(res:_*))
+          case (_,None,_) =>
             val query = SELECT("path","objective_symbol","cognitive_dimension") WHERE (
               HASTYPE(V("path"), ULO.problem) AND
                 T(V("path"), ULO.objective, V("w")) AND
@@ -35,15 +45,42 @@ trait QueryExtension { this : STeXServer =>
                 T(V("w"), ULO.cognitiveDimension, V("cognitive_dimension"))
               )
             return JsonResponse(controller.depstore.query(query).getJson)
-          case (Some(path),None | Some("")) =>
+          case (_,Some(path),None | Some("")) =>
             SELECT("x") WHERE (HASTYPE(V("x"), ULO.problem) AND T(V("x"), ULO.objective, V("y")) AND T(V("y"), ULO.crossrefs, path))
-          case (Some(path),Some(dimen)) =>
+          case (_,Some(path),Some(dimen)) =>
             SELECT("x") WHERE (HASTYPE(V("x"), ULO.problem) AND T(V("x"), ULO.objective, V("y")) AND T(V("y"), ULO.crossrefs, path) AND T(V("y"), ULO.cognitiveDimension, dimen))
         }
         val res = controller.depstore.query(query).getPaths.map(_.toString)
         JsonResponse(JSONArray(res.map(JSONString): _*))
       case _ =>
         ResourceResponse("stex/queries.html")
+    }
+  }
+
+  private def getDefis(implicit dp: DocParams) = {
+    (dp.archive, dp.filepath) match {
+      case (Some(a), Some(fp)) =>
+        val nm = fp.replace(".xhtml", ".omdoc").replace(".tex", ".omdoc").split("/")
+        val dp = DPath(nm.foldLeft(a.narrationBase)((u, s) => u / s))
+        controller.getO(dp) match {
+          case Some(d: Document) =>
+            getDefisI(d).distinct
+          case _ => Nil
+        }
+      case _ => Nil
+    }
+  }
+
+  private def getDefisI(d: Document): List[GlobalName] = {
+    // TODO replace by query
+    d.getDeclarationsElaborated.flatMap {
+      case d: Document => getDefisI(d)
+      case dr: DRef => controller.getO(dr.target) match {
+        case Some(d: Document) => getDefisI(d)
+        case _ => Nil
+      }
+      case Definienda.Def(_, _, ls) => ls
+      case _ => Nil
     }
   }
 
@@ -62,7 +99,7 @@ trait QueryExtension { this : STeXServer =>
             ) AND
             T(V("y"),(ULO.contains | ULO.declares | ULO.specifies)+,V("x")) AND
             HASTYPE(V("x"),ULO.constant)
-        )
+          )
       ).getPaths.filter(p => !p.asInstanceOf[GlobalName].module.parent.last.endsWith(".omdoc"))
     })
   }
@@ -82,7 +119,7 @@ trait QueryExtension { this : STeXServer =>
       controller.depstore.query(
         SELECT("x") WHERE (
           T(p,ULO.docref,V("x")) UNION T(V("x"),ULO.defines,p)
-        )
+          )
       ).getPaths.isEmpty
     }
   }
