@@ -39,7 +39,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   protected case class DocParams(q: WebQuery) {
     lazy val path = q.pairs.find(p => p._2.isEmpty && p._1.contains('?') && !p._1.endsWith("="))
       .map(p => Path.parse(p._1))
-    lazy val language = q("language").orElse(context_filepath.flatMap(parseLanguage))
+    lazy val language = q("language").getOrElse(context_filepath.flatMap(parseLanguage).getOrElse("en"))
     lazy val archive = q("archive").flatMap{id => getArchive(id)}
     lazy val filepath = q("filepath")
     lazy val bindings = {
@@ -460,7 +460,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   def doDeclHeader(c: Constant)(implicit dp:DocParams) = {
-    val state = new OMDocState(dp.language.getOrElse("en"))
+    val state = new OMDocState(dp.language)
     doSymbol(c)(state).toString()
   }
 
@@ -555,7 +555,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   def getAllFragmentsDefault(c : Constant)(implicit dp:DocParams) : List[(String,String)] = {
-    SHTMLContentManagement.getSymdocs(c.path, dp.language.getOrElse("en"),dp.context_doc)(controller) match { // TODO language
+    SHTMLContentManagement.getSymdocs(c.path, dp.language,dp.context_doc)(controller) match { // TODO language
       case Nil =>
         val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
           case Some(sr) =>
@@ -583,16 +583,12 @@ trait SHTMLDocumentServer { this : STeXServer =>
   }
 
   def sort(defs:List[(GlobalName,Node)])(implicit dp:DocParams): List[(GlobalName,Node)] = {
-    dp.language match {
-      case None => defs
-      case Some(lang) =>
-        val ls = defs.filter(_._1.module.name.toString == lang)
-        if (ls.isEmpty) defs else (ls ::: defs).distinct
-    }
+    val ls = defs.filter(_._1.module.name.toString == dp.language)
+    if (ls.isEmpty) defs else (ls ::: defs).distinct
   }
 
   def getFragmentDefault(c : Constant)(implicit dp:DocParams) : String = {
-    SHTMLContentManagement.getSymdocs(c.path,dp.language.getOrElse("en"),dp.context_doc)(controller) match { // TODO language TODO sort by relevance
+    SHTMLContentManagement.getSymdocs(c.path,dp.language,dp.context_doc)(controller) match { // TODO language TODO sort by relevance
       case Nil =>
         val res = "Symbol <b>" + c.name + "</b> in module " + (SourceRef.get(c) match {
           case Some(sr) =>
