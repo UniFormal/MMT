@@ -1320,11 +1320,31 @@ case class SHTMLBlindSection(orig:HTMLNode) extends SHTMLNode(orig,Some("skipsec
   val lvl = this.plain.attributes.get((HTMLParser.ns_shtml, "skipsection")).map(_.trim.toInt)
   def init = sstate.foreach { state =>
     state.bindings.add(new BlindSectionStep(lvl.getOrElse(-1)))
+    state match {
+      case s: SemanticState =>
+        val name = plain.attributes.get((plain.namespace, "id")) match {
+          case Some(id) => LocalName(id)
+          case _ =>
+            val namestr = this.hashCode().toHexString
+            plain.attributes((plain.namespace, "id")) = namestr
+            LocalName(namestr)
+        }
+        val nd = new Document(s.doc.path / name, SectionLevel)
+        s.add(nd)
+        s.openDoc(nd)
+      case _ =>
+    }
+    state.doc
   }
 
   override def onAdd: Unit = {
     super.onAdd
     sstate.foreach(_.bindings.close)
+    sstate match {
+      case Some(s: SemanticState) =>
+        s.closeDoc
+      case _ =>
+    }
   }
 
   override def copy = {

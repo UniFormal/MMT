@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JS
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse, WebQuery}
 import info.kwarc.mmt.stex.rules.{IntLiterals, StringLiterals}
 import info.kwarc.mmt.stex.vollki.{FullsTeXGraph, VirtualArchive}
-import info.kwarc.mmt.stex.xhtml.HTMLParser.ParsingState
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{ParsingState, ns_shtml}
 import info.kwarc.mmt.stex.{ErrorReturn, SHTML, STeXServer}
 import info.kwarc.mmt.stex.xhtml.{HTMLNode, HTMLNodeWrapper, HTMLParser, HTMLRule, SHTMLFrame, SHTMLNode, SHTMLRule, SHTMLState}
 
@@ -821,6 +821,10 @@ trait SHTMLDocumentServer { this : STeXServer =>
 
       override def onAdd: Unit = {
         super.onAdd
+        plain.attributes.get((HTMLParser.ns_shtml,"autogradable")) match {
+          case Some(s) => plain.attributes((this.namespace, "data-problem-autogradable")) = s
+          case None => plain.attributes((this.namespace, "data-problem-autogradable")) = "false"
+        }
         plain.attributes((this.namespace, "data-problem")) = "true"
         plain.attributes((this.namespace,"data-problem-objectives")) = objectives.distinct.map(p => s"${p._1}:${URLEncoder.encode(p._2,Charset.defaultCharset())}").mkString(",")
         plain.attributes((this.namespace, "data-problem-preconditions")) = preconditions.distinct.map(p => s"${p._1}:${URLEncoder.encode(p._2,Charset.defaultCharset())}").mkString(",")
@@ -980,15 +984,53 @@ trait SHTMLDocumentServer { this : STeXServer =>
       }
     }
 
+    case class Slideshow(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Slideshow(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-slideshow")) = "true"
+      }
+    }
+
+    case class Slide(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = Slide(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes((this.namespace, "data-slide")) = "true"
+      }
+    }
+
+    case class FillInSolEval(orig: HTMLNode) extends SHTMLNode(orig) {
+      def copy = FillInSolEval(orig.copy)
+
+      override def onAdd: Unit = {
+        super.onAdd
+        plain.attributes.get((ns_shtml, "fillin-case")).foreach { s =>
+          plain.attributes((namespace, "data-fillin-type")) = s
+        }
+        plain.attributes.get((ns_shtml, "fillin-case-value")).foreach { s =>
+          plain.attributes((namespace, "data-fillin-value")) = s
+        }
+        plain.attributes.get((ns_shtml, "fillin-case-verdict")).foreach { s =>
+          plain.attributes((namespace, "data-fillin-verdict")) = s
+        }
+      }
+    }
+
     def simple(s: String,f : HTMLNode => SHTMLNode) = map(s) = PresentationRule(s,(_,_,n) => Some(f(n)))
     def tuple(s:String,f:(String,HTMLNode) => SHTMLNode) = map(s) = PresentationRule(s,(ns,_,n) => Some(f(ns,n)))
 
+    simple("fillin-case", n => FillInSolEval(n))
     simple("solution",n => Solution(n))
     simple("problemhint", n => ProblemHint(n))
     simple("problemnote", n => ProblemNote(n))
     simple("problemgnote", n => ProblemGNote(n))
     simple("problempoints", n => ProblemPoints(n))
     simple("problemminutes", n => ProblemMinutes(n))
+    simple("slideshow", n => Slideshow(n))
+    simple("slideshow-slide",n => Slide(n))
 
     simple("multiple-choice-block",n => MCB(n))
     simple("mcc",n => MC(n))
