@@ -76,7 +76,6 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
         .map(t => if (query.simplify) controller.simplifier(t,
           SimplificationUnit(theory.getInnerContext, expandVarDefs = query.deltaExpansion, expandConDefs = query.deltaExpansion, fullRecursion = true)) else t)
         .map(t => removeFakeLambdas(t, Set()))
-        .distinct
 
       val elpiresult = JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
       val mmtresult = JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
