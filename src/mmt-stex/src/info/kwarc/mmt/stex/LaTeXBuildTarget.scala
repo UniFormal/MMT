@@ -544,11 +544,17 @@ class FullsTeX extends Importer with XHTMLParser {
         ilog("    -      bibtex " + bt.inPath)
         Process(Seq("bibtex",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       }
+      val usesms = {
+        val sms = bt.inFile.setExtension("sms")
+        if (sms.exists() && sms.toJava.length() < 2097152) {
+          Seq(("STEX_USESMS","true"))
+        } else Seq()
+      }
       ilog("    -    pdflatex " + bt.inPath + " (second run)")
-      buildSingle(bt,("STEX_USESMS","true"))
+      buildSingle(bt,usesms:_*)
       bt.outFile.delete()
       ilog("    -    pdflatex " + bt.inPath + " (final run)")
-      buildSingle(bt,("STEX_USESMS","true"))
+      buildSingle(bt,usesms:_*)
       bt.outFile.delete()
       ilog("    -       omdoc " + bt.inPath)
       val (errored,texerrored,_) = buildFileActually(bt.archive,bt.inFile, outFile, state, bt.errorCont)

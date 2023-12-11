@@ -395,6 +395,11 @@ trait SHTMLDocumentServer { this : STeXServer =>
         e.plain.classes ::= "varcomp" // TODO
       } else if (hasAttribute(e,"definiendum")) {
         e.plain.classes ::= "definiendum" // TODO
+        elem.plain.attributes.get((HTMLParser.ns_mmt,"definiendum")) match {
+          case Some(str) =>
+            e.plain.attributes((elem.namespace, "data-definiendum-uri")) = str
+          case _ =>
+        }
       }
     }
   }
