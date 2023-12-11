@@ -545,10 +545,14 @@ class FullsTeX extends Importer with XHTMLParser {
         Process(Seq("bibtex",pdffile.stripExtension.getName),pdffile.up).lazyLines_!
       }
       val usesms = {
-        val sms = bt.inFile.setExtension("sms")
+        val sms = pdffile.setExtension("sms")
         if (sms.exists() && sms.toJava.length() < 2097152) {
+          //println("HERE: Using sms file of size " + sms.toJava.length())
           Seq(("STEX_USESMS","true"))
-        } else Seq()
+        } else {
+          //println("HERE: Not using sms file of size " + sms.toJava.length())
+          Seq()
+        }
       }
       ilog("    -    pdflatex " + bt.inPath + " (second run)")
       buildSingle(bt,usesms:_*)
