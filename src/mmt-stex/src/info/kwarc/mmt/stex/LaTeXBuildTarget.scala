@@ -551,7 +551,7 @@ class FullsTeX extends Importer with XHTMLParser {
           Seq(("STEX_USESMS","true"))
         } else {
           //println("HERE: Not using sms file of size " + sms.toJava.length())
-          Seq()
+          Seq(("STEX_USESMS","false"))
         }
       }
       ilog("    -    pdflatex " + bt.inPath + " (second run)")
