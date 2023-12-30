@@ -57,7 +57,7 @@ object Server extends IOApp /*with TwitterServer with EndpointModule[IO]*/ {
 
     // force-read relational data as [[info.kwarc.mmt.frameit.business.datastructures.Scroll]] uses
     // the depstore
-    frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
+    frameitArchive.readRelational(FilePath(Nil), ctrl, "rel")
     // increase performance by prefetching archive content? ctrl.backend.getArchives.foreach(_.allContent)
 
     val situationTheory = if (debug()) Some(new SituationTheory(FrameWorld.debugSituationTheory)) else None
