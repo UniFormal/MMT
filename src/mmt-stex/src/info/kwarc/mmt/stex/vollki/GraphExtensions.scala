@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMFOREIGN
 import info.kwarc.mmt.api.ontology.{Declares, IsDocument, IsTheory}
 import info.kwarc.mmt.api.symbols.DerivedDeclaration
+import info.kwarc.mmt.api.utils.time.Time
 import info.kwarc.mmt.api.utils.{File, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{GraphSolverExtension, JGraphBuilder, JGraphEdge, JGraphExporter, JGraphNode, JGraphSelector, ServerExtension, ServerRequest, ServerResponse, StandardBuilder}
 import info.kwarc.mmt.stex.Extensions.SHTMLContentManagement
@@ -98,6 +99,7 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
 
   def guidedTour(sym:GlobalName,language:String) = {
     val map = mutable.HashMap.empty[GlobalName, Deps]
+
     def getDep(s: GlobalName): Deps = map.getOrElse(s, {
       val dep = new Deps(s)
       map(s) = dep
@@ -110,34 +112,43 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
 
       val map = mutable.HashMap.empty[Deps, MutList]
     }
-    class Deps(val symbol:GlobalName) {
-      var dependencies : Set[Deps] = Set.empty
-      lazy val doc = SHTMLContentManagement.getSymdocs(symbol,language,None)(controller).headOption
-      lazy val html = doc.map{case (_,d) =>
+    class Deps(val symbol: GlobalName) {
+      var dependencies: Set[Deps] = Set.empty
+      private var _done = false
+      lazy val doc = SHTMLContentManagement.getSymdocs(symbol, language, None)(controller).headOption
+      lazy val html = doc.map { case (_, d) =>
         HTMLParser(d.toString())(new ParsingState(controller, Nil))
       }
-      def transitive: Set[GlobalName] = {
+      private lazy val _transitive : Set[GlobalName] = {
         dependencies.map(_.symbol) + symbol ++ dependencies.flatMap(_.transitive)
       }
-      def fill : Unit = {
-        var syms : List[GlobalName] = Nil
+      def transitive: Set[GlobalName] = {
+        if (_done) _transitive else {
+          dependencies.map(_.symbol) + symbol ++ dependencies.flatMap(_.transitive)
+        }
+      }
+
+      def fill: Unit = {
+        val syms: mutable.Set[GlobalName] = mutable.Set.empty
         html.toList.foreach { html =>
-          html.iterate{ n =>
-            n.plain.attributes.get((HTMLParser.ns_shtml,"definiendum")) match {
-              case Some(s) => Try({map(Path.parseS(s)) = this})
+          html.iterate { n =>
+            n.plain.attributes.get((HTMLParser.ns_shtml, "definiendum")) match {
+              case Some(s) => Try({
+                map(Path.parseS(s)) = this
+              })
               case _ =>
                 n.plain.attributes.get((HTMLParser.ns_shtml, "term")) match {
                   case Some("OMID") =>
                     n.plain.attributes.get((HTMLParser.ns_shtml, "head")) match {
                       case Some(p) => Try({
-                        syms ::= Path.parseS(p)
+                        syms.add(Path.parseS(p))
                       })
                       case _ =>
                     }
                   case _ =>
-                    n.plain.attributes.get((HTMLParser.ns_shtml,"comp")) match {
+                    n.plain.attributes.get((HTMLParser.ns_shtml, "comp")) match {
                       case Some(p) => Try({
-                        syms ::= Path.parseS(p)
+                        syms.add(Path.parseS(p))
                       })
                       case _ =>
                     }
@@ -145,12 +156,14 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
             }
           }
         }
-        syms.distinct.foreach(getDep(_) match {
+        syms.foreach(getDep(_) match {
           case o if o.transitive.contains(this.symbol) =>
           case o => dependencies += o
         })
+        _done = true
         //syms.distinct.foreach(s => dependencies += getDep(s))
       }
+
       def getSorted = {
         val d = new Dones()
         getSortedI(d)
@@ -160,16 +173,19 @@ class VollKi(server:STeXServer) extends ServerExtension("vollki") {
           ("successors", JSONArray(p._2.ls.map(c => JSONString(c.symbol.toString)): _*))
         )): _*)
       }
-      private def getSortedI(d : Dones = new Dones()): Unit = if (!d.map.contains(this)){
+
+      private def getSortedI(d: Dones = new Dones()): Unit = if (!d.map.contains(this)) {
         val ls = new d.MutList()
         ls.count = dependencies.size
         d.map(this) = ls
-        dependencies.foreach {dep => if (dep.html.isDefined) {
-          dep.getSortedI(d)
-          val c = d.map(dep)
-          c.ls ::= this
-          ls.count += c.count
-        }}
+        dependencies.foreach { dep =>
+          if (dep.html.isDefined) {
+            dep.getSortedI(d)
+            val c = d.map(dep)
+            c.ls ::= this
+            ls.count += c.count
+          }
+        }
       }
     }
     getDep(sym).getSorted
