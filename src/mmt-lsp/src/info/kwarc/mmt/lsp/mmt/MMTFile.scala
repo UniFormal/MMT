@@ -145,6 +145,14 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
           annotateTerm(t, hl)
       }
 
+    case rc: RuleConstant =>
+      forSource(rc) { reg =>
+        val a = Annotations.addReg(rc, reg, SymbolKind.Constant, rc.name.toString)
+        a.setHover {
+          rc.df.map(_.getClass.getCanonicalName).getOrElse("could not determine fully qualified name of instantiated rule class")
+        }
+      }
+
     case nm: NestedModule =>
       forSource(nm) { reg => Annotations.addReg(nm, reg, SymbolKind.Module, nm.name.toString, true) }
       nm.module.getPrimitiveDeclarations.foreach(annotateElement)
@@ -251,8 +259,8 @@ class MMTFile(uri: String, client: ClientWrapper[MMTClient], server: MMTLSPServe
               annotations.foreach(_.setSemanticHighlightingClass(Colors.termconstantmeta))
             }
 
-            // "GO TO DEFINITION" functionality
-            // ====================================
+            // "GO TO DEFINITION" functionality on terms
+            // =================================================
             val headDecl = pragma.head.flatMap(controller.getO)
             headDecl.flatMap(SourceRef.get).foreach((src: SourceRef) => {
               server.resolveSourceFilepath(src) foreach(originFile => {
