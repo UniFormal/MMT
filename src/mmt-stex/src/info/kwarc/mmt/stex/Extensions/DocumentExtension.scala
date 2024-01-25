@@ -968,6 +968,23 @@ trait SHTMLDocumentServer { this : STeXServer =>
         plain.attributes((this.namespace, "data-problem-g-note")) = "true"
       }
     }
+    case class AnswerClass(orig:HTMLNode) extends SHTMLNode(orig) {
+      def copy = AnswerClass(orig.copy)
+
+      override def onAdd = {
+        super.onAdd
+        val id = plain.attributes((HTMLParser.ns_shtml,"answerclass"))
+        plain.attributes((this.namespace,"data-problem-answerclass")) = id
+        plain.attributes.get((HTMLParser.ns_shtml,"answerclass-pts")) match {
+          case Some(pts) => plain.attributes((this.namespace,"data-problem-answerclass-pts")) = pts
+          case _ =>
+        }
+        plain.attributes.get((HTMLParser.ns_shtml,"answerclass-feedback")) match {
+          case Some(fdb) => plain.attributes((this.namespace,"data-problem-answerclass-feedback")) = fdb
+          case _ =>
+        }
+      }
+    }
     case class ProblemPoints(orig: HTMLNode) extends SHTMLNode(orig) {
       def copy = ProblemPoints(orig.copy)
 
@@ -1032,6 +1049,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     simple("problemhint", n => ProblemHint(n))
     simple("problemnote", n => ProblemNote(n))
     simple("problemgnote", n => ProblemGNote(n))
+    simple("answerclass", n => AnswerClass(n))
     simple("problempoints", n => ProblemPoints(n))
     simple("problemminutes", n => ProblemMinutes(n))
     simple("slideshow", n => Slideshow(n))
