@@ -979,6 +979,13 @@ trait SHTMLDocumentServer { this : STeXServer =>
           case Some(pts) => plain.attributes((this.namespace,"data-problem-answerclass-pts")) = pts
           case _ =>
         }
+      }
+    }
+    case class AnswerClassFeedback(orig:HTMLNode) extends SHTMLNode(orig) {
+      def copy = AnswerClassFeedback(orig.copy)
+
+      override def onAdd = {
+        super.onAdd
         plain.attributes.get((HTMLParser.ns_shtml,"answerclass-feedback")) match {
           case Some(fdb) => plain.attributes((this.namespace,"data-problem-answerclass-feedback")) = fdb
           case _ =>
@@ -1050,6 +1057,7 @@ trait SHTMLDocumentServer { this : STeXServer =>
     simple("problemnote", n => ProblemNote(n))
     simple("problemgnote", n => ProblemGNote(n))
     simple("answerclass", n => AnswerClass(n))
+    simple("answerclass-feedback", n => AnswerClassFeedback(n))
     simple("problempoints", n => ProblemPoints(n))
     simple("problemminutes", n => ProblemMinutes(n))
     simple("slideshow", n => Slideshow(n))

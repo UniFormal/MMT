@@ -279,7 +279,7 @@ object ULO {
 
   val specifies = new ObjectProperty("specifies",Some(Declares))
     .domain(physical)
-    .domain(logical)
+    .range(logical)
     .comment("The physical organizational item S specifies a knowledge item O, i.e. S is represented in O.")
   val specified_in = new ObjectProperty("specified_in")
     .inverseOf(specifies)
