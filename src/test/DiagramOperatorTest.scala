@@ -1,4 +1,4 @@
-import info.kwarc.mmt.api.DPath
+import info.kwarc.mmt.api.{DPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.utils.URI
 
 /**
@@ -27,11 +27,9 @@ trait DiagramOperatorHelper {
 object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper {
 
   override def run(): Unit = {
-    val repl = new FastREPLExtension(FastREPL.shortcuts, Some("build MMT/urtheories mmt-omdoc module-expressions-logrel-pushout-test.mmt"))
-    controller.extman.addExtension(repl)
-
-    repl.run()
-    sys.exit(0)
+    val x = Path.parseD("latin:/algebraic/groups.omdoc", NamespaceMap.empty)
+    println(x)
+    println(controller.getDocument(Path.parseD("latin:/algebraic/groups.omdoc", NamespaceMap.empty)))
   }
 }
 

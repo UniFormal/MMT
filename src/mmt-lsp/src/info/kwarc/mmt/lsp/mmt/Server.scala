@@ -2,11 +2,13 @@ package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, ReportHandler}
 import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.ontology.DependsOn
 import info.kwarc.mmt.api.ontology.RelationExp.AnyDep
 import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.presentation.RenderingHandler
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, URI}
 import info.kwarc.mmt.lsp._
@@ -15,6 +17,7 @@ import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 
 import java.util.concurrent.CompletableFuture
 import scala.collection.mutable
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 sealed class ShellLogMessage(
@@ -291,6 +294,22 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
       client.log(s"Build finished of `${doc.uri}`!")
       ((), s"Build of $docShortname finished")
     })
+  }
+
+  @JsonRequest("mmt/present-parsed")
+  def presentParsedSource(msg: BuildMessage): CompletableFuture[String] = {
+    val file: MMTFile = findDocument(msg.uri).getOrElse(return Completable(""))
+
+    val doc = controller.getAsO(classOf[Document], file.dpath).getOrElse {
+      val err = s"Could not find corresponding narrational document for `${file.uri}`"
+      client.logError(err)
+      return Completable(err)
+    }
+
+    val rh = new presentation.StringBuilder
+    controller.presenter(doc, standalone = true)(rh)
+
+    Completable(rh.get)
   }
 
   @JsonNotification("mmt/shell/handleline")
