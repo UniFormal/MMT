@@ -12,32 +12,33 @@ import info.kwarc.mmt.api.utils.URI
   * Presents (hopefully) parsable MMT surface syntax from [[StructuralElement]]s
   *
   * @see The server ''info.kwarc.mmt.api.web.SyntaxPresenterServer'' exposes this syntax presenter to the web.
+  * @param presentGenerated Determines if generated declarations (e.g. from derived modules or diagram operators) shall be output as well.
+  * @param machineReadable Determines if the special delimiters of MMT surface syntax are printed (only needed if machine parsing of output is planned)
   */
 
-class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends Presenter(objectPresenter) {
-
-  /**
-    * Determines if generated declarations (e.g. from derived modules or diagram operators) shall
-    * be output as well.
-    **/
-  protected val presentGenerated = false
-
-  /** Determines if the special delimiters of MMT surface syntax are printed (only needed if machine parsing of output is planned) */
-  protected val presentDelimiters = false
+class MMTSyntaxPresenter(
+                          objectPresenter: ObjectPresenter = new NotationBasedPresenter,
+                          protected val presentGenerated: Boolean = false,
+                          protected val machineReadable: Boolean = false
+                        ) extends Presenter(objectPresenter) {
 
   /**
     * The format of [[MMTSyntaxPresenter]] as an extension
     */
-  def key: String = "present-text-notations" + (if (presentGenerated) "-flat" else "")
+  def key: String = {
+    "present-text-notations" +
+      (if (presentGenerated) "-flat" else "") +
+      (if (machineReadable) "-machinereadable" else "")
+  }
 
   override def outExt = "mmt"
 
   private val OBJECT_DELIMITER = "❘"
-  private def getObjDelim = if (presentDelimiters) OBJECT_DELIMITER + " " else ""
+  private def getObjDelim = if (machineReadable) OBJECT_DELIMITER + " " else ""
   private val DECLARATION_DELIMITER = "❙"
-  private def getDeclDelim = if (presentDelimiters) DECLARATION_DELIMITER + "\n" else ""
+  private def getDeclDelim = if (machineReadable) DECLARATION_DELIMITER + "\n" else ""
   private val MODULE_DELIMITER = "❚"
-  private def getModDelim = if (presentDelimiters) MODULE_DELIMITER + "\n" else ""
+  private def getModDelim = if (machineReadable) MODULE_DELIMITER + "\n" else ""
   private val EOL = "\n"
 
   /**

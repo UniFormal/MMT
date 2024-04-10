@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.ontology.DependsOn
 import info.kwarc.mmt.api.ontology.RelationExp.AnyDep
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.presentation.RenderingHandler
+import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, NotationBasedPresenter, Presenter, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem, URI}
 import info.kwarc.mmt.lsp._
@@ -50,6 +50,11 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
   override val scopes: List[String] = Colors.scopes
   override val modifiers: List[String] = Colors.modifiers
 
+  /**
+    * @see [[presentGeneratedSource]]
+    */
+  private val machineReadablePresenter: Presenter = new MMTSyntaxPresenter(new NotationBasedPresenter, presentGenerated = true, machineReadable = true)
+
   lazy val parser: IterativeParser = {
     val p = new IterativeParser()
     controller.extman.addExtension(p)
@@ -60,6 +65,8 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
 
   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
     super.initialize(params, result)
+
+    machineReadablePresenter.init(controller)
 
     val refOptions = new ReferenceOptions()
     refOptions.setWorkDoneProgress(true)
@@ -296,8 +303,8 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     })
   }
 
-  @JsonRequest("mmt/present-parsed")
-  def presentParsedSource(msg: BuildMessage): CompletableFuture[String] = {
+  @JsonRequest("mmt/present-generated")
+  def presentGeneratedSource(msg: BuildMessage): CompletableFuture[String] = {
     val file: MMTFile = findDocument(msg.uri).getOrElse(return Completable(""))
 
     val doc = controller.getAsO(classOf[Document], file.dpath).getOrElse {
@@ -307,7 +314,7 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
     }
 
     val rh = new presentation.StringBuilder
-    controller.presenter(doc, standalone = true)(rh)
+    machineReadablePresenter(doc, standalone = true)(rh)
 
     Completable(rh.get)
   }
