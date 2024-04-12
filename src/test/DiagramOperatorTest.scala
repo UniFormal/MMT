@@ -1,5 +1,7 @@
-import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, NotationBasedPresenter}
-import info.kwarc.mmt.api.{DPath, NamespaceMap, Path, presentation}
+import info.kwarc.mmt.api.modules.diagrams.{NewPushout, DiagramInterpreter}
+import info.kwarc.mmt.api.objects.{Context, OMMOD}
+import info.kwarc.mmt.api.presentation.{ConsoleWriter, MMTSyntaxPresenter, NotationBasedPresenter}
+import info.kwarc.mmt.api.{DPath, ErrorLogger, NamespaceMap, Path, presentation}
 import info.kwarc.mmt.api.utils.URI
 
 /**
@@ -28,13 +30,25 @@ trait DiagramOperatorHelper {
 object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper {
 
   override def run(): Unit = {
-    val x = Path.parseD("latin:/domain_theories/algebra/groups.omdoc", NamespaceMap.empty)
+    /*val x = Path.parseD("latin:/domain_theories/algebra/groups.omdoc", NamespaceMap.empty)
     val rh = new presentation.StringBuilder
     val p = new MMTSyntaxPresenter(new NotationBasedPresenter, presentGenerated = true, machineReadable = true)
     p.init(controller)
     p(controller.get(x), standalone = true)(rh)
 
-    println(rh.get)
+    println(rh.get)*/
+
+    val magma = Path.parseM("latin:/algebraic?Magma")
+    val opposite = Path.parseM("latin:/algebraic?OppositeMagma")
+    val semigroup = Path.parseM("latin:/algebraic?Semigroup")
+
+    println(controller.getO(opposite))
+    val pushout = new NewPushout(OMMOD(opposite), magma, magma)
+
+    val interp = new DiagramInterpreter(controller, Context.empty, new ErrorLogger(controller.report))
+    pushout.applyModule(controller.getModule(semigroup))(interp).foreach(m => {
+      controller.presenter.apply(m)(ConsoleWriter)
+    })
   }
 }
 

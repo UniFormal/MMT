@@ -161,6 +161,10 @@ object DiagramFunctor {
     dom,
     dom.modules.map(m => m -> OMMOD(m)).toMap
   )
+
+  def singleton(dom: MPath, cod: MPath): DiagramFunctor = DiagramFunctor(
+    Diagram.singleton(dom), Diagram.singleton(cod), Map(dom -> OMMOD(cod)), None
+  )
 }
 
 /**
@@ -177,7 +181,7 @@ sealed case class DiagramConnection(functor: DiagramFunctor, tx: Map[MPath, Term
   /* no cases for OMIDENT, OMCOMP as apply is only applicable on theory expressions */
   def applyTheory(thy: MPath): Term = {
     // default to return input as-is
-    tx.getOrElse(thy, metaConnection.map(_.applyTheory(thy)).getOrElse(OMMOD(thy)))
+    tx.getOrElse(thy, metaConnection.map(_.applyTheory(thy)).getOrElse(OMIDENT(OMMOD(thy))))
   }
 }
 
