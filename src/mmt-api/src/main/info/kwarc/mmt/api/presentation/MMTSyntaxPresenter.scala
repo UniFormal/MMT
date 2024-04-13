@@ -398,9 +398,10 @@ class MMTSyntaxPresenter(
       doURI(OMMOD(from), rh, needsHand = true)
       // TODO args ignored
       df.foreach(definiensTerm => {
-        rh(" " + getObjDelim)
+        rh(" " + getObjDelim + " = ")
         objectPresenter(definiensTerm, Some(s.path $ DefComponent))(rh)
       })
+      rh("\n")
 
     // actual structure, not just trivial include
     case _ =>

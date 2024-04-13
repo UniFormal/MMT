@@ -46,7 +46,9 @@ object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper
     val pushout = new NewPushout(OMMOD(opposite), magma, magma)
 
     val interp = new DiagramInterpreter(controller, Context.empty, new ErrorLogger(controller.report))
-    pushout.applyModule(controller.getModule(semigroup))(interp).foreach(m => {
+    val modules = pushout.applyModule(controller.getModule(semigroup))(interp)
+
+    modules.foreach(m => {
       controller.presenter.apply(m)(ConsoleWriter)
     })
   }

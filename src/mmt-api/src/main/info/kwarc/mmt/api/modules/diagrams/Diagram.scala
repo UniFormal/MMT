@@ -194,10 +194,14 @@ object DiagramConnection {
 
   object Singleton {
     def apply(domTheory: MPath, codTheory: MPath, mor: Term): DiagramConnection = {
-      DiagramConnection(
+      new DiagramConnection(
         DiagramFunctor(Diagram(List(domTheory)), Diagram(List(codTheory)), Map(domTheory -> OMMOD(codTheory))),
-        Map(domTheory -> mor)
-      )
+        Map(domTheory -> mor)) {
+        override def applyTheory(thy: MPath): Term = thy match {
+          case `domTheory` => mor
+          case _ => OMCOMP(OMIDENT(OMMOD(thy)), mor) // i.e., mor domain-restricted to thy
+        }
+      }
     }
 
     def unapply(connection: DiagramConnection): Option[(MPath, MPath, Term)] = connection match {
