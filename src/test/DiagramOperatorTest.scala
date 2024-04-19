@@ -66,20 +66,18 @@ object DiagramAdditiveTest extends MagicTest("debug") with DiagramOperatorHelper
 }
 
 class Additive extends LinearOperators {
-  private val Magma: MPath = Path.parseM("latin:/algebraic?Magma")
   private val Set: MPath = Path.parseM("latin:/algebraic?Set")
-
-  private object Symbols {
-    val binaryOp: GlobalName = Magma ? "op"
-    val inverseOp: GlobalName = Path.parseM("latin:/algebraic?InverseOperator") ? "inv"
-    val unit: GlobalName = Path.parseM("latin:/algebraic?UnitElement") ? "unit"
-  }
-
   override val ops: LinearOperatorSpecs = resolve(List(
     ("A", Diagram.singleton(Set) -> Diagram.singleton(Set), DiagramFunctor.singleton(Set, Set), prefixBy("Additive")),
     ("inA", Id(Set) -> "A", DiagramConnection.Singleton(Set, Set, OMIDENT(OMMOD(Set))), suffixBy("AsAdditive")),
     ("outA", "A" -> Id(Set), DiagramConnection.Singleton(Set, Set, OMIDENT(OMMOD(Set))), suffixBy("AsMultiplicative"))
   ))
+
+  private object Symbols {
+    val binaryOp: GlobalName = Path.parseS("latin:/algebraic?Magma?op")
+    val inverseOp: GlobalName = Path.parseS("latin:/algebraic?InverseOperator?inv")
+    val unit: GlobalName = Path.parseS("latin:/algebraic?UnitElement?unit")
+  }
 
   private val equinamer = getEquinamer("A")
 
