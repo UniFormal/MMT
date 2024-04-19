@@ -165,6 +165,7 @@ object InstallDiagram {
   */
 class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: Context, val errorCont: ErrorHandler) {
 
+  private val addedModules: mutable.LinkedHashSet[Module] = mutable.LinkedHashSet[Module]()
   private val transientPaths: mutable.ListBuffer[Path] = mutable.ListBuffer()
 
   // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
@@ -185,7 +186,13 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
 
   def endAdd(elem: ContainerElement[_]): Unit = {
     ctrl.endAdd(elem)
+    elem match {
+      case module: Module => addedModules += module
+      case _ => /* do nothing */
+    }
   }
+
+  def getAddedModules: List[Module] = addedModules.toList
 
   /**
     * [[add]] plus registering as a toplevel result

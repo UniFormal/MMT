@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.modules.diagrams
+package info.kwarc.mmt.api.modules.diagrams.oldstuff
 
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter}
 
 /**
   * A natural transformation betweeen two [[LinearFunctor]]s `in` and `out` that linearly maps theories to views ("connections") and views not at all.

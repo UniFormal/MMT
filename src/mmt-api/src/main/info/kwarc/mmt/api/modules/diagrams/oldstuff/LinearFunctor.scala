@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.modules.diagrams
+package info.kwarc.mmt.api.modules.diagrams.oldstuff
 
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{AbstractTheory, Link, Module, Theory, View}
@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMID, OMIDENT, OMMOD, OMS, O
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter}
 
 /**
   * A functor that linearly maps theories to theories and views to views.

@@ -3,6 +3,7 @@ package info.kwarc.mmt.odk.diagops
 import info.kwarc.mmt.api.checking.Solver
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.diagrams._
+import info.kwarc.mmt.api.modules.diagrams.oldstuff.{Functor, InwardsLinearConnector, LinearFunctor, LinearOperator, SystematicRenamer}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, TermContainer}
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}

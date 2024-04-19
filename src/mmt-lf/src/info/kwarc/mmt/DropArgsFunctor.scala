@@ -5,6 +5,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries.Library
 import info.kwarc.mmt.api.metadata.{MetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.diagrams._
+import info.kwarc.mmt.api.modules.diagrams.oldstuff.{InwardsLinearConnector, LinearFunctor, LinearOperator}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, TermContainer}

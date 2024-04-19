@@ -1,15 +1,13 @@
 package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.{ComplexStep, GeneratedFrom, ImplementationError, InvalidElement, LocalName, MPath, SimpleStep}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink, Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include, IncludeData, Structure}
+import info.kwarc.mmt.api.symbols._
 
-
-trait Blah {
+trait LinearOperators {
   val ops: LinearOperatorSpecs
 
   private val self = this
@@ -54,12 +52,20 @@ trait Blah {
     def applyDomain(m: MPath): MPath = metaFunctor(m).toMPath
   }
 
-  def suffixBy(str: String): MPath => MPath = m => {
+  private def transformModulePath(f: SimpleStep => SimpleStep): MPath => MPath = m => {
     val newName = LocalName(m.name.steps.map {
-      case SimpleStep(x) => SimpleStep(x + str)
-      case ComplexStep(path) => ComplexStep(suffixBy(str)(path)) // todo: is this correct for nested modules?
+      case x@SimpleStep(_) => f(x)
+      case ComplexStep(path) => ComplexStep(transformModulePath(f)(path)) // todo: is this correct for nested modules?
     })
     m.doc ? newName
+  }
+
+  def prefixBy(str: String): MPath => MPath = transformModulePath {
+    case SimpleStep(name) => SimpleStep(str + name)
+  }
+
+  def suffixBy(str: String): MPath => MPath = transformModulePath {
+    case SimpleStep(name) => SimpleStep(name + str)
   }
 
   object IdentityFunctorSpec {
@@ -85,36 +91,56 @@ trait Blah {
   implicit def functorTupleToSpec(x: (String, (Diagram, Diagram), DiagramFunctor, MPath => MPath)): LinearFunctorSpec =
     LinearFunctorSpec(Some(x._1), x._2._1, x._2._2, x._3, x._4)
 
-  implicit def connectorTupleToSpec(x: (String, (LinearFunctorSpec, String), DiagramConnection, MPath => MPath)): UnresolvedLinearConnectorSpec =
+  implicit def connectorTupleToSpec1(x: (String, (LinearFunctorSpec, LinearFunctorSpec), DiagramConnection, MPath => MPath)): UnresolvedLinearConnectorSpec =
+    UnresolvedLinearConnectorSpec(Some(x._1), dom = Right(x._2._1), cod = Right(x._2._2), x._3, x._4)
+
+  implicit def connectorTupleToSpec2(x: (String, (LinearFunctorSpec, String), DiagramConnection, MPath => MPath)): UnresolvedLinearConnectorSpec =
     UnresolvedLinearConnectorSpec(Some(x._1), dom = Right(x._2._1), cod = Left(x._2._2), x._3, x._4)
+
+  implicit def connectorTupleToSpec3(x: (String, (String, LinearFunctorSpec), DiagramConnection, MPath => MPath)): UnresolvedLinearConnectorSpec =
+    UnresolvedLinearConnectorSpec(Some(x._1), dom = Left(x._2._1), cod = Right(x._2._2), x._3, x._4)
+
+  implicit def connectorTupleToSpec4(x: (String, (String, String), DiagramConnection, MPath => MPath)): UnresolvedLinearConnectorSpec =
+    UnresolvedLinearConnectorSpec(Some(x._1), dom = Left(x._2._1), cod = Left(x._2._2), x._3, x._4)
 
   def Id(m: MPath): LinearFunctorSpec = IdentityFunctorSpec(Diagram.singleton(m))
 
-  def getRenamer(opKey: String)(f: String => String)(implicit interp: DiagramInterpreter): LocalName => LocalName = {
+  trait ConstantRenamer {
+    def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName
+  }
+
+  def getRenamer(opKey: String)(f: String => String): ConstantRenamer = {
     val op = ops(opKey).asInstanceOf[LinearFunctorSpec]
 
-    n => LocalName(n.steps map {
-      case SimpleStep(x) => SimpleStep(f(x))
-      case ComplexStep(m) if op.dom.hasImplicitFrom(m)(interp.ctrl.library) =>
-        ComplexStep(op.applyDomain(m))
-      case ComplexStep(m) =>
-        ComplexStep(op(m))
-    })
+    new ConstantRenamer {
+      override def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName = LocalName(n.steps map {
+        case SimpleStep(x) => SimpleStep(f(x))
+        case ComplexStep(m) if op.dom.hasImplicitFrom(m)(interp.ctrl.library) =>
+          ComplexStep(op.applyDomain(m))
+        case ComplexStep(m) =>
+          ComplexStep(op(m))
+      })
+    }
   }
-  def getEquinamer(opKey: String)(implicit interp: DiagramInterpreter): LocalName => LocalName = getRenamer(opKey)(x => x)
+  def getEquinamer(opKey: String): ConstantRenamer = getRenamer(opKey)(x => x)
 
   /** DSL END **/
 
 
   /**
-    * invariant: idempotent, i.e., when called more than once on the same theory, always returns the same existing result.
+    * invariant: idempotent, i.e., when called more than once on the same view, always returns the same modules (i.e., the objects in the Java sense).
+    *
+    * @return (modules, alreadyProcessed) where modules are the either newly created (but yet empty) or existing mapped modules and alreadyProcessed indicates whether _any_ of the operators has already processed the input module
+    * @see [[beginView]]
     */
-  protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): List[ModuleOrLink] = {
-    ops.specs map {
+  protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): (List[ModuleOrLink], Boolean) = {
+    var alreadyProcessed = false
+    val modules = ops.specs map {
       case op@LinearFunctorSpec(_, dom, _, _, _) =>
         val newThyPath = op(thy.path)
 
         if (interp.ctrl.getAsO(classOf[Theory], newThyPath).nonEmpty) {
+          alreadyProcessed = true
           interp.ctrl.getTheory(newThyPath)
         } else {
           val newMeta = thy.meta.map {
@@ -143,6 +169,7 @@ trait Blah {
         val newMorPath = op(thy.path)
 
         if (interp.ctrl.getAsO(classOf[Module], newMorPath).nonEmpty) {
+          alreadyProcessed = true
           interp.ctrl.getModule(newMorPath)
         } else {
           val newMor = View(
@@ -157,13 +184,18 @@ trait Blah {
           newMor
         }
     }
+    (modules, alreadyProcessed)
   }
 
   /**
-    * invariant: idempotent, i.e., when called more than once on the same view, always returns the same existing result.
+    * invariant: idempotent, i.e., when called more than once on the same view, always returns the same modules (i.e., the objects in the Java sense).
+    *
+    * @return (modules, alreadyProcessed) where modules are the either newly created (but yet empty) or existing mapped modules and alreadyProcessed indicates whether _any_ of the operators has already processed the input module
+    * @see [[beginTheory]]
     */
-  protected def beginView(view: View)(implicit interp: DiagramInterpreter): List[View] = {
-    ops.specs flatMap {
+  protected def beginView(view: View)(implicit interp: DiagramInterpreter): (List[View], Boolean) = {
+    var alreadyProcessed = false
+    val modules = ops.specs flatMap {
       case op@LinearFunctorSpec(_, _, _, _, _) =>
         if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
           None
@@ -173,6 +205,7 @@ trait Blah {
           val newMorPath = op(view.path)
 
           if (interp.ctrl.getAsO(classOf[View], newMorPath).nonEmpty) {
+            alreadyProcessed = true
             Some(interp.ctrl.getAs(classOf[View], newMorPath))
           } else {
             val newMor = View(
@@ -192,6 +225,8 @@ trait Blah {
         //                            but the MMT system does not yet support native statements of morphism equality
         None
     }
+
+    (modules, alreadyProcessed)
   }
 
   /**
@@ -203,15 +238,18 @@ trait Blah {
     // related to inModule gets constructed)
     interp.ctrl.simplifier(m)
 
-    val addedModules = m match {
+    val (addedModules, alreadyProcessed) = m match {
       case thy: Theory =>
         beginTheory(thy)
       case v: View =>
         beginView(v)
     }
-    m.getDeclarations.foreach(d => applyDeclaration(d, m))
 
-    addedModules.foreach(interp.ctrl.endAdd)
+    if (!alreadyProcessed) {
+      m.getDeclarations.foreach(d => applyDeclaration(d, m))
+      // finish up modules (esp. handle includes that might have been added by the last line)
+      addedModules.foreach(interp.endAdd)
+    }
     addedModules
   }
 
@@ -318,26 +356,27 @@ trait Blah {
   }
 
   def applyStructure(s: Structure, container: ModuleOrLink): Unit = {
-    ???
+    // todo: implement
   }
 
   def applyConstant(c: Constant, container: ModuleOrLink)(implicit interp: DiagramInterpreter): Unit
 }
 
-class NewPushout(m: Term, dom: MPath, cod: MPath) extends Blah {
+class NewPushout(m: Term, dom: MPath, cod: MPath) extends LinearOperators {
   override val ops: LinearOperatorSpecs = resolve(List(
     ("P", Diagram.singleton(dom) -> Diagram.singleton(cod), DiagramFunctor.singleton(dom, cod), suffixBy("_Pushout")),
     ("in", Id(dom) -> "P", DiagramConnection.Singleton(dom, cod, m), suffixBy("_Projection"))
   ))
 
+  private val equinamer = getEquinamer("P")
+
   def applyConstant(c: Constant, container: ModuleOrLink)(implicit interp: DiagramInterpreter): Unit = {
     def tr(t: Term): Term = interp.ctrl.library.ApplyMorphs(t, OMMOD(ops("in")(c.parent)))
-    val equinamer = getEquinamer("P")
 
     val newC = new FinalConstant(
       home = OMMOD(ops("P")(c.parent)),
       name = equinamer(c.name),
-      alias = c.alias map equinamer,
+      alias = c.alias.map(n => equinamer(n)),
       tpC = c.tpC.map(tr),
       dfC = c.dfC.map(tr),
       rl = c.rl,

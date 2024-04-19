@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.ContentPath
 import info.kwarc.mmt.api.libraries.Library
+import info.kwarc.mmt.api.modules.diagrams.oldstuff.LinearOperator
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData, Structure}
 
 /**

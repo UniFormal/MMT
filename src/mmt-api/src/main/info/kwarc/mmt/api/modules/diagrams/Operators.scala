@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.modules.diagrams
 
+import info.kwarc.mmt.api.modules.diagrams.oldstuff.{Functor, InwardsLinearConnector, LinearConnector, LinearFunctor, LinearOperator, OutwardsLinearConnector}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.{GlobalName, SyntaxDrivenRule}
 

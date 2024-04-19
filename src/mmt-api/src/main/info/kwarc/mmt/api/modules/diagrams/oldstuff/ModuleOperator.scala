@@ -1,5 +1,6 @@
-package info.kwarc.mmt.api.modules.diagrams
+package info.kwarc.mmt.api.modules.diagrams.oldstuff
 
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, UnaryOperator, ZippingOperator}
 import info.kwarc.mmt.api.{ContainerElement, ContentPath, GeneratedFrom, GlobalName, ImplementationError, InvalidElement, InvalidObject, LocalName, MPath}
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
 import info.kwarc.mmt.api.objects.{OMCOMP, OMID, OMIDENT, OMMOD, OMS, Term}
