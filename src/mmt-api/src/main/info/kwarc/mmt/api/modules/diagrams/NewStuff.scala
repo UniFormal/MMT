@@ -383,7 +383,7 @@ class NewPushout(m: Term, dom: MPath, cod: MPath) extends LinearOperators {
       notC = NotationContainer.empty(),
       vs = c.vs
     )
-    newC.metadata.add(c.metadata.getAll : _*)
+    newC.metadata.add(c.metadata.getAll : _*) // TODO: shall we translate meta data via tr(), too?
     interp.add(newC)
 
     if (c.df.isEmpty) {

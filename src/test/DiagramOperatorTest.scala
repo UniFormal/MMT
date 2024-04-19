@@ -38,7 +38,11 @@ object DiagramPushoutTest extends MagicTest("debug") with DiagramOperatorHelper 
     val opposite = Path.parseM("latin:/algebraic?OppositeMagma")
     val semigroup = Path.parseM("latin:/algebraic?Semigroup")
 
-    println(controller.getO(opposite))
+    // TODO(NR@FR): this is necessary for the pushout operator to now throw an exception
+    //              when it tries to find the assignment for [Proofs]/ded in ?OppositeMagma.
+    //              Apparently, without this forced build, not all includes are visible?
+    controller.handleLine("build MMT/LATIN2 mmt-omdoc domain_theories/algebra/magmas.mmt")
+
     val pushout = new NewPushout(OMMOD(opposite), magma, magma)
 
     val interp = new DiagramInterpreter(controller, Context.empty, new ErrorLogger(controller.report))
