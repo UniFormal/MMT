@@ -9,16 +9,16 @@ import info.kwarc.mmt.api.objects.Conversions._
   *
   * During the traversal, a value of type [[State]] may be used to carry along state.
   *
-  * To implement a traverser, subclass and overwrite [[traverse()]].
+  * To implement a traverser, subclass and overwrite [[traverse]].
   * Delegate cases you do not wish to handle to `Traverser(this, t)` from the companion
   * object.
-  * In a sense, `Traverser(this, t)` works as if [[traverse()]] were extended homomorphically
-  * to `t`. Namely, if `t` is complex (say on [[OMBINDC]]), then [[traverse()]] is called
+  * In a sense, `Traverser(this, t)` works as if [[traverse]] were extended homomorphically
+  * to `t`. Namely, if `t` is complex (say on [[OMBINDC]]), then [[traverse]] is called
   * on all children and the result reassembled to the same kind of term `t` was before
   * (e.g. again [[OMBINDC]]).
   * If `t` is simple (say on [[OMID]]), is is returned as-is.
   *
-  * Hence, therer are two options for doing recursion within [[traverse()]]:
+  * Hence, therer are two options for doing recursion within [[traverse]]:
   *
   * - call `Traverser(this, t)`: do this only if you determined you do not wish to handle `t`, but
   *   possibly its children.

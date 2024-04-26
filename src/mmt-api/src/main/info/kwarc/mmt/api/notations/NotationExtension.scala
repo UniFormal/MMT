@@ -48,15 +48,16 @@ abstract class Fixity {
 case class Mixfix(markers: List[Marker]) extends Fixity {
    def asString: (String, String) = ("mixfix", markers.mkString(" "))
    def addInitialImplicits(n: Int): Mixfix = {
-     val markersM = markers.map {
+     def shift(m: Marker): Marker = m match {
        case d: Delimiter => d
        case a: Arg => a * {_ + n}
        case a: ImplicitArg => a * {_ + n}
        case v: Var => v.copy(number = v.number + 1)
+       case f: FractionMarker => f.copy(above = f.above map shift)
        // TODO other cases
        case other => throw ImplementationError("undefined case of marker " + other.toString)
      }
-     Mixfix(markersM)
+     Mixfix(markers map shift)
    }
 
   /**

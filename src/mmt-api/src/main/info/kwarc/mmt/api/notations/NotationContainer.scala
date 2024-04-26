@@ -155,6 +155,7 @@ class NotationContainer extends ComponentContainer {
      ).flatten
    }
 
+  def map(f: TextNotation => TextNotation): NotationContainer = copy().mapInPlace(f)
   def mapInPlace(f: TextNotation => TextNotation): this.type = collectInPlace(x => Some(f(x)))
 
   def collectInPlace(f: TextNotation => Option[TextNotation]): this.type = {
