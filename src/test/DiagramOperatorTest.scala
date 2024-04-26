@@ -91,8 +91,6 @@ class Additive extends LinearOperators {
   }
 
   override def applyConstant(c: Constant, container: ModuleOrLink)(implicit interp: DiagramInterpreter): Unit = {
-
-    // use Infix shorthand
     val modifications: Map[GlobalName, () => (TextNotation, List[LocalName])] = Map(
       Symbols.binaryOp -> (() => (
         c.not.get.copy(fixity = Infix(Delim("+"), 0, 2, Some(true))),
