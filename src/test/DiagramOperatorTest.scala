@@ -1,6 +1,6 @@
 import info.kwarc.mmt.api.modules.ModuleOrLink
 import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramConnection, DiagramFunctor, DiagramInterpreter, LinearOperators, NewPushout}
-import info.kwarc.mmt.api.notations.{Delim, Delimiter, Mixfix, NotationContainer, SimpArg, TextNotation}
+import info.kwarc.mmt.api.notations.{Delim, Delimiter, Infix, Mixfix, NotationContainer, Prefix, SimpArg, TextNotation}
 import info.kwarc.mmt.api.objects.{Context, OMID, OMIDENT, OMMOD, StatelessTraverser, Term, Traverser, UniformTranslator}
 import info.kwarc.mmt.api.presentation.{ConsoleWriter, MMTSyntaxPresenter, NotationBasedPresenter}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant}
@@ -66,9 +66,16 @@ object DiagramAdditiveTest extends MagicTest("debug") with DiagramOperatorHelper
     interp.getAddedModules.foreach(m => {
       controller.presenter.apply(m)(ConsoleWriter)
     })
+
+    /*
+      
+
+
+     */
   }
 }
 
+// todo: potentially generalize to general notation-changing ops
 class Additive extends LinearOperators {
   private val Set: MPath = Path.parseM("latin:/algebraic?Set")
   override val ops: LinearOperatorSpecs = resolve(List(
@@ -83,17 +90,16 @@ class Additive extends LinearOperators {
     val unit: GlobalName = Path.parseS("latin:/algebraic?UnitElement?unit")
   }
 
-  private val equinamer = getEquinamer("A")
-
   override def applyConstant(c: Constant, container: ModuleOrLink)(implicit interp: DiagramInterpreter): Unit = {
 
+    // use Infix shorthand
     val modifications: Map[GlobalName, () => (TextNotation, List[LocalName])] = Map(
       Symbols.binaryOp -> (() => (
-        c.not.get.copy(fixity = Mixfix(List(SimpArg(1), Delim("+"), SimpArg(2)))),
+        c.not.get.copy(fixity = Infix(Delim("+"), 0, 2, Some(true))),
         List(LocalName("plus"))
       )),
       Symbols.inverseOp -> (() => (
-        c.not.get.copy(fixity = Mixfix(List(Delim("-", associatesToLeft = false), SimpArg(1)))),
+        c.not.get.copy(fixity = Prefix(Delim("-"), 0, 1)),
         List(LocalName("negate"))
       )),
       Symbols.unit -> (() => (
@@ -106,8 +112,8 @@ class Additive extends LinearOperators {
 
     val newC = new FinalConstant(
       home = OMMOD(ops("A")(c.parent)),
-      name = equinamer(c.name),
-      alias = c.alias.map(n => equinamer(n)) ++ modifications.get(c.path).map(f => f()._2).getOrElse(Nil),
+      name = ops("A")(c.name),
+      alias = c.alias.map(ops("A")(_)) ++ modifications.get(c.path).map(f => f()._2).getOrElse(Nil),
       tpC = c.tpC map inTr,
       dfC = c.dfC map inTr,
       rl = c.rl,
@@ -116,26 +122,25 @@ class Additive extends LinearOperators {
     )
     interp.add(newC)
 
-    if (c.df.isEmpty) {
-      val inC = Constant(
-        home = OMMOD(ops("inA")(c.parent)),
-        name = LocalName(ComplexStep(c.parent) :: c.name),
-        alias = Nil,
-        tp = c.tpC.map(inTr).get,
-        df = Some(newC.toTerm),
-        rl = None
-      )
-      val outC = Constant(
-        home = OMMOD(ops("outA")(c.parent)),
-        name = LocalName(ComplexStep(newC.parent) :: equinamer(c.name)),
-        alias = Nil,
-        tp = c.tpC.get,
-        df = Some(c.toTerm),
-        rl = None
-      )
-      interp.add(inC)
-      interp.add(outC)
-    }
+    val inC = Constant(
+      home = OMMOD(ops("inA")(c.parent)),
+      name = LocalName(ComplexStep(c.parent) :: c.name),
+      alias = Nil,
+      tp = c.tpC.map(inTr).get,
+      df = Some(newC.toTerm),
+      rl = None
+    )
+
+    val outC = Constant(
+      home = OMMOD(ops("outA")(c.parent)),
+      name = LocalName(ComplexStep(newC.parent) :: ops("A")(c.name)),
+      alias = Nil,
+      tp = c.tpC.get,
+      df = Some(c.toTerm),
+      rl = None
+    )
+    interp.add(inC)
+    interp.add(outC)
   }
 }
 

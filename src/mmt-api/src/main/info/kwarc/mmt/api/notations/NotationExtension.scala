@@ -217,7 +217,7 @@ abstract class SimpleFixity extends Fixity {
 }
 
 /** delimiter after a certain argument */
-case class PrePostfix(delim: Delimiter, leftArgs: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0)  extends SimpleFixity {
+case class PrePostfix(override val delim: Delimiter, leftArgs: Int, override val expl: Int, rightArgsBracketed: Boolean = false, override val impl: Int = 0)  extends SimpleFixity {
   lazy val markers = if (expl != 0) {
     val leftArgMarkers = (impl until impl+leftArgs).map(i=>SimpArg(i+1)).toList
     val rightArgsMarkers = (impl+leftArgs until impl+expl).map(i=>SimpArg(i+1)).toList
@@ -229,7 +229,7 @@ case class PrePostfix(delim: Delimiter, leftArgs: Int, expl: Int, rightArgsBrack
 }
 
 /** delimiter followed by the (explicit) arguments */
-case class Prefix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
+case class Prefix(override val delim: Delimiter, override val impl: Int, override val expl: Int) extends SimpleFixity {
    lazy val markers = if (expl != 0) argsWithOp(0) else argsWithOp(0) ::: implArgs
    def asString = ("prefix", simpleArgs)
    def addInitialImplicits(n: Int) = copy(impl = impl+n) 
@@ -239,7 +239,7 @@ case class Prefix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
  *
  * @param assoc None/Some(true)/Some(false) for none, left, right; currently ignored
  */
-case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean]) extends SimpleFixity {
+case class Infix(override val delim: Delimiter, override val impl: Int, override val expl: Int, assoc: Option[Boolean]) extends SimpleFixity {
    lazy val markers = assoc match {
       case Some(true) =>  argsWithOp(1)
       case None =>        argsWithOp(1)
@@ -257,7 +257,7 @@ case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean])
 }
 
 /** delimiter after the (explicit) arguments */
-case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
+case class Postfix(override val delim: Delimiter, override val impl: Int, override val expl: Int) extends SimpleFixity {
    lazy val markers = argsWithOp(expl)
    def asString = ("postfix", simpleArgs)
    def addInitialImplicits(n: Int) = copy(impl = impl+n)
@@ -269,7 +269,7 @@ case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity 
  *
  * assumes arguments are one variable and one scope; expl must be 1
  */
-case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) extends SimpleFixity {
+case class Bindfix(override val delim: Delimiter, override val impl: Int, override val expl: Int, assoc: Boolean) extends SimpleFixity {
    def markers = List(delim, Var(impl+1, true, None), Delim("."), SimpArg(impl+2))
    def asString = {
       val assocString = if (assoc) "-assoc" else ""

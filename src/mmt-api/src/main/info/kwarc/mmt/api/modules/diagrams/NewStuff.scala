@@ -23,6 +23,7 @@ trait LinearOperators {
 
   abstract class LinearOperatorSpec(val key: Option[String], val renamer: MPath => MPath) {
     def apply(m: MPath): MPath = renamer(m)
+    def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName
   }
   sealed trait UnresolvedLinearOperatorSpec {
     val key: Option[String]
@@ -49,6 +50,8 @@ trait LinearOperators {
                                override val renamer: MPath => MPath)
     extends LinearOperatorSpec(key, renamer) with UnresolvedLinearOperatorSpec {
 
+    private lazy val equinamer = getEquinamer(this)
+    override def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName = equinamer(n)
     def applyDomain(m: MPath): MPath = metaFunctor(m).toMPath
   }
 
@@ -69,13 +72,15 @@ trait LinearOperators {
   }
 
   object IdentityFunctorSpec {
-    def apply(dom: Diagram): LinearFunctorSpec = new LinearFunctorSpec(None, dom, dom, DiagramFunctor.identity(dom), x => x)
+    def apply(dom: Diagram): LinearFunctorSpec = LinearFunctorSpec(None, dom, dom, DiagramFunctor.identity(dom), x => x)
   }
   case class LinearConnectorSpec(override val key: Option[String],
                                  dom: LinearFunctorSpec,
                                  cod: LinearFunctorSpec,
                                  metaConnector: DiagramConnection,
                                  override val renamer: MPath => MPath) extends LinearOperatorSpec(key, renamer) {
+    override def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName = ???
+
     // this needs to return a Term (instead of a mere MPath) to allow for constructs of the form OMIDENT(thy)
     def applyDomain(m: MPath): Term = metaConnector.applyTheory(m)
   }
@@ -109,19 +114,18 @@ trait LinearOperators {
     def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName
   }
 
-  def getRenamer(opKey: String)(f: String => String): ConstantRenamer = {
-    val op = ops(opKey).asInstanceOf[LinearFunctorSpec]
 
-    new ConstantRenamer {
-      override def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName = LocalName(n.steps map {
-        case SimpleStep(x) => SimpleStep(f(x))
-        case ComplexStep(m) if op.dom.hasImplicitFrom(m)(interp.ctrl.library) =>
-          ComplexStep(op.applyDomain(m))
-        case ComplexStep(m) =>
-          ComplexStep(op(m))
-      })
-    }
+  def getRenamer(opKey: String)(f: String => String): ConstantRenamer = getRenamer(ops(opKey).asInstanceOf[LinearFunctorSpec])(f)
+  def getRenamer(op: LinearFunctorSpec)(f: String => String): ConstantRenamer = new ConstantRenamer {
+    override def apply(n: LocalName)(implicit interp: DiagramInterpreter): LocalName = LocalName(n.steps map {
+      case SimpleStep(x) => SimpleStep(f(x))
+      case ComplexStep(m) if op.dom.hasImplicitFrom(m)(interp.ctrl.library) =>
+        ComplexStep(op.applyDomain(m))
+      case ComplexStep(m) =>
+        ComplexStep(op(m))
+    })
   }
+  def getEquinamer(op: LinearFunctorSpec): ConstantRenamer = getRenamer(op)(x => x)
   def getEquinamer(opKey: String): ConstantRenamer = getRenamer(opKey)(x => x)
 
   /** DSL END **/
@@ -368,15 +372,13 @@ class NewPushout(m: Term, dom: MPath, cod: MPath) extends LinearOperators {
     ("in", Id(dom) -> "P", DiagramConnection.Singleton(dom, cod, m), suffixBy("_Projection"))
   ))
 
-  private val equinamer = getEquinamer("P")
-
   def applyConstant(c: Constant, container: ModuleOrLink)(implicit interp: DiagramInterpreter): Unit = {
     def tr(t: Term): Term = interp.ctrl.library.ApplyMorphs(t, OMMOD(ops("in")(c.parent)))
 
     val newC = new FinalConstant(
       home = OMMOD(ops("P")(c.parent)),
-      name = equinamer(c.name),
-      alias = c.alias.map(n => equinamer(n)),
+      name = ops("P")(c.name),
+      alias = c.alias.map(ops("P")(_)),
       tpC = c.tpC.map(tr),
       dfC = c.dfC.map(tr),
       rl = c.rl,
@@ -385,17 +387,16 @@ class NewPushout(m: Term, dom: MPath, cod: MPath) extends LinearOperators {
     )
     newC.metadata.add(c.metadata.getAll : _*) // TODO: shall we translate meta data via tr(), too?
     interp.add(newC)
+    // Declaration.translate method
 
-    if (c.df.isEmpty) {
-      val cAssignment = Constant(
-        home = OMMOD(ops("in")(c.parent)),
-        name = LocalName(ComplexStep(c.parent) :: c.name),
-        alias = Nil,
-        tp = c.tpC.map(tr).get,
-        df = Some(newC.toTerm),
-        rl = None
-      )
-      interp.add(cAssignment)
-    }
+    val cAssignment = Constant(
+      home = OMMOD(ops("in")(c.parent)),
+      name = LocalName(ComplexStep(c.parent) :: c.name),
+      alias = Nil,
+      tp = c.tpC.map(tr).get,
+      df = Some(newC.toTerm),
+      rl = None
+    )
+    interp.add(cAssignment)
   }
 }
