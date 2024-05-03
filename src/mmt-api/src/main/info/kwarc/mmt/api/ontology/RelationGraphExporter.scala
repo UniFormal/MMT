@@ -47,7 +47,8 @@ abstract class RelationGraphExporter extends StructurePresenter {
     val svg = try {
       dot(dg)
     } catch {
-      case e: Exception => throw LocalError("error while producing graph").setCausedBy(e)
+      case e: Exception =>
+        throw LocalError("error while producing graph").setCausedBy(e)
     }
     rh(svg)
   }

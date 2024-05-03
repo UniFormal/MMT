@@ -901,8 +901,22 @@ trait RDFRelStoreLike extends RelStoreLike { this : RDFStore =>
 
   def query(start: Path, q: RelationExp)(implicit add: Path => Unit) = {
     val qv = SparqlBuilder.`var`("qv")
-    val p = makeQuery(q)
-    val query = Queries.SELECT(qv).where(GraphPatterns.tp(qv, p, pathToIri(start)))
+    val (nq,tps) = q match {
+      case Sequence(qs @ _*) =>
+        val tps = qs.collect {
+          case q@HasType(_, Nil) => q
+          case HasType(_,_) =>
+            println("HERE!")
+            ???
+        }
+        val nq = qs.filterNot(tps.contains)
+        val ntps = tps.flatMap(_.mustHave).flatten
+        if (nq.length == 1) (nq.head,ntps.toList)
+        else (Choice(nq:_*),ntps.toList)
+      case _ => (q,Nil)
+    }
+    val p = makeQuery(nq)
+    val query = Queries.SELECT(qv).where(GraphPatterns.tp(qv, p, pathToIri(start)) :: tps.map(tp => GraphPatterns.tp(qv, RDF.TYPE, tp.toULO.toIri)) :_*)
     import scala.jdk.CollectionConverters._
     repo.getConnection.prepareTupleQuery(query.getQueryString).evaluate().forEach { res =>
       val vl = res.getBinding("qv").getValue
@@ -923,6 +937,8 @@ trait RDFRelStoreLike extends RelStoreLike { this : RDFStore =>
       () => "(" + qs.map(makeQuery(_).getQueryString).mkString("|") + ")"
     case Transitive(q) =>
       () => "(" + makeQuery(q).getQueryString + ")+"
+    case Sequence(qs@_*) =>
+      () => qs.map(makeQuery(_).getQueryString).mkString(", ")
     case _ =>
       ???
   }
