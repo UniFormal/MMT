@@ -297,11 +297,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
                             children: Option[List[BuildTask]],eCOpt: Option[ErrorHandler]): BuildTask = {
     val ew = makeHandler(a,inPath,children.isDefined)
     val errorCont = MultipleErrorHandler(new ErrorContainer :: ew :: eCOpt.toList, report)
-
-    // Change outFile to path without $
-    val segmentsForInPathForStex = inPath.map(segment => segment.replace("$", ""))
-    val inPathForStex = new FilePath(segmentsForInPathForStex)
-    val outFile = if (children.isDefined) getFolderOutFile(a,inPathForStex) else getOutFile(a,inPathForStex)
+    val outFile = if (children.isDefined) getFolderOutFile(a,inPath) else getOutFile(a,inPath)
     new BuildTask(key,a,inFile,children,inPath,outFile,errorCont)
   }
 
