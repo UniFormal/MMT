@@ -13,8 +13,11 @@ import utils._
 /** customizes the default errors of the ErrorList plugin
  *  @param mainFile the file whose checking led to the error (may differ from the file that contains the error)
  */
-case class MMTError(mainFile: File, es: ErrorSource, error: Error, sf: String, sl: Int, sc: Int, ec: Int, msg: String, extraMsg: List[String])
-   extends DefaultErrorSource.DefaultError(es, MMTError.mmtLevelTojEditLevel(error), sf, sl, sc, ec, msg) {
+/* ErrorList weirdly errors that have the same error message (even if they are in different lines).
+   So we add the error hash to the messages to make them all unique.
+ */
+class MMTError(val mainFile: File, es: ErrorSource, error: Error, sf: String, sl: Int, sc: Int, ec: Int, msg: String, extraMsg: List[String])
+   extends DefaultErrorSource.DefaultError(es, MMTError.mmtLevelTojEditLevel(error), sf, sl, sc, ec, msg + s"    (error hash: ${error.hashCode().toString})") {
   extraMsg foreach {m => addExtraMessage(m)}
 }
 
@@ -53,9 +56,7 @@ class MMTErrorSource extends DefaultErrorSource("MMT", null) {
 
    /** remove errors produced when checking this file */
    def removeMMTFileErrors(file: File): Unit = {
-     // ErrorList 2.4.0 causes a bug where errors are not removed from the ErrorListPanel even though this method sends the right message
-     //val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
-     //mmt.report("debug", "removing errors: " + file)
+     val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
      val sets = errors.values.iterator
      while (sets.hasNext) {
        val set = sets.next
@@ -72,13 +73,33 @@ class MMTErrorSource extends DefaultErrorSource("MMT", null) {
           }
        }
        remove.foreach {e =>
-          set.remove(e)
-          gui.Swing.invokeLater {
-            // mmt.report("debug", "error removed: " + e.getErrorMessage)
+         errorCount -= 1
+         set.remove(e)
+       }
+       /* ErrorList 2.4.0 has a bug where errors are not removed from the ErrorListPanel
+          even though this error source removes them correctly and this method sends the right bus message.
+          ErrorListPanel maintains a set of all errors and a tree model for displaying them.
+          It's unclear if the failure is with both or only the latter, or if the messages are somehow faulty.
+          We cannot use ErrorList 2.3.x anymore because it is not compatible with jEdit 5.7.
+          Therefore, as a workaround, we clear all errors and readd them using the list maintained by the ErrorSource.
+          As soon as ErrorList works correctly again, the commented-out code below should be reinstated.s
+        */
+       if (remove.nonEmpty) gui.Swing.invokeLater {
+         val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERRORS_CLEARED)
+         org.gjt.sp.jedit.EditBus.send(msg)
+         getAllErrors.foreach {e =>
+           val upd = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_ADDED, e)
+           org.gjt.sp.jedit.EditBus.send(upd)
+         }
+       }
+       /*if (remove.nonEmpty) gui.Swing.invokeLater {
+         remove.foreach {e =>
+            mmt.report("debug", "error removed: " + e.getErrorMessage)
             val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_REMOVED, e)
             org.gjt.sp.jedit.EditBus.send(msg)
-          }
+         }
        }
+       */
      }
    }
 }
