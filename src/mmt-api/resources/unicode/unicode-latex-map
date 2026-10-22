@@ -155,8 +155,8 @@ jnleq|≨
 jngeq|≩
 jsqsubset|⊏
 jsqsupset|⊐
-jsubseteq|⊑
-jsupseteq|⊒
+jsqsubseteq|⊑
+jsqsupseteq|⊒
 jin|∈
 jnin|∉
 jni|∋
@@ -359,7 +359,8 @@ jepsilon|ϵ
 jvarepsilon|ε
 jzeta|ζ
 jeta|η
-jtheta|ϑ
+jtheta|θ
+jvartheta|ϑ
 jiota|ι
 jkappa|κ
 jlambda|λ
