@@ -7,7 +7,6 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{AnonymousTheory, OMMOD, Term, Traverser}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.moduleexpressions.operators.PushoutUtils
 
 import scala.collection.mutable
 
